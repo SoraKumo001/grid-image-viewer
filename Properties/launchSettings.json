@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "grid-image-viewer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "grid-image-viewer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
