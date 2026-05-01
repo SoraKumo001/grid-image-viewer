@@ -378,7 +378,12 @@ namespace grid_image_viewer
             {
                 if (item.IsAnimated)
                 {
-                    item.AdvanceFrame(_gridDecodeSize);
+                    // 表示範囲内（またはバッファ内）でコンテナが実体化されている場合のみアニメーションを進める
+                    var container = ImageGridView.ContainerFromItem(item);
+                    if (container != null)
+                    {
+                        item.AdvanceFrame(_gridDecodeSize);
+                    }
                 }
             }
         }
@@ -1032,14 +1037,29 @@ namespace grid_image_viewer
             }
         }
 
-        private void NavigateFolder(int offset)
-        {
-            if (string.IsNullOrEmpty(_currentDirectory)) return;
+        private bool _isSearchingFolder = false;
 
-            string? nextImageFolder = FindNextImageFolder(_currentDirectory, offset);
-            if (!string.IsNullOrEmpty(nextImageFolder))
+        private async void NavigateFolder(int offset)
+        {
+            if (string.IsNullOrEmpty(_currentDirectory) || _isSearchingFolder) return;
+
+            _isSearchingFolder = true;
+            FolderSearchingOverlay.Visibility = Visibility.Visible;
+
+            try
             {
-                LoadDirectory(nextImageFolder);
+                string currentDir = _currentDirectory;
+                string? nextImageFolder = await Task.Run(() => FindNextImageFolder(currentDir, offset));
+                
+                if (!string.IsNullOrEmpty(nextImageFolder))
+                {
+                    LoadDirectory(nextImageFolder);
+                }
+            }
+            finally
+            {
+                _isSearchingFolder = false;
+                FolderSearchingOverlay.Visibility = Visibility.Collapsed;
             }
         }
 

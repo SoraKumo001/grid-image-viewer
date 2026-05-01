@@ -127,5 +127,13 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
+        
+        <!-- Folder Searching Overlay -->
+        <Grid x:Name="FolderSearchingOverlay" Grid.RowSpan="2" Background="#88000000" Visibility="Collapsed" Canvas.ZIndex="100">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <ProgressRing Width="60" Height="60" Foreground="#00A2ED" IsActive="True" />
+                <TextBlock Text="Searching folders..." Foreground="White" FontSize="16" HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
