@@ -87,6 +87,8 @@
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
+                        <ToggleMenuFlyoutItem x:Name="MenuToggleManga" Text="Manga Mode" Click="MenuToggleManga_Click" />
+                        <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
                     </MenuFlyout>
                 </Grid.ContextFlyout>
@@ -135,5 +137,24 @@
                 <TextBlock Text="Searching folders..." Foreground="White" FontSize="16" HorizontalAlignment="Center" />
             </StackPanel>
         </Grid>
+        
+        <ContentDialog x:Name="SlideshowDialog"
+                       Title="自動再生設定"
+                       PrimaryButtonText="OK"
+                       CloseButtonText="キャンセル"
+                       PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick">
+            <StackPanel Spacing="12">
+                <CheckBox x:Name="SlideshowFullscreen" Content="全画面表示(_F)"/>
+                <CheckBox x:Name="SlideshowRandom" Content="ランダムな並び順(_R)"/>
+                <CheckBox x:Name="SlideshowLoop" Content="ループする(_L)"/>
+                <CheckBox x:Name="SlideshowNextFolder" Content="次のフォルダも表示(_N)"/>
+                <CheckBox x:Name="SlideshowCurrentFolderOnly" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                    <TextBlock Text="時間(_T)：" VerticalAlignment="Center"/>
+                    <NumberBox x:Name="SlideshowInterval" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="120"/>
+                    <TextBlock Text="秒毎" VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </ContentDialog>
     </Grid>
 </Window>

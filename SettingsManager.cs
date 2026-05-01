@@ -7,15 +7,23 @@ namespace grid_image_viewer
 {
     public class SettingsManager
     {
-        public VirtualKey KeyNextImage { get; set; } = VirtualKey.PageDown;
-        public VirtualKey KeyPrevImage { get; set; } = VirtualKey.PageUp;
+        public VirtualKey KeyNextImage { get; set; } = VirtualKey.Space;
+        public VirtualKey KeyPrevImage { get; set; } = VirtualKey.Back;
         public VirtualKey KeyNextFolder { get; set; } = VirtualKey.Down;
         public VirtualKey KeyPrevFolder { get; set; } = VirtualKey.Up;
         public VirtualKey KeyToggleManga { get; set; } = VirtualKey.G;
         public VirtualKey KeyExit { get; set; } = VirtualKey.Escape;
         public VirtualKey KeyToggleGrid { get; set; } = VirtualKey.Enter;
+        public VirtualKey KeySlideshow { get; set; } = VirtualKey.A;
 
         public bool IsMangaMode { get; set; } = false;
+        
+        public bool SlideshowFullscreen { get; set; } = false;
+        public bool SlideshowRandom { get; set; } = true;
+        public bool SlideshowLoop { get; set; } = true;
+        public bool SlideshowNextFolder { get; set; } = false;
+        public bool SlideshowCurrentFolderOnly { get; set; } = false;
+        public double SlideshowInterval { get; set; } = 2.0;
 
         public SettingsManager()
         {
@@ -36,6 +44,14 @@ namespace grid_image_viewer
             if (settings.TryGetValue("Key_ToggleManga", out object? tglManga)) KeyToggleManga = (VirtualKey)(int)tglManga;
             if (settings.TryGetValue("Key_Exit", out object? exitApp)) KeyExit = (VirtualKey)(int)exitApp;
             if (settings.TryGetValue("Key_ToggleGrid", out object? tglGrid)) KeyToggleGrid = (VirtualKey)(int)tglGrid;
+            if (settings.TryGetValue("Key_Slideshow", out object? slideshowKey)) KeySlideshow = (VirtualKey)(int)slideshowKey;
+
+            if (settings.TryGetValue("SlideshowFullscreen", out object? ssFs)) SlideshowFullscreen = (bool)ssFs;
+            if (settings.TryGetValue("SlideshowRandom", out object? ssRnd)) SlideshowRandom = (bool)ssRnd;
+            if (settings.TryGetValue("SlideshowLoop", out object? ssLoop)) SlideshowLoop = (bool)ssLoop;
+            if (settings.TryGetValue("SlideshowNextFolder", out object? ssNext)) SlideshowNextFolder = (bool)ssNext;
+            if (settings.TryGetValue("SlideshowCurrentFolderOnly", out object? ssCurr)) SlideshowCurrentFolderOnly = (bool)ssCurr;
+            if (settings.TryGetValue("SlideshowInterval", out object? ssInt)) SlideshowInterval = (double)ssInt;
         }
 
         public void SaveKeyBindings()
@@ -48,12 +64,24 @@ namespace grid_image_viewer
             settings["Key_ToggleManga"] = (int)KeyToggleManga;
             settings["Key_Exit"] = (int)KeyExit;
             settings["Key_ToggleGrid"] = (int)KeyToggleGrid;
+            settings["Key_Slideshow"] = (int)KeySlideshow;
         }
 
         public void SaveMangaMode()
         {
             var settings = ApplicationData.Current.LocalSettings.Values;
             settings["IsMangaMode"] = IsMangaMode;
+        }
+
+        public void SaveSlideshowSettings()
+        {
+            var settings = ApplicationData.Current.LocalSettings.Values;
+            settings["SlideshowFullscreen"] = SlideshowFullscreen;
+            settings["SlideshowRandom"] = SlideshowRandom;
+            settings["SlideshowLoop"] = SlideshowLoop;
+            settings["SlideshowNextFolder"] = SlideshowNextFolder;
+            settings["SlideshowCurrentFolderOnly"] = SlideshowCurrentFolderOnly;
+            settings["SlideshowInterval"] = SlideshowInterval;
         }
 
         public void LoadWindowState(AppWindow appWindow)

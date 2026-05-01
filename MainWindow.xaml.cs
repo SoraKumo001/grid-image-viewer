@@ -37,6 +37,10 @@ namespace grid_image_viewer
         private CancellationTokenSource? _displayCts;
         private CancellationTokenSource? _gridCts;
 
+        private DispatcherTimer _slideshowTimer;
+        private bool _isSlideshowRunning = false;
+        private Random _random = new Random();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -71,7 +75,21 @@ namespace grid_image_viewer
             }
 
             _animationTimer = new DispatcherTimer();
+            _animationTimer.Interval = TimeSpan.FromMilliseconds(30);
             _animationTimer.Tick += AnimationTimer_Tick;
+
+            _slideshowTimer = new DispatcherTimer();
+            _slideshowTimer.Tick += SlideshowTimer_Tick;
+
+            var settings = ApplicationData.Current.LocalSettings.Values;
+            if (settings.TryGetValue("LastImagePath", out object? lastPathObj) && lastPathObj is string lastPath)
+            {
+                var dir = Path.GetDirectoryName(lastPath);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                {
+                    LoadDirectory(dir, lastPath);
+                }
+            }
 
             ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
         }
@@ -794,6 +812,7 @@ namespace grid_image_viewer
         {
             var props = e.GetCurrentPoint(RootGrid).Properties;
             bool isCtrl = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control);
+            bool isShift = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Shift);
 
             if (isCtrl)
             {
@@ -820,11 +839,11 @@ namespace grid_image_viewer
             // Navigate images (単一画像表示モード)
             if (props.MouseWheelDelta < 0)
             {
-                Navigate(1); // Next
+                Navigate(1, isShift); // Next
             }
             else
             {
-                Navigate(-1); // Prev
+                Navigate(-1, isShift); // Prev
             }
             e.Handled = true;
         }
@@ -898,7 +917,20 @@ namespace grid_image_viewer
 
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (_isSlideshowRunning && e.Key != _settings.KeySlideshow && e.Key != _settings.KeyExit)
+            {
+                StopSlideshow();
+            }
+
             bool isCtrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool isShift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+            if (e.Key == _settings.KeySlideshow)
+            {
+                OpenSlideshowDialogAsync();
+                e.Handled = true;
+                return;
+            }
 
             if (e.Key == _settings.KeyToggleManga && isCtrl)
             {
@@ -993,25 +1025,25 @@ namespace grid_image_viewer
 
             if (e.Key == Windows.System.VirtualKey.Left)
             {
-                Navigate(_settings.IsMangaMode ? 1 : -1);
+                Navigate(_settings.IsMangaMode ? 1 : -1, isShift);
                 e.Handled = true;
                 return;
             }
             if (e.Key == Windows.System.VirtualKey.Right)
             {
-                Navigate(_settings.IsMangaMode ? -1 : 1);
+                Navigate(_settings.IsMangaMode ? -1 : 1, isShift);
                 e.Handled = true;
                 return;
             }
 
             if (e.Key == _settings.KeyPrevImage)
             {
-                Navigate(-1);
+                Navigate(-1, isShift);
                 e.Handled = true;
             }
             else if (e.Key == _settings.KeyNextImage)
             {
-                Navigate(1);
+                Navigate(1, isShift);
                 e.Handled = true;
             }
             else if (e.Key == _settings.KeyPrevFolder)
@@ -1053,11 +1085,11 @@ namespace grid_image_viewer
         }
 
 
-        private void Navigate(int offset)
+        private void Navigate(int offset, bool forceSingleStep = false)
         {
             if (_playlist.Count == 0) return;
 
-            int step = _settings.IsMangaMode ? 2 : 1;
+            int step = (_settings.IsMangaMode && !forceSingleStep) ? 2 : 1;
 
             if (offset > 0)
             {
@@ -1147,6 +1179,10 @@ namespace grid_image_viewer
         private void EditMenuFlyout_Opening(object sender, object e)
         {
             MenuCrop.IsEnabled = _hasSelection;
+            if (MenuToggleManga != null)
+            {
+                MenuToggleManga.IsChecked = _settings.IsMangaMode;
+            }
         }
 
         private async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
@@ -1323,8 +1359,12 @@ namespace grid_image_viewer
 
 
 
-
-
+        private void MenuToggleManga_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.IsMangaMode = !_settings.IsMangaMode;
+            _settings.SaveMangaMode();
+            _ = UpdateDisplayAsync();
+        }
         private TextBox CreateKeyBindingTextBox(string header, Windows.System.VirtualKey currentKey, Action<Windows.System.VirtualKey> updateAction)
         {
             var tb = new TextBox { Header = header, Text = currentKey.ToString(), IsReadOnly = true };
@@ -1360,6 +1400,7 @@ namespace grid_image_viewer
             var tempToggleManga = _settings.KeyToggleManga;
             var tempExit = _settings.KeyExit;
             var tempToggleGrid = _settings.KeyToggleGrid;
+            var tempSlideshow = _settings.KeySlideshow;
 
             stackPanel.Children.Add(CreateKeyBindingTextBox("Next Image", tempNextImage, k => tempNextImage = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Image", tempPrevImage, k => tempPrevImage = k));
@@ -1367,6 +1408,7 @@ namespace grid_image_viewer
             stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Folder", tempPrevFolder, k => tempPrevFolder = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Manga Mode (Requires Ctrl)", tempToggleManga, k => tempToggleManga = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Grid Mode", tempToggleGrid, k => tempToggleGrid = k));
+            stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Slideshow", tempSlideshow, k => tempSlideshow = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Exit App", tempExit, k => tempExit = k));
 
             dialog.Content = stackPanel;
@@ -1380,7 +1422,102 @@ namespace grid_image_viewer
                 _settings.KeyToggleManga = tempToggleManga;
                 _settings.KeyExit = tempExit;
                 _settings.KeyToggleGrid = tempToggleGrid;
+                _settings.KeySlideshow = tempSlideshow;
                 _settings.SaveKeyBindings();
+            }
+        }
+
+        private async void OpenSlideshowDialogAsync()
+        {
+            if (_isSlideshowRunning)
+            {
+                StopSlideshow();
+                return;
+            }
+
+            SlideshowFullscreen.IsChecked = _settings.SlideshowFullscreen;
+            SlideshowRandom.IsChecked = _settings.SlideshowRandom;
+            SlideshowLoop.IsChecked = _settings.SlideshowLoop;
+            SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
+            SlideshowInterval.Value = _settings.SlideshowInterval;
+
+            SlideshowDialog.XamlRoot = this.Content.XamlRoot;
+            await SlideshowDialog.ShowAsync();
+        }
+
+        private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            _settings.SlideshowFullscreen = SlideshowFullscreen.IsChecked ?? false;
+            _settings.SlideshowRandom = SlideshowRandom.IsChecked ?? false;
+            _settings.SlideshowLoop = SlideshowLoop.IsChecked ?? false;
+            _settings.SlideshowNextFolder = SlideshowNextFolder.IsChecked ?? false;
+            _settings.SlideshowInterval = SlideshowInterval.Value;
+            _settings.SaveSlideshowSettings();
+
+            StartSlideshow();
+        }
+
+        private void StartSlideshow()
+        {
+            _isSlideshowRunning = true;
+            if (_settings.SlideshowFullscreen && !AppWindow.Presenter.Kind.Equals(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen))
+            {
+                AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
+                AppTitleBar.Visibility = Visibility.Collapsed;
+            }
+
+            _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
+            _slideshowTimer.Start();
+        }
+
+        private void StopSlideshow()
+        {
+            _isSlideshowRunning = false;
+            _slideshowTimer.Stop();
+        }
+
+        private void SlideshowTimer_Tick(object? sender, object e)
+        {
+            if (_playlist == null || _playlist.Count == 0) return;
+
+            if (_settings.SlideshowRandom)
+            {
+                int nextIdx;
+                if (_playlist.Count == 1)
+                    nextIdx = 0;
+                else
+                {
+                    do
+                    {
+                        nextIdx = _random.Next(_playlist.Count);
+                    } while (nextIdx == _currentIndex);
+                }
+                _currentIndex = nextIdx;
+                _ = UpdateDisplayAsync();
+            }
+            else
+            {
+                int increment = _settings.IsMangaMode ? 2 : 1;
+                if (_currentIndex + increment >= _playlist.Count)
+                {
+                    if (_settings.SlideshowNextFolder)
+                    {
+                        NavigateFolder(1);
+                    }
+                    else if (_settings.SlideshowLoop)
+                    {
+                        _currentIndex = 0;
+                        _ = UpdateDisplayAsync();
+                    }
+                    else
+                    {
+                        StopSlideshow();
+                    }
+                }
+                else
+                {
+                    Navigate(1);
+                }
             }
         }
     }
