@@ -5,6 +5,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
@@ -50,12 +51,16 @@ namespace grid_image_viewer
         private SKBitmap? _animationBuffer;
         private int _priorFrameIndex = -1;
 
+        private bool _isDecodingFrame = false;
+
         /// <summary>
-        /// 現在のフレームを WriteableBitmap に描画して Thumbnail を更新する
+        /// 現在のフレームを非同期で WriteableBitmap に描画して Thumbnail を更新する
         /// </summary>
-        public void AdvanceFrame(int decodeWidth = 200)
+        public async void AdvanceFrame(int decodeWidth, Microsoft.UI.Dispatching.DispatcherQueue dispatcher)
         {
-            if (Codec == null || FrameCount <= 1) return;
+            if (Codec == null || FrameCount <= 1 || _isDecodingFrame) return;
+
+            _isDecodingFrame = true;
 
             int previousFrame = _priorFrameIndex;
             CurrentFrame = (CurrentFrame + 1) % FrameCount;
@@ -65,46 +70,68 @@ namespace grid_image_viewer
 
             try
             {
-                var info = Codec.Info;
-                if (_animationBuffer == null)
+                var (pixelBytes, w, h) = await Task.Run(() =>
                 {
-                    _animationBuffer = new SKBitmap(new SKImageInfo(info.Width, info.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
-                    previousFrame = -1;
-                }
+                    lock (this)
+                    {
+                        if (Codec == null) return (null, 0, 0);
 
-                if (previousFrame == -1)
+                        var info = Codec.Info;
+                        if (_animationBuffer == null)
+                        {
+                            _animationBuffer = new SKBitmap(new SKImageInfo(info.Width, info.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
+                            previousFrame = -1;
+                        }
+
+                        if (previousFrame == -1)
+                        {
+                            _animationBuffer.Erase(SKColors.Transparent);
+                        }
+
+                        var options = new SKCodecOptions 
+                        { 
+                            FrameIndex = CurrentFrame,
+                            PriorFrame = previousFrame
+                        };
+
+                        Codec.GetPixels(_animationBuffer.Info, _animationBuffer.GetPixels(), options);
+                        _priorFrameIndex = CurrentFrame;
+
+                        // デコードサイズを制限してリサイズ
+                        float scale = Math.Min((float)decodeWidth / info.Width, (float)decodeWidth / info.Height);
+                        scale = Math.Min(scale, 1.0f); // 元サイズより大きくしない
+                        int targetW = Math.Max(1, (int)(info.Width * scale));
+                        int targetH = Math.Max(1, (int)(info.Height * scale));
+
+                        using var resized = _animationBuffer.Resize(new SKImageInfo(targetW, targetH, SKColorType.Bgra8888, SKAlphaType.Premul), new SKSamplingOptions(SKFilterMode.Linear));
+                        if (resized == null) return (null, 0, 0);
+
+                        return (resized.GetPixelSpan().ToArray(), targetW, targetH);
+                    }
+                });
+
+                if (pixelBytes == null || dispatcher == null) return;
+
+                dispatcher.TryEnqueue(() =>
                 {
-                    _animationBuffer.Erase(SKColors.Transparent);
-                }
-
-                var options = new SKCodecOptions 
-                { 
-                    FrameIndex = CurrentFrame,
-                    PriorFrame = previousFrame
-                };
-
-                Codec.GetPixels(_animationBuffer.Info, _animationBuffer.GetPixels(), options);
-                _priorFrameIndex = CurrentFrame;
-
-                // デコードサイズを制限してリサイズ
-                float scale = Math.Min((float)decodeWidth / info.Width, (float)decodeWidth / info.Height);
-                scale = Math.Min(scale, 1.0f); // 元サイズより大きくしない
-                int w = Math.Max(1, (int)(info.Width * scale));
-                int h = Math.Max(1, (int)(info.Height * scale));
-
-                using var resized = _animationBuffer.Resize(new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul), new SKSamplingOptions(SKFilterMode.Linear));
-                if (resized == null) return;
-
-                var wb = new WriteableBitmap(w, h);
-                using (var stream = wb.PixelBuffer.AsStream())
-                {
-                    var pixels = resized.GetPixelSpan();
-                    stream.Write(pixels.ToArray(), 0, pixels.Length);
-                }
-                wb.Invalidate();
-                Thumbnail = wb;
+                    try
+                    {
+                        var wb = new WriteableBitmap(w, h);
+                        using (var stream = wb.PixelBuffer.AsStream())
+                        {
+                            stream.Write(pixelBytes, 0, pixelBytes.Length);
+                        }
+                        wb.Invalidate();
+                        Thumbnail = wb;
+                    }
+                    catch { }
+                });
             }
             catch { }
+            finally
+            {
+                _isDecodingFrame = false;
+            }
         }
 
         public void DisposeCodec()

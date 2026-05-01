@@ -216,7 +216,7 @@ namespace grid_image_viewer
                             DispatcherQueue.TryEnqueue(() =>
                             {
                                 if (!token.IsCancellationRequested)
-                                    item.AdvanceFrame(decodeSize);
+                                    item.AdvanceFrame(decodeSize, this.DispatcherQueue);
                             });
                             return;
                         }
@@ -382,7 +382,7 @@ namespace grid_image_viewer
                     var container = ImageGridView.ContainerFromItem(item);
                     if (container != null)
                     {
-                        item.AdvanceFrame(_gridDecodeSize);
+                        item.AdvanceFrame(_gridDecodeSize, this.DispatcherQueue);
                     }
                 }
             }
@@ -984,6 +984,25 @@ namespace grid_image_viewer
                         NavigateFolder(1);
                         e.Handled = true;
                         return;
+                    }
+
+                    // 下キーで最終行の真上にいるが、真下にアイテムがない場合 → 最後のアイテムへ移動
+                    if (e.Key == Windows.System.VirtualKey.Down && currentRow == totalRows - 2)
+                    {
+                        int targetIdx = selectedIdx + columns;
+                        if (targetIdx >= _gridItems.Count)
+                        {
+                            ImageGridView.SelectedIndex = _gridItems.Count - 1;
+                            ImageGridView.ScrollIntoView(ImageGridView.SelectedItem);
+                            
+                            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                            {
+                                var container = ImageGridView.ContainerFromIndex(ImageGridView.SelectedIndex) as GridViewItem;
+                                container?.Focus(FocusState.Programmatic);
+                            });
+                            e.Handled = true;
+                            return;
+                        }
                     }
 
                     // フォーカスが GridViewItem にない場合は復帰させる
