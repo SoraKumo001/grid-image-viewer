@@ -24,11 +24,15 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore grid-image-viewer.csproj
 
-    - name: Publish app
-      run: dotnet publish grid-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:PublishProfile=Properties\PublishProfiles\win-x64.pubxml -p:WindowsAppSDKSelfContained=true -p:WindowsPackageType=None -p:EnableMsixTooling=false -o publish_output
+    - name: Build app (Unpackaged)
+      run: dotnet build grid-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64
 
     - name: Create ZIP archive
-      run: Compress-Archive -Path "publish_output\*" -DestinationPath "grid-image-viewer-win-x64.zip"
+      run: |
+        $buildDir = "bin\Release\net8.0-windows10.0.19041.0\win-x64"
+        # Remove debug symbols to reduce ZIP size
+        Get-ChildItem $buildDir -Filter "*.pdb" -Recurse | Remove-Item -Force
+        Compress-Archive -Path "$buildDir\*" -DestinationPath "grid-image-viewer-win-x64.zip"
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
