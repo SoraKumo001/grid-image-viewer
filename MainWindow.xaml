@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:skia="using:SkiaSharp.Views.Windows"
     mc:Ignorable="d"
-    Title="grid-image-viewer">
+    Title="Grid Image Viewer">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
@@ -32,7 +32,7 @@
         </Grid.RowDefinitions>
 
         <Border x:Name="AppTitleBar" Grid.Row="0" Height="32" Background="#242424" BorderBrush="#333333" BorderThickness="0,0,0,1">
-            <TextBlock Text="grid-image-viewer" Foreground="#888888" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="12" />
+            <TextBlock Text="Grid Image Viewer" Foreground="#888888" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="12" />
         </Border>
 
         <ScrollViewer
@@ -90,5 +90,39 @@
                 </Grid.ContextFlyout>
             </Grid>
         </ScrollViewer>
+
+        <!-- Grid Mode UI -->
+        <GridView x:Name="ImageGridView"
+                  Grid.Row="1"
+                  Visibility="Collapsed"
+                  SelectionMode="Single"
+                  IsItemClickEnabled="True"
+                  ItemClick="ImageGridView_ItemClick"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  SizeChanged="ImageGridView_SizeChanged"
+                  Margin="10">
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                </Style>
+            </GridView.ItemContainerStyle>
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal" HorizontalAlignment="Center" />
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="local:ImageItem">
+                    <Grid Margin="5" CornerRadius="4" Background="#333333" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="Uniform" />
+                        <Border VerticalAlignment="Bottom" Background="#88000000" Padding="4">
+                            <TextBlock Text="{x:Bind FileName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FileName}" />
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
     </Grid>
 </Window>

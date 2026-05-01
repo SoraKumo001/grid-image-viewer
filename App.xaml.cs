@@ -46,6 +46,7 @@ namespace grid_image_viewer
             _window = new MainWindow();
             _window.Activate();
 
+            bool fileLoaded = false;
             try
             {
                 var appArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
@@ -56,12 +57,24 @@ namespace grid_image_viewer
                     {
                         string filePath = fileArgs.Files[0].Path;
                         ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
+                        fileLoaded = true;
                     }
                 }
             }
             catch
             {
                 // Ignore activation errors to prevent app crash
+            }
+
+            if (!fileLoaded)
+            {
+                if (Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue("LastImagePath", out object? lastImagePathObj) && lastImagePathObj is string lastImagePath)
+                {
+                    if (System.IO.File.Exists(lastImagePath))
+                    {
+                        ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
+                    }
+                }
             }
         }
     }

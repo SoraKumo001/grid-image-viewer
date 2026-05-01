@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using System.Runtime.InteropServices;
+using System.Collections.ObjectModel;
 
 namespace grid_image_viewer
 {
@@ -56,12 +57,20 @@ namespace grid_image_viewer
         private Windows.System.VirtualKey _keyNextFolder = Windows.System.VirtualKey.Down;
         private Windows.System.VirtualKey _keyPrevFolder = Windows.System.VirtualKey.Up;
         private Windows.System.VirtualKey _keyToggleManga = Windows.System.VirtualKey.G;
+        private Windows.System.VirtualKey _keyExit = Windows.System.VirtualKey.Escape;
+        private Windows.System.VirtualKey _keyToggleGrid = Windows.System.VirtualKey.Enter;
+
+        private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
+        private bool _isGridMode = false;
 
         public MainWindow()
         {
             InitializeComponent();
+            ImageGridView.ItemsSource = _gridItems;
 
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("IsMangaMode", out object obj) && obj is bool isMangaMode)
+            this.Closed += MainWindow_Closed;
+
+            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("IsMangaMode", out object? obj) && obj is bool isMangaMode)
             {
                 _isMangaMode = isMangaMode;
             }
@@ -72,6 +81,23 @@ namespace grid_image_viewer
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+            var settings = ApplicationData.Current.LocalSettings.Values;
+            if (settings.TryGetValue("WindowWidth", out object? widthObj) && widthObj is int width &&
+                settings.TryGetValue("WindowHeight", out object? heightObj) && heightObj is int height)
+            {
+                if (width > 0 && height > 0)
+                {
+                    appWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
+                }
+            }
+            
+            if (settings.TryGetValue("WindowX", out object? xObj) && xObj is int x &&
+                settings.TryGetValue("WindowY", out object? yObj) && yObj is int y)
+            {
+                // 画面外に出てしまっている場合のケアは省略していますが、基本の復元は行います
+                appWindow.Move(new Windows.Graphics.PointInt32(x, y));
+            }
 
             if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
             {
@@ -92,6 +118,179 @@ namespace grid_image_viewer
 
             _animationTimer = new DispatcherTimer();
             _animationTimer.Tick += AnimationTimer_Tick;
+        }
+
+        private void MainWindow_Closed(object sender, WindowEventArgs args)
+        {
+            StopAnimation();
+            SaveWindowState();
+        }
+
+        private async Task LoadThumbnailsAsync()
+        {
+            var items = _gridItems.ToList();
+            foreach (var item in items)
+            {
+                try
+                {
+                    var file = await StorageFile.GetFileFromPathAsync(item.FilePath);
+
+                    // 画像プロパティからアスペクト比を取得
+                    var props = await file.Properties.GetImagePropertiesAsync();
+                    if (props.Width > 0 && props.Height > 0)
+                    {
+                        item.AspectRatio = (double)props.Width / props.Height;
+                    }
+
+                    using var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.SingleItem, 256, Windows.Storage.FileProperties.ThumbnailOptions.UseCurrentScale);
+                    if (thumbnail != null && thumbnail.Size > 0)
+                    {
+                        var stream = thumbnail.CloneStream();
+                        this.DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            try
+                            {
+                                var bitmap = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                                await bitmap.SetSourceAsync(stream);
+                                item.Thumbnail = bitmap;
+                            }
+                            catch { }
+                            finally
+                            {
+                                stream.Dispose();
+                            }
+                        });
+                    }
+                }
+                catch { }
+            }
+
+            // 全サムネイル読み込み後にグリッドレイアウトを再計算
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateGridLayout();
+            });
+        }
+
+        private void ImageGridView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is ImageItem item)
+            {
+                int idx = _playlist.IndexOf(item.FilePath);
+                if (idx >= 0)
+                {
+                    _currentIndex = idx;
+                    _isGridMode = false;
+                    _ = UpdateDisplayAsync();
+                }
+            }
+        }
+
+        private void ImageGridView_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateGridLayout();
+        }
+
+        private void UpdateGridLayout()
+        {
+            if (ImageGridView.ItemsPanelRoot is not ItemsWrapGrid wrapGrid) return;
+
+            int totalItems = _gridItems.Count;
+            if (totalItems == 0) return;
+
+            double W = ImageGridView.ActualWidth - ImageGridView.Padding.Left - ImageGridView.Padding.Right - 24;
+            double H = ImageGridView.ActualHeight - ImageGridView.Padding.Top - ImageGridView.Padding.Bottom - 8;
+            if (W <= 0 || H <= 0) return;
+
+            // 最頻値のアスペクト比を算出（最も多い比率を基準にする）
+            var ratios = _gridItems.Select(x => x.AspectRatio).Where(r => r > 0).ToList();
+            double modeAspect = 1.0;
+            if (ratios.Count > 0)
+            {
+                // 小数2桁で丸めてグループ化し、最も多い比率を採用
+                modeAspect = ratios
+                    .GroupBy(r => Math.Round(r, 2))
+                    .OrderByDescending(g => g.Count())
+                    .First()
+                    .Average();
+            }
+
+            // 最適な列数を探索: セル内に収まる画像面積が最大になる組み合わせを選ぶ
+            double bestArea = 0;
+            int bestCols = 1;
+
+            for (int cols = 1; cols <= totalItems; cols++)
+            {
+                int rows = (int)Math.Ceiling((double)totalItems / cols);
+                double cellW = W / cols;
+                double cellH = H / rows;
+
+                // セル内でアスペクト比を保持して収まる画像サイズを計算
+                double imgW, imgH;
+                if (modeAspect >= cellW / cellH)
+                {
+                    // 幅に合わせる
+                    imgW = cellW;
+                    imgH = cellW / modeAspect;
+                }
+                else
+                {
+                    // 高さに合わせる
+                    imgH = cellH;
+                    imgW = cellH * modeAspect;
+                }
+
+                double area = imgW * imgH;
+                if (area > bestArea)
+                {
+                    bestArea = area;
+                    bestCols = cols;
+                }
+            }
+
+            // フォールバック: セルが小さすぎる場合は従来のスクロールモード
+            int bestRows = (int)Math.Ceiling((double)totalItems / bestCols);
+            double finalCellW = Math.Floor(W / bestCols);
+            double finalCellH = Math.Floor(H / bestRows);
+            double minDim = Math.Min(finalCellW, finalCellH);
+
+            if (minDim < 120)
+            {
+                // スクロールモード: 幅ベースで列数を決め、高さはアスペクト比に従う
+                int cols = Math.Max(1, (int)(W / 150));
+                double scrollW = Math.Floor(W / cols);
+                double scrollH = Math.Floor(scrollW / modeAspect);
+                wrapGrid.ItemWidth = scrollW;
+                wrapGrid.ItemHeight = scrollH;
+            }
+            else
+            {
+                wrapGrid.ItemWidth = finalCellW;
+                wrapGrid.ItemHeight = finalCellH;
+            }
+        }
+
+        private void SaveWindowState()
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+            var settings = ApplicationData.Current.LocalSettings.Values;
+            
+            // Only save if not maximized or minimized to preserve normal window size
+            if (appWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.Default)
+            {
+                settings["WindowWidth"] = appWindow.Size.Width;
+                settings["WindowHeight"] = appWindow.Size.Height;
+                settings["WindowX"] = appWindow.Position.X;
+                settings["WindowY"] = appWindow.Position.Y;
+            }
+
+            if (!string.IsNullOrEmpty(CurrentImagePath))
+            {
+                settings["LastImagePath"] = CurrentImagePath;
+            }
         }
 
         private void RootGrid_DragOver(object sender, DragEventArgs e)
@@ -116,7 +315,7 @@ namespace grid_image_viewer
                     }
                     else if (firstItem is StorageFile file)
                     {
-                        directory = Path.GetDirectoryName(file.Path);
+                        directory = Path.GetDirectoryName(file.Path) ?? string.Empty;
                         targetFile = file.Path;
                     }
 
@@ -143,6 +342,14 @@ namespace grid_image_viewer
                 if (_playlist.Count > 0)
                 {
                     _currentIndex = string.IsNullOrEmpty(initialFile) ? 0 : Math.Max(0, _playlist.IndexOf(initialFile));
+                    
+                    _gridItems.Clear();
+                    foreach (var f in _playlist)
+                    {
+                        _gridItems.Add(new ImageItem { FilePath = f });
+                    }
+                    _ = LoadThumbnailsAsync();
+
                     _ = UpdateDisplayAsync();
                 }
             }
@@ -155,6 +362,40 @@ namespace grid_image_viewer
         private async Task UpdateDisplayAsync()
         {
             if (_playlist.Count == 0 || _currentIndex < 0 || _currentIndex >= _playlist.Count) return;
+
+            if (_isGridMode)
+            {
+                ImageScrollViewer.Visibility = Visibility.Collapsed;
+                ImageGridView.Visibility = Visibility.Visible;
+                StopAnimation();
+                
+                ImageGridView.SelectedIndex = _currentIndex;
+                ImageGridView.ScrollIntoView(ImageGridView.SelectedItem);
+                // 選択アイテムのコンテナに直接フォーカスを当てる（カーソルキー操作に必要）
+                // コンテナの生成を待つため遅延実行
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                {
+                    if (ImageGridView.SelectedItem != null)
+                    {
+                        var container = ImageGridView.ContainerFromItem(ImageGridView.SelectedItem) as GridViewItem;
+                        if (container != null)
+                        {
+                            container.Focus(FocusState.Programmatic);
+                        }
+                        else
+                        {
+                            ImageGridView.Focus(FocusState.Programmatic);
+                        }
+                    }
+                });
+                return;
+            }
+            else
+            {
+                ImageScrollViewer.Visibility = Visibility.Visible;
+                ImageGridView.Visibility = Visibility.Collapsed;
+                RootGrid.Focus(FocusState.Programmatic);
+            }
 
             StopAnimation();
 
@@ -397,6 +638,69 @@ namespace grid_image_viewer
                 ApplicationData.Current.LocalSettings.Values["IsMangaMode"] = _isMangaMode;
                 _ = UpdateDisplayAsync();
                 e.Handled = true;
+                return;
+            }
+
+            if (e.Key == _keyToggleGrid)
+            {
+                _isGridMode = !_isGridMode;
+                _ = UpdateDisplayAsync();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == _keyExit)
+            {
+                this.Close();
+                e.Handled = true;
+                return;
+            }
+
+            if (_isGridMode)
+            {
+                // グリッドモード中にカーソルキーが押されたら処理
+                if (e.Key == Windows.System.VirtualKey.Left || e.Key == Windows.System.VirtualKey.Right ||
+                    e.Key == Windows.System.VirtualKey.Up || e.Key == Windows.System.VirtualKey.Down)
+                {
+                    // グリッドの列数と現在の行を算出
+                    int selectedIdx = ImageGridView.SelectedIndex;
+                    int columns = 1;
+                    if (ImageGridView.ItemsPanelRoot is ItemsWrapGrid wrap && wrap.ItemWidth > 0)
+                    {
+                        double availW = ImageGridView.ActualWidth - ImageGridView.Padding.Left - ImageGridView.Padding.Right - 24;
+                        columns = Math.Max(1, (int)(availW / wrap.ItemWidth));
+                    }
+                    int currentRow = selectedIdx / columns;
+                    int totalRows = (int)Math.Ceiling((double)_gridItems.Count / columns);
+
+                    // 上キーで先頭行にいる → 前のフォルダへ移動
+                    if (e.Key == Windows.System.VirtualKey.Up && currentRow == 0)
+                    {
+                        NavigateFolder(-1);
+                        e.Handled = true;
+                        return;
+                    }
+                    // 下キーで末尾行にいる → 次のフォルダへ移動
+                    if (e.Key == Windows.System.VirtualKey.Down && currentRow >= totalRows - 1)
+                    {
+                        NavigateFolder(1);
+                        e.Handled = true;
+                        return;
+                    }
+
+                    // フォーカスが GridViewItem にない場合は復帰させる
+                    var focused = FocusManager.GetFocusedElement(this.Content.XamlRoot);
+                    if (focused is not GridViewItem)
+                    {
+                        if (ImageGridView.SelectedItem != null)
+                        {
+                            var container = ImageGridView.ContainerFromItem(ImageGridView.SelectedItem) as GridViewItem;
+                            container?.Focus(FocusState.Programmatic);
+                        }
+                        e.Handled = true;
+                    }
+                }
+                // GridView 標準のナビゲーションに任せる
                 return;
             }
 
@@ -813,7 +1117,7 @@ namespace grid_image_viewer
                     using var bitmap = SKBitmap.Decode(codec);
                     if (bitmap != null)
                     {
-                        using var resizedBitmap = bitmap.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.High);
+                        using var resizedBitmap = bitmap.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKCubicResampler.Mitchell));
                         using var image = SKImage.FromBitmap(resizedBitmap);
                         using var skData = image.Encode(GetSKEncodedImageFormat(Path.GetExtension(sourcePath)), 100);
 
@@ -852,11 +1156,13 @@ namespace grid_image_viewer
         private void LoadKeyBindings()
         {
             var settings = ApplicationData.Current.LocalSettings.Values;
-            if (settings.TryGetValue("Key_NextImage", out object nextImg)) _keyNextImage = (Windows.System.VirtualKey)(int)nextImg;
-            if (settings.TryGetValue("Key_PrevImage", out object prevImg)) _keyPrevImage = (Windows.System.VirtualKey)(int)prevImg;
-            if (settings.TryGetValue("Key_NextFolder", out object nextFld)) _keyNextFolder = (Windows.System.VirtualKey)(int)nextFld;
-            if (settings.TryGetValue("Key_PrevFolder", out object prevFld)) _keyPrevFolder = (Windows.System.VirtualKey)(int)prevFld;
-            if (settings.TryGetValue("Key_ToggleManga", out object tglManga)) _keyToggleManga = (Windows.System.VirtualKey)(int)tglManga;
+            if (settings.TryGetValue("Key_NextImage", out object? nextImg)) _keyNextImage = (Windows.System.VirtualKey)(int)nextImg;
+            if (settings.TryGetValue("Key_PrevImage", out object? prevImg)) _keyPrevImage = (Windows.System.VirtualKey)(int)prevImg;
+            if (settings.TryGetValue("Key_NextFolder", out object? nextFld)) _keyNextFolder = (Windows.System.VirtualKey)(int)nextFld;
+            if (settings.TryGetValue("Key_PrevFolder", out object? prevFld)) _keyPrevFolder = (Windows.System.VirtualKey)(int)prevFld;
+            if (settings.TryGetValue("Key_ToggleManga", out object? tglManga)) _keyToggleManga = (Windows.System.VirtualKey)(int)tglManga;
+            if (settings.TryGetValue("Key_Exit", out object? exitApp)) _keyExit = (Windows.System.VirtualKey)(int)exitApp;
+            if (settings.TryGetValue("Key_ToggleGrid", out object? tglGrid)) _keyToggleGrid = (Windows.System.VirtualKey)(int)tglGrid;
         }
 
         private void SaveKeyBindings()
@@ -867,6 +1173,8 @@ namespace grid_image_viewer
             settings["Key_NextFolder"] = (int)_keyNextFolder;
             settings["Key_PrevFolder"] = (int)_keyPrevFolder;
             settings["Key_ToggleManga"] = (int)_keyToggleManga;
+            settings["Key_Exit"] = (int)_keyExit;
+            settings["Key_ToggleGrid"] = (int)_keyToggleGrid;
         }
 
         private TextBox CreateKeyBindingTextBox(string header, Windows.System.VirtualKey currentKey, Action<Windows.System.VirtualKey> updateAction)
@@ -902,12 +1210,16 @@ namespace grid_image_viewer
             var tempNextFolder = _keyNextFolder;
             var tempPrevFolder = _keyPrevFolder;
             var tempToggleManga = _keyToggleManga;
+            var tempExit = _keyExit;
+            var tempToggleGrid = _keyToggleGrid;
 
             stackPanel.Children.Add(CreateKeyBindingTextBox("Next Image", tempNextImage, k => tempNextImage = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Image", tempPrevImage, k => tempPrevImage = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Next Folder", tempNextFolder, k => tempNextFolder = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Folder", tempPrevFolder, k => tempPrevFolder = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Manga Mode (Requires Ctrl)", tempToggleManga, k => tempToggleManga = k));
+            stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Grid Mode", tempToggleGrid, k => tempToggleGrid = k));
+            stackPanel.Children.Add(CreateKeyBindingTextBox("Exit App", tempExit, k => tempExit = k));
 
             dialog.Content = stackPanel;
 
@@ -918,6 +1230,8 @@ namespace grid_image_viewer
                 _keyNextFolder = tempNextFolder;
                 _keyPrevFolder = tempPrevFolder;
                 _keyToggleManga = tempToggleManga;
+                _keyExit = tempExit;
+                _keyToggleGrid = tempToggleGrid;
                 SaveKeyBindings();
             }
         }
