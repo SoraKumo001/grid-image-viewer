@@ -126,6 +126,8 @@ namespace grid_image_viewer
 
             _animationTimer = new DispatcherTimer();
             _animationTimer.Tick += AnimationTimer_Tick;
+
+            ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -169,102 +171,11 @@ namespace grid_image_viewer
                 await semaphore.WaitAsync(token);
                 try
                 {
-                    if (token.IsCancellationRequested) return;
-
-                    var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
-                    bool mightBeAnimated = ext == ".webp" || ext == ".gif";
-
-                    if (mightBeAnimated)
-                    {
-                        byte[]? bytes = null;
-                        for (int i = 0; i < 3; i++)
-                        {
-                            try
-                            {
-                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                                using (var ms = new MemoryStream((int)fs.Length))
-                                {
-                                    await fs.CopyToAsync(ms, token);
-                                    bytes = ms.ToArray();
-                                }
-                                break;
-                            }
-                            catch (IOException)
-                            {
-                                await Task.Delay(100, token);
-                            }
-                        }
-
-                        if (bytes == null || token.IsCancellationRequested) return;
-
-                        var skData = SKData.CreateCopy(bytes);
-                        var codec = SKCodec.Create(skData);
-
-                        if (codec != null)
-                        {
-                            item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                        }
-
-                        if (codec != null && codec.FrameCount > 1)
-                        {
-                            if (token.IsCancellationRequested) { codec.Dispose(); skData.Dispose(); return; }
-
-                            item.CodecData = skData;
-                            item.Codec = codec;
-                            item.FrameCount = codec.FrameCount;
-                            item.CurrentFrame = 0;
-                            DispatcherQueue.TryEnqueue(() =>
-                            {
-                                if (!token.IsCancellationRequested)
-                                    item.AdvanceFrame(decodeSize, this.DispatcherQueue);
-                            });
-                            return;
-                        }
-                        
-                        codec?.Dispose();
-                        if (token.IsCancellationRequested) { skData.Dispose(); return; }
-
-                        using var skBitmap = SKBitmap.Decode(skData);
-                        skData.Dispose();
-
-                        ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
-                    }
-                    else
-                    {
-                        SKBitmap? decoded = null;
-                        for (int i = 0; i < 3; i++)
-                        {
-                            try
-                            {
-                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                                {
-                                    using var codec = SKCodec.Create(fs);
-                                    if (codec != null)
-                                    {
-                                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                                    }
-                                    fs.Position = 0;
-                                    decoded = SKBitmap.Decode(fs);
-                                }
-                                break;
-                            }
-                            catch (IOException)
-                            {
-                                await Task.Delay(100, token);
-                            }
-                        }
-
-                        using var skBitmapToDispose = decoded;
-                        if (token.IsCancellationRequested) return;
-
-                        ProcessDecodedBitmap(decoded, item, decodeSize, token);
-                    }
+                    await LoadSingleThumbnailAsync(item, decodeSize, token);
                 }
-                catch { }
                 finally
                 {
                     semaphore.Release();
-                    DispatcherQueue.TryEnqueue(() => item.IsLoading = false);
                 }
             }, token)).ToArray();
 
@@ -288,6 +199,108 @@ namespace grid_image_viewer
             }
             finally
             {
+            }
+        }
+
+        private async Task LoadSingleThumbnailAsync(ImageItem item, int decodeSize, CancellationToken token)
+        {
+            try
+            {
+                if (token.IsCancellationRequested) return;
+
+                var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
+                bool mightBeAnimated = ext == ".webp" || ext == ".gif";
+
+                if (mightBeAnimated)
+                {
+                    byte[]? bytes = null;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        try
+                        {
+                            using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (var ms = new MemoryStream((int)fs.Length))
+                            {
+                                await fs.CopyToAsync(ms, token);
+                                bytes = ms.ToArray();
+                            }
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            await Task.Delay(100, token);
+                        }
+                    }
+
+                    if (bytes == null || token.IsCancellationRequested) return;
+
+                    var skData = SKData.CreateCopy(bytes);
+                    var codec = SKCodec.Create(skData);
+
+                    if (codec != null)
+                    {
+                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
+                    }
+
+                    if (codec != null && codec.FrameCount > 1)
+                    {
+                        if (token.IsCancellationRequested) { codec.Dispose(); skData.Dispose(); return; }
+
+                        item.CodecData = skData;
+                        item.Codec = codec;
+                        item.FrameCount = codec.FrameCount;
+                        item.CurrentFrame = 0;
+                        DispatcherQueue.TryEnqueue(() =>
+                        {
+                            if (!token.IsCancellationRequested)
+                                item.AdvanceFrame(decodeSize, this.DispatcherQueue);
+                        });
+                        return;
+                    }
+                    
+                    codec?.Dispose();
+                    if (token.IsCancellationRequested) { skData.Dispose(); return; }
+
+                    using var skBitmap = SKBitmap.Decode(skData);
+                    skData.Dispose();
+
+                    ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
+                }
+                else
+                {
+                    SKBitmap? decoded = null;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        try
+                        {
+                            using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            {
+                                using var codec = SKCodec.Create(fs);
+                                if (codec != null)
+                                {
+                                    item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
+                                }
+                                fs.Position = 0;
+                                decoded = SKBitmap.Decode(fs);
+                            }
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            await Task.Delay(100, token);
+                        }
+                    }
+
+                    using var skBitmapToDispose = decoded;
+                    if (token.IsCancellationRequested) return;
+
+                    ProcessDecodedBitmap(decoded, item, decodeSize, token);
+                }
+            }
+            catch { }
+            finally
+            {
+                DispatcherQueue.TryEnqueue(() => item.IsLoading = false);
             }
         }
 
@@ -382,7 +395,17 @@ namespace grid_image_viewer
                     var container = ImageGridView.ContainerFromItem(item);
                     if (container != null)
                     {
-                        item.AdvanceFrame(_gridDecodeSize, this.DispatcherQueue);
+                        if (item.IsAnimated)
+                        {
+                            item.AdvanceFrame(_gridDecodeSize, this.DispatcherQueue);
+                        }
+                        else if (item.Thumbnail == null && !item.IsLoading && item.RetryCount < 5)
+                        {
+                            // 読み込み失敗＆現在見えている要素の場合、リトライを実行
+                            item.RetryCount++;
+                            item.IsLoading = true;
+                            _ = Task.Run(() => LoadSingleThumbnailAsync(item, _gridDecodeSize, _gridCts.Token));
+                        }
                     }
                 }
             }
@@ -896,7 +919,23 @@ namespace grid_image_viewer
                 return;
             }
             
-            // Navigate images
+            if (_isGridMode)
+            {
+                // ここには到達しないか、外側でホイールした時のみ到達する。
+                // 実際のグリッド上のホイールは ImageGridView_PointerWheelChanged で処理される。
+                if (props.MouseWheelDelta < 0)
+                {
+                    NavigateFolder(1);
+                }
+                else
+                {
+                    NavigateFolder(-1);
+                }
+                e.Handled = true;
+                return;
+            }
+
+            // Navigate images (単一画像表示モード)
             if (props.MouseWheelDelta < 0)
             {
                 Navigate(1); // Next
@@ -906,6 +945,55 @@ namespace grid_image_viewer
                 Navigate(-1); // Prev
             }
             e.Handled = true;
+        }
+
+        private ScrollViewer? _gridScrollViewer;
+
+        private ScrollViewer? GetScrollViewer(DependencyObject element)
+        {
+            if (element is ScrollViewer sv) return sv;
+            for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(element, i);
+                var result = GetScrollViewer(child);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+        private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_isGridMode) return;
+            
+            bool isCtrl = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control);
+            if (isCtrl) return;
+
+            var props = e.GetCurrentPoint(ImageGridView).Properties;
+            
+            if (_gridScrollViewer == null)
+            {
+                _gridScrollViewer = GetScrollViewer(ImageGridView);
+            }
+
+            if (_gridScrollViewer != null)
+            {
+                if (props.MouseWheelDelta < 0) // 下へスクロール
+                {
+                    if (_gridScrollViewer.VerticalOffset >= _gridScrollViewer.ScrollableHeight - 0.5)
+                    {
+                        NavigateFolder(1);
+                        e.Handled = true;
+                    }
+                }
+                else // 上へスクロール
+                {
+                    if (_gridScrollViewer.VerticalOffset <= 0.5)
+                    {
+                        NavigateFolder(-1);
+                        e.Handled = true;
+                    }
+                }
+            }
         }
 
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)

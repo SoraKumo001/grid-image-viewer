@@ -38,6 +38,20 @@ namespace grid_image_viewer
             }
         }
 
+        private int _retryCount = 0;
+        public int RetryCount
+        {
+            get => _retryCount;
+            set
+            {
+                if (_retryCount != value)
+                {
+                    _retryCount = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         private ImageSource? _thumbnail;
         public ImageSource? Thumbnail
         {
