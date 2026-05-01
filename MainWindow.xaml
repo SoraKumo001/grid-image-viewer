@@ -124,5 +124,7 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
+        <!-- Loading Indicator -->
+        <ProgressRing x:Name="LoadingRing" Grid.Row="1" Width="60" Height="60" IsActive="False" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#00A2ED" Canvas.ZIndex="100" />
     </Grid>
 </Window>
