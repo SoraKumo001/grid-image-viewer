@@ -26,20 +26,8 @@ namespace grid_image_viewer
 
         private SettingsManager _settings = new SettingsManager();
 
-        private SKData? _data1;
-        private SKCodec? _codec1;
-        private SKBitmap? _bitmap1;
-        private int _currentFrame1 = -1;
-        private int _priorFrame1 = -1;
-        private int _frameCount1 = 0;
-
-        private SKData? _data2;
-        private SKCodec? _codec2;
-        private SKBitmap? _bitmap2;
-        private int _currentFrame2 = -1;
-        private int _priorFrame2 = -1;
-        private int _frameCount2 = 0;
-
+        private PageRenderer _page1 = new PageRenderer();
+        private PageRenderer _page2 = new PageRenderer();
         private DispatcherTimer _animationTimer;
 
         private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
@@ -633,9 +621,7 @@ namespace grid_image_viewer
                 if (!hasLeftPage)
                 {
                     LeftImage.Source = null;
-                    _codec2?.Dispose(); _codec2 = null;
-                    _data2?.Dispose(); _data2 = null;
-                    _bitmap2?.Dispose(); _bitmap2 = null;
+                    _page2.Reset();
                     LeftSkiaCanvas.Invalidate();
                 }
             }
@@ -643,7 +629,7 @@ namespace grid_image_viewer
             {
             }
 
-            if ((_codec1 != null && _frameCount1 > 1) || (_codec2 != null && _frameCount2 > 1))
+            if (_page1.IsAnimated || _page2.IsAnimated)
             {
                 _animationTimer.Start();
             }
@@ -664,47 +650,15 @@ namespace grid_image_viewer
 
                     try
                     {
+                        var page = isRightPage ? _page1 : _page2;
                         await Task.Run(() =>
                         {
                             if (token.IsCancellationRequested) return;
-
-                            var bytes = File.ReadAllBytes(filePath);
-                            if (token.IsCancellationRequested) return;
-
-                            var data = SKData.CreateCopy(bytes);
-                            if (data != null)
+                            page.LoadSkia(filePath, token);
+                            
+                            if (!token.IsCancellationRequested)
                             {
-                                if (token.IsCancellationRequested) { data.Dispose(); return; }
-
-                                var codec = SKCodec.Create(data);
-                                if (codec != null)
-                                {
-                                    if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
-
-                                    var bitmap = new SKBitmap(codec.Info);
-                                    int frameCount = codec.FrameCount;
-
-                                    if (isRightPage)
-                                    {
-                                        _data1 = data; _codec1 = codec; _bitmap1 = bitmap; _frameCount1 = frameCount; _currentFrame1 = -1; _priorFrame1 = -1;
-                                    }
-                                    else
-                                    {
-                                        _data2 = data; _codec2 = codec; _bitmap2 = bitmap; _frameCount2 = frameCount; _currentFrame2 = -1; _priorFrame2 = -1;
-                                    }
-
-                                    if (frameCount <= 1)
-                                    {
-                                        bitmap = SKBitmap.Decode(codec);
-                                        if (isRightPage) _bitmap1 = bitmap;
-                                        else _bitmap2 = bitmap;
-                                    }
-                                    
-                                    if (!token.IsCancellationRequested)
-                                    {
-                                        DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
-                                    }
-                                }
+                                DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
                             }
                         }, token);
                     }
@@ -743,50 +697,27 @@ namespace grid_image_viewer
         private void StopAnimation()
         {
             _animationTimer.Stop();
-
-            _codec1?.Dispose(); _codec1 = null;
-            _data1?.Dispose(); _data1 = null;
-            _bitmap1?.Dispose(); _bitmap1 = null;
-            _frameCount1 = 0;
-            _currentFrame1 = -1;
-            _priorFrame1 = -1;
-
-            _codec2?.Dispose(); _codec2 = null;
-            _data2?.Dispose(); _data2 = null;
-            _bitmap2?.Dispose(); _bitmap2 = null;
-            _frameCount2 = 0;
-            _currentFrame2 = -1;
-            _priorFrame2 = -1;
+            _page1.Reset();
+            _page2.Reset();
         }
 
         private void AnimationTimer_Tick(object? sender, object e)
         {
-            bool needsInvalidate1 = false;
-            if (_codec1 != null && _frameCount1 > 1)
+            bool needsInvalidate1 = _page1.IsAnimated;
+            bool needsInvalidate2 = _page2.IsAnimated;
+
+            int interval = 100;
+            if (needsInvalidate1)
             {
-                _currentFrame1 = (_currentFrame1 + 1) % _frameCount1;
-                // Simplified timing: using a fixed 100ms or so by the timer if multiple animations exist
-                needsInvalidate1 = true;
+                interval = _page1.AdvanceFrame();
+            }
+            if (needsInvalidate2)
+            {
+                int interval2 = _page2.AdvanceFrame();
+                if (!needsInvalidate1) interval = interval2;
             }
 
-            bool needsInvalidate2 = false;
-            if (_codec2 != null && _frameCount2 > 1)
-            {
-                _currentFrame2 = (_currentFrame2 + 1) % _frameCount2;
-                needsInvalidate2 = true;
-            }
-
-            // Adjust interval to the next frame of codec1, or fixed if multiple
-            if (_codec1 != null && _frameCount1 > 1)
-            {
-                var frameInfo = _codec1.FrameInfo[_currentFrame1];
-                _animationTimer.Interval = TimeSpan.FromMilliseconds(frameInfo.Duration > 0 ? frameInfo.Duration : 100);
-            }
-            else if (_codec2 != null && _frameCount2 > 1)
-            {
-                var frameInfo = _codec2.FrameInfo[_currentFrame2];
-                _animationTimer.Interval = TimeSpan.FromMilliseconds(frameInfo.Duration > 0 ? frameInfo.Duration : 100);
-            }
+            _animationTimer.Interval = TimeSpan.FromMilliseconds(interval);
 
             if (needsInvalidate1) RightSkiaCanvas.Invalidate();
             if (needsInvalidate2) LeftSkiaCanvas.Invalidate();
@@ -797,54 +728,14 @@ namespace grid_image_viewer
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.Transparent);
             int align = _settings.IsMangaMode ? 0 : 1; // 0: Left, 1: Center
-            PaintSkiaCanvas(canvas, e.Info, _codec1, ref _bitmap1, _currentFrame1, ref _priorFrame1, align);
+            _page1.Paint(canvas, e.Info, align);
         }
 
         private void LeftSkiaCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.Transparent);
-            PaintSkiaCanvas(canvas, e.Info, _codec2, ref _bitmap2, _currentFrame2, ref _priorFrame2, 2); // 2: Right
-        }
-
-        private void PaintSkiaCanvas(SKCanvas canvas, SKImageInfo info, SKCodec? codec, ref SKBitmap? bitmap, int currentFrame, ref int priorFrame, int horizontalAlignment)
-        {
-            if (codec != null && codec.FrameCount > 1)
-            {
-                var imageInfo = new SKImageInfo(codec.Info.Width, codec.Info.Height, codec.Info.ColorType, codec.Info.AlphaType);
-                if (bitmap == null || bitmap.Width != imageInfo.Width || bitmap.Height != imageInfo.Height)
-                {
-                    bitmap?.Dispose();
-                    bitmap = new SKBitmap(imageInfo);
-                    priorFrame = -1;
-                }
-                
-                if (priorFrame == -1 || currentFrame == 0)
-                {
-                    bitmap.Erase(SKColors.Transparent);
-                    priorFrame = -1;
-                }
-
-                var options = new SKCodecOptions 
-                { 
-                    FrameIndex = currentFrame,
-                    PriorFrame = priorFrame
-                };
-                codec.GetPixels(imageInfo, bitmap.GetPixels(), options);
-                priorFrame = currentFrame;
-            }
-
-            if (bitmap != null)
-            {
-                float scale = Math.Min((float)info.Width / bitmap.Width, (float)info.Height / bitmap.Height);
-                float x = (info.Width - bitmap.Width * scale) / 2;
-                if (horizontalAlignment == 0) x = 0;
-                else if (horizontalAlignment == 2) x = info.Width - bitmap.Width * scale;
-                float y = (info.Height - bitmap.Height * scale) / 2;
-
-                var destRect = new SKRect(x, y, x + bitmap.Width * scale, y + bitmap.Height * scale);
-                canvas.DrawBitmap(bitmap, destRect);
-            }
+            _page2.Paint(canvas, e.Info, 2); // 2: Right
         }
 
         private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
