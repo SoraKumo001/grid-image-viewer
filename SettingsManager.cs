@@ -1,11 +1,12 @@
 using Microsoft.UI.Windowing;
 using System;
-using Windows.Storage;
+using System.IO;
+using System.Text.Json;
 using Windows.System;
 
 namespace grid_image_viewer
 {
-    public class SettingsManager
+    public class SettingsData
     {
         public VirtualKey KeyNextImage { get; set; } = VirtualKey.Space;
         public VirtualKey KeyPrevImage { get; set; } = VirtualKey.Back;
@@ -25,100 +26,109 @@ namespace grid_image_viewer
         public bool SlideshowCurrentFolderOnly { get; set; } = false;
         public double SlideshowInterval { get; set; } = 2.0;
 
+        public int WindowWidth { get; set; } = -1;
+        public int WindowHeight { get; set; } = -1;
+        public int WindowX { get; set; } = -1;
+        public int WindowY { get; set; } = -1;
+        
+        public string LastImagePath { get; set; } = string.Empty;
+    }
+
+    public class SettingsManager
+    {
+        private readonly string _settingsFilePath;
+        private SettingsData _data;
+
+        public VirtualKey KeyNextImage { get => _data.KeyNextImage; set => _data.KeyNextImage = value; }
+        public VirtualKey KeyPrevImage { get => _data.KeyPrevImage; set => _data.KeyPrevImage = value; }
+        public VirtualKey KeyNextFolder { get => _data.KeyNextFolder; set => _data.KeyNextFolder = value; }
+        public VirtualKey KeyPrevFolder { get => _data.KeyPrevFolder; set => _data.KeyPrevFolder = value; }
+        public VirtualKey KeyToggleManga { get => _data.KeyToggleManga; set => _data.KeyToggleManga = value; }
+        public VirtualKey KeyExit { get => _data.KeyExit; set => _data.KeyExit = value; }
+        public VirtualKey KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
+        public VirtualKey KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
+
+        public bool IsMangaMode { get => _data.IsMangaMode; set => _data.IsMangaMode = value; }
+        
+        public bool SlideshowFullscreen { get => _data.SlideshowFullscreen; set => _data.SlideshowFullscreen = value; }
+        public bool SlideshowRandom { get => _data.SlideshowRandom; set => _data.SlideshowRandom = value; }
+        public bool SlideshowLoop { get => _data.SlideshowLoop; set => _data.SlideshowLoop = value; }
+        public bool SlideshowNextFolder { get => _data.SlideshowNextFolder; set => _data.SlideshowNextFolder = value; }
+        public bool SlideshowCurrentFolderOnly { get => _data.SlideshowCurrentFolderOnly; set => _data.SlideshowCurrentFolderOnly = value; }
+        public double SlideshowInterval { get => _data.SlideshowInterval; set => _data.SlideshowInterval = value; }
+
+        public string LastImagePath { get => _data.LastImagePath; }
+
         public SettingsManager()
         {
+            string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string appFolder = Path.Combine(appDataFolder, "grid-image-viewer");
+            Directory.CreateDirectory(appFolder);
+            _settingsFilePath = Path.Combine(appFolder, "settings.json");
+            
+            _data = new SettingsData();
             LoadSettings();
         }
 
         public void LoadSettings()
         {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            
-            if (settings.TryGetValue("IsMangaMode", out object? obj) && obj is bool isMangaMode)
-                IsMangaMode = isMangaMode;
-
-            if (settings.TryGetValue("Key_NextImage", out object? nextImg)) KeyNextImage = (VirtualKey)(int)nextImg;
-            if (settings.TryGetValue("Key_PrevImage", out object? prevImg)) KeyPrevImage = (VirtualKey)(int)prevImg;
-            if (settings.TryGetValue("Key_NextFolder", out object? nextFld)) KeyNextFolder = (VirtualKey)(int)nextFld;
-            if (settings.TryGetValue("Key_PrevFolder", out object? prevFld)) KeyPrevFolder = (VirtualKey)(int)prevFld;
-            if (settings.TryGetValue("Key_ToggleManga", out object? tglManga)) KeyToggleManga = (VirtualKey)(int)tglManga;
-            if (settings.TryGetValue("Key_Exit", out object? exitApp)) KeyExit = (VirtualKey)(int)exitApp;
-            if (settings.TryGetValue("Key_ToggleGrid", out object? tglGrid)) KeyToggleGrid = (VirtualKey)(int)tglGrid;
-            if (settings.TryGetValue("Key_Slideshow", out object? slideshowKey)) KeySlideshow = (VirtualKey)(int)slideshowKey;
-
-            if (settings.TryGetValue("SlideshowFullscreen", out object? ssFs)) SlideshowFullscreen = (bool)ssFs;
-            if (settings.TryGetValue("SlideshowRandom", out object? ssRnd)) SlideshowRandom = (bool)ssRnd;
-            if (settings.TryGetValue("SlideshowLoop", out object? ssLoop)) SlideshowLoop = (bool)ssLoop;
-            if (settings.TryGetValue("SlideshowNextFolder", out object? ssNext)) SlideshowNextFolder = (bool)ssNext;
-            if (settings.TryGetValue("SlideshowCurrentFolderOnly", out object? ssCurr)) SlideshowCurrentFolderOnly = (bool)ssCurr;
-            if (settings.TryGetValue("SlideshowInterval", out object? ssInt)) SlideshowInterval = (double)ssInt;
+            try
+            {
+                if (File.Exists(_settingsFilePath))
+                {
+                    string json = File.ReadAllText(_settingsFilePath);
+                    _data = JsonSerializer.Deserialize<SettingsData>(json) ?? new SettingsData();
+                }
+            }
+            catch
+            {
+                _data = new SettingsData();
+            }
         }
 
-        public void SaveKeyBindings()
+        private void Save()
         {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            settings["Key_NextImage"] = (int)KeyNextImage;
-            settings["Key_PrevImage"] = (int)KeyPrevImage;
-            settings["Key_NextFolder"] = (int)KeyNextFolder;
-            settings["Key_PrevFolder"] = (int)KeyPrevFolder;
-            settings["Key_ToggleManga"] = (int)KeyToggleManga;
-            settings["Key_Exit"] = (int)KeyExit;
-            settings["Key_ToggleGrid"] = (int)KeyToggleGrid;
-            settings["Key_Slideshow"] = (int)KeySlideshow;
+            try
+            {
+                string json = JsonSerializer.Serialize(_data, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_settingsFilePath, json);
+            }
+            catch { }
         }
 
-        public void SaveMangaMode()
-        {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            settings["IsMangaMode"] = IsMangaMode;
-        }
-
-        public void SaveSlideshowSettings()
-        {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            settings["SlideshowFullscreen"] = SlideshowFullscreen;
-            settings["SlideshowRandom"] = SlideshowRandom;
-            settings["SlideshowLoop"] = SlideshowLoop;
-            settings["SlideshowNextFolder"] = SlideshowNextFolder;
-            settings["SlideshowCurrentFolderOnly"] = SlideshowCurrentFolderOnly;
-            settings["SlideshowInterval"] = SlideshowInterval;
-        }
+        public void SaveKeyBindings() => Save();
+        public void SaveMangaMode() => Save();
+        public void SaveSlideshowSettings() => Save();
 
         public void LoadWindowState(AppWindow appWindow)
         {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            if (settings.TryGetValue("WindowWidth", out object? widthObj) && widthObj is int width &&
-                settings.TryGetValue("WindowHeight", out object? heightObj) && heightObj is int height)
+            if (_data.WindowWidth > 0 && _data.WindowHeight > 0)
             {
-                if (width > 0 && height > 0)
-                {
-                    appWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
-                }
+                appWindow.Resize(new Windows.Graphics.SizeInt32(_data.WindowWidth, _data.WindowHeight));
             }
             
-            if (settings.TryGetValue("WindowX", out object? xObj) && xObj is int x &&
-                settings.TryGetValue("WindowY", out object? yObj) && yObj is int y)
+            if (_data.WindowX != -1 && _data.WindowY != -1)
             {
-                appWindow.Move(new Windows.Graphics.PointInt32(x, y));
+                appWindow.Move(new Windows.Graphics.PointInt32(_data.WindowX, _data.WindowY));
             }
         }
 
         public void SaveWindowState(AppWindow appWindow, string currentImagePath)
         {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            
             if (appWindow.Presenter.Kind == AppWindowPresenterKind.Default)
             {
-                settings["WindowWidth"] = appWindow.Size.Width;
-                settings["WindowHeight"] = appWindow.Size.Height;
-                settings["WindowX"] = appWindow.Position.X;
-                settings["WindowY"] = appWindow.Position.Y;
+                _data.WindowWidth = appWindow.Size.Width;
+                _data.WindowHeight = appWindow.Size.Height;
+                _data.WindowX = appWindow.Position.X;
+                _data.WindowY = appWindow.Position.Y;
             }
 
             if (!string.IsNullOrEmpty(currentImagePath))
             {
-                settings["LastImagePath"] = currentImagePath;
+                _data.LastImagePath = currentImagePath;
             }
+
+            Save();
         }
     }
 }

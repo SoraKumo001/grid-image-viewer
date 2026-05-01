@@ -89,8 +89,8 @@ namespace grid_image_viewer
                 NotificationOverlay.Visibility = Visibility.Collapsed;
             };
 
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            if (settings.TryGetValue("LastImagePath", out object? lastPathObj) && lastPathObj is string lastPath)
+            string lastPath = _settings.LastImagePath;
+            if (!string.IsNullOrEmpty(lastPath))
             {
                 var dir = Path.GetDirectoryName(lastPath);
                 if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))

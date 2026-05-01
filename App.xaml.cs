@@ -68,12 +68,11 @@ namespace grid_image_viewer
 
             if (!fileLoaded)
             {
-                if (Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue("LastImagePath", out object? lastImagePathObj) && lastImagePathObj is string lastImagePath)
+                var settings = new SettingsManager();
+                string lastImagePath = settings.LastImagePath;
+                if (!string.IsNullOrEmpty(lastImagePath) && System.IO.File.Exists(lastImagePath))
                 {
-                    if (System.IO.File.Exists(lastImagePath))
-                    {
-                        ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
-                    }
+                    ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
                 }
             }
         }
