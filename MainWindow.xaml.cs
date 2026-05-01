@@ -1241,41 +1241,18 @@ namespace grid_image_viewer
 
             try
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                using var bitmap = SKBitmap.Decode(codec);
-                if (bitmap != null)
+                if (overwrite)
                 {
-                    using var image = SKImage.FromBitmap(bitmap);
-                    using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), 100);
-                    
-                    if (overwrite)
-                    {
-                        StopAnimation();
-                        RightImage.Source = null;
-                        LeftImage.Source = null;
-                    }
-
-                    using var stream = File.Open(destPath, FileMode.Create, FileAccess.Write);
-                    skData.SaveTo(stream);
+                    StopAnimation();
+                    RightImage.Source = null;
+                    LeftImage.Source = null;
                 }
+
+                await Task.Run(() => ImageProcessor.SaveImage(sourcePath, destPath, targetExtension));
                 
                 if (overwrite) _ = UpdateDisplayAsync();
             }
             catch { }
-        }
-
-        private SKEncodedImageFormat GetSKEncodedImageFormat(string ext)
-        {
-            return ext.ToLowerInvariant() switch
-            {
-                ".jpg" or ".jpeg" => SKEncodedImageFormat.Jpeg,
-                ".png" => SKEncodedImageFormat.Png,
-                ".webp" => SKEncodedImageFormat.Webp,
-                ".bmp" => SKEncodedImageFormat.Bmp,
-                _ => SKEncodedImageFormat.Png
-            };
         }
 
         private void MenuCrop_Click(object sender, RoutedEventArgs e)
@@ -1286,62 +1263,51 @@ namespace grid_image_viewer
 
             try
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                using var bitmap = SKBitmap.Decode(codec);
-                if (bitmap != null)
+                var (imgW, imgH) = ImageProcessor.GetImageSize(sourcePath);
+                if (imgW == 0 || imgH == 0) return;
+
+                FrameworkElement targetElement = RightImage.Visibility == Visibility.Visible ? RightImage : RightSkiaCanvas;
+                    
+                double renderRatio = targetElement.ActualWidth / targetElement.ActualHeight;
+                double imageRatio = (double)imgW / imgH;
+
+                double imgDisplayWidth = targetElement.ActualWidth;
+                double imgDisplayHeight = targetElement.ActualHeight;
+                double offsetX = 0;
+                double offsetY = 0;
+
+                if (imageRatio > renderRatio)
                 {
-                    FrameworkElement targetElement = RightImage.Visibility == Visibility.Visible ? RightImage : RightSkiaCanvas;
-                    
-                    double renderRatio = targetElement.ActualWidth / targetElement.ActualHeight;
-                    double imageRatio = (double)bitmap.Width / bitmap.Height;
-
-                    double imgDisplayWidth = targetElement.ActualWidth;
-                    double imgDisplayHeight = targetElement.ActualHeight;
-                    double offsetX = 0;
-                    double offsetY = 0;
-
-                    if (imageRatio > renderRatio)
-                    {
-                        imgDisplayHeight = targetElement.ActualWidth / imageRatio;
-                        offsetY = (targetElement.ActualHeight - imgDisplayHeight) / 2;
-                    }
-                    else
-                    {
-                        imgDisplayWidth = targetElement.ActualHeight * imageRatio;
-                        offsetX = (targetElement.ActualWidth - imgDisplayWidth) / 2;
-                    }
-
-                    var ttv = SelectionRectangle.TransformToVisual(targetElement);
-                    var rectTopLeft = ttv.TransformPoint(new Windows.Foundation.Point(0, 0));
-                    var rectBottomRight = ttv.TransformPoint(new Windows.Foundation.Point(SelectionRectangle.Width, SelectionRectangle.Height));
-
-                    double cropX = (rectTopLeft.X - offsetX) * (bitmap.Width / imgDisplayWidth);
-                    double cropY = (rectTopLeft.Y - offsetY) * (bitmap.Height / imgDisplayHeight);
-                    double cropW = (rectBottomRight.X - rectTopLeft.X) * (bitmap.Width / imgDisplayWidth);
-                    double cropH = (rectBottomRight.Y - rectTopLeft.Y) * (bitmap.Height / imgDisplayHeight);
-
-                    cropX = Math.Max(0, Math.Min(cropX, bitmap.Width));
-                    cropY = Math.Max(0, Math.Min(cropY, bitmap.Height));
-                    cropW = Math.Max(1, Math.Min(cropW, bitmap.Width - cropX));
-                    cropH = Math.Max(1, Math.Min(cropH, bitmap.Height - cropY));
-
-                    var cropRect = new SKRectI((int)cropX, (int)cropY, (int)(cropX + cropW), (int)(cropY + cropH));
-                    
-                    using var croppedBitmap = new SKBitmap(cropRect.Width, cropRect.Height);
-                    bitmap.ExtractSubset(croppedBitmap, cropRect);
-
-                    using var image = SKImage.FromBitmap(croppedBitmap);
-                    using var skData = image.Encode(GetSKEncodedImageFormat(Path.GetExtension(sourcePath)), 100);
-
-                    StopAnimation();
-                    RightImage.Source = null;
-                    LeftImage.Source = null;
-
-                    using var stream = File.Open(sourcePath, FileMode.Create, FileAccess.Write);
-                    skData.SaveTo(stream);
+                    imgDisplayHeight = targetElement.ActualWidth / imageRatio;
+                    offsetY = (targetElement.ActualHeight - imgDisplayHeight) / 2;
                 }
+                else
+                {
+                    imgDisplayWidth = targetElement.ActualHeight * imageRatio;
+                    offsetX = (targetElement.ActualWidth - imgDisplayWidth) / 2;
+                }
+
+                var ttv = SelectionRectangle.TransformToVisual(targetElement);
+                var rectTopLeft = ttv.TransformPoint(new Windows.Foundation.Point(0, 0));
+                var rectBottomRight = ttv.TransformPoint(new Windows.Foundation.Point(SelectionRectangle.Width, SelectionRectangle.Height));
+
+                double cropX = (rectTopLeft.X - offsetX) * (imgW / imgDisplayWidth);
+                double cropY = (rectTopLeft.Y - offsetY) * (imgH / imgDisplayHeight);
+                double cropW = (rectBottomRight.X - rectTopLeft.X) * (imgW / imgDisplayWidth);
+                double cropH = (rectBottomRight.Y - rectTopLeft.Y) * (imgH / imgDisplayHeight);
+
+                cropX = Math.Max(0, Math.Min(cropX, imgW));
+                cropY = Math.Max(0, Math.Min(cropY, imgH));
+                cropW = Math.Max(1, Math.Min(cropW, imgW - cropX));
+                cropH = Math.Max(1, Math.Min(cropH, imgH - cropY));
+
+                var cropRect = new SKRectI((int)cropX, (int)cropY, (int)(cropX + cropW), (int)(cropY + cropH));
+
+                StopAnimation();
+                RightImage.Source = null;
+                LeftImage.Source = null;
+
+                ImageProcessor.CropImage(sourcePath, cropRect);
 
                 SelectionRectangle.Visibility = Visibility.Collapsed;
                 _hasSelection = false;
@@ -1372,14 +1338,9 @@ namespace grid_image_viewer
 
             try
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                if (codec != null)
-                {
-                    widthBox.Value = codec.Info.Width;
-                    heightBox.Value = codec.Info.Height;
-                }
+                var (origW, origH) = ImageProcessor.GetImageSize(sourcePath);
+                widthBox.Value = origW;
+                heightBox.Value = origH;
 
                 if (await dialog.ShowAsync() == ContentDialogResult.Primary)
                 {
@@ -1387,20 +1348,11 @@ namespace grid_image_viewer
                     int newHeight = (int)heightBox.Value;
                     if (newWidth <= 0 || newHeight <= 0) return;
 
-                    using var bitmap = SKBitmap.Decode(codec);
-                    if (bitmap != null)
-                    {
-                        using var resizedBitmap = bitmap.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKCubicResampler.Mitchell));
-                        using var image = SKImage.FromBitmap(resizedBitmap);
-                        using var skData = image.Encode(GetSKEncodedImageFormat(Path.GetExtension(sourcePath)), 100);
+                    StopAnimation();
+                    RightImage.Source = null;
+                    LeftImage.Source = null;
 
-                        StopAnimation();
-                        RightImage.Source = null;
-                        LeftImage.Source = null;
-
-                        using var stream = File.Open(sourcePath, FileMode.Create, FileAccess.Write);
-                        skData.SaveTo(stream);
-                    }
+                    await Task.Run(() => ImageProcessor.ResizeImage(sourcePath, newWidth, newHeight));
                     _ = UpdateDisplayAsync();
                 }
             }
