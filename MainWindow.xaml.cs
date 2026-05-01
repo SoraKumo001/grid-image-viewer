@@ -38,6 +38,7 @@ namespace grid_image_viewer
         private CancellationTokenSource? _gridCts;
 
         private DispatcherTimer _slideshowTimer;
+        private DispatcherTimer _notificationTimer;
         private bool _isSlideshowRunning = false;
         private Random _random = new Random();
 
@@ -80,6 +81,13 @@ namespace grid_image_viewer
 
             _slideshowTimer = new DispatcherTimer();
             _slideshowTimer.Tick += SlideshowTimer_Tick;
+
+            _notificationTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _notificationTimer.Tick += (s, e) =>
+            {
+                _notificationTimer.Stop();
+                NotificationOverlay.Visibility = Visibility.Collapsed;
+            };
 
             var settings = ApplicationData.Current.LocalSettings.Values;
             if (settings.TryGetValue("LastImagePath", out object? lastPathObj) && lastPathObj is string lastPath)
@@ -1090,11 +1098,16 @@ namespace grid_image_viewer
             if (_playlist.Count == 0) return;
 
             int step = (_settings.IsMangaMode && !forceSingleStep) ? 2 : 1;
+            bool looped = false;
 
             if (offset > 0)
             {
                 _currentIndex += step;
-                if (_currentIndex >= _playlist.Count) _currentIndex = 0;
+                if (_currentIndex >= _playlist.Count)
+                {
+                    _currentIndex = 0;
+                    looped = true;
+                }
             }
             else
             {
@@ -1104,10 +1117,24 @@ namespace grid_image_viewer
                     int remainder = _playlist.Count % step;
                     _currentIndex = _playlist.Count - (remainder == 0 ? step : remainder);
                     if (_currentIndex < 0) _currentIndex = 0;
+                    looped = true;
                 }
             }
 
+            if (looped)
+            {
+                ShowNotification("🔄 Looped to " + (offset > 0 ? "Start" : "End"));
+            }
+
             _ = UpdateDisplayAsync();
+        }
+
+        private void ShowNotification(string message)
+        {
+            NotificationText.Text = message;
+            NotificationOverlay.Visibility = Visibility.Visible;
+            _notificationTimer.Stop();
+            _notificationTimer.Start();
         }
 
         private string CurrentImagePath => _playlist != null && _currentIndex >= 0 && _currentIndex < _playlist.Count ? _playlist[_currentIndex] : string.Empty;
