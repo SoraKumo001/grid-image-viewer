@@ -59,11 +59,13 @@
                 <Grid Grid.Column="0" x:Name="LeftPageGrid" Visibility="Collapsed">
                     <Image x:Name="LeftImage" Stretch="Uniform" HorizontalAlignment="Right" />
                     <skia:SKXamlCanvas x:Name="LeftSkiaCanvas" Visibility="Collapsed" PaintSurface="LeftSkiaCanvas_PaintSurface" />
+                    <ProgressRing x:Name="LeftLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
                 <Grid Grid.Column="1" x:Name="RightPageGrid">
                     <Image x:Name="RightImage" Stretch="Uniform" />
                     <skia:SKXamlCanvas x:Name="RightSkiaCanvas" Visibility="Collapsed" PaintSurface="RightSkiaCanvas_PaintSurface" />
+                    <ProgressRing x:Name="RightLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
                 <Canvas Grid.ColumnSpan="2" x:Name="OverlayCanvas" Background="Transparent">
@@ -120,11 +122,10 @@
                         <Border VerticalAlignment="Bottom" Background="#88000000" Padding="4">
                             <TextBlock Text="{x:Bind FileName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FileName}" />
                         </Border>
+                        <ProgressRing IsActive="{x:Bind IsLoading, Mode=OneWay}" Width="32" Height="32" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" />
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
-        <!-- Loading Indicator -->
-        <ProgressRing x:Name="LoadingRing" Grid.Row="1" Width="60" Height="60" IsActive="False" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#00A2ED" Canvas.ZIndex="100" />
     </Grid>
 </Window>

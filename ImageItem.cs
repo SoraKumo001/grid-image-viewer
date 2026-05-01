@@ -23,6 +23,20 @@ namespace grid_image_viewer
         public int CurrentFrame { get; set; } = 0;
         public bool IsAnimated => FrameCount > 1;
 
+        private bool _isLoading = false;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (_isLoading != value)
+                {
+                    _isLoading = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         private ImageSource? _thumbnail;
         public ImageSource? Thumbnail
         {
@@ -33,6 +47,8 @@ namespace grid_image_viewer
                 OnPropertyChanged();
             }
         }
+        private SKBitmap? _animationBuffer;
+        private int _priorFrameIndex = -1;
 
         /// <summary>
         /// 現在のフレームを WriteableBitmap に描画して Thumbnail を更新する
@@ -41,24 +57,42 @@ namespace grid_image_viewer
         {
             if (Codec == null || FrameCount <= 1) return;
 
+            int previousFrame = _priorFrameIndex;
             CurrentFrame = (CurrentFrame + 1) % FrameCount;
+            
+            // ループして先頭に戻る場合は、ベースフレームなしで描画し直す
+            if (CurrentFrame == 0) previousFrame = -1;
 
             try
             {
                 var info = Codec.Info;
-                var imageInfo = new SKImageInfo(info.Width, info.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+                if (_animationBuffer == null)
+                {
+                    _animationBuffer = new SKBitmap(new SKImageInfo(info.Width, info.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
+                    previousFrame = -1;
+                }
 
-                using var bitmap = new SKBitmap(imageInfo);
-                var options = new SKCodecOptions { FrameIndex = CurrentFrame };
-                Codec.GetPixels(imageInfo, bitmap.GetPixels(), options);
+                if (previousFrame == -1)
+                {
+                    _animationBuffer.Erase(SKColors.Transparent);
+                }
+
+                var options = new SKCodecOptions 
+                { 
+                    FrameIndex = CurrentFrame,
+                    PriorFrame = previousFrame
+                };
+
+                Codec.GetPixels(_animationBuffer.Info, _animationBuffer.GetPixels(), options);
+                _priorFrameIndex = CurrentFrame;
 
                 // デコードサイズを制限してリサイズ
                 float scale = Math.Min((float)decodeWidth / info.Width, (float)decodeWidth / info.Height);
                 scale = Math.Min(scale, 1.0f); // 元サイズより大きくしない
-                int w = (int)(info.Width * scale);
-                int h = (int)(info.Height * scale);
+                int w = Math.Max(1, (int)(info.Width * scale));
+                int h = Math.Max(1, (int)(info.Height * scale));
 
-                using var resized = bitmap.Resize(new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul), new SKSamplingOptions(SKFilterMode.Linear));
+                using var resized = _animationBuffer.Resize(new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul), new SKSamplingOptions(SKFilterMode.Linear));
                 if (resized == null) return;
 
                 var wb = new WriteableBitmap(w, h);
@@ -79,6 +113,9 @@ namespace grid_image_viewer
             Codec = null;
             CodecData?.Dispose();
             CodecData = null;
+            _animationBuffer?.Dispose();
+            _animationBuffer = null;
+            _priorFrameIndex = -1;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

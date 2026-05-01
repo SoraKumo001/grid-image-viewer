@@ -42,13 +42,15 @@ namespace grid_image_viewer
         private SKData? _data1;
         private SKCodec? _codec1;
         private SKBitmap? _bitmap1;
-        private int _currentFrame1 = 0;
+        private int _currentFrame1 = -1;
+        private int _priorFrame1 = -1;
         private int _frameCount1 = 0;
 
         private SKData? _data2;
         private SKCodec? _codec2;
         private SKBitmap? _bitmap2;
-        private int _currentFrame2 = 0;
+        private int _currentFrame2 = -1;
+        private int _priorFrame2 = -1;
         private int _frameCount2 = 0;
 
         private DispatcherTimer _animationTimer;
@@ -169,91 +171,103 @@ namespace grid_image_viewer
                 {
                     if (token.IsCancellationRequested) return;
 
-                    // ファイルI/Oとデコードをバックグラウンドスレッドで実行
-                    var bytes = File.ReadAllBytes(item.FilePath);
-                    if (token.IsCancellationRequested) return;
+                    var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
+                    bool mightBeAnimated = ext == ".webp" || ext == ".gif";
 
-                    // アスペクト比を取得（バックグラウンドでデコード結果から取得）
-                    var skData = SKData.CreateCopy(bytes);
-                    var codec = SKCodec.Create(skData);
-
-                    if (codec != null)
+                    if (mightBeAnimated)
                     {
-                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                    }
-
-                    if (codec != null && codec.FrameCount > 1)
-                    {
-                        if (token.IsCancellationRequested) { codec.Dispose(); skData.Dispose(); return; }
-
-                        // アニメーション画像
-                        item.CodecData = skData;
-                        item.Codec = codec;
-                        item.FrameCount = codec.FrameCount;
-                        item.CurrentFrame = 0;
-                        DispatcherQueue.TryEnqueue(() =>
+                        byte[]? bytes = null;
+                        for (int i = 0; i < 3; i++)
                         {
-                            if (!token.IsCancellationRequested)
-                                item.AdvanceFrame(decodeSize);
-                        });
-                    }
-                    else
-                    {
-                        // 静止画: バックグラウンドでデコードしてWriteableBitmapを生成
-                        codec?.Dispose();
+                            try
+                            {
+                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                using (var ms = new MemoryStream((int)fs.Length))
+                                {
+                                    await fs.CopyToAsync(ms, token);
+                                    bytes = ms.ToArray();
+                                }
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                await Task.Delay(100, token);
+                            }
+                        }
 
+                        if (bytes == null || token.IsCancellationRequested) return;
+
+                        var skData = SKData.CreateCopy(bytes);
+                        var codec = SKCodec.Create(skData);
+
+                        if (codec != null)
+                        {
+                            item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
+                        }
+
+                        if (codec != null && codec.FrameCount > 1)
+                        {
+                            if (token.IsCancellationRequested) { codec.Dispose(); skData.Dispose(); return; }
+
+                            item.CodecData = skData;
+                            item.Codec = codec;
+                            item.FrameCount = codec.FrameCount;
+                            item.CurrentFrame = 0;
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                if (!token.IsCancellationRequested)
+                                    item.AdvanceFrame(decodeSize);
+                            });
+                            return;
+                        }
+                        
+                        codec?.Dispose();
                         if (token.IsCancellationRequested) { skData.Dispose(); return; }
 
                         using var skBitmap = SKBitmap.Decode(skData);
                         skData.Dispose();
 
-                        if (skBitmap != null)
+                        ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
+                    }
+                    else
+                    {
+                        SKBitmap? decoded = null;
+                        for (int i = 0; i < 3; i++)
                         {
-                            if (token.IsCancellationRequested) return;
-
-                            // リサイズ（decodeSizeはグリッドセルサイズに基づく）
-                            float scale = Math.Min((float)decodeSize / skBitmap.Width, (float)decodeSize / skBitmap.Height);
-                            scale = Math.Min(scale, 1.0f);
-                            int w = (int)(skBitmap.Width * scale);
-                            int h = (int)(skBitmap.Height * scale);
-
-                            var resizeInfo = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul);
-                            using var resized = skBitmap.Resize(resizeInfo, new SKSamplingOptions(SKFilterMode.Linear));
-                            if (resized != null)
+                            try
                             {
-                                if (token.IsCancellationRequested) return;
-
-                                var pixelBytes = new byte[resized.ByteCount];
-                                System.Runtime.InteropServices.Marshal.Copy(resized.GetPixels(), pixelBytes, 0, pixelBytes.Length);
-                                int finalW = w, finalH = h;
-
-                                DispatcherQueue.TryEnqueue(() =>
+                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                                 {
-                                    if (token.IsCancellationRequested) return;
-                                    try
+                                    using var codec = SKCodec.Create(fs);
+                                    if (codec != null)
                                     {
-                                        var wb = new WriteableBitmap(finalW, finalH);
-                                        using (var stream = wb.PixelBuffer.AsStream())
-                                        {
-                                            stream.Write(pixelBytes, 0, pixelBytes.Length);
-                                        }
-                                        wb.Invalidate();
-                                        item.Thumbnail = wb;
+                                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
                                     }
-                                    catch { }
-                                });
+                                    fs.Position = 0;
+                                    decoded = SKBitmap.Decode(fs);
+                                }
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                await Task.Delay(100, token);
                             }
                         }
+
+                        using var skBitmapToDispose = decoded;
+                        if (token.IsCancellationRequested) return;
+
+                        ProcessDecodedBitmap(decoded, item, decodeSize, token);
                     }
                 }
                 catch { }
                 finally
                 {
                     semaphore.Release();
+                    DispatcherQueue.TryEnqueue(() => item.IsLoading = false);
                 }
             }, token)).ToArray();
 
-            LoadingRing.IsActive = true;
             try
             {
                 try
@@ -274,10 +288,64 @@ namespace grid_image_viewer
             }
             finally
             {
-                if (!token.IsCancellationRequested)
+            }
+        }
+
+        private void ProcessDecodedBitmap(SKBitmap? skBitmap, ImageItem item, int decodeSize, CancellationToken token)
+        {
+            if (skBitmap != null)
+            {
+                if (token.IsCancellationRequested) return;
+
+                float scale = Math.Min((float)decodeSize / skBitmap.Width, (float)decodeSize / skBitmap.Height);
+                scale = Math.Min(scale, 1.0f);
+                int w = Math.Max(1, (int)(skBitmap.Width * scale));
+                int h = Math.Max(1, (int)(skBitmap.Height * scale));
+
+                var resizeInfo = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul);
+                using var resized = skBitmap.Resize(resizeInfo, new SKSamplingOptions(SKFilterMode.Linear));
+
+                if (resized != null)
                 {
-                    LoadingRing.IsActive = false;
+                    if (token.IsCancellationRequested) return;
+
+                    var pixelBytes = new byte[resized.ByteCount];
+                    System.Runtime.InteropServices.Marshal.Copy(resized.GetPixels(), pixelBytes, 0, pixelBytes.Length);
+
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+                        try
+                        {
+                            var wb = new WriteableBitmap(w, h);
+                            using (var stream = wb.PixelBuffer.AsStream())
+                            {
+                                stream.Write(pixelBytes, 0, pixelBytes.Length);
+                            }
+                            wb.Invalidate();
+                            item.Thumbnail = wb;
+                        }
+                        catch { }
+                    });
                 }
+            }
+            else
+            {
+                // Fallback to native BitmapImage
+                DispatcherQueue.TryEnqueue(async () =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    try
+                    {
+                        var file = await StorageFile.GetFileFromPathAsync(item.FilePath);
+                        using var stream = await file.OpenReadAsync();
+                        var bitmapImage = new BitmapImage();
+                        bitmapImage.DecodePixelWidth = decodeSize;
+                        await bitmapImage.SetSourceAsync(stream);
+                        item.Thumbnail = bitmapImage;
+                    }
+                    catch { }
+                });
             }
         }
 
@@ -489,7 +557,7 @@ namespace grid_image_viewer
                     _gridItems.Clear();
                     foreach (var f in _playlist)
                     {
-                        _gridItems.Add(new ImageItem { FilePath = f });
+                        _gridItems.Add(new ImageItem { FilePath = f, IsLoading = true });
                     }
                     _gridCts?.Cancel();
                     _gridCts?.Dispose();
@@ -554,8 +622,6 @@ namespace grid_image_viewer
             _displayCts = new CancellationTokenSource();
             var token = _displayCts.Token;
 
-            LoadingRing.IsActive = true;
-
             try
             {
                 if (_isMangaMode)
@@ -575,12 +641,16 @@ namespace grid_image_viewer
 
                 // Load Pages in parallel
                 var loadTasks = new List<Task>();
-                loadTasks.Add(LoadPageAsync(_playlist[_currentIndex], RightImage, RightSkiaCanvas, true, token));
+                loadTasks.Add(LoadPageAsync(_playlist[_currentIndex], RightImage, RightSkiaCanvas, RightLoadingRing, true, token));
 
                 bool hasLeftPage = _isMangaMode && _currentIndex + 1 < _playlist.Count;
                 if (hasLeftPage)
                 {
-                    loadTasks.Add(LoadPageAsync(_playlist[_currentIndex + 1], LeftImage, LeftSkiaCanvas, false, token));
+                    loadTasks.Add(LoadPageAsync(_playlist[_currentIndex + 1], LeftImage, LeftSkiaCanvas, LeftLoadingRing, false, token));
+                }
+                else
+                {
+                    LeftLoadingRing.IsActive = false;
                 }
 
                 try
@@ -604,10 +674,6 @@ namespace grid_image_viewer
             }
             finally
             {
-                if (!token.IsCancellationRequested)
-                {
-                    LoadingRing.IsActive = false;
-                }
             }
 
             if ((_codec1 != null && _frameCount1 > 1) || (_codec2 != null && _frameCount2 > 1))
@@ -616,86 +682,94 @@ namespace grid_image_viewer
             }
         }
 
-        private async Task LoadPageAsync(string filePath, Image imageCtrl, SKXamlCanvas canvasCtrl, bool isRightPage, CancellationToken token)
+        private async Task LoadPageAsync(string filePath, Image imageCtrl, SKXamlCanvas canvasCtrl, ProgressRing loadingRing, bool isRightPage, CancellationToken token)
         {
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            bool useSkia = ext == ".webp" || ext == ".gif";
-
-            if (useSkia)
+            loadingRing.IsActive = true;
+            try
             {
-                imageCtrl.Visibility = Visibility.Collapsed;
-                canvasCtrl.Visibility = Visibility.Visible;
+                var ext = Path.GetExtension(filePath).ToLowerInvariant();
+                bool useSkia = ext == ".webp" || ext == ".gif";
 
-                try
+                if (useSkia)
                 {
-                    await Task.Run(() =>
+                    imageCtrl.Visibility = Visibility.Collapsed;
+                    canvasCtrl.Visibility = Visibility.Visible;
+
+                    try
                     {
-                        if (token.IsCancellationRequested) return;
-
-                        var bytes = File.ReadAllBytes(filePath);
-                        if (token.IsCancellationRequested) return;
-
-                        var data = SKData.CreateCopy(bytes);
-                        if (data != null)
+                        await Task.Run(() =>
                         {
-                            if (token.IsCancellationRequested) { data.Dispose(); return; }
+                            if (token.IsCancellationRequested) return;
 
-                            var codec = SKCodec.Create(data);
-                            if (codec != null)
+                            var bytes = File.ReadAllBytes(filePath);
+                            if (token.IsCancellationRequested) return;
+
+                            var data = SKData.CreateCopy(bytes);
+                            if (data != null)
                             {
-                                if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
+                                if (token.IsCancellationRequested) { data.Dispose(); return; }
 
-                                var bitmap = new SKBitmap(codec.Info);
-                                int frameCount = codec.FrameCount;
+                                var codec = SKCodec.Create(data);
+                                if (codec != null)
+                                {
+                                    if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
 
-                                if (isRightPage)
-                                {
-                                    _data1 = data; _codec1 = codec; _bitmap1 = bitmap; _frameCount1 = frameCount; _currentFrame1 = 0;
-                                }
-                                else
-                                {
-                                    _data2 = data; _codec2 = codec; _bitmap2 = bitmap; _frameCount2 = frameCount; _currentFrame2 = 0;
-                                }
+                                    var bitmap = new SKBitmap(codec.Info);
+                                    int frameCount = codec.FrameCount;
 
-                                if (frameCount <= 1)
-                                {
-                                    bitmap = SKBitmap.Decode(codec);
-                                    if (isRightPage) _bitmap1 = bitmap;
-                                    else _bitmap2 = bitmap;
-                                }
-                                
-                                if (!token.IsCancellationRequested)
-                                {
-                                    DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
+                                    if (isRightPage)
+                                    {
+                                        _data1 = data; _codec1 = codec; _bitmap1 = bitmap; _frameCount1 = frameCount; _currentFrame1 = -1; _priorFrame1 = -1;
+                                    }
+                                    else
+                                    {
+                                        _data2 = data; _codec2 = codec; _bitmap2 = bitmap; _frameCount2 = frameCount; _currentFrame2 = -1; _priorFrame2 = -1;
+                                    }
+
+                                    if (frameCount <= 1)
+                                    {
+                                        bitmap = SKBitmap.Decode(codec);
+                                        if (isRightPage) _bitmap1 = bitmap;
+                                        else _bitmap2 = bitmap;
+                                    }
+                                    
+                                    if (!token.IsCancellationRequested)
+                                    {
+                                        DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
+                                    }
                                 }
                             }
-                        }
-                    }, token);
-                }
-                catch { }
-            }
-            else
-            {
-                canvasCtrl.Visibility = Visibility.Collapsed;
-                imageCtrl.Visibility = Visibility.Visible;
-
-                try
-                {
-                    var file = await StorageFile.GetFileFromPathAsync(filePath);
-                    if (token.IsCancellationRequested) return;
-
-                    using var stream = await file.OpenReadAsync();
-                    if (token.IsCancellationRequested) return;
-
-                    var bitmapImage = new BitmapImage();
-                    await bitmapImage.SetSourceAsync(stream);
-                    
-                    if (!token.IsCancellationRequested)
-                    {
-                        imageCtrl.Source = bitmapImage;
+                        }, token);
                     }
+                    catch { }
                 }
-                catch { }
+                else
+                {
+                    canvasCtrl.Visibility = Visibility.Collapsed;
+                    imageCtrl.Visibility = Visibility.Visible;
+
+                    try
+                    {
+                        var file = await StorageFile.GetFileFromPathAsync(filePath);
+                        if (token.IsCancellationRequested) return;
+
+                        using var stream = await file.OpenReadAsync();
+                        if (token.IsCancellationRequested) return;
+
+                        var bitmapImage = new BitmapImage();
+                        await bitmapImage.SetSourceAsync(stream);
+                        
+                        if (!token.IsCancellationRequested)
+                        {
+                            imageCtrl.Source = bitmapImage;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            finally
+            {
+                loadingRing.IsActive = false;
             }
         }
 
@@ -707,11 +781,15 @@ namespace grid_image_viewer
             _data1?.Dispose(); _data1 = null;
             _bitmap1?.Dispose(); _bitmap1 = null;
             _frameCount1 = 0;
+            _currentFrame1 = -1;
+            _priorFrame1 = -1;
 
             _codec2?.Dispose(); _codec2 = null;
             _data2?.Dispose(); _data2 = null;
             _bitmap2?.Dispose(); _bitmap2 = null;
             _frameCount2 = 0;
+            _currentFrame2 = -1;
+            _priorFrame2 = -1;
         }
 
         private void AnimationTimer_Tick(object? sender, object e)
@@ -752,17 +830,17 @@ namespace grid_image_viewer
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.Transparent);
             int align = _isMangaMode ? 0 : 1; // 0: Left, 1: Center
-            PaintSkiaCanvas(canvas, e.Info, _codec1, ref _bitmap1, _currentFrame1, align);
+            PaintSkiaCanvas(canvas, e.Info, _codec1, ref _bitmap1, _currentFrame1, ref _priorFrame1, align);
         }
 
         private void LeftSkiaCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.Transparent);
-            PaintSkiaCanvas(canvas, e.Info, _codec2, ref _bitmap2, _currentFrame2, 2); // 2: Right
+            PaintSkiaCanvas(canvas, e.Info, _codec2, ref _bitmap2, _currentFrame2, ref _priorFrame2, 2); // 2: Right
         }
 
-        private void PaintSkiaCanvas(SKCanvas canvas, SKImageInfo info, SKCodec? codec, ref SKBitmap? bitmap, int currentFrame, int horizontalAlignment)
+        private void PaintSkiaCanvas(SKCanvas canvas, SKImageInfo info, SKCodec? codec, ref SKBitmap? bitmap, int currentFrame, ref int priorFrame, int horizontalAlignment)
         {
             if (codec != null && codec.FrameCount > 1)
             {
@@ -771,10 +849,22 @@ namespace grid_image_viewer
                 {
                     bitmap?.Dispose();
                     bitmap = new SKBitmap(imageInfo);
+                    priorFrame = -1;
                 }
                 
-                var options = new SKCodecOptions { FrameIndex = currentFrame };
+                if (priorFrame == -1 || currentFrame == 0)
+                {
+                    bitmap.Erase(SKColors.Transparent);
+                    priorFrame = -1;
+                }
+
+                var options = new SKCodecOptions 
+                { 
+                    FrameIndex = currentFrame,
+                    PriorFrame = priorFrame
+                };
                 codec.GetPixels(imageInfo, bitmap.GetPixels(), options);
+                priorFrame = currentFrame;
             }
 
             if (bitmap != null)
