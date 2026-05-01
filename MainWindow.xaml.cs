@@ -18,26 +18,13 @@ using System.Threading;
 
 namespace grid_image_viewer
 {
-    public class NaturalStringComparer : IComparer<string>
-    {
-        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
-        private static extern int StrCmpLogicalW(string psz1, string psz2);
-
-        public int Compare(string? x, string? y)
-        {
-            if (x == null || y == null) return string.Compare(x, y, StringComparison.OrdinalIgnoreCase);
-            return StrCmpLogicalW(x, y);
-        }
-    }
-
     public sealed partial class MainWindow : Window
     {
         private List<string> _playlist = new List<string>();
         private int _currentIndex = -1;
         private string _currentDirectory = string.Empty;
 
-        // Manga Mode State
-        private bool _isMangaMode = false;
+        private SettingsManager _settings = new SettingsManager();
 
         private SKData? _data1;
         private SKCodec? _codec1;
@@ -55,15 +42,6 @@ namespace grid_image_viewer
 
         private DispatcherTimer _animationTimer;
 
-        // Key Bindings
-        private Windows.System.VirtualKey _keyNextImage = Windows.System.VirtualKey.PageDown;
-        private Windows.System.VirtualKey _keyPrevImage = Windows.System.VirtualKey.PageUp;
-        private Windows.System.VirtualKey _keyNextFolder = Windows.System.VirtualKey.Down;
-        private Windows.System.VirtualKey _keyPrevFolder = Windows.System.VirtualKey.Up;
-        private Windows.System.VirtualKey _keyToggleManga = Windows.System.VirtualKey.G;
-        private Windows.System.VirtualKey _keyExit = Windows.System.VirtualKey.Escape;
-        private Windows.System.VirtualKey _keyToggleGrid = Windows.System.VirtualKey.Enter;
-
         private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
         private bool _isGridMode = false;
         private DispatcherTimer? _gridAnimationTimer;
@@ -78,11 +56,6 @@ namespace grid_image_viewer
 
             this.Closed += MainWindow_Closed;
 
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("IsMangaMode", out object? obj) && obj is bool isMangaMode)
-            {
-                _isMangaMode = isMangaMode;
-            }
-            LoadKeyBindings();
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
 
@@ -90,22 +63,7 @@ namespace grid_image_viewer
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
 
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            if (settings.TryGetValue("WindowWidth", out object? widthObj) && widthObj is int width &&
-                settings.TryGetValue("WindowHeight", out object? heightObj) && heightObj is int height)
-            {
-                if (width > 0 && height > 0)
-                {
-                    appWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
-                }
-            }
-            
-            if (settings.TryGetValue("WindowX", out object? xObj) && xObj is int x &&
-                settings.TryGetValue("WindowY", out object? yObj) && yObj is int y)
-            {
-                // 画面外に出てしまっている場合のケアは省略していますが、基本の復元は行います
-                appWindow.Move(new Windows.Graphics.PointInt32(x, y));
-            }
+            _settings.LoadWindowState(appWindow);
 
             if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
             {
@@ -135,7 +93,11 @@ namespace grid_image_viewer
             StopAnimation();
             StopGridAnimation();
             foreach (var item in _gridItems) item.DisposeCodec();
-            SaveWindowState();
+            
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+            _settings.SaveWindowState(appWindow, CurrentImagePath);
         }
 
         private async Task LoadThumbnailsAsync(CancellationToken token)
@@ -509,29 +471,6 @@ namespace grid_image_viewer
             }
         }
 
-        private void SaveWindowState()
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            
-            // Only save if not maximized or minimized to preserve normal window size
-            if (appWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.Default)
-            {
-                settings["WindowWidth"] = appWindow.Size.Width;
-                settings["WindowHeight"] = appWindow.Size.Height;
-                settings["WindowX"] = appWindow.Position.X;
-                settings["WindowY"] = appWindow.Position.Y;
-            }
-
-            if (!string.IsNullOrEmpty(CurrentImagePath))
-            {
-                settings["LastImagePath"] = CurrentImagePath;
-            }
-        }
-
         private void RootGrid_DragOver(object sender, DragEventArgs e)
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
@@ -652,7 +591,7 @@ namespace grid_image_viewer
 
             try
             {
-                if (_isMangaMode)
+                if (_settings.IsMangaMode)
                 {
                     LeftColumn.Width = new GridLength(1, GridUnitType.Star);
                     RightColumn.Width = new GridLength(1, GridUnitType.Star);
@@ -671,7 +610,7 @@ namespace grid_image_viewer
                 var loadTasks = new List<Task>();
                 loadTasks.Add(LoadPageAsync(_playlist[_currentIndex], RightImage, RightSkiaCanvas, RightLoadingRing, true, token));
 
-                bool hasLeftPage = _isMangaMode && _currentIndex + 1 < _playlist.Count;
+                bool hasLeftPage = _settings.IsMangaMode && _currentIndex + 1 < _playlist.Count;
                 if (hasLeftPage)
                 {
                     loadTasks.Add(LoadPageAsync(_playlist[_currentIndex + 1], LeftImage, LeftSkiaCanvas, LeftLoadingRing, false, token));
@@ -857,7 +796,7 @@ namespace grid_image_viewer
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.Transparent);
-            int align = _isMangaMode ? 0 : 1; // 0: Left, 1: Center
+            int align = _settings.IsMangaMode ? 0 : 1; // 0: Left, 1: Center
             PaintSkiaCanvas(canvas, e.Info, _codec1, ref _bitmap1, _currentFrame1, ref _priorFrame1, align);
         }
 
@@ -1018,16 +957,16 @@ namespace grid_image_viewer
         {
             bool isCtrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
-            if (e.Key == _keyToggleManga && isCtrl)
+            if (e.Key == _settings.KeyToggleManga && isCtrl)
             {
-                _isMangaMode = !_isMangaMode;
-                ApplicationData.Current.LocalSettings.Values["IsMangaMode"] = _isMangaMode;
+                _settings.IsMangaMode = !_settings.IsMangaMode;
+                _settings.SaveMangaMode();
                 _ = UpdateDisplayAsync();
                 e.Handled = true;
                 return;
             }
 
-            if (e.Key == _keyToggleGrid)
+            if (e.Key == _settings.KeyToggleGrid)
             {
                 _isGridMode = !_isGridMode;
                 _ = UpdateDisplayAsync();
@@ -1035,7 +974,7 @@ namespace grid_image_viewer
                 return;
             }
 
-            if (e.Key == _keyExit)
+            if (e.Key == _settings.KeyExit)
             {
                 this.Close();
                 e.Handled = true;
@@ -1111,33 +1050,33 @@ namespace grid_image_viewer
 
             if (e.Key == Windows.System.VirtualKey.Left)
             {
-                Navigate(_isMangaMode ? 1 : -1);
+                Navigate(_settings.IsMangaMode ? 1 : -1);
                 e.Handled = true;
                 return;
             }
             if (e.Key == Windows.System.VirtualKey.Right)
             {
-                Navigate(_isMangaMode ? -1 : 1);
+                Navigate(_settings.IsMangaMode ? -1 : 1);
                 e.Handled = true;
                 return;
             }
 
-            if (e.Key == _keyPrevImage)
+            if (e.Key == _settings.KeyPrevImage)
             {
                 Navigate(-1);
                 e.Handled = true;
             }
-            else if (e.Key == _keyNextImage)
+            else if (e.Key == _settings.KeyNextImage)
             {
                 Navigate(1);
                 e.Handled = true;
             }
-            else if (e.Key == _keyPrevFolder)
+            else if (e.Key == _settings.KeyPrevFolder)
             {
                 NavigateFolder(-1);
                 e.Handled = true;
             }
-            else if (e.Key == _keyNextFolder)
+            else if (e.Key == _settings.KeyNextFolder)
             {
                 NavigateFolder(1);
                 e.Handled = true;
@@ -1156,7 +1095,7 @@ namespace grid_image_viewer
             try
             {
                 string currentDir = _currentDirectory;
-                string? nextImageFolder = await Task.Run(() => FindNextImageFolder(currentDir, offset));
+                string? nextImageFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, offset));
                 
                 if (!string.IsNullOrEmpty(nextImageFolder))
                 {
@@ -1170,98 +1109,12 @@ namespace grid_image_viewer
             }
         }
 
-        private string? FindNextImageFolder(string currentPath, int offset)
-        {
-            string? node = currentPath;
-            var extensions = new HashSet<string>(new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp" }, StringComparer.OrdinalIgnoreCase);
-
-            int maxIterations = 1000;
-            for (int i = 0; i < maxIterations; i++)
-            {
-                node = offset == 1 ? GetNextNodeDFS(node) : GetPrevNodeDFS(node);
-                if (string.IsNullOrEmpty(node)) break;
-
-                try
-                {
-                    bool hasImages = Directory.EnumerateFiles(node)
-                                              .Any(f => extensions.Contains(Path.GetExtension(f)));
-                    if (hasImages)
-                    {
-                        return node;
-                    }
-                }
-                catch { }
-            }
-            
-            return null;
-        }
-
-        private string? GetNextNodeDFS(string current)
-        {
-            try 
-            {
-                var dirs = Directory.GetDirectories(current).OrderBy(d => d, new NaturalStringComparer()).ToArray();
-                if (dirs.Length > 0) return dirs[0];
-            } catch {}
-
-            string node = current;
-            while(true)
-            {
-                var parent = Directory.GetParent(node);
-                if (parent == null) return null;
-
-                try 
-                {
-                    var siblings = parent.GetDirectories().Select(d => d.FullName).OrderBy(d => d, new NaturalStringComparer()).ToList();
-                    int idx = siblings.FindIndex(d => string.Equals(d, node, StringComparison.OrdinalIgnoreCase));
-                    if (idx != -1 && idx + 1 < siblings.Count)
-                    {
-                        return siblings[idx + 1];
-                    }
-                } catch {}
-                
-                node = parent.FullName;
-            }
-        }
-
-        private string? GetPrevNodeDFS(string current)
-        {
-            var parent = Directory.GetParent(current);
-            if (parent == null) return null;
-
-            try 
-            {
-                var siblings = parent.GetDirectories().Select(d => d.FullName).OrderBy(d => d, new NaturalStringComparer()).ToList();
-                int idx = siblings.FindIndex(d => string.Equals(d, current, StringComparison.OrdinalIgnoreCase));
-                if (idx > 0)
-                {
-                    string node = siblings[idx - 1];
-                    while(true)
-                    {
-                        try 
-                        {
-                            var children = Directory.GetDirectories(node).OrderBy(d => d, new NaturalStringComparer()).ToArray();
-                            if (children.Length == 0) return node;
-                            node = children[children.Length - 1];
-                        } catch {
-                            return node;
-                        }
-                    }
-                }
-                else if (idx == 0)
-                {
-                    return parent.FullName;
-                }
-            } catch {}
-            
-            return parent.FullName;
-        }
 
         private void Navigate(int offset)
         {
             if (_playlist.Count == 0) return;
 
-            int step = _isMangaMode ? 2 : 1;
+            int step = _settings.IsMangaMode ? 2 : 1;
 
             if (offset > 0)
             {
@@ -1573,29 +1426,9 @@ namespace grid_image_viewer
             }
         }
 
-        private void LoadKeyBindings()
-        {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            if (settings.TryGetValue("Key_NextImage", out object? nextImg)) _keyNextImage = (Windows.System.VirtualKey)(int)nextImg;
-            if (settings.TryGetValue("Key_PrevImage", out object? prevImg)) _keyPrevImage = (Windows.System.VirtualKey)(int)prevImg;
-            if (settings.TryGetValue("Key_NextFolder", out object? nextFld)) _keyNextFolder = (Windows.System.VirtualKey)(int)nextFld;
-            if (settings.TryGetValue("Key_PrevFolder", out object? prevFld)) _keyPrevFolder = (Windows.System.VirtualKey)(int)prevFld;
-            if (settings.TryGetValue("Key_ToggleManga", out object? tglManga)) _keyToggleManga = (Windows.System.VirtualKey)(int)tglManga;
-            if (settings.TryGetValue("Key_Exit", out object? exitApp)) _keyExit = (Windows.System.VirtualKey)(int)exitApp;
-            if (settings.TryGetValue("Key_ToggleGrid", out object? tglGrid)) _keyToggleGrid = (Windows.System.VirtualKey)(int)tglGrid;
-        }
 
-        private void SaveKeyBindings()
-        {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            settings["Key_NextImage"] = (int)_keyNextImage;
-            settings["Key_PrevImage"] = (int)_keyPrevImage;
-            settings["Key_NextFolder"] = (int)_keyNextFolder;
-            settings["Key_PrevFolder"] = (int)_keyPrevFolder;
-            settings["Key_ToggleManga"] = (int)_keyToggleManga;
-            settings["Key_Exit"] = (int)_keyExit;
-            settings["Key_ToggleGrid"] = (int)_keyToggleGrid;
-        }
+
+
 
         private TextBox CreateKeyBindingTextBox(string header, Windows.System.VirtualKey currentKey, Action<Windows.System.VirtualKey> updateAction)
         {
@@ -1625,13 +1458,13 @@ namespace grid_image_viewer
 
             var stackPanel = new StackPanel { Spacing = 10 };
             
-            var tempNextImage = _keyNextImage;
-            var tempPrevImage = _keyPrevImage;
-            var tempNextFolder = _keyNextFolder;
-            var tempPrevFolder = _keyPrevFolder;
-            var tempToggleManga = _keyToggleManga;
-            var tempExit = _keyExit;
-            var tempToggleGrid = _keyToggleGrid;
+            var tempNextImage = _settings.KeyNextImage;
+            var tempPrevImage = _settings.KeyPrevImage;
+            var tempNextFolder = _settings.KeyNextFolder;
+            var tempPrevFolder = _settings.KeyPrevFolder;
+            var tempToggleManga = _settings.KeyToggleManga;
+            var tempExit = _settings.KeyExit;
+            var tempToggleGrid = _settings.KeyToggleGrid;
 
             stackPanel.Children.Add(CreateKeyBindingTextBox("Next Image", tempNextImage, k => tempNextImage = k));
             stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Image", tempPrevImage, k => tempPrevImage = k));
@@ -1645,14 +1478,14 @@ namespace grid_image_viewer
 
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             {
-                _keyNextImage = tempNextImage;
-                _keyPrevImage = tempPrevImage;
-                _keyNextFolder = tempNextFolder;
-                _keyPrevFolder = tempPrevFolder;
-                _keyToggleManga = tempToggleManga;
-                _keyExit = tempExit;
-                _keyToggleGrid = tempToggleGrid;
-                SaveKeyBindings();
+                _settings.KeyNextImage = tempNextImage;
+                _settings.KeyPrevImage = tempPrevImage;
+                _settings.KeyNextFolder = tempNextFolder;
+                _settings.KeyPrevFolder = tempPrevFolder;
+                _settings.KeyToggleManga = tempToggleManga;
+                _settings.KeyExit = tempExit;
+                _settings.KeyToggleGrid = tempToggleGrid;
+                _settings.SaveKeyBindings();
             }
         }
     }
