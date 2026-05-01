@@ -21,7 +21,7 @@ namespace grid_image_viewer
     public static class FileNavigator
     {
         private static readonly HashSet<string> ImageExtensions = new HashSet<string>(
-            new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp" }, 
+            new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis" }, 
             StringComparer.OrdinalIgnoreCase);
 
         public static string? FindNextImageFolder(string currentPath, int offset)

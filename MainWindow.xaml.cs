@@ -159,7 +159,7 @@ namespace grid_image_viewer
                 if (token.IsCancellationRequested) return;
 
                 var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
-                bool mightBeAnimated = ext == ".webp" || ext == ".gif";
+                bool mightBeAnimated = ext == ".webp" || ext == ".gif" || ext == ".avis";
 
                 if (mightBeAnimated)
                 {
@@ -238,6 +238,16 @@ namespace grid_image_viewer
                         catch (IOException)
                         {
                             await Task.Delay(100, token);
+                        }
+                    }
+
+                    if (decoded == null)
+                    {
+                        var bmpBytes = ImageProcessor.DecodeToBmpBytes(item.FilePath);
+                        if (bmpBytes != null && !token.IsCancellationRequested)
+                        {
+                            using var skData = SKData.CreateCopy(bmpBytes);
+                            decoded = SKBitmap.Decode(skData);
                         }
                     }
 
@@ -499,7 +509,7 @@ namespace grid_image_viewer
             _currentDirectory = path;
             try
             {
-                var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp" };
+                var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis" };
                 _playlist = Directory.EnumerateFiles(path)
                                      .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
                                      .OrderBy(f => f, new NaturalStringComparer())
@@ -641,7 +651,7 @@ namespace grid_image_viewer
             try
             {
                 var ext = Path.GetExtension(filePath).ToLowerInvariant();
-                bool useSkia = ext == ".webp" || ext == ".gif";
+                bool useSkia = ext == ".webp" || ext == ".gif" || ext == ".avis";
 
                 if (useSkia)
                 {
@@ -669,6 +679,7 @@ namespace grid_image_viewer
                     canvasCtrl.Visibility = Visibility.Collapsed;
                     imageCtrl.Visibility = Visibility.Visible;
 
+                    bool nativeDecodeFailed = false;
                     try
                     {
                         var file = await StorageFile.GetFileFromPathAsync(filePath);
@@ -685,7 +696,48 @@ namespace grid_image_viewer
                             imageCtrl.Source = bitmapImage;
                         }
                     }
-                    catch { }
+                    catch { nativeDecodeFailed = true; }
+
+                    if (nativeDecodeFailed)
+                    {
+                        var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
+                        if (bmpBytes != null)
+                        {
+                            try
+                            {
+                                var bitmapImage = new BitmapImage();
+                                using var ms = new System.IO.MemoryStream(bmpBytes);
+                                await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                                
+                                if (!token.IsCancellationRequested)
+                                {
+                                    imageCtrl.Source = bitmapImage;
+                                }
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            imageCtrl.Visibility = Visibility.Collapsed;
+                            canvasCtrl.Visibility = Visibility.Visible;
+
+                            try
+                            {
+                                var page = isRightPage ? _page1 : _page2;
+                                await Task.Run(() =>
+                                {
+                                    if (token.IsCancellationRequested) return;
+                                    page.LoadSkia(filePath, token);
+                                    
+                                    if (!token.IsCancellationRequested)
+                                    {
+                                        DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
+                                    }
+                                }, token);
+                            }
+                            catch { }
+                        }
+                    }
                 }
             }
             finally

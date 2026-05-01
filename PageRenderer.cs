@@ -35,7 +35,21 @@ namespace grid_image_viewer
             if (token.IsCancellationRequested) { data.Dispose(); return; }
 
             var codec = SKCodec.Create(data);
-            if (codec == null) { data.Dispose(); return; }
+            if (codec == null) 
+            { 
+                data.Dispose(); 
+                var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
+                if (bmpBytes != null)
+                {
+                    data = SKData.CreateCopy(bmpBytes);
+                    codec = SKCodec.Create(data);
+                }
+                if (codec == null) 
+                {
+                    data?.Dispose();
+                    return;
+                }
+            }
             if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
 
             var bitmap = new SKBitmap(codec.Info);

@@ -1,6 +1,7 @@
 using SkiaSharp;
 using System;
 using System.IO;
+using ImageMagick;
 
 namespace grid_image_viewer
 {
@@ -17,6 +18,21 @@ namespace grid_image_viewer
                 _ => SKEncodedImageFormat.Png
             };
         }
+
+        public static byte[]? DecodeToBmpBytes(string filePath)
+        {
+            try
+            {
+                using var image = new MagickImage(filePath);
+                image.Format = MagickFormat.Bmp;
+                return image.ToByteArray();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
 
         /// <summary>
         /// 画像を指定フォーマットで保存する。
