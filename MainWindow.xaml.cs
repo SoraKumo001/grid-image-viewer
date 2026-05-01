@@ -509,7 +509,7 @@ namespace grid_image_viewer
             _currentDirectory = path;
             try
             {
-                var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis" };
+                var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" };
                 _playlist = Directory.EnumerateFiles(path)
                                      .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
                                      .OrderBy(f => f, new NaturalStringComparer())
