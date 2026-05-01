@@ -390,7 +390,7 @@ namespace grid_image_viewer
                             // 読み込み失敗＆現在見えている要素の場合、リトライを実行
                             item.RetryCount++;
                             item.IsLoading = true;
-                            _ = Task.Run(() => LoadSingleThumbnailAsync(item, _gridDecodeSize, _gridCts.Token));
+                            _ = Task.Run(() => LoadSingleThumbnailAsync(item, _gridDecodeSize, _gridCts?.Token ?? CancellationToken.None));
                         }
                     }
                 }

@@ -84,7 +84,7 @@ namespace grid_image_viewer
 
             try
             {
-                var (pixelBytes, w, h) = await Task.Run(() =>
+                var (pixelBytes, w, h) = await Task.Run<(byte[]? pixelBytes, int w, int h)>(() =>
                 {
                     lock (this)
                     {
