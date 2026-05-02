@@ -9,6 +9,8 @@ using Microsoft.UI.Xaml.Input;
 using SkiaSharp;
 using Windows.Storage;
 using Windows.System;
+using Windows.UI;
+using Microsoft.UI.Xaml.Media;
 
 namespace grid_image_viewer
 {
@@ -288,20 +290,53 @@ namespace grid_image_viewer
             }
         }
 
-        private TextBox CreateKeyBindingTextBox(string header, VirtualKey currentKey, Action<VirtualKey> updateAction)
+        private UIElement CreateKeyBindingRow(string header, KeyBindingData binding)
         {
-            var tb = new TextBox { Header = header, Text = currentKey.ToString(), IsReadOnly = true };
+            var stack = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 16, 0) };
+            stack.Children.Add(new TextBlock { Text = header, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 170, 170, 170)), Margin = new Thickness(0, 8, 0, 2) });
+            
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Key
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Ctrl
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Shift
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Alt
+            
+            var tb = new TextBox { Text = binding.Key.ToString(), IsReadOnly = true, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 12, 0), Background = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 255, 255, 255)) };
             tb.PreviewKeyDown += (s, e) =>
             {
                 var key = e.Key;
                 if (key != VirtualKey.Control && key != VirtualKey.Shift && key != VirtualKey.Menu)
                 {
                     tb.Text = key.ToString();
-                    updateAction(key);
+                    binding.Key = key;
                 }
                 e.Handled = true;
             };
-            return tb;
+            
+            var cbCtrl = new CheckBox { Content = "Ctrl", IsChecked = binding.Ctrl, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+            cbCtrl.Checked += (s, e) => binding.Ctrl = true;
+            cbCtrl.Unchecked += (s, e) => binding.Ctrl = false;
+            
+            var cbShift = new CheckBox { Content = "Shift", IsChecked = binding.Shift, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+            cbShift.Checked += (s, e) => binding.Shift = true;
+            cbShift.Unchecked += (s, e) => binding.Shift = false;
+            
+            var cbAlt = new CheckBox { Content = "Alt", IsChecked = binding.Alt, VerticalAlignment = VerticalAlignment.Center };
+            cbAlt.Checked += (s, e) => binding.Alt = true;
+            cbAlt.Unchecked += (s, e) => binding.Alt = false;
+
+            Grid.SetColumn(tb, 0);
+            Grid.SetColumn(cbCtrl, 1);
+            Grid.SetColumn(cbShift, 2);
+            Grid.SetColumn(cbAlt, 3);
+            
+            grid.Children.Add(tb);
+            grid.Children.Add(cbCtrl);
+            grid.Children.Add(cbShift);
+            grid.Children.Add(cbAlt);
+            
+            stack.Children.Add(grid);
+            return stack;
         }
 
         public async void MenuKeyBindings_Click(object sender, RoutedEventArgs e)
@@ -312,30 +347,37 @@ namespace grid_image_viewer
                 PrimaryButtonText = "Save",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = _window.Content.XamlRoot
+                XamlRoot = _window.Content.XamlRoot,
+                RequestedTheme = ElementTheme.Dark
             };
 
-            var stackPanel = new StackPanel { Spacing = 10 };
+            var stackPanel = new StackPanel { Spacing = 10, Padding = new Thickness(0, 0, 0, 20), MinWidth = 480 };
             
-            var tempNextImage = _settings.KeyNextImage;
-            var tempPrevImage = _settings.KeyPrevImage;
-            var tempNextFolder = _settings.KeyNextFolder;
-            var tempPrevFolder = _settings.KeyPrevFolder;
-            var tempToggleManga = _settings.KeyToggleManga;
-            var tempExit = _settings.KeyExit;
-            var tempToggleGrid = _settings.KeyToggleGrid;
-            var tempSlideshow = _settings.KeySlideshow;
+            var tempNextImage = _settings.KeyNextImage.Clone();
+            var tempPrevImage = _settings.KeyPrevImage.Clone();
+            var tempNextFolder = _settings.KeyNextFolder.Clone();
+            var tempPrevFolder = _settings.KeyPrevFolder.Clone();
+            var tempToggleManga = _settings.KeyToggleManga.Clone();
+            var tempExit = _settings.KeyExit.Clone();
+            var tempToggleGrid = _settings.KeyToggleGrid.Clone();
+            var tempSlideshow = _settings.KeySlideshow.Clone();
 
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Next Image", tempNextImage, k => tempNextImage = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Image", tempPrevImage, k => tempPrevImage = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Next Folder", tempNextFolder, k => tempNextFolder = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Previous Folder", tempPrevFolder, k => tempPrevFolder = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Manga Mode (Requires Ctrl)", tempToggleManga, k => tempToggleManga = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Grid Mode", tempToggleGrid, k => tempToggleGrid = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Toggle Slideshow", tempSlideshow, k => tempSlideshow = k));
-            stackPanel.Children.Add(CreateKeyBindingTextBox("Exit App", tempExit, k => tempExit = k));
+            stackPanel.Children.Add(CreateKeyBindingRow("Next Image", tempNextImage));
+            stackPanel.Children.Add(CreateKeyBindingRow("Previous Image", tempPrevImage));
+            stackPanel.Children.Add(CreateKeyBindingRow("Next Folder", tempNextFolder));
+            stackPanel.Children.Add(CreateKeyBindingRow("Previous Folder", tempPrevFolder));
+            stackPanel.Children.Add(CreateKeyBindingRow("Toggle Manga Mode", tempToggleManga));
+            stackPanel.Children.Add(CreateKeyBindingRow("Toggle Grid Mode", tempToggleGrid));
+            stackPanel.Children.Add(CreateKeyBindingRow("Toggle Slideshow", tempSlideshow));
+            stackPanel.Children.Add(CreateKeyBindingRow("Exit App", tempExit));
 
-            dialog.Content = stackPanel;
+            dialog.Content = new ScrollViewer 
+            { 
+                Content = stackPanel, 
+                MaxHeight = 500, 
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
 
             _window.IsDialogOpen = true;
             var resultKb = await dialog.ShowAsync();

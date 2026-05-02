@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using System.IO;
+using Windows.System;
 
 namespace grid_image_viewer
 {
@@ -22,14 +23,23 @@ namespace grid_image_viewer
             _settings = settings;
         }
 
+        private bool IsMatch(KeyBindingData binding, VirtualKey key, bool ctrl, bool shift, bool alt)
+        {
+            return binding.Key == key && binding.Ctrl == ctrl && binding.Shift == shift && binding.Alt == alt;
+        }
+
         public void HandleKeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (_window.IsDialogOpen) return;
 
-            if (_window.SlideshowManager.IsSlideshowRunning && e.Key != _settings.KeySlideshow)
+            bool isCtrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool isShift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            bool isAlt = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+            if (_window.SlideshowManager.IsSlideshowRunning && !IsMatch(_settings.KeySlideshow, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.SlideshowManager.StopSlideshow();
-                if (e.Key == _settings.KeyExit)
+                if (IsMatch(_settings.KeyExit, e.Key, isCtrl, isShift, isAlt))
                 {
                     if (_window.AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
                     {
@@ -41,17 +51,14 @@ namespace grid_image_viewer
                 }
             }
 
-            bool isCtrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-            bool isShift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-            if (e.Key == _settings.KeySlideshow)
+            if (IsMatch(_settings.KeySlideshow, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.SlideshowManager.OpenSlideshowDialogAsync();
                 e.Handled = true;
                 return;
             }
 
-            if (e.Key == _settings.KeyToggleManga && isCtrl)
+            if (IsMatch(_settings.KeyToggleManga, e.Key, isCtrl, isShift, isAlt))
             {
                 _settings.MangaSplitCount = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
                 _settings.SaveMangaMode();
@@ -60,7 +67,7 @@ namespace grid_image_viewer
                 return;
             }
 
-            if (e.Key == _settings.KeyToggleGrid)
+            if (IsMatch(_settings.KeyToggleGrid, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.IsGridMode = !_window.IsGridMode;
                 _ = _window.UpdateDisplayAsync();
@@ -68,7 +75,7 @@ namespace grid_image_viewer
                 return;
             }
 
-            if (e.Key == _settings.KeyExit)
+            if (IsMatch(_settings.KeyExit, e.Key, isCtrl, isShift, isAlt))
             {
                 if (_window.AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
                 {
@@ -156,22 +163,22 @@ namespace grid_image_viewer
                 return;
             }
 
-            if (e.Key == _settings.KeyPrevImage)
+            if (IsMatch(_settings.KeyPrevImage, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.Navigate(-1, isShift);
                 e.Handled = true;
             }
-            else if (e.Key == _settings.KeyNextImage)
+            else if (IsMatch(_settings.KeyNextImage, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.Navigate(1, isShift);
                 e.Handled = true;
             }
-            else if (e.Key == _settings.KeyPrevFolder)
+            else if (IsMatch(_settings.KeyPrevFolder, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.NavigateFolder(-1);
                 e.Handled = true;
             }
-            else if (e.Key == _settings.KeyNextFolder)
+            else if (IsMatch(_settings.KeyNextFolder, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.NavigateFolder(1);
                 e.Handled = true;

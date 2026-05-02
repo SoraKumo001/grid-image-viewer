@@ -100,12 +100,15 @@ namespace grid_image_viewer
             try
             {
                 int splitCount = _settings.MangaSplitCount;
+                int remaining = _window.Playlist.Count - _window.CurrentIndex;
+                int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+
                 // Layout Configuration
                 int currentQuadLayout = GetEffectiveQuadLayout();
-                UpdateLayoutGrid(splitCount, currentQuadLayout);
+                UpdateLayoutGrid(splitCount, effectiveSplitCount, currentQuadLayout);
 
                 var loadTasks = new List<Task>();
-                for (int i = 0; i < splitCount; i++)
+                for (int i = 0; i < effectiveSplitCount; i++)
                 {
                     int indexToLoad = -1;
                     if (i == 0) indexToLoad = _window.CurrentIndex;
@@ -128,13 +131,6 @@ namespace grid_image_viewer
                     {
                         loadTasks.Add(LoadPageAsync(_window.Playlist[indexToLoad], _pageImages[i], _pageCanvases[i], _pageLoadingRings[i], i, token));
                     }
-                    else
-                    {
-                        _pageImages[i].Source = null;
-                        _pages[i].Reset();
-                        _pageCanvases[i].Invalidate();
-                        _pageLoadingRings[i].IsActive = false;
-                    }
                 }
 
                 try
@@ -146,7 +142,7 @@ namespace grid_image_viewer
                     return;
                 }
                 
-                for (int i = splitCount; i < 4; i++) {
+                for (int i = effectiveSplitCount; i < 4; i++) {
                      _pageImages[i].Source = null;
                      _pages[i].Reset();
                      _pageCanvases[i].Invalidate();
@@ -163,9 +159,12 @@ namespace grid_image_viewer
             }
         }
 
-        private void UpdateLayoutGrid(int splitCount, int currentQuadLayout)
+        private void UpdateLayoutGrid(int splitCount, int effectiveSplitCount, int currentQuadLayout)
         {
-            if (splitCount == 1)
+            // Reset vertical alignment for all
+            for (int i = 0; i < 4; i++) _pageImages[i].VerticalAlignment = VerticalAlignment.Center;
+
+            if (effectiveSplitCount == 1)
             {
                 _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                 _window.Col1.Width = new GridLength(0); _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
@@ -178,12 +177,8 @@ namespace grid_image_viewer
                 _window.PageGrid3.Visibility = Visibility.Collapsed;
                 _window.PageGrid4.Visibility = Visibility.Collapsed;
                 _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
-                _window.Image1.VerticalAlignment = VerticalAlignment.Center;
-                _window.Image2.VerticalAlignment = VerticalAlignment.Center;
-                _window.Image3.VerticalAlignment = VerticalAlignment.Center;
-                _window.Image4.VerticalAlignment = VerticalAlignment.Center;
             }
-            else if (splitCount == 2)
+            else if (effectiveSplitCount == 2)
             {
                 _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                 _window.Col1.Width = new GridLength(1, GridUnitType.Star);
@@ -201,12 +196,51 @@ namespace grid_image_viewer
                 _window.PageGrid4.Visibility = Visibility.Collapsed;
                 _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
                 _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
-                _window.Image1.VerticalAlignment = VerticalAlignment.Center;
-                _window.Image2.VerticalAlignment = VerticalAlignment.Center;
-                _window.Image3.VerticalAlignment = VerticalAlignment.Center;
-                _window.Image4.VerticalAlignment = VerticalAlignment.Center;
             }
-            else if (splitCount == 4)
+            else if (effectiveSplitCount == 3)
+            {
+                _window.PageGrid1.Visibility = Visibility.Visible;
+                _window.PageGrid2.Visibility = Visibility.Visible;
+                _window.PageGrid3.Visibility = Visibility.Visible;
+                _window.PageGrid4.Visibility = Visibility.Collapsed;
+
+                if (currentQuadLayout == 2) // Grid mode (1 top, 2 bottom)
+                {
+                    _window.Col0.Width = new GridLength(1, GridUnitType.Star);
+                    _window.Col1.Width = new GridLength(1, GridUnitType.Star);
+                    _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
+                    _window.Row0.Height = new GridLength(1, GridUnitType.Star);
+                    _window.Row1.Height = new GridLength(1, GridUnitType.Star);
+
+                    Grid.SetColumn(_window.PageGrid1, 0); Grid.SetRow(_window.PageGrid1, 0);
+                    Grid.SetColumnSpan(_window.PageGrid1, 2); Grid.SetRowSpan(_window.PageGrid1, 1);
+                    Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 1);
+                    Grid.SetColumnSpan(_window.PageGrid2, 1); Grid.SetRowSpan(_window.PageGrid2, 1);
+                    Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 1);
+                    Grid.SetColumnSpan(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1);
+
+                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center; _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;   _window.Image2.VerticalAlignment = VerticalAlignment.Top;
+                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;  _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                }
+                else // Horizontal 1x3
+                {
+                    _window.Col0.Width = new GridLength(1, GridUnitType.Star);
+                    _window.Col1.Width = new GridLength(1, GridUnitType.Star);
+                    _window.Col2.Width = new GridLength(1, GridUnitType.Star);
+                    _window.Col3.Width = new GridLength(0);
+                    _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
+
+                    Grid.SetColumn(_window.PageGrid1, 2); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 2); Grid.SetColumnSpan(_window.PageGrid1, 1);
+                    Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 2); Grid.SetColumnSpan(_window.PageGrid2, 1);
+                    Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 0); Grid.SetRowSpan(_window.PageGrid3, 2); Grid.SetColumnSpan(_window.PageGrid3, 1);
+                    
+                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
+                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Center;
+                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Center;
+                }
+            }
+            else // 4
             {
                 _window.PageGrid1.Visibility = Visibility.Visible;
                 _window.PageGrid2.Visibility = Visibility.Visible;
@@ -219,11 +253,6 @@ namespace grid_image_viewer
                     _window.Image2.HorizontalAlignment = HorizontalAlignment.Center;
                     _window.Image3.HorizontalAlignment = HorizontalAlignment.Center;
                     _window.Image4.HorizontalAlignment = HorizontalAlignment.Center;
-
-                    _window.Image1.VerticalAlignment = VerticalAlignment.Center;
-                    _window.Image2.VerticalAlignment = VerticalAlignment.Center;
-                    _window.Image3.VerticalAlignment = VerticalAlignment.Center;
-                    _window.Image4.VerticalAlignment = VerticalAlignment.Center;
 
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col1.Width = new GridLength(1, GridUnitType.Star);
@@ -238,13 +267,11 @@ namespace grid_image_viewer
                 }
                 else // Grid 2x2
                 {
-                    // Align images to the center vertical line
                     _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
                     _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
                     _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
                     _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
                     
-                    // Optional: also touch vertically
                     _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
                     _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
                     _window.Image3.VerticalAlignment = VerticalAlignment.Top;
@@ -440,21 +467,30 @@ namespace grid_image_viewer
             int hAlign = 1; // Center
             int vAlign = 1; // Center
 
-            if (_settings.MangaSplitCount == 2) 
+            int remaining = _window.Playlist.Count - _window.CurrentIndex;
+            int splitCount = _settings.MangaSplitCount;
+            int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+
+            if (effectiveSplitCount == 2) 
             {
                 hAlign = index == 0 ? 0 : 2; // Index 0 (Right) -> Left-aligned, Index 1 (Left) -> Right-aligned
             } 
-            else if (_settings.MangaSplitCount == 4) 
+            else if (effectiveSplitCount == 3)
+            {
+                int layout = GetEffectiveQuadLayout();
+                if (layout == 2) // Grid mode (1 top, 2 bottom)
+                {
+                    if (index == 0) { hAlign = 1; vAlign = 2; } // Top center (Bottom-aligned)
+                    else if (index == 1) { hAlign = 2; vAlign = 0; } // Bottom right (Right/Top-aligned)
+                    else if (index == 2) { hAlign = 0; vAlign = 0; } // Bottom left (Left/Top-aligned)
+                }
+            }
+            else if (effectiveSplitCount == 4) 
             {
                 int layout = GetEffectiveQuadLayout();
 
                 if (layout == 2) // Grid 2x2
                 {
-                    // Index 0: Row 0, Col 1 (Right-Top) -> H:Left, V:Bottom
-                    // Index 1: Row 0, Col 0 (Left-Top)  -> H:Right, V:Bottom
-                    // Index 2: Row 1, Col 1 (Right-Bottom) -> H:Left, V:Top
-                    // Index 3: Row 1, Col 0 (Left-Bottom) -> H:Right, V:Top
-                    
                     hAlign = (index == 0 || index == 2) ? 0 : 2;
                     vAlign = (index == 0 || index == 1) ? 2 : 0;
                 }

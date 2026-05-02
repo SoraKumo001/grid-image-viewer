@@ -6,16 +6,49 @@ using Windows.System;
 
 namespace grid_image_viewer
 {
+    public class KeyBindingData
+    {
+        public VirtualKey Key { get; set; }
+        public bool Ctrl { get; set; }
+        public bool Shift { get; set; }
+        public bool Alt { get; set; }
+
+        public KeyBindingData() { }
+        public KeyBindingData(VirtualKey key, bool ctrl = false, bool shift = false, bool alt = false)
+        {
+            Key = key;
+            Ctrl = ctrl;
+            Shift = shift;
+            Alt = alt;
+        }
+
+        public KeyBindingData Clone() => new KeyBindingData(Key, Ctrl, Shift, Alt);
+    }
+
+
+
+
+
     public class SettingsData
     {
-        public VirtualKey KeyNextImage { get; set; } = VirtualKey.Space;
-        public VirtualKey KeyPrevImage { get; set; } = VirtualKey.Back;
-        public VirtualKey KeyNextFolder { get; set; } = VirtualKey.Down;
-        public VirtualKey KeyPrevFolder { get; set; } = VirtualKey.Up;
-        public VirtualKey KeyToggleManga { get; set; } = VirtualKey.G;
-        public VirtualKey KeyExit { get; set; } = VirtualKey.Escape;
-        public VirtualKey KeyToggleGrid { get; set; } = VirtualKey.Enter;
-        public VirtualKey KeySlideshow { get; set; } = VirtualKey.A;
+        public KeyBindingData KeyNextImage { get; set; } = new KeyBindingData(VirtualKey.Space);
+        public KeyBindingData KeyPrevImage { get; set; } = new KeyBindingData(VirtualKey.Back);
+        public KeyBindingData KeyNextFolder { get; set; } = new KeyBindingData(VirtualKey.Down);
+        public KeyBindingData KeyPrevFolder { get; set; } = new KeyBindingData(VirtualKey.Up);
+        public KeyBindingData KeyToggleManga { get; set; } = new KeyBindingData(VirtualKey.G, ctrl: true);
+        public KeyBindingData KeyExit { get; set; } = new KeyBindingData(VirtualKey.Escape);
+        public KeyBindingData KeyToggleGrid { get; set; } = new KeyBindingData(VirtualKey.Enter);
+        public KeyBindingData KeySlideshow { get; set; } = new KeyBindingData(VirtualKey.A);
+
+        // Legacy properties for migration
+        public VirtualKey? LegacyKeyNextImage { get; set; }
+        public VirtualKey? LegacyKeyPrevImage { get; set; }
+        public VirtualKey? LegacyKeyNextFolder { get; set; }
+        public VirtualKey? LegacyKeyPrevFolder { get; set; }
+        public VirtualKey? LegacyKeyToggleManga { get; set; }
+        public VirtualKey? LegacyKeyExit { get; set; }
+        public VirtualKey? LegacyKeyToggleGrid { get; set; }
+        public VirtualKey? LegacyKeySlideshow { get; set; }
 
         public int MangaSplitCount { get; set; } = 1; // 1, 2, or 4
         public int QuadLayoutMode { get; set; } = 0; // 0: Auto, 1: Horizontal, 2: 2x2 Grid
@@ -39,14 +72,14 @@ namespace grid_image_viewer
         private readonly string _settingsFilePath;
         private SettingsData _data;
 
-        public VirtualKey KeyNextImage { get => _data.KeyNextImage; set => _data.KeyNextImage = value; }
-        public VirtualKey KeyPrevImage { get => _data.KeyPrevImage; set => _data.KeyPrevImage = value; }
-        public VirtualKey KeyNextFolder { get => _data.KeyNextFolder; set => _data.KeyNextFolder = value; }
-        public VirtualKey KeyPrevFolder { get => _data.KeyPrevFolder; set => _data.KeyPrevFolder = value; }
-        public VirtualKey KeyToggleManga { get => _data.KeyToggleManga; set => _data.KeyToggleManga = value; }
-        public VirtualKey KeyExit { get => _data.KeyExit; set => _data.KeyExit = value; }
-        public VirtualKey KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
-        public VirtualKey KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
+        public KeyBindingData KeyNextImage { get => _data.KeyNextImage; set => _data.KeyNextImage = value; }
+        public KeyBindingData KeyPrevImage { get => _data.KeyPrevImage; set => _data.KeyPrevImage = value; }
+        public KeyBindingData KeyNextFolder { get => _data.KeyNextFolder; set => _data.KeyNextFolder = value; }
+        public KeyBindingData KeyPrevFolder { get => _data.KeyPrevFolder; set => _data.KeyPrevFolder = value; }
+        public KeyBindingData KeyToggleManga { get => _data.KeyToggleManga; set => _data.KeyToggleManga = value; }
+        public KeyBindingData KeyExit { get => _data.KeyExit; set => _data.KeyExit = value; }
+        public KeyBindingData KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
+        public KeyBindingData KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
@@ -79,6 +112,16 @@ namespace grid_image_viewer
                 {
                     string json = File.ReadAllText(_settingsFilePath);
                     _data = JsonSerializer.Deserialize<SettingsData>(json) ?? new SettingsData();
+
+                    // Migrate legacy key bindings
+                    if (_data.LegacyKeyNextImage.HasValue) { _data.KeyNextImage = new KeyBindingData(_data.LegacyKeyNextImage.Value); _data.LegacyKeyNextImage = null; }
+                    if (_data.LegacyKeyPrevImage.HasValue) { _data.KeyPrevImage = new KeyBindingData(_data.LegacyKeyPrevImage.Value); _data.LegacyKeyPrevImage = null; }
+                    if (_data.LegacyKeyNextFolder.HasValue) { _data.KeyNextFolder = new KeyBindingData(_data.LegacyKeyNextFolder.Value); _data.LegacyKeyNextFolder = null; }
+                    if (_data.LegacyKeyPrevFolder.HasValue) { _data.KeyPrevFolder = new KeyBindingData(_data.LegacyKeyPrevFolder.Value); _data.LegacyKeyPrevFolder = null; }
+                    if (_data.LegacyKeyToggleManga.HasValue) { _data.KeyToggleManga = new KeyBindingData(_data.LegacyKeyToggleManga.Value, ctrl: true); _data.LegacyKeyToggleManga = null; }
+                    if (_data.LegacyKeyExit.HasValue) { _data.KeyExit = new KeyBindingData(_data.LegacyKeyExit.Value); _data.LegacyKeyExit = null; }
+                    if (_data.LegacyKeyToggleGrid.HasValue) { _data.KeyToggleGrid = new KeyBindingData(_data.LegacyKeyToggleGrid.Value); _data.LegacyKeyToggleGrid = null; }
+                    if (_data.LegacyKeySlideshow.HasValue) { _data.KeySlideshow = new KeyBindingData(_data.LegacyKeySlideshow.Value); _data.LegacyKeySlideshow = null; }
                 }
             }
             catch
