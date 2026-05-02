@@ -21,7 +21,7 @@ namespace grid_image_viewer
     public static class FileNavigator
     {
         private static readonly HashSet<string> ImageExtensions = new HashSet<string>(
-            new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" }, 
+            new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" },
             StringComparer.OrdinalIgnoreCase);
 
         public static string? FindNextImageFolder(string currentPath, int offset)
@@ -45,25 +45,26 @@ namespace grid_image_viewer
                 }
                 catch { }
             }
-            
+
             return null;
         }
 
         private static string? GetNextNodeDFS(string current)
         {
-            try 
+            try
             {
                 var dirs = Directory.GetDirectories(current).OrderBy(d => d, new NaturalStringComparer()).ToArray();
                 if (dirs.Length > 0) return dirs[0];
-            } catch {}
+            }
+            catch { }
 
             string node = current;
-            while(true)
+            while (true)
             {
                 var parent = Directory.GetParent(node);
                 if (parent == null) return null;
 
-                try 
+                try
                 {
                     var siblings = parent.GetDirectories().Select(d => d.FullName).OrderBy(d => d, new NaturalStringComparer()).ToList();
                     int idx = siblings.FindIndex(d => string.Equals(d, node, StringComparison.OrdinalIgnoreCase));
@@ -71,8 +72,9 @@ namespace grid_image_viewer
                     {
                         return siblings[idx + 1];
                     }
-                } catch {}
-                
+                }
+                catch { }
+
                 node = parent.FullName;
             }
         }
@@ -82,21 +84,23 @@ namespace grid_image_viewer
             var parent = Directory.GetParent(current);
             if (parent == null) return null;
 
-            try 
+            try
             {
                 var siblings = parent.GetDirectories().Select(d => d.FullName).OrderBy(d => d, new NaturalStringComparer()).ToList();
                 int idx = siblings.FindIndex(d => string.Equals(d, current, StringComparison.OrdinalIgnoreCase));
                 if (idx > 0)
                 {
                     string node = siblings[idx - 1];
-                    while(true)
+                    while (true)
                     {
-                        try 
+                        try
                         {
                             var children = Directory.GetDirectories(node).OrderBy(d => d, new NaturalStringComparer()).ToArray();
                             if (children.Length == 0) return node;
                             node = children[children.Length - 1];
-                        } catch {
+                        }
+                        catch
+                        {
                             return node;
                         }
                     }
@@ -105,8 +109,9 @@ namespace grid_image_viewer
                 {
                     return parent.FullName;
                 }
-            } catch {}
-            
+            }
+            catch { }
+
             return parent.FullName;
         }
     }

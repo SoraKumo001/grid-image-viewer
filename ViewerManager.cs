@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.Windows.ApplicationModel.Resources;
 using SkiaSharp;
 using SkiaSharp.Views.Windows;
 using System;
@@ -10,8 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
-using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -22,6 +19,9 @@ namespace grid_image_viewer
 
         private PageRenderer[] _pages = new PageRenderer[] { new PageRenderer(), new PageRenderer(), new PageRenderer(), new PageRenderer() };
         private Grid[] _pageGrids;
+        private Grid[] _prevContainers;
+        private Grid[] _currentContainers;
+        private Microsoft.UI.Xaml.Controls.Image[] _prevImages;
         private Microsoft.UI.Xaml.Controls.Image[] _pageImages;
         private SkiaSharp.Views.Windows.SKXamlCanvas[] _pageCanvases;
         private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
@@ -30,12 +30,18 @@ namespace grid_image_viewer
         private CancellationTokenSource? _displayCts;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
+        private Dictionary<string, SKBitmap> _imageCache = new Dictionary<string, SKBitmap>();
+        private const int MAX_CACHE_SIZE = 20;
+
         public ViewerManager(MainWindow window, SettingsManager settings)
         {
             _window = window;
             _settings = settings;
 
             _pageGrids = new Grid[] { _window.PageGrid1, _window.PageGrid2, _window.PageGrid3, _window.PageGrid4 };
+            _prevContainers = new Grid[] { _window.PrevContainer1, _window.PrevContainer2, _window.PrevContainer3, _window.PrevContainer4 };
+            _currentContainers = new Grid[] { _window.CurrentContainer1, _window.CurrentContainer2, _window.CurrentContainer3, _window.CurrentContainer4 };
+            _prevImages = new Microsoft.UI.Xaml.Controls.Image[] { _window.Image1_Prev, _window.Image2_Prev, _window.Image3_Prev, _window.Image4_Prev };
             _pageImages = new Microsoft.UI.Xaml.Controls.Image[] { _window.Image1, _window.Image2, _window.Image3, _window.Image4 };
             _pageCanvases = new SkiaSharp.Views.Windows.SKXamlCanvas[] { _window.Canvas1, _window.Canvas2, _window.Canvas3, _window.Canvas4 };
             _pageLoadingRings = new Microsoft.UI.Xaml.Controls.ProgressRing[] { _window.LoadingRing1, _window.LoadingRing2, _window.LoadingRing3, _window.LoadingRing4 };
@@ -65,7 +71,7 @@ namespace grid_image_viewer
                 _window.ImageGridView.Visibility = Visibility.Visible;
                 StopAnimation();
                 _window.GridManager.StartGridAnimation();
-                
+
                 _window.ImageGridView.SelectedIndex = _window.CurrentIndex;
                 _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
                 _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
@@ -119,9 +125,9 @@ namespace grid_image_viewer
                     {
                         if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
                         {
-                            if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1) 
+                            if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1)
                                 indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
-                            else if (_window.CurrentIndex + i < _window.Playlist.Count) 
+                            else if (_window.CurrentIndex + i < _window.Playlist.Count)
                                 indexToLoad = _window.CurrentIndex + i;
                         }
                         else if (_window.CurrentIndex + i < _window.Playlist.Count)
@@ -144,13 +150,16 @@ namespace grid_image_viewer
                 {
                     return;
                 }
-                
-                for (int i = effectiveSplitCount; i < 4; i++) {
-                     _pageImages[i].Source = null;
-                     _pages[i].Reset();
-                     _pageCanvases[i].Invalidate();
-                     _pageLoadingRings[i].IsActive = false;
+
+                for (int i = effectiveSplitCount; i < 4; i++)
+                {
+                    _pageImages[i].Source = null;
+                    _pages[i].Reset();
+                    _pageCanvases[i].Invalidate();
+                    _pageLoadingRings[i].IsActive = false;
                 }
+
+                _ = PreloadAroundAsync();
             }
             finally
             {
@@ -178,7 +187,7 @@ namespace grid_image_viewer
                 _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                 _window.Col1.Width = new GridLength(0); _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
                 _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
-                
+
                 Grid.SetColumn(_window.PageGrid1, 0); Grid.SetRow(_window.PageGrid1, 0);
                 Grid.SetColumnSpan(_window.PageGrid1, 4); Grid.SetRowSpan(_window.PageGrid1, 2);
                 _window.PageGrid1.Visibility = Visibility.Visible;
@@ -198,7 +207,7 @@ namespace grid_image_viewer
                 Grid.SetColumnSpan(_window.PageGrid1, 1); Grid.SetRowSpan(_window.PageGrid1, 2);
                 Grid.SetColumn(_window.PageGrid2, 0); Grid.SetRow(_window.PageGrid2, 0);
                 Grid.SetColumnSpan(_window.PageGrid2, 1); Grid.SetRowSpan(_window.PageGrid2, 2);
-                
+
                 _window.PageGrid1.Visibility = Visibility.Visible;
                 _window.PageGrid2.Visibility = Visibility.Visible;
                 _window.PageGrid3.Visibility = Visibility.Collapsed;
@@ -235,8 +244,8 @@ namespace grid_image_viewer
                     if (!uniformToFill)
                     {
                         _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;   _window.Image2.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;  _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Left; _window.Image2.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Right; _window.Image3.VerticalAlignment = VerticalAlignment.Top;
                     }
                 }
                 else // Horizontal 1x3
@@ -292,7 +301,7 @@ namespace grid_image_viewer
                         _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
                         _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
                         _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
-                        
+
                         _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
                         _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
                         _window.Image3.VerticalAlignment = VerticalAlignment.Top;
@@ -302,10 +311,86 @@ namespace grid_image_viewer
             }
         }
 
+
+        private async Task PreloadAroundAsync()
+        {
+            var items = _window.Playlist;
+            if (items.Count == 0) return;
+
+            var indicesToPreload = new List<int>();
+            int splitCount = _settings.MangaSplitCount;
+
+            for (int i = 1; i <= 2 * splitCount; i++)
+            {
+                int idx = (_window.CurrentIndex + splitCount + i) % items.Count;
+                if (idx < 0) idx += items.Count;
+                indicesToPreload.Add(idx);
+            }
+            int prevIdx = (_window.CurrentIndex - splitCount) % items.Count;
+            if (prevIdx < 0) prevIdx += items.Count;
+            indicesToPreload.Add(prevIdx);
+
+            foreach (var idx in indicesToPreload)
+            {
+                var path = items[idx];
+                lock (_imageCache) { if (_imageCache.ContainsKey(path)) continue; }
+
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        using var stream = System.IO.File.OpenRead(path);
+                        using var managedStream = new SKManagedStream(stream);
+                        var bitmap = SKBitmap.Decode(managedStream);
+                        if (bitmap != null)
+                        {
+                            lock (_imageCache)
+                            {
+                                if (_imageCache.Count >= MAX_CACHE_SIZE)
+                                {
+                                    var firstKey = _imageCache.Keys.First();
+                                    _imageCache[firstKey].Dispose();
+                                    _imageCache.Remove(firstKey);
+                                }
+                                _imageCache[path] = bitmap;
+                            }
+                        }
+                    }
+                    catch { }
+                });
+            }
+        }
+
         private async Task LoadPageAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, int pageIndex, CancellationToken token)
         {
+            if (imageCtrl.Visibility == Visibility.Visible && imageCtrl.Source != null)
+            {
+                _prevImages[pageIndex].Source = imageCtrl.Source;
+            }
+            else if (canvasCtrl.Visibility == Visibility.Visible && _pages[pageIndex].Bitmap != null)
+            {
+                try
+                {
+                    using var ms = new System.IO.MemoryStream();
+                    _pages[pageIndex].Bitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
+                    ms.Position = 0;
+                    var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                    _prevImages[pageIndex].Source = bitmapImage;
+                }
+                catch { _prevImages[pageIndex].Source = null; }
+            }
+            else
+            {
+                _prevImages[pageIndex].Source = null;
+            }
+
+            _prevContainers[pageIndex].Opacity = 1;
+            _currentContainers[pageIndex].Opacity = 0;
+
             _pages[pageIndex].CurrentFilePath = filePath;
             loadingRing.IsActive = true;
+
             try
             {
                 var ext = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
@@ -316,88 +401,56 @@ namespace grid_image_viewer
                     imageCtrl.Visibility = Visibility.Collapsed;
                     canvasCtrl.Visibility = Visibility.Visible;
 
-                    try
-                    {
-                        var page = _pages[pageIndex];
-                        await Task.Run(() =>
-                        {
-                            if (token.IsCancellationRequested) return;
-                            page.LoadSkia(filePath, token);
-                            
-                            if (!token.IsCancellationRequested)
-                            {
-                                _window.DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
-                            }
-                        }, token);
-                    }
-                    catch { }
+                    await Task.Run(() => _pages[pageIndex].LoadSkia(filePath, token));
+                    canvasCtrl.Invalidate();
                 }
                 else
                 {
                     canvasCtrl.Visibility = Visibility.Collapsed;
                     imageCtrl.Visibility = Visibility.Visible;
 
-                    bool nativeDecodeFailed = false;
-                    try
+                    SKBitmap? cachedBitmap = null;
+                    lock (_imageCache) { _imageCache.TryGetValue(filePath, out cachedBitmap); }
+
+                    if (cachedBitmap != null)
                     {
-                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                        if (token.IsCancellationRequested) return;
-
-                        using var stream = await file.OpenReadAsync();
-                        if (token.IsCancellationRequested) return;
-
+                        using var ms = new System.IO.MemoryStream();
+                        cachedBitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
+                        ms.Position = 0;
                         var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                        await bitmapImage.SetSourceAsync(stream);
-                        
-                        if (!token.IsCancellationRequested)
-                        {
-                            imageCtrl.Source = bitmapImage;
-                        }
+                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                        imageCtrl.Source = bitmapImage;
                     }
-                    catch { nativeDecodeFailed = true; }
-
-                    if (nativeDecodeFailed)
+                    else
                     {
-                        var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
-                        if (bmpBytes != null)
+                        bool nativeDecodeFailed = false;
+                        try
                         {
-                            try
+                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                            if (token.IsCancellationRequested) return;
+                            using var stream = await file.OpenReadAsync();
+                            var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                            await bitmapImage.SetSourceAsync(stream);
+                            if (!token.IsCancellationRequested) imageCtrl.Source = bitmapImage;
+                        }
+                        catch { nativeDecodeFailed = true; }
+
+                        if (nativeDecodeFailed)
+                        {
+                            var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
+                            if (bmpBytes != null)
                             {
                                 var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                                 using var ms = new System.IO.MemoryStream(bmpBytes);
                                 await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                                
-                                if (!token.IsCancellationRequested)
-                                {
-                                    imageCtrl.Source = bitmapImage;
-                                }
+                                if (!token.IsCancellationRequested) imageCtrl.Source = bitmapImage;
                             }
-                            catch { }
-                        }
-                        else
-                        {
-                            imageCtrl.Visibility = Visibility.Collapsed;
-                            canvasCtrl.Visibility = Visibility.Visible;
-
-                            try
-                            {
-                                var page = _pages[pageIndex];
-                                await Task.Run(() =>
-                                {
-                                    if (token.IsCancellationRequested) return;
-                                    page.LoadSkia(filePath, token);
-                                    
-                                    if (!token.IsCancellationRequested)
-                                    {
-                                        _window.DispatcherQueue.TryEnqueue(() => canvasCtrl.Invalidate());
-                                    }
-                                }, token);
-                            }
-                            catch { }
                         }
                     }
                 }
+                StartCrossfade(pageIndex);
             }
+            catch { }
             finally
             {
                 loadingRing.IsActive = false;
@@ -412,10 +465,10 @@ namespace grid_image_viewer
 
         public void UpdateStretch()
         {
-            var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill) 
-                ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill 
+            var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill)
+                ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill
                 : Microsoft.UI.Xaml.Media.Stretch.Uniform;
-            
+
             bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
 
             for (int i = 0; i < 4; i++)
@@ -491,7 +544,7 @@ namespace grid_image_viewer
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SkiaSharp.SKColors.Transparent);
-            
+
             int hAlign = 1; // Center
             int vAlign = 1; // Center
 
@@ -499,10 +552,10 @@ namespace grid_image_viewer
             int splitCount = _settings.MangaSplitCount;
             int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
 
-            if (effectiveSplitCount == 2) 
+            if (effectiveSplitCount == 2)
             {
                 hAlign = index == 0 ? 0 : 2; // Index 0 (Right) -> Left-aligned, Index 1 (Left) -> Right-aligned
-            } 
+            }
             else if (effectiveSplitCount == 3)
             {
                 int layout = GetEffectiveQuadLayout();
@@ -513,7 +566,7 @@ namespace grid_image_viewer
                     else if (index == 2) { hAlign = 0; vAlign = 0; } // Bottom left (Left/Top-aligned)
                 }
             }
-            else if (effectiveSplitCount == 4) 
+            else if (effectiveSplitCount == 4)
             {
                 int layout = GetEffectiveQuadLayout();
 
@@ -523,7 +576,7 @@ namespace grid_image_viewer
                     vAlign = (index == 0 || index == 1) ? 2 : 0;
                 }
             }
-            
+
             _pages[index].Paint(canvas, e.Info, hAlign, vAlign);
         }
 
@@ -538,7 +591,7 @@ namespace grid_image_viewer
             {
                 string currentDir = _window.CurrentDirectory;
                 string? nextImageFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, offset));
-                
+
                 if (!string.IsNullOrEmpty(nextImageFolder))
                 {
                     _window.LoadDirectory(nextImageFolder);
@@ -553,7 +606,7 @@ namespace grid_image_viewer
 
         public void Navigate(int offset, bool forceSingleStep = false)
         {
-            for (int i=0; i<4; i++) _window.SlideshowManager.SlideshowRandomIndices[i] = -1;
+            for (int i = 0; i < 4; i++) _window.SlideshowManager.SlideshowRandomIndices[i] = -1;
             if (_window.Playlist.Count == 0) return;
 
             int step = forceSingleStep ? 1 : _settings.MangaSplitCount;
@@ -597,6 +650,35 @@ namespace grid_image_viewer
             _window.NotificationOverlay.Visibility = Visibility.Visible;
             _notificationTimer.Stop();
             _notificationTimer.Start();
+        }
+
+        private void StartCrossfade(int pageIndex)
+        {
+            var sb = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
+
+            var animIn = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(400),
+                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
+            };
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animIn, _currentContainers[pageIndex]);
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animIn, "Opacity");
+            sb.Children.Add(animIn);
+
+            var animOut = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
+            {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(400),
+                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
+            };
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animOut, _prevContainers[pageIndex]);
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animOut, "Opacity");
+            sb.Children.Add(animOut);
+
+            sb.Begin();
         }
 
         public void Dispose()

@@ -3,8 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using SkiaSharp;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -148,7 +146,7 @@ namespace grid_image_viewer
                         });
                         return;
                     }
-                    
+
                     codec?.Dispose();
                     if (token.IsCancellationRequested) { skData.Dispose(); return; }
 

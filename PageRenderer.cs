@@ -2,7 +2,6 @@ using SkiaSharp;
 using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
@@ -39,16 +38,16 @@ namespace grid_image_viewer
                 if (token.IsCancellationRequested) { data.Dispose(); return; }
 
                 var codec = SKCodec.Create(data);
-                if (codec == null) 
-                { 
-                    data.Dispose(); 
+                if (codec == null)
+                {
+                    data.Dispose();
                     var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
                     if (bmpBytes != null)
                     {
                         data = SKData.CreateCopy(bmpBytes);
                         codec = SKCodec.Create(data);
                     }
-                    if (codec == null) 
+                    if (codec == null)
                     {
                         data?.Dispose();
                         return;
@@ -109,15 +108,15 @@ namespace grid_image_viewer
                         Bitmap = new SKBitmap(imageInfo);
                         PriorFrame = -1;
                     }
-                    
+
                     if (PriorFrame == -1 || CurrentFrame == 0)
                     {
                         Bitmap.Erase(SKColors.Transparent);
                         PriorFrame = -1;
                     }
 
-                    var options = new SKCodecOptions 
-                    { 
+                    var options = new SKCodecOptions
+                    {
                         FrameIndex = CurrentFrame,
                         PriorFrame = PriorFrame
                     };
@@ -132,14 +131,14 @@ namespace grid_image_viewer
                         scale = Math.Max((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
                     else
                         scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
-                    
+
                     float x = (info.Width - Bitmap.Width * scale) / 2;
                     if (!UniformToFill)
                     {
                         if (horizontalAlignment == 0) x = 0;
                         else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
                     }
-                    
+
                     float y = (info.Height - Bitmap.Height * scale) / 2;
                     if (!UniformToFill)
                     {

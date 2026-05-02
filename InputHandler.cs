@@ -1,14 +1,12 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.Windows.ApplicationModel.Resources;
+using System;
+using System.IO;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
-using System.IO;
 using Windows.System;
-using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -127,7 +125,7 @@ namespace grid_image_viewer
                         {
                             _window.ImageGridView.SelectedIndex = _window.GridItems.Count - 1;
                             _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
-                            
+
                             _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
                             {
                                 var container = _window.ImageGridView.ContainerFromIndex(_window.ImageGridView.SelectedIndex) as GridViewItem;
@@ -210,7 +208,7 @@ namespace grid_image_viewer
                 // Let ScrollViewer handle Zoom
                 return;
             }
-            
+
             if (_window.IsGridMode)
             {
                 if (_gridScrollViewer == null)

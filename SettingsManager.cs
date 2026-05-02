@@ -64,7 +64,7 @@ namespace grid_image_viewer
         public int WindowHeight { get; set; } = -1;
         public int WindowX { get; set; } = -1;
         public int WindowY { get; set; } = -1;
-        
+
         public string LastImagePath { get; set; } = string.Empty;
     }
 
@@ -84,7 +84,7 @@ namespace grid_image_viewer
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
-        
+
         public bool SlideshowFullscreen { get => _data.SlideshowFullscreen; set => _data.SlideshowFullscreen = value; }
         public bool SlideshowRandom { get => _data.SlideshowRandom; set => _data.SlideshowRandom = value; }
         public bool SlideshowLoop { get => _data.SlideshowLoop; set => _data.SlideshowLoop = value; }
@@ -101,7 +101,7 @@ namespace grid_image_viewer
             string appFolder = Path.Combine(appDataFolder, "grid-image-viewer");
             Directory.CreateDirectory(appFolder);
             _settingsFilePath = Path.Combine(appFolder, "settings.json");
-            
+
             _data = new SettingsData();
             LoadSettings();
         }
@@ -152,7 +152,7 @@ namespace grid_image_viewer
             {
                 appWindow.Resize(new Windows.Graphics.SizeInt32(_data.WindowWidth, _data.WindowHeight));
             }
-            
+
             if (_data.WindowX != -1 && _data.WindowY != -1)
             {
                 appWindow.Move(new Windows.Graphics.PointInt32(_data.WindowX, _data.WindowY));

@@ -1,7 +1,6 @@
-using SkiaSharp;
-using System;
-using System.IO;
 using ImageMagick;
+using SkiaSharp;
+using System.IO;
 
 namespace grid_image_viewer
 {

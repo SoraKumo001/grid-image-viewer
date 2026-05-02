@@ -63,26 +63,46 @@
                 </Grid.RowDefinitions>
 
                 <Grid x:Name="PageGrid4" x:FieldModifier="internal" Visibility="Collapsed">
-                    <Image x:Name="Image4" x:FieldModifier="internal" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas4" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas4_PaintSurface" />
+                    <Grid x:Name="PrevContainer4" x:FieldModifier="internal" IsHitTestVisible="False">
+                        <Image x:Name="Image4_Prev" x:FieldModifier="internal" Stretch="Uniform" />
+                    </Grid>
+                    <Grid x:Name="CurrentContainer4" x:FieldModifier="internal">
+                        <Image x:Name="Image4" x:FieldModifier="internal" Stretch="Uniform" />
+                        <skia:SKXamlCanvas x:Name="Canvas4" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas4_PaintSurface" />
+                    </Grid>
                     <ProgressRing x:Name="LoadingRing4" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
                 <Grid x:Name="PageGrid3" x:FieldModifier="internal" Visibility="Collapsed">
-                    <Image x:Name="Image3" x:FieldModifier="internal" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas3" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas3_PaintSurface" />
+                    <Grid x:Name="PrevContainer3" x:FieldModifier="internal" IsHitTestVisible="False">
+                        <Image x:Name="Image3_Prev" x:FieldModifier="internal" Stretch="Uniform" />
+                    </Grid>
+                    <Grid x:Name="CurrentContainer3" x:FieldModifier="internal">
+                        <Image x:Name="Image3" x:FieldModifier="internal" Stretch="Uniform" />
+                        <skia:SKXamlCanvas x:Name="Canvas3" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas3_PaintSurface" />
+                    </Grid>
                     <ProgressRing x:Name="LoadingRing3" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
                 <Grid x:Name="PageGrid2" x:FieldModifier="internal" Visibility="Collapsed">
-                    <Image x:Name="Image2" x:FieldModifier="internal" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas2" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas2_PaintSurface" />
+                    <Grid x:Name="PrevContainer2" x:FieldModifier="internal" IsHitTestVisible="False">
+                        <Image x:Name="Image2_Prev" x:FieldModifier="internal" Stretch="Uniform" />
+                    </Grid>
+                    <Grid x:Name="CurrentContainer2" x:FieldModifier="internal">
+                        <Image x:Name="Image2" x:FieldModifier="internal" Stretch="Uniform" />
+                        <skia:SKXamlCanvas x:Name="Canvas2" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas2_PaintSurface" />
+                    </Grid>
                     <ProgressRing x:Name="LoadingRing2" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
                 <Grid x:Name="PageGrid1" x:FieldModifier="internal" Visibility="Collapsed">
-                    <Image x:Name="Image1" x:FieldModifier="internal" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas1" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas1_PaintSurface" />
+                    <Grid x:Name="PrevContainer1" x:FieldModifier="internal" IsHitTestVisible="False">
+                        <Image x:Name="Image1_Prev" x:FieldModifier="internal" Stretch="Uniform" />
+                    </Grid>
+                    <Grid x:Name="CurrentContainer1" x:FieldModifier="internal">
+                        <Image x:Name="Image1" x:FieldModifier="internal" Stretch="Uniform" />
+                        <skia:SKXamlCanvas x:Name="Canvas1" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas1_PaintSurface" />
+                    </Grid>
                     <ProgressRing x:Name="LoadingRing1" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 

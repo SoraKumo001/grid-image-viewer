@@ -1,21 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
-using SkiaSharp;
 using SkiaSharp.Views.Windows;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Collections.ObjectModel;
-using System.Threading;
 
 namespace grid_image_viewer
 {
@@ -89,7 +81,7 @@ namespace grid_image_viewer
             if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
             {
                 var titleBar = appWindow.TitleBar;
-                
+
                 // Set active window colors
                 titleBar.ButtonForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
                 titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
@@ -97,7 +89,7 @@ namespace grid_image_viewer
                 titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(25, 255, 255, 255);
                 titleBar.ButtonPressedForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
                 titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(51, 255, 255, 255);
-                
+
                 // Set inactive window colors
                 titleBar.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(255, 128, 128, 128);
                 titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
@@ -127,7 +119,7 @@ namespace grid_image_viewer
             _viewerManager.Dispose();
             _gridManager.Dispose();
             foreach (var item in _gridItems) item.DisposeCodec();
-            
+
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
@@ -154,7 +146,7 @@ namespace grid_image_viewer
                 if (_playlist.Count > 0)
                 {
                     _currentIndex = string.IsNullOrEmpty(initialFile) ? 0 : Math.Max(0, _playlist.IndexOf(initialFile));
-                    
+
                     _gridItems.Clear();
                     foreach (var f in _playlist)
                     {
@@ -170,7 +162,7 @@ namespace grid_image_viewer
             }
         }
 
-        
+
         internal Task UpdateDisplayAsync() => _viewerManager.UpdateDisplayAsync();
         private void Canvas1_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => _viewerManager.PaintCanvas(0, e);
         private void Canvas2_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => _viewerManager.PaintCanvas(1, e);

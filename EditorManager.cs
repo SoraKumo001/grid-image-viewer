@@ -1,17 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
-using Windows.UI;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -71,7 +68,7 @@ namespace grid_image_viewer
                 double y = Math.Min(point.Position.Y, _selectionStart.Y);
                 double width = Math.Abs(point.Position.X - _selectionStart.X);
                 double height = Math.Abs(point.Position.Y - _selectionStart.Y);
-                
+
                 Canvas.SetLeft(_window.SelectionRectangle, x);
                 Canvas.SetTop(_window.SelectionRectangle, y);
                 _window.SelectionRectangle.Width = width;
@@ -138,7 +135,7 @@ namespace grid_image_viewer
                 picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
                 picker.FileTypeChoices.Add(targetExtension.Trim('.').ToUpper(), new List<string>() { targetExtension });
                 picker.SuggestedFileName = Path.GetFileNameWithoutExtension(sourcePath);
-                
+
                 var file = await picker.PickSaveFileAsync();
                 if (file == null) return;
                 destPath = file.Path;
@@ -153,7 +150,7 @@ namespace grid_image_viewer
                 }
 
                 await Task.Run(() => ImageProcessor.SaveImage(sourcePath, destPath, targetExtension));
-                
+
                 if (overwrite) _ = _window.UpdateDisplayAsync();
             }
             catch { }
@@ -193,13 +190,13 @@ namespace grid_image_viewer
                 if (imgW == 0 || imgH == 0) return;
 
                 FrameworkElement targetElement = _window.ViewerManager.PageImages[targetIdx];
-                
+
                 // If image is collapsed, it must be Skia mode, use Canvas instead
                 if (targetElement.Visibility != Visibility.Visible)
                 {
                     targetElement = targetIdx == 0 ? _window.Canvas1 : (targetIdx == 1 ? _window.Canvas2 : (targetIdx == 2 ? _window.Canvas3 : _window.Canvas4));
                 }
-                    
+
                 double renderRatio = targetElement.ActualWidth / targetElement.ActualHeight;
                 double imageRatio = (double)imgW / imgH;
 
@@ -343,13 +340,13 @@ namespace grid_image_viewer
         {
             var stack = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 16, 0) };
             stack.Children.Add(new TextBlock { Text = header, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 170, 170, 170)), Margin = new Thickness(0, 8, 0, 2) });
-            
+
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Key
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Ctrl
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Shift
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Alt
-            
+
             var tb = new TextBox { Text = binding.Key.ToString(), IsReadOnly = true, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 12, 0), Background = new SolidColorBrush(Windows.UI.Color.FromArgb(25, 255, 255, 255)) };
             tb.PreviewKeyDown += (s, e) =>
             {
@@ -361,15 +358,15 @@ namespace grid_image_viewer
                 }
                 e.Handled = true;
             };
-            
+
             var cbCtrl = new CheckBox { Content = "Ctrl", IsChecked = binding.Ctrl, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
             cbCtrl.Checked += (s, e) => binding.Ctrl = true;
             cbCtrl.Unchecked += (s, e) => binding.Ctrl = false;
-            
+
             var cbShift = new CheckBox { Content = "Shift", IsChecked = binding.Shift, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
             cbShift.Checked += (s, e) => binding.Shift = true;
             cbShift.Unchecked += (s, e) => binding.Shift = false;
-            
+
             var cbAlt = new CheckBox { Content = "Alt", IsChecked = binding.Alt, VerticalAlignment = VerticalAlignment.Center };
             cbAlt.Checked += (s, e) => binding.Alt = true;
             cbAlt.Unchecked += (s, e) => binding.Alt = false;
@@ -378,12 +375,12 @@ namespace grid_image_viewer
             Grid.SetColumn(cbCtrl, 1);
             Grid.SetColumn(cbShift, 2);
             Grid.SetColumn(cbAlt, 3);
-            
+
             grid.Children.Add(tb);
             grid.Children.Add(cbCtrl);
             grid.Children.Add(cbShift);
             grid.Children.Add(cbAlt);
-            
+
             stack.Children.Add(grid);
             return stack;
         }
@@ -401,7 +398,7 @@ namespace grid_image_viewer
             };
 
             var stackPanel = new StackPanel { Spacing = 10, Padding = new Thickness(0, 0, 0, 20), MinWidth = 480 };
-            
+
             var tempNextImage = _settings.KeyNextImage.Clone();
             var tempPrevImage = _settings.KeyPrevImage.Clone();
             var tempNextFolder = _settings.KeyNextFolder.Clone();
@@ -420,10 +417,10 @@ namespace grid_image_viewer
             stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleSlideshow"), tempSlideshow));
             stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_Exit"), tempExit));
 
-            dialog.Content = new ScrollViewer 
-            { 
-                Content = stackPanel, 
-                MaxHeight = 500, 
+            dialog.Content = new ScrollViewer
+            {
+                Content = stackPanel,
+                MaxHeight = 500,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto
             };

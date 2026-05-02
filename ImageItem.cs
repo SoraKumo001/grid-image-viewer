@@ -78,7 +78,7 @@ namespace grid_image_viewer
 
             int previousFrame = _priorFrameIndex;
             CurrentFrame = (CurrentFrame + 1) % FrameCount;
-            
+
             // ループして先頭に戻る場合は、ベースフレームなしで描画し直す
             if (CurrentFrame == 0) previousFrame = -1;
 
@@ -102,8 +102,8 @@ namespace grid_image_viewer
                             _animationBuffer.Erase(SKColors.Transparent);
                         }
 
-                        var options = new SKCodecOptions 
-                        { 
+                        var options = new SKCodecOptions
+                        {
                             FrameIndex = CurrentFrame,
                             PriorFrame = previousFrame
                         };

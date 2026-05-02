@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Linq;
-using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -23,7 +23,7 @@ namespace grid_image_viewer
 
             _slideshowTimer = new DispatcherTimer();
             _slideshowTimer.Tick += SlideshowTimer_Tick;
-            
+
         }
 
         public async void OpenSlideshowDialogAsync()
@@ -44,7 +44,7 @@ namespace grid_image_viewer
             SetSlideshowControlsEnabled(false);
 
             _mainWindow.SlideshowDialog.XamlRoot = _mainWindow.Content.XamlRoot;
-            
+
             _mainWindow.SlideshowDialog.Opened -= SlideshowDialog_Opened;
             _mainWindow.SlideshowDialog.Opened += SlideshowDialog_Opened;
 
