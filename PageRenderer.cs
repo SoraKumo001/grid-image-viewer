@@ -93,7 +93,8 @@ namespace grid_image_viewer
         /// <param name="canvas">描画対象のSKCanvas</param>
         /// <param name="info">キャンバスの描画情報</param>
         /// <param name="horizontalAlignment">0=Left, 1=Center, 2=Right</param>
-        public void Paint(SKCanvas canvas, SKImageInfo info, int horizontalAlignment)
+        /// <param name="verticalAlignment">0=Top, 1=Center, 2=Bottom</param>
+        public void Paint(SKCanvas canvas, SKImageInfo info, int horizontalAlignment, int verticalAlignment = 1)
         {
             lock (this)
             {
@@ -125,10 +126,14 @@ namespace grid_image_viewer
                 if (Bitmap != null)
                 {
                     float scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
+                    
                     float x = (info.Width - Bitmap.Width * scale) / 2;
                     if (horizontalAlignment == 0) x = 0;
                     else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
+                    
                     float y = (info.Height - Bitmap.Height * scale) / 2;
+                    if (verticalAlignment == 0) y = 0;
+                    else if (verticalAlignment == 2) y = info.Height - Bitmap.Height * scale;
 
                     var destRect = new SKRect(x, y, x + Bitmap.Width * scale, y + Bitmap.Height * scale);
                     canvas.DrawBitmap(Bitmap, destRect);

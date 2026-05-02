@@ -100,22 +100,8 @@ namespace grid_image_viewer
             try
             {
                 int splitCount = _settings.MangaSplitCount;
-                int currentQuadLayout = _settings.QuadLayoutMode;
-                
-                // Aspect Ratio Check for Quad Mode Auto
-                if (splitCount == 4 && currentQuadLayout == 0)
-                {
-                    try {
-                        var (w, h) = ImageProcessor.GetImageSize(_window.Playlist[_window.CurrentIndex]);
-                        if (w > 0 && h > 0) {
-                            double ratio = (double)w / h;
-                            if (ratio > 1.2) currentQuadLayout = 2; // Temporarily act as grid
-                            else currentQuadLayout = 1; 
-                        }
-                    } catch {}
-                }
-
                 // Layout Configuration
+                int currentQuadLayout = GetEffectiveQuadLayout();
                 UpdateLayoutGrid(splitCount, currentQuadLayout);
 
                 var loadTasks = new List<Task>();
@@ -192,6 +178,10 @@ namespace grid_image_viewer
                 _window.PageGrid3.Visibility = Visibility.Collapsed;
                 _window.PageGrid4.Visibility = Visibility.Collapsed;
                 _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
+                _window.Image1.VerticalAlignment = VerticalAlignment.Center;
+                _window.Image2.VerticalAlignment = VerticalAlignment.Center;
+                _window.Image3.VerticalAlignment = VerticalAlignment.Center;
+                _window.Image4.VerticalAlignment = VerticalAlignment.Center;
             }
             else if (splitCount == 2)
             {
@@ -211,6 +201,10 @@ namespace grid_image_viewer
                 _window.PageGrid4.Visibility = Visibility.Collapsed;
                 _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
                 _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                _window.Image1.VerticalAlignment = VerticalAlignment.Center;
+                _window.Image2.VerticalAlignment = VerticalAlignment.Center;
+                _window.Image3.VerticalAlignment = VerticalAlignment.Center;
+                _window.Image4.VerticalAlignment = VerticalAlignment.Center;
             }
             else if (splitCount == 4)
             {
@@ -218,13 +212,19 @@ namespace grid_image_viewer
                 _window.PageGrid2.Visibility = Visibility.Visible;
                 _window.PageGrid3.Visibility = Visibility.Visible;
                 _window.PageGrid4.Visibility = Visibility.Visible;
-                _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
-                _window.Image2.HorizontalAlignment = HorizontalAlignment.Center;
-                _window.Image3.HorizontalAlignment = HorizontalAlignment.Center;
-                _window.Image4.HorizontalAlignment = HorizontalAlignment.Center;
 
-                if (currentQuadLayout == 1 || currentQuadLayout == 0) // Horizontal
+                if (currentQuadLayout == 1 || currentQuadLayout == 0) // Horizontal 1x4
                 {
+                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
+                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Center;
+                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Center;
+                    _window.Image4.HorizontalAlignment = HorizontalAlignment.Center;
+
+                    _window.Image1.VerticalAlignment = VerticalAlignment.Center;
+                    _window.Image2.VerticalAlignment = VerticalAlignment.Center;
+                    _window.Image3.VerticalAlignment = VerticalAlignment.Center;
+                    _window.Image4.VerticalAlignment = VerticalAlignment.Center;
+
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col1.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col2.Width = new GridLength(1, GridUnitType.Star);
@@ -238,6 +238,18 @@ namespace grid_image_viewer
                 }
                 else // Grid 2x2
                 {
+                    // Align images to the center vertical line
+                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
+                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
+                    _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
+                    
+                    // Optional: also touch vertically
+                    _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                    _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
+                    _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                    _window.Image4.VerticalAlignment = VerticalAlignment.Top;
+
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col1.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
@@ -376,17 +388,79 @@ namespace grid_image_viewer
             if (anyAnimated) _animationTimer.Interval = TimeSpan.FromMilliseconds(minInterval);
         }
 
+        private int GetEffectiveQuadLayout()
+        {
+            int layout = _settings.QuadLayoutMode;
+            if (_settings.MangaSplitCount != 4 || layout != 0) return layout;
+
+            int wideCount = 0;
+            int tallCount = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int indexToLoad = -1;
+                if (i == 0) indexToLoad = _window.CurrentIndex;
+                else
+                {
+                    if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
+                    {
+                        if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                            indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
+                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
+                            indexToLoad = _window.CurrentIndex + i;
+                    }
+                    else if (_window.CurrentIndex + i < _window.Playlist.Count)
+                    {
+                        indexToLoad = _window.CurrentIndex + i;
+                    }
+                }
+
+                if (indexToLoad != -1 && indexToLoad < _window.Playlist.Count)
+                {
+                    try
+                    {
+                        var (w, h) = ImageProcessor.GetImageSize(_window.Playlist[indexToLoad]);
+                        if (w > 0 && h > 0)
+                        {
+                            if ((double)w / h > 1.2) wideCount++;
+                            else tallCount++;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            if (wideCount == 0 && tallCount == 0) return 1;
+            return wideCount >= tallCount ? 2 : 1;
+        }
+
         public void PaintCanvas(int index, SKPaintSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SkiaSharp.SKColors.Transparent);
-            int align = 1; // Center by default
-            if (_settings.MangaSplitCount == 2) {
-                align = index == 0 ? 0 : 2; // 0=Left, 2=Right
-            } else if (_settings.MangaSplitCount == 4) {
-                align = 1; // In quad mode, center is usually best unless stretching
+            
+            int hAlign = 1; // Center
+            int vAlign = 1; // Center
+
+            if (_settings.MangaSplitCount == 2) 
+            {
+                hAlign = index == 0 ? 0 : 2; // Index 0 (Right) -> Left-aligned, Index 1 (Left) -> Right-aligned
+            } 
+            else if (_settings.MangaSplitCount == 4) 
+            {
+                int layout = GetEffectiveQuadLayout();
+
+                if (layout == 2) // Grid 2x2
+                {
+                    // Index 0: Row 0, Col 1 (Right-Top) -> H:Left, V:Bottom
+                    // Index 1: Row 0, Col 0 (Left-Top)  -> H:Right, V:Bottom
+                    // Index 2: Row 1, Col 1 (Right-Bottom) -> H:Left, V:Top
+                    // Index 3: Row 1, Col 0 (Left-Bottom) -> H:Right, V:Top
+                    
+                    hAlign = (index == 0 || index == 2) ? 0 : 2;
+                    vAlign = (index == 0 || index == 1) ? 2 : 0;
+                }
             }
-            _pages[index].Paint(canvas, e.Info, align);
+            
+            _pages[index].Paint(canvas, e.Info, hAlign, vAlign);
         }
 
         public async void NavigateFolder(int offset)
