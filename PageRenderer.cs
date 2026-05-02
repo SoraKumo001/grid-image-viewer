@@ -27,47 +27,50 @@ namespace grid_image_viewer
         /// </summary>
         public void LoadSkia(string filePath, CancellationToken token)
         {
-            var bytes = File.ReadAllBytes(filePath);
-            if (token.IsCancellationRequested) return;
-
-            var data = SKData.CreateCopy(bytes);
-            if (data == null) return;
-            if (token.IsCancellationRequested) { data.Dispose(); return; }
-
-            var codec = SKCodec.Create(data);
-            if (codec == null) 
-            { 
-                data.Dispose(); 
-                var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
-                if (bmpBytes != null)
-                {
-                    data = SKData.CreateCopy(bmpBytes);
-                    codec = SKCodec.Create(data);
-                }
-                if (codec == null) 
-                {
-                    data?.Dispose();
-                    return;
-                }
-            }
-            if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
-
-            var bitmap = new SKBitmap(codec.Info);
-            int frameCount = codec.FrameCount;
-
-            Data = data;
-            Codec = codec;
-            Bitmap = bitmap;
-            FrameCount = frameCount;
-            CurrentFrame = -1;
-            PriorFrame = -1;
-
-            if (frameCount <= 1)
+            lock (this)
             {
-                var decoded = SKBitmap.Decode(codec);
-                if (decoded != null)
+                var bytes = File.ReadAllBytes(filePath);
+                if (token.IsCancellationRequested) return;
+
+                var data = SKData.CreateCopy(bytes);
+                if (data == null) return;
+                if (token.IsCancellationRequested) { data.Dispose(); return; }
+
+                var codec = SKCodec.Create(data);
+                if (codec == null) 
+                { 
+                    data.Dispose(); 
+                    var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
+                    if (bmpBytes != null)
+                    {
+                        data = SKData.CreateCopy(bmpBytes);
+                        codec = SKCodec.Create(data);
+                    }
+                    if (codec == null) 
+                    {
+                        data?.Dispose();
+                        return;
+                    }
+                }
+                if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
+
+                var bitmap = new SKBitmap(codec.Info);
+                int frameCount = codec.FrameCount;
+
+                Data = data;
+                Codec = codec;
+                Bitmap = bitmap;
+                FrameCount = frameCount;
+                CurrentFrame = -1;
+                PriorFrame = -1;
+
+                if (frameCount <= 1)
                 {
-                    Bitmap = decoded;
+                    var decoded = SKBitmap.Decode(codec);
+                    if (decoded != null)
+                    {
+                        Bitmap = decoded;
+                    }
                 }
             }
         }
@@ -92,41 +95,44 @@ namespace grid_image_viewer
         /// <param name="horizontalAlignment">0=Left, 1=Center, 2=Right</param>
         public void Paint(SKCanvas canvas, SKImageInfo info, int horizontalAlignment)
         {
-            if (Codec != null && FrameCount > 1)
+            lock (this)
             {
-                var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
-                if (Bitmap == null || Bitmap.Width != imageInfo.Width || Bitmap.Height != imageInfo.Height)
+                if (Codec != null && FrameCount > 1)
                 {
-                    Bitmap?.Dispose();
-                    Bitmap = new SKBitmap(imageInfo);
-                    PriorFrame = -1;
+                    var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
+                    if (Bitmap == null || Bitmap.Width != imageInfo.Width || Bitmap.Height != imageInfo.Height)
+                    {
+                        Bitmap?.Dispose();
+                        Bitmap = new SKBitmap(imageInfo);
+                        PriorFrame = -1;
+                    }
+                    
+                    if (PriorFrame == -1 || CurrentFrame == 0)
+                    {
+                        Bitmap.Erase(SKColors.Transparent);
+                        PriorFrame = -1;
+                    }
+
+                    var options = new SKCodecOptions 
+                    { 
+                        FrameIndex = CurrentFrame,
+                        PriorFrame = PriorFrame
+                    };
+                    Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
+                    PriorFrame = CurrentFrame;
                 }
-                
-                if (PriorFrame == -1 || CurrentFrame == 0)
+
+                if (Bitmap != null)
                 {
-                    Bitmap.Erase(SKColors.Transparent);
-                    PriorFrame = -1;
+                    float scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
+                    float x = (info.Width - Bitmap.Width * scale) / 2;
+                    if (horizontalAlignment == 0) x = 0;
+                    else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
+                    float y = (info.Height - Bitmap.Height * scale) / 2;
+
+                    var destRect = new SKRect(x, y, x + Bitmap.Width * scale, y + Bitmap.Height * scale);
+                    canvas.DrawBitmap(Bitmap, destRect);
                 }
-
-                var options = new SKCodecOptions 
-                { 
-                    FrameIndex = CurrentFrame,
-                    PriorFrame = PriorFrame
-                };
-                Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
-                PriorFrame = CurrentFrame;
-            }
-
-            if (Bitmap != null)
-            {
-                float scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
-                float x = (info.Width - Bitmap.Width * scale) / 2;
-                if (horizontalAlignment == 0) x = 0;
-                else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
-                float y = (info.Height - Bitmap.Height * scale) / 2;
-
-                var destRect = new SKRect(x, y, x + Bitmap.Width * scale, y + Bitmap.Height * scale);
-                canvas.DrawBitmap(Bitmap, destRect);
             }
         }
 
@@ -135,12 +141,15 @@ namespace grid_image_viewer
         /// </summary>
         public void Reset()
         {
-            Codec?.Dispose(); Codec = null;
-            Data?.Dispose(); Data = null;
-            Bitmap?.Dispose(); Bitmap = null;
-            FrameCount = 0;
-            CurrentFrame = -1;
-            PriorFrame = -1;
+            lock (this)
+            {
+                Codec?.Dispose(); Codec = null;
+                Data?.Dispose(); Data = null;
+                Bitmap?.Dispose(); Bitmap = null;
+                FrameCount = 0;
+                CurrentFrame = -1;
+                PriorFrame = -1;
+            }
         }
 
         public void Dispose()

@@ -57,6 +57,21 @@ namespace grid_image_viewer
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
 
             _settings.LoadWindowState(appWindow);
+            try
+            {
+                var iconPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+                if (System.IO.File.Exists(iconPath))
+                {
+                    appWindow.SetIcon(iconPath);
+                }
+                else
+                {
+                    // Fallback to project root if running from source/debug differently
+                    var fallbackPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "Assets", "AppIcon.ico");
+                    if (System.IO.File.Exists(fallbackPath)) appWindow.SetIcon(fallbackPath);
+                }
+            }
+            catch { /* Ignore icon errors to prevent crash */ }
 
             if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
             {

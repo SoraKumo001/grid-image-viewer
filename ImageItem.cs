@@ -150,13 +150,16 @@ namespace grid_image_viewer
 
         public void DisposeCodec()
         {
-            Codec?.Dispose();
-            Codec = null;
-            CodecData?.Dispose();
-            CodecData = null;
-            _animationBuffer?.Dispose();
-            _animationBuffer = null;
-            _priorFrameIndex = -1;
+            lock (this)
+            {
+                Codec?.Dispose();
+                Codec = null;
+                CodecData?.Dispose();
+                CodecData = null;
+                _animationBuffer?.Dispose();
+                _animationBuffer = null;
+                _priorFrameIndex = -1;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
