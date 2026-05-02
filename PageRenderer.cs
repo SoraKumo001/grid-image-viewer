@@ -30,10 +30,18 @@ namespace grid_image_viewer
         {
             lock (this)
             {
-                var bytes = File.ReadAllBytes(filePath);
                 if (token.IsCancellationRequested) return;
 
-                var data = SKData.CreateCopy(bytes);
+                var data = SKData.Create(filePath);
+                if (data == null)
+                {
+                    var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
+                    if (bmpBytes != null)
+                    {
+                        data = SKData.CreateCopy(bmpBytes);
+                    }
+                }
+
                 if (data == null) return;
                 if (token.IsCancellationRequested) { data.Dispose(); return; }
 
@@ -41,17 +49,7 @@ namespace grid_image_viewer
                 if (codec == null)
                 {
                     data.Dispose();
-                    var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
-                    if (bmpBytes != null)
-                    {
-                        data = SKData.CreateCopy(bmpBytes);
-                        codec = SKCodec.Create(data);
-                    }
-                    if (codec == null)
-                    {
-                        data?.Dispose();
-                        return;
-                    }
+                    return;
                 }
                 if (token.IsCancellationRequested) { codec.Dispose(); data.Dispose(); return; }
 

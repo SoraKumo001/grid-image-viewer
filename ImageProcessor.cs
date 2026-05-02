@@ -95,13 +95,16 @@ namespace grid_image_viewer
         /// </summary>
         public static (int width, int height) GetImageSize(string sourcePath)
         {
-            byte[] fileBytes = File.ReadAllBytes(sourcePath);
-            using var data = SKData.CreateCopy(fileBytes);
-            using var codec = SKCodec.Create(data);
-            if (codec != null)
+            try
             {
-                return (codec.Info.Width, codec.Info.Height);
+                using var stream = File.OpenRead(sourcePath);
+                using var codec = SKCodec.Create(stream);
+                if (codec != null)
+                {
+                    return (codec.Info.Width, codec.Info.Height);
+                }
             }
+            catch { }
             return (0, 0);
         }
     }

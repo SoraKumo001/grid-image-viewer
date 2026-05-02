@@ -28,6 +28,7 @@ namespace grid_image_viewer
         private DispatcherTimer _animationTimer;
         private DispatcherTimer _notificationTimer;
         private CancellationTokenSource? _displayCts;
+        private int _cachedQuadLayout = 1;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
@@ -113,8 +114,9 @@ namespace grid_image_viewer
                 int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
 
                 // Layout Configuration
-                int currentQuadLayout = GetEffectiveQuadLayout();
-                UpdateLayoutGrid(splitCount, effectiveSplitCount, currentQuadLayout);
+                // Layout Configuration
+                _cachedQuadLayout = await Task.Run(() => GetEffectiveQuadLayout());
+                UpdateLayoutGrid(splitCount, effectiveSplitCount, _cachedQuadLayout);
 
                 var loadTasks = new List<Task>();
                 for (int i = 0; i < effectiveSplitCount; i++)
@@ -401,7 +403,8 @@ namespace grid_image_viewer
                             using var ms = new System.IO.MemoryStream();
                             await Task.Run(() =>
                             {
-                                using var data = snapshot.Encode(SKEncodedImageFormat.Png, 100);
+                                // BMP is much faster to encode than PNG for snapshots
+                                using var data = snapshot.Encode(SKEncodedImageFormat.Bmp, 100);
                                 if (data != null) data.SaveTo(ms);
                             });
                             ms.Position = 0;
@@ -466,11 +469,13 @@ namespace grid_image_viewer
                         bool nativeDecodeFailed = false;
                         try
                         {
-                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
                             if (token.IsCancellationRequested) return;
-                            using var stream = await file.OpenReadAsync();
+                            
+                            // Use System.IO for much faster file opening than StorageFile
+                            using var stream = System.IO.File.OpenRead(filePath);
                             var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                            await bitmapImage.SetSourceAsync(stream);
+                            await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
+                            
                             if (!token.IsCancellationRequested) imageCtrl.Source = bitmapImage;
                         }
                         catch { nativeDecodeFailed = true; }
@@ -607,8 +612,7 @@ namespace grid_image_viewer
             }
             else if (effectiveSplitCount == 3)
             {
-                int layout = GetEffectiveQuadLayout();
-                if (layout == 2) // Grid mode (1 top, 2 bottom)
+                if (_cachedQuadLayout == 2) // Grid mode (1 top, 2 bottom)
                 {
                     if (index == 0) { hAlign = 1; vAlign = 2; } // Top center (Bottom-aligned)
                     else if (index == 1) { hAlign = 2; vAlign = 0; } // Bottom right (Right/Top-aligned)
@@ -617,9 +621,7 @@ namespace grid_image_viewer
             }
             else if (effectiveSplitCount == 4)
             {
-                int layout = GetEffectiveQuadLayout();
-
-                if (layout == 2) // Grid 2x2
+                if (_cachedQuadLayout == 2) // Grid 2x2
                 {
                     hAlign = (index == 0 || index == 2) ? 0 : 2;
                     vAlign = (index == 0 || index == 1) ? 2 : 0;
