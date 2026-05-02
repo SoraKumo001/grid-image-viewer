@@ -162,15 +162,43 @@ namespace grid_image_viewer
         public void MenuCrop_Click(object sender, RoutedEventArgs e)
         {
             if (!_hasSelection) return;
-            string sourcePath = _window.CurrentImagePath;
-            if (string.IsNullOrEmpty(sourcePath)) return;
 
             try
             {
+                // Find target grid based on selection center
+                double cx = Canvas.GetLeft(_window.SelectionRectangle) + _window.SelectionRectangle.Width / 2;
+                double cy = Canvas.GetTop(_window.SelectionRectangle) + _window.SelectionRectangle.Height / 2;
+                var centerPoint = new Windows.Foundation.Point(cx, cy);
+
+                int targetIdx = 0;
+                var pageGrids = new Grid[] { _window.PageGrid1, _window.PageGrid2, _window.PageGrid3, _window.PageGrid4 };
+                for (int i = 0; i < 4; i++)
+                {
+                    if (pageGrids[i].Visibility == Visibility.Visible)
+                    {
+                        var ttvGrid = _window.OverlayCanvas.TransformToVisual(pageGrids[i]);
+                        var p = ttvGrid.TransformPoint(centerPoint);
+                        if (p.X >= 0 && p.X <= pageGrids[i].ActualWidth && p.Y >= 0 && p.Y <= pageGrids[i].ActualHeight)
+                        {
+                            targetIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                string? sourcePath = _window.ViewerManager.Pages[targetIdx].CurrentFilePath;
+                if (string.IsNullOrEmpty(sourcePath)) return;
+
                 var (imgW, imgH) = ImageProcessor.GetImageSize(sourcePath);
                 if (imgW == 0 || imgH == 0) return;
 
-                FrameworkElement targetElement = _window.Image1.Visibility == Visibility.Visible ? _window.Image1 : _window.Canvas1;
+                FrameworkElement targetElement = _window.ViewerManager.PageImages[targetIdx];
+                
+                // If image is collapsed, it must be Skia mode, use Canvas instead
+                if (targetElement.Visibility != Visibility.Visible)
+                {
+                    targetElement = targetIdx == 0 ? _window.Canvas1 : (targetIdx == 1 ? _window.Canvas2 : (targetIdx == 2 ? _window.Canvas3 : _window.Canvas4));
+                }
                     
                 double renderRatio = targetElement.ActualWidth / targetElement.ActualHeight;
                 double imageRatio = (double)imgW / imgH;
@@ -216,7 +244,10 @@ namespace grid_image_viewer
                 _hasSelection = false;
                 _ = _window.UpdateDisplayAsync();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Crop error: {ex.Message}");
+            }
         }
 
         public async void MenuResize_Click(object sender, RoutedEventArgs e)

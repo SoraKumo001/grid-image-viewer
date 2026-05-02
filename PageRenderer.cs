@@ -17,6 +17,7 @@ namespace grid_image_viewer
         public SKBitmap? Bitmap { get; set; }
         public int CurrentFrame { get; set; } = -1;
         public int PriorFrame { get; set; } = -1;
+        public string? CurrentFilePath { get; set; }
         public int FrameCount { get; private set; } = 0;
 
         public bool IsAnimated => Codec != null && FrameCount > 1;
@@ -151,6 +152,7 @@ namespace grid_image_viewer
                 Codec?.Dispose(); Codec = null;
                 Data?.Dispose(); Data = null;
                 Bitmap?.Dispose(); Bitmap = null;
+                CurrentFilePath = null;
                 FrameCount = 0;
                 CurrentFrame = -1;
                 PriorFrame = -1;

@@ -295,6 +295,7 @@ namespace grid_image_viewer
 
         private async Task LoadPageAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, int pageIndex, CancellationToken token)
         {
+            _pages[pageIndex].CurrentFilePath = filePath;
             loadingRing.IsActive = true;
             try
             {

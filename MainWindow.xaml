@@ -86,7 +86,7 @@
                     <ProgressRing x:Name="LoadingRing1" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Canvas Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayCanvas" Background="Transparent">
+                <Canvas Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayCanvas" x:FieldModifier="internal" Background="Transparent">
                     <Rectangle x:Name="SelectionRectangle" x:FieldModifier="internal" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
                 </Canvas>
 
