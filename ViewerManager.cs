@@ -488,7 +488,16 @@ namespace grid_image_viewer
                         }
                     }
                 }
-                StartCrossfade(pageIndex);
+                if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
+                {
+                    StartCrossfade(pageIndex);
+                }
+                else
+                {
+                    _currentContainers[pageIndex].Opacity = 1;
+                    _prevContainers[pageIndex].Opacity = 0;
+                    if (pageIndex == 0) UpdateMetadataPanel();
+                }
             }
             catch { }
             finally
@@ -743,7 +752,7 @@ namespace grid_image_viewer
             {
                 From = 0,
                 To = 1,
-                Duration = TimeSpan.FromMilliseconds(100),
+                Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
                 EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
             };
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animIn, _currentContainers[pageIndex]);
@@ -754,7 +763,7 @@ namespace grid_image_viewer
             {
                 From = 1,
                 To = 0,
-                Duration = TimeSpan.FromMilliseconds(100),
+                Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
                 EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
             };
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animOut, _prevContainers[pageIndex]);

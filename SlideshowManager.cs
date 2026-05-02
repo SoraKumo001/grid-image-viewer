@@ -40,6 +40,8 @@ namespace grid_image_viewer
             _mainWindow.SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
             _mainWindow.SlideshowUniformToFill.IsChecked = _settings.SlideshowUniformToFill;
             _mainWindow.SlideshowInterval.Value = _settings.SlideshowInterval;
+            _mainWindow.SlideshowCrossfade.IsChecked = _settings.SlideshowCrossfade;
+            _mainWindow.SlideshowCrossfadeDuration.Value = _settings.SlideshowCrossfadeDuration;
 
             SetSlideshowControlsEnabled(false);
 
@@ -74,6 +76,8 @@ namespace grid_image_viewer
             _mainWindow.SlideshowCurrentFolderOnly.IsEnabled = enabled;
             _mainWindow.SlideshowUniformToFill.IsEnabled = enabled;
             _mainWindow.SlideshowInterval.IsEnabled = enabled;
+            _mainWindow.SlideshowCrossfade.IsEnabled = enabled;
+            _mainWindow.SlideshowCrossfadeDuration.IsEnabled = enabled;
         }
 
         public void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -84,6 +88,8 @@ namespace grid_image_viewer
             _settings.SlideshowNextFolder = _mainWindow.SlideshowNextFolder.IsChecked ?? false;
             _settings.SlideshowUniformToFill = _mainWindow.SlideshowUniformToFill.IsChecked ?? false;
             _settings.SlideshowInterval = _mainWindow.SlideshowInterval.Value;
+            _settings.SlideshowCrossfade = _mainWindow.SlideshowCrossfade.IsChecked ?? false;
+            _settings.SlideshowCrossfadeDuration = _mainWindow.SlideshowCrossfadeDuration.Value;
             _settings.SaveSlideshowSettings();
 
             StartSlideshow();
