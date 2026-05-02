@@ -61,7 +61,7 @@ namespace grid_image_viewer
         public bool SlideshowUniformToFill { get; set; } = false;
         public double SlideshowInterval { get; set; } = 2.0;
         public bool SlideshowCrossfade { get; set; } = true;
-        public double SlideshowCrossfadeDuration { get; set; } = 0.1;
+        public double SlideshowCrossfadeDuration { get; set; } = 0.4;
 
         public int WindowWidth { get; set; } = -1;
         public int WindowHeight { get; set; } = -1;

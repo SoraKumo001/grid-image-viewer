@@ -24,6 +24,17 @@ namespace grid_image_viewer
             _slideshowTimer = new DispatcherTimer();
             _slideshowTimer.Tick += SlideshowTimer_Tick;
 
+            var formatter = new Windows.Globalization.NumberFormatting.DecimalFormatter();
+            formatter.IntegerDigits = 1;
+            formatter.FractionDigits = 2;
+
+            var rounder = new Windows.Globalization.NumberFormatting.IncrementNumberRounder();
+            rounder.Increment = 0.01;
+            rounder.RoundingAlgorithm = Windows.Globalization.NumberFormatting.RoundingAlgorithm.RoundHalfUp;
+            formatter.NumberRounder = rounder;
+
+            _mainWindow.SlideshowCrossfadeDuration.NumberFormatter = formatter;
+            _mainWindow.SlideshowInterval.NumberFormatter = formatter;
         }
 
         public async void OpenSlideshowDialogAsync()

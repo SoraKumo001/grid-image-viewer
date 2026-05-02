@@ -11,14 +11,14 @@ namespace grid_image_viewer
     /// </summary>
     public class PageRenderer : IDisposable
     {
-        public SKData? Data { get; private set; }
-        public SKCodec? Codec { get; private set; }
+        public SKData? Data { get; internal set; }
+        public SKCodec? Codec { get; internal set; }
         public SKBitmap? Bitmap { get; set; }
         public int CurrentFrame { get; set; } = -1;
         public int PriorFrame { get; set; } = -1;
         public string? CurrentFilePath { get; set; }
         public bool UniformToFill { get; set; } = false;
-        public int FrameCount { get; private set; } = 0;
+        public int FrameCount { get; internal set; } = 0;
 
         public bool IsAnimated => Codec != null && FrameCount > 1;
 

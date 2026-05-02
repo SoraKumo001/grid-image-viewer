@@ -384,6 +384,7 @@ namespace grid_image_viewer
 
         private async Task LoadPageAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, int pageIndex, CancellationToken token)
         {
+               // Prepare previous image for crossfade or to prevent blackout
             if (imageCtrl.Visibility == Visibility.Visible && imageCtrl.Source != null)
             {
                 _prevImages[pageIndex].Source = imageCtrl.Source;
@@ -393,7 +394,6 @@ namespace grid_image_viewer
                 var bitmap = _pages[pageIndex].Bitmap;
                 if (bitmap != null)
                 {
-                    // Dispose対策として、不変なSKImageのスナップショットを作成してから別スレッドに渡す
                     using var snapshot = SKImage.FromBitmap(bitmap);
                     if (snapshot != null)
                     {
@@ -403,7 +403,6 @@ namespace grid_image_viewer
                             using var ms = new System.IO.MemoryStream();
                             await Task.Run(() =>
                             {
-                                // BMP is much faster to encode than PNG for snapshots
                                 using var data = snapshot.Encode(SKEncodedImageFormat.Bmp, 100);
                                 if (data != null) data.SaveTo(ms);
                             });
@@ -413,28 +412,17 @@ namespace grid_image_viewer
                         }
                         catch { _prevImages[pageIndex].Source = null; }
                     }
-                    else
-                    {
-                        _prevImages[pageIndex].Source = null;
-                    }
-                }
-                else
-                {
-                    _prevImages[pageIndex].Source = null;
                 }
             }
-            else
-            {
-                _prevImages[pageIndex].Source = null;
-            }
 
-            _pages[pageIndex].Reset();
-
+            // Show previous image in the background container
             _prevContainers[pageIndex].Opacity = 1;
-            _currentContainers[pageIndex].Opacity = 0;
+            
+            // NOTE: We don't hide CurrentContainer here to prevent blackout.
+            // It will be hidden/faded only when the new content is ready.
 
             _pages[pageIndex].CurrentFilePath = filePath;
-            loadingRing.IsActive = true;
+            loadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
 
             try
             {
@@ -443,58 +431,71 @@ namespace grid_image_viewer
 
                 if (useSkia)
                 {
+                    // Load Skia content in background
+                    await Task.Run(() => {
+                        var tempRenderer = new PageRenderer();
+                        tempRenderer.LoadSkia(filePath, token);
+                        if (!token.IsCancellationRequested)
+                        {
+                            _pages[pageIndex].Reset();
+                            _pages[pageIndex].Data = tempRenderer.Data;
+                            _pages[pageIndex].Codec = tempRenderer.Codec;
+                            _pages[pageIndex].Bitmap = tempRenderer.Bitmap;
+                            _pages[pageIndex].FrameCount = tempRenderer.FrameCount;
+                        }
+                    });
+
+                    if (token.IsCancellationRequested) return;
+
                     imageCtrl.Visibility = Visibility.Collapsed;
                     canvasCtrl.Visibility = Visibility.Visible;
-
-                    await Task.Run(() => _pages[pageIndex].LoadSkia(filePath, token));
                     canvasCtrl.Invalidate();
                 }
                 else
                 {
-                    canvasCtrl.Visibility = Visibility.Collapsed;
-                    imageCtrl.Visibility = Visibility.Visible;
-
                     byte[]? cachedBytes = null;
                     lock (_imageCache) { _imageCache.TryGetValue(filePath, out cachedBytes); }
+
+                    Microsoft.UI.Xaml.Media.Imaging.BitmapImage? bitmapImage = null;
 
                     if (cachedBytes != null)
                     {
                         using var ms = new System.IO.MemoryStream(cachedBytes);
-                        var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                        bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                        imageCtrl.Source = bitmapImage;
                     }
                     else
                     {
-                        bool nativeDecodeFailed = false;
                         try
                         {
-                            if (token.IsCancellationRequested) return;
-                            
-                            // Use System.IO for much faster file opening than StorageFile
                             using var stream = System.IO.File.OpenRead(filePath);
-                            var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                            bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                             await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
-                            
-                            if (!token.IsCancellationRequested) imageCtrl.Source = bitmapImage;
                         }
-                        catch { nativeDecodeFailed = true; }
-
-                        if (nativeDecodeFailed)
+                        catch 
                         {
                             var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
                             if (bmpBytes != null)
                             {
-                                var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                                bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                                 using var ms = new System.IO.MemoryStream(bmpBytes);
                                 await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                                if (!token.IsCancellationRequested) imageCtrl.Source = bitmapImage;
                             }
                         }
                     }
+
+                    if (token.IsCancellationRequested) return;
+
+                    _pages[pageIndex].Reset();
+                    canvasCtrl.Visibility = Visibility.Collapsed;
+                    imageCtrl.Visibility = Visibility.Visible;
+                    imageCtrl.Source = bitmapImage;
                 }
+
                 if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
                 {
+                    // For crossfade, we need to start from Opacity 0
+                    _currentContainers[pageIndex].Opacity = 0;
                     StartCrossfade(pageIndex);
                 }
                 else
