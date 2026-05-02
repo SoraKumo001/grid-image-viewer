@@ -30,7 +30,7 @@ namespace grid_image_viewer
         private CancellationTokenSource? _displayCts;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
-        private Dictionary<string, SKBitmap> _imageCache = new Dictionary<string, SKBitmap>();
+        private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private const int MAX_CACHE_SIZE = 20;
 
         public ViewerManager(MainWindow window, SettingsManager settings)
@@ -341,40 +341,38 @@ namespace grid_image_viewer
             var indicesToPreload = new List<int>();
             int splitCount = _settings.MangaSplitCount;
 
-            for (int i = 1; i <= 2 * splitCount; i++)
+            for (int i = 1; i <= splitCount; i++)
             {
-                int idx = (_window.CurrentIndex + splitCount + i) % items.Count;
-                if (idx < 0) idx += items.Count;
-                indicesToPreload.Add(idx);
+                int prevIdx = (_window.CurrentIndex - i) % items.Count;
+                if (prevIdx < 0) prevIdx += items.Count;
+                indicesToPreload.Add(prevIdx);
             }
-            int prevIdx = (_window.CurrentIndex - splitCount) % items.Count;
-            if (prevIdx < 0) prevIdx += items.Count;
-            indicesToPreload.Add(prevIdx);
+
+            for (int i = 0; i < 2 * splitCount; i++)
+            {
+                int nextIdx = (_window.CurrentIndex + splitCount + i) % items.Count;
+                if (nextIdx < 0) nextIdx += items.Count;
+                indicesToPreload.Add(nextIdx);
+            }
 
             foreach (var idx in indicesToPreload)
             {
                 var path = items[idx];
                 lock (_imageCache) { if (_imageCache.ContainsKey(path)) continue; }
 
-                _ = Task.Run(() =>
+                _ = Task.Run(async () =>
                 {
                     try
                     {
-                        using var stream = System.IO.File.OpenRead(path);
-                        using var managedStream = new SKManagedStream(stream);
-                        var bitmap = SKBitmap.Decode(managedStream);
-                        if (bitmap != null)
+                        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+                        lock (_imageCache)
                         {
-                            lock (_imageCache)
+                            if (_imageCache.Count >= MAX_CACHE_SIZE)
                             {
-                                if (_imageCache.Count >= MAX_CACHE_SIZE)
-                                {
-                                    var firstKey = _imageCache.Keys.First();
-                                    _imageCache[firstKey].Dispose();
-                                    _imageCache.Remove(firstKey);
-                                }
-                                _imageCache[path] = bitmap;
+                                var firstKey = _imageCache.Keys.First();
+                                _imageCache.Remove(firstKey);
                             }
+                            _imageCache[path] = bytes;
                         }
                     }
                     catch { }
@@ -440,14 +438,12 @@ namespace grid_image_viewer
                     canvasCtrl.Visibility = Visibility.Collapsed;
                     imageCtrl.Visibility = Visibility.Visible;
 
-                    SKBitmap? cachedBitmap = null;
-                    lock (_imageCache) { _imageCache.TryGetValue(filePath, out cachedBitmap); }
+                    byte[]? cachedBytes = null;
+                    lock (_imageCache) { _imageCache.TryGetValue(filePath, out cachedBytes); }
 
-                    if (cachedBitmap != null)
+                    if (cachedBytes != null)
                     {
-                        using var ms = new System.IO.MemoryStream();
-                        cachedBitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
-                        ms.Position = 0;
+                        using var ms = new System.IO.MemoryStream(cachedBytes);
                         var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                         imageCtrl.Source = bitmapImage;
