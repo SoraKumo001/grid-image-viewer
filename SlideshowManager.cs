@@ -98,7 +98,7 @@ namespace grid_image_viewer
                 _mainWindow.AppTitleBar.Visibility = Visibility.Collapsed;
             }
 
-            _mainWindow.ViewerManager.UpdateStretch();
+            _ = _mainWindow.UpdateDisplayAsync();
             _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
             _slideshowTimer.Start();
             _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
@@ -109,7 +109,7 @@ namespace grid_image_viewer
             IsSlideshowRunning = false;
             _slideshowTimer.Stop();
             for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
-            _mainWindow.ViewerManager.UpdateStretch();
+            _ = _mainWindow.UpdateDisplayAsync();
             _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
         }
 

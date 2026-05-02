@@ -164,8 +164,14 @@ namespace grid_image_viewer
 
         private void UpdateLayoutGrid(int splitCount, int effectiveSplitCount, int currentQuadLayout)
         {
-            // Reset vertical alignment for all
-            for (int i = 0; i < 4; i++) _pageImages[i].VerticalAlignment = VerticalAlignment.Center;
+            bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
+
+            // Reset alignments
+            for (int i = 0; i < 4; i++)
+            {
+                _pageImages[i].HorizontalAlignment = HorizontalAlignment.Center;
+                _pageImages[i].VerticalAlignment = VerticalAlignment.Center;
+            }
 
             if (effectiveSplitCount == 1)
             {
@@ -197,8 +203,12 @@ namespace grid_image_viewer
                 _window.PageGrid2.Visibility = Visibility.Visible;
                 _window.PageGrid3.Visibility = Visibility.Collapsed;
                 _window.PageGrid4.Visibility = Visibility.Collapsed;
-                _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
-                _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+
+                if (!uniformToFill)
+                {
+                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
+                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                }
             }
             else if (effectiveSplitCount == 3)
             {
@@ -222,9 +232,12 @@ namespace grid_image_viewer
                     Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 1);
                     Grid.SetColumnSpan(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1);
 
-                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center; _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
-                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;   _window.Image2.VerticalAlignment = VerticalAlignment.Top;
-                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;  _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                    if (!uniformToFill)
+                    {
+                        _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;   _window.Image2.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;  _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                    }
                 }
                 else // Horizontal 1x3
                 {
@@ -237,10 +250,6 @@ namespace grid_image_viewer
                     Grid.SetColumn(_window.PageGrid1, 2); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 2); Grid.SetColumnSpan(_window.PageGrid1, 1);
                     Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 2); Grid.SetColumnSpan(_window.PageGrid2, 1);
                     Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 0); Grid.SetRowSpan(_window.PageGrid3, 2); Grid.SetColumnSpan(_window.PageGrid3, 1);
-                    
-                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
-                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Center;
-                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Center;
                 }
             }
             else // 4
@@ -252,10 +261,6 @@ namespace grid_image_viewer
 
                 if (currentQuadLayout == 1 || currentQuadLayout == 0) // Horizontal 1x4
                 {
-                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
-                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Center;
-                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Center;
-                    _window.Image4.HorizontalAlignment = HorizontalAlignment.Center;
 
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col1.Width = new GridLength(1, GridUnitType.Star);
@@ -270,16 +275,6 @@ namespace grid_image_viewer
                 }
                 else // Grid 2x2
                 {
-                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
-                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
-                    _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
-                    _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
-                    
-                    _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
-                    _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
-                    _window.Image3.VerticalAlignment = VerticalAlignment.Top;
-                    _window.Image4.VerticalAlignment = VerticalAlignment.Top;
-
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col1.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
@@ -290,6 +285,19 @@ namespace grid_image_viewer
                     Grid.SetColumn(_window.PageGrid2, 0); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 1); Grid.SetColumnSpan(_window.PageGrid2, 1);
                     Grid.SetColumn(_window.PageGrid3, 1); Grid.SetRow(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1); Grid.SetColumnSpan(_window.PageGrid3, 1);
                     Grid.SetColumn(_window.PageGrid4, 0); Grid.SetRow(_window.PageGrid4, 1); Grid.SetRowSpan(_window.PageGrid4, 1); Grid.SetColumnSpan(_window.PageGrid4, 1);
+
+                    if (!uniformToFill)
+                    {
+                        _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
+                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
+                        _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
+                        
+                        _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                        _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
+                        _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image4.VerticalAlignment = VerticalAlignment.Top;
+                    }
                 }
             }
         }

@@ -134,12 +134,18 @@ namespace grid_image_viewer
                         scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
                     
                     float x = (info.Width - Bitmap.Width * scale) / 2;
-                    if (horizontalAlignment == 0) x = 0;
-                    else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
+                    if (!UniformToFill)
+                    {
+                        if (horizontalAlignment == 0) x = 0;
+                        else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
+                    }
                     
                     float y = (info.Height - Bitmap.Height * scale) / 2;
-                    if (verticalAlignment == 0) y = 0;
-                    else if (verticalAlignment == 2) y = info.Height - Bitmap.Height * scale;
+                    if (!UniformToFill)
+                    {
+                        if (verticalAlignment == 0) y = 0;
+                        else if (verticalAlignment == 2) y = info.Height - Bitmap.Height * scale;
+                    }
 
                     var destRect = new SKRect(x, y, x + Bitmap.Width * scale, y + Bitmap.Height * scale);
                     canvas.DrawBitmap(Bitmap, destRect);
