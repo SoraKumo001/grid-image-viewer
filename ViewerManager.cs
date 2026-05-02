@@ -180,6 +180,8 @@ namespace grid_image_viewer
             {
                 _pageImages[i].HorizontalAlignment = HorizontalAlignment.Center;
                 _pageImages[i].VerticalAlignment = VerticalAlignment.Center;
+                _prevImages[i].HorizontalAlignment = HorizontalAlignment.Center;
+                _prevImages[i].VerticalAlignment = VerticalAlignment.Center;
             }
 
             if (effectiveSplitCount == 1)
@@ -195,6 +197,7 @@ namespace grid_image_viewer
                 _window.PageGrid3.Visibility = Visibility.Collapsed;
                 _window.PageGrid4.Visibility = Visibility.Collapsed;
                 _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
+                _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Center;
             }
             else if (effectiveSplitCount == 2)
             {
@@ -216,7 +219,9 @@ namespace grid_image_viewer
                 if (!uniformToFill)
                 {
                     _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
+                    _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Left;
                     _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                    _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Right;
                 }
             }
             else if (effectiveSplitCount == 3)
@@ -244,8 +249,17 @@ namespace grid_image_viewer
                     if (!uniformToFill)
                     {
                         _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Left; _window.Image2.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Right; _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image1_Prev.VerticalAlignment = VerticalAlignment.Bottom;
+
+                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;
+                        _window.Image2.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Left;
+                        _window.Image2_Prev.VerticalAlignment = VerticalAlignment.Top;
+
+                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;
+                        _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image3_Prev.HorizontalAlignment = HorizontalAlignment.Right;
+                        _window.Image3_Prev.VerticalAlignment = VerticalAlignment.Top;
                     }
                 }
                 else // Horizontal 1x3
@@ -298,19 +312,26 @@ namespace grid_image_viewer
                     if (!uniformToFill)
                     {
                         _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
+                        _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Left;
                         _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                        _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Right;
                         _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
+                        _window.Image3_Prev.HorizontalAlignment = HorizontalAlignment.Left;
                         _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
+                        _window.Image4_Prev.HorizontalAlignment = HorizontalAlignment.Right;
 
                         _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                        _window.Image1_Prev.VerticalAlignment = VerticalAlignment.Bottom;
                         _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
+                        _window.Image2_Prev.VerticalAlignment = VerticalAlignment.Bottom;
                         _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image3_Prev.VerticalAlignment = VerticalAlignment.Top;
                         _window.Image4.VerticalAlignment = VerticalAlignment.Top;
+                        _window.Image4_Prev.VerticalAlignment = VerticalAlignment.Top;
                     }
                 }
             }
         }
-
 
         private async Task PreloadAroundAsync()
         {
@@ -367,23 +388,33 @@ namespace grid_image_viewer
             {
                 _prevImages[pageIndex].Source = imageCtrl.Source;
             }
-            else if (canvasCtrl.Visibility == Visibility.Visible && _pages[pageIndex].Bitmap != null)
+            else if (canvasCtrl.Visibility == Visibility.Visible)
             {
-                try
+                var bitmap = _pages[pageIndex].Bitmap;
+                if (bitmap != null)
                 {
-                    using var ms = new System.IO.MemoryStream();
-                    _pages[pageIndex].Bitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
-                    ms.Position = 0;
-                    var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                    _prevImages[pageIndex].Source = bitmapImage;
+                    try
+                    {
+                        using var ms = new System.IO.MemoryStream();
+                        bitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
+                        ms.Position = 0;
+                        var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                        _prevImages[pageIndex].Source = bitmapImage;
+                    }
+                    catch { _prevImages[pageIndex].Source = null; }
                 }
-                catch { _prevImages[pageIndex].Source = null; }
+                else
+                {
+                    _prevImages[pageIndex].Source = null;
+                }
             }
             else
             {
                 _prevImages[pageIndex].Source = null;
             }
+
+            _pages[pageIndex].Reset();
 
             _prevContainers[pageIndex].Opacity = 1;
             _currentContainers[pageIndex].Opacity = 0;
@@ -460,7 +491,6 @@ namespace grid_image_viewer
         public void StopAnimation()
         {
             _animationTimer.Stop();
-            foreach (var p in _pages) p.Reset();
         }
 
         public void UpdateStretch()
@@ -473,7 +503,8 @@ namespace grid_image_viewer
 
             for (int i = 0; i < 4; i++)
             {
-                PageImages[i].Stretch = stretch;
+                _pageImages[i].Stretch = stretch;
+                _prevImages[i].Stretch = stretch;
                 _pages[i].UniformToFill = uniformToFill;
                 _pageCanvases[i].Invalidate();
             }
@@ -703,7 +734,7 @@ namespace grid_image_viewer
             {
                 From = 0,
                 To = 1,
-                Duration = TimeSpan.FromMilliseconds(400),
+                Duration = TimeSpan.FromMilliseconds(100),
                 EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
             };
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animIn, _currentContainers[pageIndex]);
@@ -714,12 +745,17 @@ namespace grid_image_viewer
             {
                 From = 1,
                 To = 0,
-                Duration = TimeSpan.FromMilliseconds(400),
+                Duration = TimeSpan.FromMilliseconds(100),
                 EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
             };
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animOut, _prevContainers[pageIndex]);
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animOut, "Opacity");
             sb.Children.Add(animOut);
+
+            sb.Completed += (s, e) =>
+            {
+                _prevContainers[pageIndex].Opacity = 0;
+            };
 
             sb.Begin();
 

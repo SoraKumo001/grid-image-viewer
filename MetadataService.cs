@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
-using MetadataExtractor.Formats.Png;
-using MetadataExtractor.Formats.Bmp;
 using MetadataExtractor.Formats.Jpeg;
+using MetadataExtractor.Formats.Png;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace grid_image_viewer
 {
@@ -45,11 +43,11 @@ namespace grid_image_viewer
 
                 // 1. 基本的な解像度の取得 (ディレクトリによってタグが異なるため優先順位をつけて取得)
                 int width = 0, height = 0;
-                
+
                 // JPEG / EXIF
                 var subIfd = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
                 var ifd0 = directories.OfType<ExifIfd0Directory>().FirstOrDefault();
-                
+
                 if (subIfd != null)
                 {
                     info.ExposureTime = subIfd.GetDescription(ExifDirectoryBase.TagExposureTime);
@@ -67,7 +65,7 @@ namespace grid_image_viewer
                 {
                     info.Make = ifd0.GetDescription(ExifDirectoryBase.TagMake);
                     info.Model = ifd0.GetDescription(ExifDirectoryBase.TagModel);
-                    
+
                     if (width == 0 && int.TryParse(ifd0.GetString(ExifDirectoryBase.TagImageWidth), out var w)) width = w;
                     if (height == 0 && int.TryParse(ifd0.GetString(ExifDirectoryBase.TagImageHeight), out var h)) height = h;
                 }
