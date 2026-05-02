@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitleBar_Text.Text" xml:space="preserve">
+    <value>グリッド画像ビューアー</value>
+  </data>
+  <data name="MenuSaveAs.Text" xml:space="preserve">
+    <value>名前を付けて保存...</value>
+  </data>
+  <data name="MenuOverwrite.Text" xml:space="preserve">
+    <value>上書き保存</value>
+  </data>
+  <data name="MenuCrop.Text" xml:space="preserve">
+    <value>切り抜き (選択範囲)</value>
+  </data>
+  <data name="MenuResize.Text" xml:space="preserve">
+    <value>リサイズ</value>
+  </data>
+  <data name="MenuOpenExplorer.Text" xml:space="preserve">
+    <value>エクスプローラーで開く</value>
+  </data>
+  <data name="MenuViewMode.Text" xml:space="preserve">
+    <value>表示モード</value>
+  </data>
+  <data name="MenuViewMode_Single.Text" xml:space="preserve">
+    <value>単一表示</value>
+  </data>
+  <data name="MenuViewMode_Double.Text" xml:space="preserve">
+    <value>2分割表示 (漫画)</value>
+  </data>
+  <data name="MenuViewMode_Quad.Text" xml:space="preserve">
+    <value>4分割表示</value>
+  </data>
+  <data name="MenuQuadLayout.Text" xml:space="preserve">
+    <value>4分割レイアウト</value>
+  </data>
+  <data name="MenuLayoutAuto.Text" xml:space="preserve">
+    <value>自動 (アスペクト比)</value>
+  </data>
+  <data name="MenuLayoutHorz.Text" xml:space="preserve">
+    <value>横並び (1x4)</value>
+  </data>
+  <data name="MenuLayoutGrid.Text" xml:space="preserve">
+    <value>格子状 (2x2)</value>
+  </data>
+  <data name="MenuKeyBindings.Text" xml:space="preserve">
+    <value>キーバインド設定...</value>
+  </data>
+  <data name="SearchingText.Text" xml:space="preserve">
+    <value>画像を検索中...</value>
+  </data>
+  <data name="SlideshowDialog.Title" xml:space="preserve">
+    <value>自動再生設定</value>
+  </data>
+  <data name="SlideshowDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="SlideshowDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="SlideshowFullscreen.Content" xml:space="preserve">
+    <value>全画面表示(_F)</value>
+  </data>
+  <data name="SlideshowRandom.Content" xml:space="preserve">
+    <value>ランダムな並び順(_R)</value>
+  </data>
+  <data name="SlideshowLoop.Content" xml:space="preserve">
+    <value>ループする(_L)</value>
+  </data>
+  <data name="SlideshowNextFolder.Content" xml:space="preserve">
+    <value>次のフォルダも表示(_N)</value>
+  </data>
+  <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
+    <value>開始フォルダと下位フォルダだけ表示(_B)</value>
+  </data>
+  <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
+    <value>時間(_T)：</value>
+  </data>
+  <data name="SlideshowIntervalUnit.Text" xml:space="preserve">
+    <value>秒毎</value>
+  </data>
+  <data name="KeyBinding_Title" xml:space="preserve">
+    <value>キーバインド設定</value>
+  </data>
+  <data name="KeyBinding_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="KeyBinding_Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="KeyBinding_NextImage" xml:space="preserve">
+    <value>次の画像</value>
+  </data>
+  <data name="KeyBinding_PrevImage" xml:space="preserve">
+    <value>前の画像</value>
+  </data>
+  <data name="KeyBinding_NextFolder" xml:space="preserve">
+    <value>次のフォルダ</value>
+  </data>
+  <data name="KeyBinding_PrevFolder" xml:space="preserve">
+    <value>前のフォルダ</value>
+  </data>
+  <data name="KeyBinding_ToggleManga" xml:space="preserve">
+    <value>漫画モード切替</value>
+  </data>
+  <data name="KeyBinding_ToggleGrid" xml:space="preserve">
+    <value>グリッドモード切替</value>
+  </data>
+  <data name="KeyBinding_ToggleSlideshow" xml:space="preserve">
+    <value>スライドショー切替</value>
+  </data>
+  <data name="KeyBinding_Exit" xml:space="preserve">
+    <value>アプリを終了</value>
+  </data>
+  <data name="Notification_LoopedStart" xml:space="preserve">
+    <value>🔄 先頭に戻りました</value>
+  </data>
+  <data name="Notification_LoopedEnd" xml:space="preserve">
+    <value>🔄 最後に戻りました</value>
+  </data>
+  <data name="Notification_SlideshowStarted" xml:space="preserve">
+    <value>自動再生 開始</value>
+  </data>
+  <data name="Notification_SlideshowStopped" xml:space="preserve">
+    <value>自動再生 停止</value>
+  </data>
+  <data name="Notification_NotAnImage" xml:space="preserve">
+    <value>画像ファイルではありません</value>
+  </data>
+</root>

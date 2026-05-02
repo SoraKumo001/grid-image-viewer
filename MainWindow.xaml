@@ -32,7 +32,7 @@
         </Grid.RowDefinitions>
 
         <Border x:Name="AppTitleBar" x:FieldModifier="internal" Grid.Row="0" Height="32" Background="#242424" BorderBrush="#333333" BorderThickness="0,0,0,1">
-            <TextBlock Text="Grid Image Viewer" Foreground="#888888" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="12" />
+            <TextBlock x:Uid="AppTitleBar_Text" Text="Grid Image Viewer" Foreground="#888888" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="12" />
         </Border>
 
         <ScrollViewer
@@ -46,7 +46,7 @@
             <Grid x:Name="PagesGrid" x:FieldModifier="internal"
                   Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
                   Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
-                  RightTapped="PagesGrid_RightTapped" 
+                  Background="Transparent"
                   PointerPressed="PagesGrid_PointerPressed" 
                   PointerMoved="PagesGrid_PointerMoved" 
                   PointerReleased="PagesGrid_PointerReleased"
@@ -92,27 +92,40 @@
 
                 <Grid.ContextFlyout>
                     <MenuFlyout x:Name="EditMenuFlyout" Opening="EditMenuFlyout_Opening">
-                        <MenuFlyoutSubItem Text="Save As...">
+                        <MenuFlyout.MenuFlyoutPresenterStyle>
+                            <Style TargetType="MenuFlyoutPresenter">
+                                <Setter Property="Transitions">
+                                    <Setter.Value>
+                                        <TransitionCollection />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </MenuFlyout.MenuFlyoutPresenterStyle>
+                        <MenuFlyoutSubItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As...">
                             <MenuFlyoutItem Text="JPEG" Click="MenuSaveAs_Click" Tag=".jpg" />
                             <MenuFlyoutItem Text="PNG" Click="MenuSaveAs_Click" Tag=".png" />
                             <MenuFlyoutItem Text="WebP" Click="MenuSaveAs_Click" Tag=".webp" />
                             <MenuFlyoutItem Text="BMP" Click="MenuSaveAs_Click" Tag=".bmp" />
                         </MenuFlyoutSubItem>
-                        <MenuFlyoutItem Text="Overwrite" Click="MenuOverwrite_Click" />
+                        <MenuFlyoutItem x:Name="MenuOverwrite" x:FieldModifier="internal" x:Uid="MenuOverwrite" Text="Overwrite" Click="MenuOverwrite_Click" />
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" Text="Crop (Selection)" Click="MenuCrop_Click" IsEnabled="False" />
-                        <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" Text="Resize" Click="MenuResize_Click" />
+                        <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" x:Uid="MenuCrop" Text="Crop (Selection)" Click="MenuCrop_Click" IsEnabled="False" />
+                        <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" x:Uid="MenuResize" Text="Resize" Click="MenuResize_Click" />
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
+                        <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="MenuToggleManga" x:FieldModifier="internal" Text="View Mode: Single" Click="MenuToggleManga_Click" />
-                        <MenuFlyoutSubItem x:Name="MenuQuadLayout" Text="Quad Layout">
-                            <MenuFlyoutItem x:Name="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" />
-                            <MenuFlyoutItem x:Name="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" />
-                            <MenuFlyoutItem x:Name="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" />
+                        <MenuFlyoutSubItem x:Name="MenuViewMode" x:FieldModifier="internal" x:Uid="MenuViewMode" Text="View Mode">
+                            <MenuFlyoutItem x:Uid="MenuViewMode_Single" Text="Single" Click="MenuViewMode_Click" Tag="1" />
+                            <MenuFlyoutItem x:Uid="MenuViewMode_Double" Text="Manga (2-split)" Click="MenuViewMode_Click" Tag="2" />
+                            <MenuFlyoutItem x:Uid="MenuViewMode_Quad" Text="Quad (4-split)" Click="MenuViewMode_Click" Tag="4" />
+                        </MenuFlyoutSubItem>
+                        <MenuFlyoutSubItem x:Name="MenuQuadLayout" x:FieldModifier="internal" x:Uid="MenuQuadLayout" Text="Quad Layout">
+                            <MenuFlyoutItem x:Name="MenuLayoutAuto" x:FieldModifier="internal" x:Uid="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" />
+                            <MenuFlyoutItem x:Name="MenuLayoutHorz" x:FieldModifier="internal" x:Uid="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" />
+                            <MenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
+                        <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
                     </MenuFlyout>
                 </Grid.ContextFlyout>
             </Grid>
@@ -157,7 +170,7 @@
             <Border x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Background="#88000000" Visibility="Collapsed" IsHitTestVisible="True">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                     <ProgressRing IsActive="True" Width="64" Height="64" Foreground="#00A2ED" />
-                    <TextBlock Text="Searching for images..." Foreground="White" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock x:Uid="SearchingText" Text="Searching for images..." Foreground="White" FontSize="18" FontWeight="SemiBold" />
                 </StackPanel>
             </Border>
 
@@ -166,7 +179,7 @@
                 <TextBlock x:Name="NotificationText" x:FieldModifier="internal" Foreground="White" FontSize="36" FontWeight="Bold" />
             </Border>
         
-        <ContentDialog x:Name="SlideshowDialog" x:FieldModifier="internal"
+        <ContentDialog x:Name="SlideshowDialog" x:FieldModifier="internal" x:Uid="SlideshowDialog"
                        Title="自動再生設定"
                        PrimaryButtonText="OK"
                        CloseButtonText="キャンセル"
@@ -174,15 +187,15 @@
                        PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick"
                        Opened="SlideshowDialog_Opened">
             <StackPanel Spacing="12">
-                <CheckBox x:Name="SlideshowFullscreen" x:FieldModifier="internal" Content="全画面表示(_F)"/>
-                <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" Content="ランダムな並び順(_R)"/>
-                <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" Content="ループする(_L)"/>
-                <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" Content="次のフォルダも表示(_N)"/>
-                <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
+                <CheckBox x:Name="SlideshowFullscreen" x:FieldModifier="internal" x:Uid="SlideshowFullscreen" Content="全画面表示(_F)"/>
+                <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" x:Uid="SlideshowRandom" Content="ランダムな並び順(_R)"/>
+                <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" x:Uid="SlideshowLoop" Content="ループする(_L)"/>
+                <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" x:Uid="SlideshowNextFolder" Content="次のフォルダも表示(_N)"/>
+                <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                    <TextBlock Text="時間(_T)：" VerticalAlignment="Center"/>
+                    <TextBlock x:Uid="SlideshowIntervalLabel" Text="時間(_T)：" VerticalAlignment="Center"/>
                     <NumberBox x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="200"/>
-                    <TextBlock Text="秒毎" VerticalAlignment="Center"/>
+                    <TextBlock x:Uid="SlideshowIntervalUnit" Text="秒毎" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
         </ContentDialog>

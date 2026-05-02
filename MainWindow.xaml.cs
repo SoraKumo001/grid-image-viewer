@@ -190,14 +190,13 @@ namespace grid_image_viewer
         private void PagesGrid_PointerPressed(object sender, PointerRoutedEventArgs e) => _editorManager.PagesGrid_PointerPressed(sender, e);
         private void PagesGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => _editorManager.PagesGrid_PointerMoved(sender, e);
         private void PagesGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => _editorManager.PagesGrid_PointerReleased(sender, e);
-        private void PagesGrid_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
         private void EditMenuFlyout_Opening(object sender, object e) => _editorManager.EditMenuFlyout_Opening(sender, e);
         private void MenuSaveAs_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSaveAs_Click(sender, e);
         private void MenuOverwrite_Click(object sender, RoutedEventArgs e) => _editorManager.MenuOverwrite_Click(sender, e);
         private void MenuCrop_Click(object sender, RoutedEventArgs e) => _editorManager.MenuCrop_Click(sender, e);
         private void MenuResize_Click(object sender, RoutedEventArgs e) => _editorManager.MenuResize_Click(sender, e);
         private void MenuOpenExplorer_Click(object sender, RoutedEventArgs e) => _editorManager.MenuOpenExplorer_Click(sender, e);
-        private void MenuToggleManga_Click(object sender, RoutedEventArgs e) => _editorManager.MenuToggleManga_Click(sender, e);
+        private void MenuViewMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuLayoutMode_Click(sender, e);
         private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuKeyBindings_Click(sender, e);
 

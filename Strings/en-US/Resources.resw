@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitleBar_Text.Text" xml:space="preserve">
+    <value>Grid Image Viewer</value>
+  </data>
+  <data name="MenuSaveAs.Text" xml:space="preserve">
+    <value>Save As...</value>
+  </data>
+  <data name="MenuOverwrite.Text" xml:space="preserve">
+    <value>Overwrite</value>
+  </data>
+  <data name="MenuCrop.Text" xml:space="preserve">
+    <value>Crop (Selection)</value>
+  </data>
+  <data name="MenuResize.Text" xml:space="preserve">
+    <value>Resize</value>
+  </data>
+  <data name="MenuOpenExplorer.Text" xml:space="preserve">
+    <value>Open in Explorer</value>
+  </data>
+  <data name="MenuViewMode.Text" xml:space="preserve">
+    <value>View Mode</value>
+  </data>
+  <data name="MenuViewMode_Single.Text" xml:space="preserve">
+    <value>Single</value>
+  </data>
+  <data name="MenuViewMode_Double.Text" xml:space="preserve">
+    <value>Manga (2-split)</value>
+  </data>
+  <data name="MenuViewMode_Quad.Text" xml:space="preserve">
+    <value>Quad (4-split)</value>
+  </data>
+  <data name="MenuQuadLayout.Text" xml:space="preserve">
+    <value>Quad Layout</value>
+  </data>
+  <data name="MenuLayoutAuto.Text" xml:space="preserve">
+    <value>Auto (Aspect Ratio)</value>
+  </data>
+  <data name="MenuLayoutHorz.Text" xml:space="preserve">
+    <value>Horizontal (1x4)</value>
+  </data>
+  <data name="MenuLayoutGrid.Text" xml:space="preserve">
+    <value>Grid (2x2)</value>
+  </data>
+  <data name="MenuKeyBindings.Text" xml:space="preserve">
+    <value>Key Bindings Settings...</value>
+  </data>
+  <data name="SearchingText.Text" xml:space="preserve">
+    <value>Searching for images...</value>
+  </data>
+  <data name="SlideshowDialog.Title" xml:space="preserve">
+    <value>Slideshow Settings</value>
+  </data>
+  <data name="SlideshowDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="SlideshowDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SlideshowFullscreen.Content" xml:space="preserve">
+    <value>Fullscreen(_F)</value>
+  </data>
+  <data name="SlideshowRandom.Content" xml:space="preserve">
+    <value>Random order(_R)</value>
+  </data>
+  <data name="SlideshowLoop.Content" xml:space="preserve">
+    <value>Loop(_L)</value>
+  </data>
+  <data name="SlideshowNextFolder.Content" xml:space="preserve">
+    <value>Show next folder(_N)</value>
+  </data>
+  <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
+    <value>Start folder and subfolders only(_B)</value>
+  </data>
+  <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
+    <value>Interval(_T):</value>
+  </data>
+  <data name="SlideshowIntervalUnit.Text" xml:space="preserve">
+    <value>sec</value>
+  </data>
+  <data name="KeyBinding_Title" xml:space="preserve">
+    <value>Key Bindings Settings</value>
+  </data>
+  <data name="KeyBinding_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="KeyBinding_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="KeyBinding_NextImage" xml:space="preserve">
+    <value>Next Image</value>
+  </data>
+  <data name="KeyBinding_PrevImage" xml:space="preserve">
+    <value>Previous Image</value>
+  </data>
+  <data name="KeyBinding_NextFolder" xml:space="preserve">
+    <value>Next Folder</value>
+  </data>
+  <data name="KeyBinding_PrevFolder" xml:space="preserve">
+    <value>Previous Folder</value>
+  </data>
+  <data name="KeyBinding_ToggleManga" xml:space="preserve">
+    <value>Toggle Manga Mode</value>
+  </data>
+  <data name="KeyBinding_ToggleGrid" xml:space="preserve">
+    <value>Toggle Grid Mode</value>
+  </data>
+  <data name="KeyBinding_ToggleSlideshow" xml:space="preserve">
+    <value>Toggle Slideshow</value>
+  </data>
+  <data name="KeyBinding_Exit" xml:space="preserve">
+    <value>Exit App</value>
+  </data>
+  <data name="Notification_LoopedStart" xml:space="preserve">
+    <value>🔄 Looped to Start</value>
+  </data>
+  <data name="Notification_LoopedEnd" xml:space="preserve">
+    <value>🔄 Looped to End</value>
+  </data>
+  <data name="Notification_SlideshowStarted" xml:space="preserve">
+    <value>Slideshow Started</value>
+  </data>
+  <data name="Notification_SlideshowStopped" xml:space="preserve">
+    <value>Slideshow Stopped</value>
+  </data>
+  <data name="Notification_NotAnImage" xml:space="preserve">
+    <value>Not an image file</value>
+  </data>
+</root>

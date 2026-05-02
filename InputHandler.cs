@@ -8,6 +8,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using System.IO;
 using Windows.System;
+using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -16,6 +17,7 @@ namespace grid_image_viewer
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
         private ScrollViewer? _gridScrollViewer;
+        private ResourceLoader _resourceLoader = new ResourceLoader();
 
         public InputHandler(MainWindow window, SettingsManager settings)
         {
@@ -290,7 +292,7 @@ namespace grid_image_viewer
                         }
                         else
                         {
-                            _window.ShowNotification("画像ファイルではありません");
+                            _window.ShowNotification(_resourceLoader.GetString("Notification_NotAnImage"));
                         }
                     }
                 }

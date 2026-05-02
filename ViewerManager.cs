@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -27,6 +28,7 @@ namespace grid_image_viewer
         private DispatcherTimer _animationTimer;
         private DispatcherTimer _notificationTimer;
         private CancellationTokenSource? _displayCts;
+        private ResourceLoader _resourceLoader = new ResourceLoader();
 
         public ViewerManager(MainWindow window, SettingsManager settings)
         {
@@ -556,7 +558,8 @@ namespace grid_image_viewer
 
             if (looped)
             {
-                ShowNotification("🔄 Looped to " + (offset > 0 ? "Start" : "End"));
+                string resKey = offset > 0 ? "Notification_LoopedStart" : "Notification_LoopedEnd";
+                ShowNotification(_resourceLoader.GetString(resKey));
             }
 
             _ = UpdateDisplayAsync();

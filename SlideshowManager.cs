@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Linq;
+using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -13,6 +14,7 @@ namespace grid_image_viewer
         public bool IsSlideshowRunning { get; private set; } = false;
         public int[] SlideshowRandomIndices { get; private set; } = new int[4] { -1, -1, -1, -1 };
         private Random _random = new Random();
+        private ResourceLoader _resourceLoader = new ResourceLoader();
 
         public SlideshowManager(MainWindow mainWindow, SettingsManager settings)
         {
@@ -95,7 +97,7 @@ namespace grid_image_viewer
 
             _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
             _slideshowTimer.Start();
-            _mainWindow.ShowNotification("自動再生 開始");
+            _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
         }
 
         public void StopSlideshow()
@@ -103,7 +105,7 @@ namespace grid_image_viewer
             IsSlideshowRunning = false;
             _slideshowTimer.Stop();
             for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
-            _mainWindow.ShowNotification("自動再生 停止");
+            _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
         }
 
         private void SlideshowTimer_Tick(object? sender, object e)

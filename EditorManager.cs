@@ -11,6 +11,7 @@ using Windows.Storage;
 using Windows.System;
 using Windows.UI;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace grid_image_viewer
 {
@@ -18,6 +19,9 @@ namespace grid_image_viewer
     {
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
+        private Microsoft.Windows.ApplicationModel.Resources.ResourceManager _resourceManager;
+        private Microsoft.Windows.ApplicationModel.Resources.ResourceContext _resourceContext;
+        private readonly Dictionary<string, string> _stringCache = new Dictionary<string, string>();
 
         // Selection State
         private Windows.Foundation.Point _selectionStart;
@@ -30,6 +34,14 @@ namespace grid_image_viewer
         {
             _window = window;
             _settings = settings;
+            _resourceManager = new Microsoft.Windows.ApplicationModel.Resources.ResourceManager();
+            _resourceContext = _resourceManager.CreateResourceContext();
+            PreloadStrings();
+        }
+
+        private void PreloadStrings()
+        {
+            // Currently no dynamic strings need preloading as we moved to sub-menus and x:Uid
         }
 
         public void PagesGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -89,10 +101,13 @@ namespace grid_image_viewer
 
         public void EditMenuFlyout_Opening(object sender, object e)
         {
-            _window.MenuCrop.IsEnabled = _hasSelection;
-            if (_window.MenuToggleManga != null)
+            try
             {
-                _window.MenuToggleManga.Text = _settings.MangaSplitCount == 1 ? "View Mode: Single" : _settings.MangaSplitCount == 2 ? "View Mode: Double" : "View Mode: Quad";
+                _window.MenuCrop.IsEnabled = _hasSelection;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Menu Opening error: {ex.Message}");
             }
         }
 
@@ -270,11 +285,14 @@ namespace grid_image_viewer
             }
         }
 
-        public void MenuToggleManga_Click(object sender, RoutedEventArgs e)
+        public void MenuViewMode_Click(object sender, RoutedEventArgs e)
         {
-            _settings.MangaSplitCount = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
-            _settings.SaveMangaMode();
-            _ = _window.UpdateDisplayAsync();
+            if (sender is MenuFlyoutItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int count))
+            {
+                _settings.MangaSplitCount = count;
+                _settings.SaveMangaMode();
+                _ = _window.UpdateDisplayAsync();
+            }
         }
 
         public void MenuLayoutMode_Click(object sender, RoutedEventArgs e)
@@ -343,9 +361,9 @@ namespace grid_image_viewer
         {
             var dialog = new ContentDialog
             {
-                Title = "Key Bindings Settings",
-                PrimaryButtonText = "Save",
-                CloseButtonText = "Cancel",
+                Title = GetString("KeyBinding_Title"),
+                PrimaryButtonText = GetString("KeyBinding_Save"),
+                CloseButtonText = GetString("KeyBinding_Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = _window.Content.XamlRoot,
                 RequestedTheme = ElementTheme.Dark
@@ -362,14 +380,14 @@ namespace grid_image_viewer
             var tempToggleGrid = _settings.KeyToggleGrid.Clone();
             var tempSlideshow = _settings.KeySlideshow.Clone();
 
-            stackPanel.Children.Add(CreateKeyBindingRow("Next Image", tempNextImage));
-            stackPanel.Children.Add(CreateKeyBindingRow("Previous Image", tempPrevImage));
-            stackPanel.Children.Add(CreateKeyBindingRow("Next Folder", tempNextFolder));
-            stackPanel.Children.Add(CreateKeyBindingRow("Previous Folder", tempPrevFolder));
-            stackPanel.Children.Add(CreateKeyBindingRow("Toggle Manga Mode", tempToggleManga));
-            stackPanel.Children.Add(CreateKeyBindingRow("Toggle Grid Mode", tempToggleGrid));
-            stackPanel.Children.Add(CreateKeyBindingRow("Toggle Slideshow", tempSlideshow));
-            stackPanel.Children.Add(CreateKeyBindingRow("Exit App", tempExit));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_NextImage"), tempNextImage));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_PrevImage"), tempPrevImage));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_NextFolder"), tempNextFolder));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_PrevFolder"), tempPrevFolder));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleManga"), tempToggleManga));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleGrid"), tempToggleGrid));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleSlideshow"), tempSlideshow));
+            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_Exit"), tempExit));
 
             dialog.Content = new ScrollViewer 
             { 
@@ -395,6 +413,18 @@ namespace grid_image_viewer
                 _settings.KeySlideshow = tempSlideshow;
                 _settings.SaveKeyBindings();
             }
+        }
+        private string GetString(string key)
+        {
+            try
+            {
+                // Dots are used for properties in x:Uid, but for simple strings they might be just names.
+                // ResourceManager uses / as separator.
+                var resourceKey = "Resources/" + key.Replace(".", "/");
+                var candidate = _resourceManager.MainResourceMap.GetValue(resourceKey, _resourceContext);
+                return candidate?.ValueAsString ?? key;
+            }
+            catch { return key; }
         }
     }
 }
