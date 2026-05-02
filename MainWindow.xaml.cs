@@ -22,6 +22,16 @@ namespace grid_image_viewer
     public sealed partial class MainWindow : Window
     {
         private List<string> _playlist = new List<string>();
+
+        // === Properties exposed for SlideshowManager / InputHandler ===
+        internal SlideshowManager SlideshowManager => _slideshowManager;
+        internal InputHandler InputHandler => _inputHandler;
+        internal bool IsGridMode { get => _isGridMode; set => _isGridMode = value; }
+        internal ObservableCollection<ImageItem> GridItems => _gridItems;
+        internal bool IsDialogOpen { get => _isDialogOpen; set => _isDialogOpen = value; }
+        internal List<string> Playlist => _playlist;
+        internal int CurrentIndex { get => _currentIndex; set => _currentIndex = value; }
+
         private int _currentIndex = -1;
         private string _currentDirectory = string.Empty;
 
@@ -41,11 +51,10 @@ namespace grid_image_viewer
         private CancellationTokenSource? _displayCts;
         private CancellationTokenSource? _gridCts;
 
-        private DispatcherTimer _slideshowTimer;
+        private SlideshowManager _slideshowManager;
+        private InputHandler _inputHandler;
         private DispatcherTimer _notificationTimer;
-        private bool _isSlideshowRunning = false;
         private bool _isDialogOpen = false;
-        private int[] _slideshowRandomIndices = new int[4] { -1, -1, -1, -1 };
         private Random _random = new Random();
 
         public MainWindow()
@@ -104,8 +113,8 @@ namespace grid_image_viewer
             _animationTimer.Interval = TimeSpan.FromMilliseconds(30);
             _animationTimer.Tick += AnimationTimer_Tick;
 
-            _slideshowTimer = new DispatcherTimer();
-            _slideshowTimer.Tick += SlideshowTimer_Tick;
+            _slideshowManager = new SlideshowManager(this, _settings);
+            _inputHandler = new InputHandler(this, _settings);
 
             _notificationTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
             _notificationTimer.Tick += (s, e) =>
@@ -520,41 +529,8 @@ namespace grid_image_viewer
             }
         }
 
-        private void RootGrid_DragOver(object sender, DragEventArgs e)
-        {
-            e.AcceptedOperation = DataPackageOperation.Copy;
-        }
-
-        private async void RootGrid_Drop(object sender, DragEventArgs e)
-        {
-            if (e.DataView.Contains(StandardDataFormats.StorageItems))
-            {
-                var items = await e.DataView.GetStorageItemsAsync();
-                if (items.Count > 0)
-                {
-                    var firstItem = items[0];
-                    string directory = string.Empty;
-                    string targetFile = string.Empty;
-
-                    if (firstItem is StorageFolder folder)
-                    {
-                        directory = folder.Path;
-                    }
-                    else if (firstItem is StorageFile file)
-                    {
-                        directory = Path.GetDirectoryName(file.Path) ?? string.Empty;
-                        targetFile = file.Path;
-                    }
-
-                    if (!string.IsNullOrEmpty(directory))
-                    {
-                        LoadDirectory(directory, targetFile);
-                        RootGrid.Focus(FocusState.Programmatic);
-                    }
-                }
-            }
-        }
-
+        private void RootGrid_DragOver(object sender, DragEventArgs e) => _inputHandler.HandleDragOver(sender, e);
+        private void RootGrid_Drop(object sender, DragEventArgs e) => _inputHandler.HandleDrop(sender, e);
         public void LoadDirectory(string path, string initialFile = "")
         {
             _currentDirectory = path;
@@ -591,7 +567,7 @@ namespace grid_image_viewer
         }
 
         
-        private async Task UpdateDisplayAsync()
+        internal async Task UpdateDisplayAsync()
         {
             if (_playlist.Count == 0 || _currentIndex < 0 || _currentIndex >= _playlist.Count) return;
 
@@ -747,10 +723,10 @@ namespace grid_image_viewer
                     if (i == 0) indexToLoad = _currentIndex;
                     else
                     {
-                        if (_isSlideshowRunning && _settings.SlideshowRandom)
+                        if (_slideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
                         {
-                            if (_slideshowRandomIndices[i] != -1) 
-                                indexToLoad = _slideshowRandomIndices[i];
+                            if (_slideshowManager.SlideshowRandomIndices[i] != -1) 
+                                indexToLoad = _slideshowManager.SlideshowRandomIndices[i];
                             else if (_currentIndex + i < _playlist.Count) 
                                 indexToLoad = _currentIndex + i;
                         }
@@ -982,238 +958,14 @@ namespace grid_image_viewer
             e.Handled = true;
         }
 
-        private ScrollViewer? _gridScrollViewer;
 
-        private ScrollViewer? GetScrollViewer(DependencyObject element)
-        {
-            if (element is ScrollViewer sv) return sv;
-            for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(element, i);
-                var result = GetScrollViewer(child);
-                if (result != null) return result;
-            }
-            return null;
-        }
 
-        private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
-        {
-            if (!_isGridMode) return;
-            
-            bool isCtrl = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control);
-            if (isCtrl) return;
-
-            var props = e.GetCurrentPoint(ImageGridView).Properties;
-            
-            if (_gridScrollViewer == null)
-            {
-                _gridScrollViewer = GetScrollViewer(ImageGridView);
-            }
-
-            if (_gridScrollViewer != null)
-            {
-                if (props.MouseWheelDelta < 0) // 下へスクロール
-                {
-                    if (_gridScrollViewer.VerticalOffset >= _gridScrollViewer.ScrollableHeight - 0.5)
-                    {
-                        NavigateFolder(1);
-                        e.Handled = true;
-                    }
-                }
-                else // 上へスクロール
-                {
-                    if (_gridScrollViewer.VerticalOffset <= 0.5)
-                    {
-                        NavigateFolder(-1);
-                        e.Handled = true;
-                    }
-                }
-            }
-        }
-
-        private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-            if (appWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
-            {
-                appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                AppTitleBar.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
-                AppTitleBar.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (_isDialogOpen) return;
-
-            if (_isSlideshowRunning && e.Key != _settings.KeySlideshow)
-            {
-                StopSlideshow();
-                if (e.Key == _settings.KeyExit)
-                {
-                    if (AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
-                    {
-                        AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                        AppTitleBar.Visibility = Visibility.Visible;
-                    }
-                    e.Handled = true;
-                    return;
-                }
-            }
-
-            bool isCtrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-            bool isShift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-            if (e.Key == _settings.KeySlideshow)
-            {
-                OpenSlideshowDialogAsync();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == _settings.KeyToggleManga && isCtrl)
-            {
-                _settings.MangaSplitCount = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
-                _settings.SaveMangaMode();
-                _ = UpdateDisplayAsync();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == _settings.KeyToggleGrid)
-            {
-                _isGridMode = !_isGridMode;
-                _ = UpdateDisplayAsync();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == _settings.KeyExit)
-            {
-                if (AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
-                {
-                    AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                    AppTitleBar.Visibility = Visibility.Visible;
-                    e.Handled = true;
-                    return;
-                }
-                this.Close();
-                e.Handled = true;
-                return;
-            }
-
-            if (_isGridMode)
-            {
-                // グリッドモード中にカーソルキーが押されたら処理
-                if (e.Key == Windows.System.VirtualKey.Left || e.Key == Windows.System.VirtualKey.Right ||
-                    e.Key == Windows.System.VirtualKey.Up || e.Key == Windows.System.VirtualKey.Down)
-                {
-                    // グリッドの列数と現在の行を算出
-                    int selectedIdx = ImageGridView.SelectedIndex;
-                    int columns = 1;
-                    if (ImageGridView.ItemsPanelRoot is ItemsWrapGrid wrap && wrap.ItemWidth > 0)
-                    {
-                        double availW = ImageGridView.ActualWidth - ImageGridView.Padding.Left - ImageGridView.Padding.Right - 24;
-                        columns = Math.Max(1, (int)(availW / wrap.ItemWidth));
-                    }
-                    int currentRow = selectedIdx / columns;
-                    int totalRows = (int)Math.Ceiling((double)_gridItems.Count / columns);
-
-                    // 上キーで先頭行にいる → 前のフォルダへ移動
-                    if (e.Key == Windows.System.VirtualKey.Up && currentRow == 0)
-                    {
-                        NavigateFolder(-1);
-                        e.Handled = true;
-                        return;
-                    }
-                    // 下キーで末尾行にいる → 次のフォルダへ移動
-                    if (e.Key == Windows.System.VirtualKey.Down && currentRow >= totalRows - 1)
-                    {
-                        NavigateFolder(1);
-                        e.Handled = true;
-                        return;
-                    }
-
-                    // 下キーで最終行の真上にいるが、真下にアイテムがない場合 → 最後のアイテムへ移動
-                    if (e.Key == Windows.System.VirtualKey.Down && currentRow == totalRows - 2)
-                    {
-                        int targetIdx = selectedIdx + columns;
-                        if (targetIdx >= _gridItems.Count)
-                        {
-                            ImageGridView.SelectedIndex = _gridItems.Count - 1;
-                            ImageGridView.ScrollIntoView(ImageGridView.SelectedItem);
-                            
-                            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
-                            {
-                                var container = ImageGridView.ContainerFromIndex(ImageGridView.SelectedIndex) as GridViewItem;
-                                container?.Focus(FocusState.Programmatic);
-                            });
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-
-                    // フォーカスが GridViewItem にない場合は復帰させる
-                    var focused = FocusManager.GetFocusedElement(this.Content.XamlRoot);
-                    if (focused is not GridViewItem)
-                    {
-                        if (ImageGridView.SelectedItem != null)
-                        {
-                            var container = ImageGridView.ContainerFromItem(ImageGridView.SelectedItem) as GridViewItem;
-                            container?.Focus(FocusState.Programmatic);
-                        }
-                        e.Handled = true;
-                    }
-                }
-                // GridView 標準のナビゲーションに任せる
-                return;
-            }
-
-            if (e.Key == Windows.System.VirtualKey.Left)
-            {
-                Navigate(_settings.MangaSplitCount > 1 ? 1 : -1, isShift);
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == Windows.System.VirtualKey.Right)
-            {
-                Navigate(_settings.MangaSplitCount > 1 ? -1 : 1, isShift);
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == _settings.KeyPrevImage)
-            {
-                Navigate(-1, isShift);
-                e.Handled = true;
-            }
-            else if (e.Key == _settings.KeyNextImage)
-            {
-                Navigate(1, isShift);
-                e.Handled = true;
-            }
-            else if (e.Key == _settings.KeyPrevFolder)
-            {
-                NavigateFolder(-1);
-                e.Handled = true;
-            }
-            else if (e.Key == _settings.KeyNextFolder)
-            {
-                NavigateFolder(1);
-                e.Handled = true;
-            }
-        }
-
+        private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => _inputHandler.HandlePointerWheelChanged(sender, e);
+        private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => _inputHandler.HandleDoubleTapped(sender, e);
+        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => _inputHandler.HandleKeyDown(sender, e);
         private bool _isSearchingFolder = false;
 
-        private async void NavigateFolder(int offset)
+        internal async void NavigateFolder(int offset)
         {
             if (string.IsNullOrEmpty(_currentDirectory) || _isSearchingFolder) return;
 
@@ -1238,9 +990,9 @@ namespace grid_image_viewer
         }
 
 
-        private void Navigate(int offset, bool forceSingleStep = false)
+        internal void Navigate(int offset, bool forceSingleStep = false)
         {
-            for (int i=0; i<4; i++) _slideshowRandomIndices[i] = -1;
+            for (int i=0; i<4; i++) _slideshowManager.SlideshowRandomIndices[i] = -1;
             if (_playlist.Count == 0) return;
 
             int step = forceSingleStep ? 1 : _settings.MangaSplitCount;
@@ -1275,7 +1027,7 @@ namespace grid_image_viewer
             _ = UpdateDisplayAsync();
         }
 
-        private void ShowNotification(string message)
+        internal void ShowNotification(string message)
         {
             NotificationText.Text = message;
             NotificationOverlay.Visibility = Visibility.Visible;
@@ -1533,7 +1285,6 @@ namespace grid_image_viewer
         }
 
 
-
         private void MenuToggleManga_Click(object sender, RoutedEventArgs e)
         {
             _settings.MangaSplitCount = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
@@ -1621,181 +1372,8 @@ namespace grid_image_viewer
             }
         }
 
-        private async void OpenSlideshowDialogAsync()
-        {
-            if (_isSlideshowRunning)
-            {
-                StopSlideshow();
-                return;
-            }
-
-            SlideshowFullscreen.IsChecked = _settings.SlideshowFullscreen;
-            SlideshowRandom.IsChecked = _settings.SlideshowRandom;
-            SlideshowLoop.IsChecked = _settings.SlideshowLoop;
-            SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
-            SlideshowInterval.Value = _settings.SlideshowInterval;
-
-            // Temporarily disable all content controls to force focus to the dialog buttons (OK)
-            SetSlideshowControlsEnabled(false);
-
-            SlideshowDialog.XamlRoot = this.Content.XamlRoot;
-            _isDialogOpen = true;
-            await SlideshowDialog.ShowAsync();
-            _isDialogOpen = false;
-        }
-
-        private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args)
-        {
-            // Re-enable controls after a short delay to ensure focus stays on the OK button
-            var restoreTimer = new DispatcherTimer();
-            restoreTimer.Interval = TimeSpan.FromMilliseconds(100);
-            restoreTimer.Tick += (s, e) =>
-            {
-                restoreTimer.Stop();
-                SetSlideshowControlsEnabled(true);
-            };
-            restoreTimer.Start();
-        }
-
-        private void SetSlideshowControlsEnabled(bool enabled)
-        {
-            SlideshowFullscreen.IsEnabled = enabled;
-            SlideshowRandom.IsEnabled = enabled;
-            SlideshowLoop.IsEnabled = enabled;
-            SlideshowNextFolder.IsEnabled = enabled;
-            SlideshowCurrentFolderOnly.IsEnabled = enabled;
-            SlideshowInterval.IsEnabled = enabled;
-        }
-
-
-
-        private Button? FindButtonByContent(DependencyObject parent, string content)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is Button btn && btn.Content is string text && text == content)
-                    return btn;
-
-                var result = FindButtonByContent(child, content);
-                if (result != null)
-                    return result;
-            }
-            return null;
-        }
-
-        private DependencyObject? FindVisualChildByName(DependencyObject parent, string name)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is FrameworkElement fe && fe.Name == name)
-                    return child;
-
-                var result = FindVisualChildByName(child, name);
-                if (result != null)
-                    return result;
-            }
-            return null;
-        }
-
-
-
-        private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-        {
-            _settings.SlideshowFullscreen = SlideshowFullscreen.IsChecked ?? false;
-            _settings.SlideshowRandom = SlideshowRandom.IsChecked ?? false;
-            _settings.SlideshowLoop = SlideshowLoop.IsChecked ?? false;
-            _settings.SlideshowNextFolder = SlideshowNextFolder.IsChecked ?? false;
-            _settings.SlideshowInterval = SlideshowInterval.Value;
-            _settings.SaveSlideshowSettings();
-
-            StartSlideshow();
-        }
-
-        private void StartSlideshow()
-        {
-            _isSlideshowRunning = true;
-            if (_settings.SlideshowFullscreen && !AppWindow.Presenter.Kind.Equals(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen))
-            {
-                AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
-                AppTitleBar.Visibility = Visibility.Collapsed;
-            }
-
-            _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
-            _slideshowTimer.Start();
-            ShowNotification("自動再生 開始");
-        }
-
-        private void StopSlideshow()
-        {
-            _isSlideshowRunning = false;
-            _slideshowTimer.Stop();
-            for (int i=0; i<4; i++) _slideshowRandomIndices[i] = -1;
-            ShowNotification("自動再生 停止");
-        }
-
-        private void SlideshowTimer_Tick(object? sender, object e)
-        {
-            if (_playlist == null || _playlist.Count == 0) return;
-
-            if (_settings.SlideshowRandom)
-            {
-                int nextIdx;
-                int splits = _settings.MangaSplitCount;
-                if (_playlist.Count <= 1)
-                {
-                    nextIdx = 0;
-                    for (int i=0; i<4; i++) _slideshowRandomIndices[i] = -1;
-                }
-                else
-                {
-                    do { nextIdx = _random.Next(_playlist.Count); } while (nextIdx == _currentIndex);
-                    _slideshowRandomIndices[0] = nextIdx;
-                    
-                    if (splits > 1 && _playlist.Count >= splits)
-                    {
-                        for (int i = 1; i < splits; i++)
-                        {
-                            int r;
-                            do {
-                                r = _random.Next(_playlist.Count);
-                            } while (r == nextIdx || _slideshowRandomIndices.Take(i).Contains(r) || r == _currentIndex);
-                            _slideshowRandomIndices[i] = r;
-                        }
-                    }
-                    else
-                    {
-                        for (int i=1; i<4; i++) _slideshowRandomIndices[i] = -1;
-                    }
-                }
-                _currentIndex = nextIdx;
-                _ = UpdateDisplayAsync();
-            }
-            else
-            {
-                int increment = _settings.MangaSplitCount;
-                if (_currentIndex + increment >= _playlist.Count)
-                {
-                    if (_settings.SlideshowNextFolder)
-                    {
-                        NavigateFolder(1);
-                    }
-                    else if (_settings.SlideshowLoop)
-                    {
-                        _currentIndex = 0;
-                        _ = UpdateDisplayAsync();
-                    }
-                    else
-                    {
-                        StopSlideshow();
-                    }
-                }
-                else
-                {
-                    Navigate(1);
-                }
-            }
-        }
+        private void OpenSlideshowDialogAsync() => _slideshowManager.OpenSlideshowDialogAsync();
+        private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => _slideshowManager.SlideshowDialog_Opened(sender, args);
+        private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) => _slideshowManager.SlideshowDialog_PrimaryButtonClick(sender, args);
     }
 }

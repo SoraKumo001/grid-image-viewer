@@ -31,7 +31,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border x:Name="AppTitleBar" Grid.Row="0" Height="32" Background="#242424" BorderBrush="#333333" BorderThickness="0,0,0,1">
+        <Border x:Name="AppTitleBar" x:FieldModifier="internal" Grid.Row="0" Height="32" Background="#242424" BorderBrush="#333333" BorderThickness="0,0,0,1">
             <TextBlock Text="Grid Image Viewer" Foreground="#888888" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="12" />
         </Border>
 
@@ -119,7 +119,7 @@
         </ScrollViewer>
 
         <!-- Grid Mode UI -->
-        <GridView x:Name="ImageGridView"
+        <GridView x:Name="ImageGridView" x:FieldModifier="internal"
                   Grid.Row="1"
                   Visibility="Collapsed"
                   SelectionMode="Single"
@@ -166,7 +166,7 @@
                 <TextBlock x:Name="NotificationText" Foreground="White" FontSize="36" FontWeight="Bold" />
             </Border>
         
-        <ContentDialog x:Name="SlideshowDialog"
+        <ContentDialog x:Name="SlideshowDialog" x:FieldModifier="internal"
                        Title="自動再生設定"
                        PrimaryButtonText="OK"
                        CloseButtonText="キャンセル"
@@ -174,14 +174,14 @@
                        PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick"
                        Opened="SlideshowDialog_Opened">
             <StackPanel Spacing="12">
-                <CheckBox x:Name="SlideshowFullscreen" Content="全画面表示(_F)"/>
-                <CheckBox x:Name="SlideshowRandom" Content="ランダムな並び順(_R)"/>
-                <CheckBox x:Name="SlideshowLoop" Content="ループする(_L)"/>
-                <CheckBox x:Name="SlideshowNextFolder" Content="次のフォルダも表示(_N)"/>
-                <CheckBox x:Name="SlideshowCurrentFolderOnly" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
+                <CheckBox x:Name="SlideshowFullscreen" x:FieldModifier="internal" Content="全画面表示(_F)"/>
+                <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" Content="ランダムな並び順(_R)"/>
+                <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" Content="ループする(_L)"/>
+                <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" Content="次のフォルダも表示(_N)"/>
+                <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
                     <TextBlock Text="時間(_T)：" VerticalAlignment="Center"/>
-                    <NumberBox x:Name="SlideshowInterval" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="200"/>
+                    <NumberBox x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="200"/>
                     <TextBlock Text="秒毎" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
