@@ -40,6 +40,7 @@ namespace grid_image_viewer
         private DispatcherTimer _slideshowTimer;
         private DispatcherTimer _notificationTimer;
         private bool _isSlideshowRunning = false;
+        private int _slideshowLeftIndex = -1;
         private Random _random = new Random();
 
         public MainWindow()
@@ -649,10 +650,23 @@ namespace grid_image_viewer
                 var loadTasks = new List<Task>();
                 loadTasks.Add(LoadPageAsync(_playlist[_currentIndex], RightImage, RightSkiaCanvas, RightLoadingRing, true, token));
 
-                bool hasLeftPage = _settings.IsMangaMode && _currentIndex + 1 < _playlist.Count;
+                int leftIndex = -1;
+                if (_settings.IsMangaMode)
+                {
+                    if (_isSlideshowRunning && _settings.SlideshowRandom && _slideshowLeftIndex != -1)
+                    {
+                        leftIndex = _slideshowLeftIndex;
+                    }
+                    else if (_currentIndex + 1 < _playlist.Count)
+                    {
+                        leftIndex = _currentIndex + 1;
+                    }
+                }
+
+                bool hasLeftPage = leftIndex != -1;
                 if (hasLeftPage)
                 {
-                    loadTasks.Add(LoadPageAsync(_playlist[_currentIndex + 1], LeftImage, LeftSkiaCanvas, LeftLoadingRing, false, token));
+                    loadTasks.Add(LoadPageAsync(_playlist[leftIndex], LeftImage, LeftSkiaCanvas, LeftLoadingRing, false, token));
                 }
                 else
                 {
@@ -1110,6 +1124,7 @@ namespace grid_image_viewer
 
         private void Navigate(int offset, bool forceSingleStep = false)
         {
+            _slideshowLeftIndex = -1;
             if (_playlist.Count == 0) return;
 
             int step = (_settings.IsMangaMode && !forceSingleStep) ? 2 : 1;
@@ -1516,6 +1531,7 @@ namespace grid_image_viewer
         {
             _isSlideshowRunning = false;
             _slideshowTimer.Stop();
+            _slideshowLeftIndex = -1;
         }
 
         private void SlideshowTimer_Tick(object? sender, object e)
@@ -1526,13 +1542,28 @@ namespace grid_image_viewer
             {
                 int nextIdx;
                 if (_playlist.Count == 1)
+                {
                     nextIdx = 0;
+                    _slideshowLeftIndex = -1;
+                }
                 else
                 {
                     do
                     {
                         nextIdx = _random.Next(_playlist.Count);
                     } while (nextIdx == _currentIndex);
+
+                    if (_settings.IsMangaMode && _playlist.Count > 1)
+                    {
+                        do
+                        {
+                            _slideshowLeftIndex = _random.Next(_playlist.Count);
+                        } while (_slideshowLeftIndex == nextIdx);
+                    }
+                    else
+                    {
+                        _slideshowLeftIndex = -1;
+                    }
                 }
                 _currentIndex = nextIdx;
                 _ = UpdateDisplayAsync();

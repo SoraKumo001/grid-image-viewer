@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
+    <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsPackageType)' != 'None'" />
   </ItemGroup>
 
   <!--
@@ -73,7 +74,7 @@
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsPackageType>MSIX</WindowsPackageType>
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
 </Project>
