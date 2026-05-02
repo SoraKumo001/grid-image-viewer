@@ -169,6 +169,13 @@ namespace grid_image_viewer
 
             if (_pages.Any(p => p.IsAnimated))
             {
+                int minInterval = 1000;
+                for (int i = 0; i < 4; i++)
+                {
+                    if (_pages[i].IsAnimated && _pages[i].CurrentFrameDuration < minInterval)
+                        minInterval = _pages[i].CurrentFrameDuration;
+                }
+                _animationTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(10, minInterval));
                 _animationTimer.Start();
             }
         }
@@ -442,6 +449,9 @@ namespace grid_image_viewer
                             _pages[pageIndex].Codec = tempRenderer.Codec;
                             _pages[pageIndex].Bitmap = tempRenderer.Bitmap;
                             _pages[pageIndex].FrameCount = tempRenderer.FrameCount;
+                            _pages[pageIndex].CurrentFrame = tempRenderer.CurrentFrame;
+                            _pages[pageIndex].PriorFrame = tempRenderer.PriorFrame;
+                            _pages[pageIndex].CurrentFrameDuration = tempRenderer.CurrentFrameDuration;
                         }
                     });
 
@@ -536,19 +546,28 @@ namespace grid_image_viewer
 
         private void AnimationTimer_Tick(object? sender, object e)
         {
-            int minInterval = 100;
+            _animationTimer.Stop();
+
+            int minInterval = 1000;
             bool anyAnimated = false;
+
             for (int i = 0; i < 4; i++)
             {
                 if (_pages[i].IsAnimated)
                 {
                     int interval = _pages[i].AdvanceFrame();
-                    if (!anyAnimated || interval < minInterval) minInterval = interval;
+                    if (interval < minInterval) minInterval = interval;
                     anyAnimated = true;
                     _pageCanvases[i].Invalidate();
                 }
             }
-            if (anyAnimated) _animationTimer.Interval = TimeSpan.FromMilliseconds(minInterval);
+
+            if (anyAnimated)
+            {
+                // Ensure interval is at least 10ms to prevent CPU saturation
+                _animationTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(10, minInterval));
+                _animationTimer.Start();
+            }
         }
 
         private int GetEffectiveQuadLayout()

@@ -53,10 +53,12 @@ namespace grid_image_viewer
             _gridDecodeSize = decodeSize;
 
             var items = _window.GridItems.ToList();
-            var semaphore = new SemaphoreSlim(Environment.ProcessorCount);
+            var semaphore = new SemaphoreSlim(Math.Max(1, Environment.ProcessorCount / 2));
             var tasks = items.Select(item => Task.Run(async () =>
             {
                 if (token.IsCancellationRequested) return;
+                // Add a small initial delay to prioritize main image loading
+                await Task.Delay(100, token);
                 await semaphore.WaitAsync(token);
                 try
                 {

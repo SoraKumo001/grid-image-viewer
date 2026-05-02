@@ -7,7 +7,6 @@ namespace grid_image_viewer
 {
     /// <summary>
     /// 1ページ分のSkiaSharp画像・アニメーション状態を管理するクラス。
-    /// MainWindowは右ページ用・左ページ用に2つインスタンスを持つ。
     /// </summary>
     public class PageRenderer : IDisposable
     {
@@ -19,6 +18,7 @@ namespace grid_image_viewer
         public string? CurrentFilePath { get; set; }
         public bool UniformToFill { get; set; } = false;
         public int FrameCount { get; internal set; } = 0;
+        public int CurrentFrameDuration { get; internal set; } = 100;
 
         public bool IsAnimated => Codec != null && FrameCount > 1;
 
@@ -60,8 +60,6 @@ namespace grid_image_viewer
                 Codec = codec;
                 Bitmap = bitmap;
                 FrameCount = frameCount;
-                CurrentFrame = -1;
-                PriorFrame = -1;
 
                 if (frameCount <= 1)
                 {
@@ -70,58 +68,66 @@ namespace grid_image_viewer
                     {
                         Bitmap = decoded;
                     }
+                    CurrentFrame = 0;
+                    PriorFrame = -1;
+                }
+                else
+                {
+                    // アニメーションの場合、最初のフレームをデコードしておく
+                    var imageInfo = new SKImageInfo(codec.Info.Width, codec.Info.Height, codec.Info.ColorType, codec.Info.AlphaType);
+                    var options = new SKCodecOptions { FrameIndex = 0 };
+                    codec.GetPixels(imageInfo, bitmap.GetPixels(), options);
+                    
+                    CurrentFrame = 0;
+                    PriorFrame = 0;
+                    CurrentFrameDuration = codec.FrameInfo[0].Duration > 0 ? codec.FrameInfo[0].Duration : 100;
                 }
             }
         }
 
         /// <summary>
         /// アニメーションフレームを1つ進め、次のフレームのタイマー間隔(ms)を返す。
+        /// 実際のデコード処理もここで行うことでPaintの負荷を下げ、アニメーションを滑らかにする。
         /// </summary>
         public int AdvanceFrame()
         {
-            if (Codec == null || FrameCount <= 1) return 100;
+            lock (this)
+            {
+                if (Codec == null || FrameCount <= 1 || Bitmap == null) return 100;
 
-            CurrentFrame = (CurrentFrame + 1) % FrameCount;
-            var frameInfo = Codec.FrameInfo[CurrentFrame];
-            return frameInfo.Duration > 0 ? frameInfo.Duration : 100;
+                CurrentFrame = (CurrentFrame + 1) % FrameCount;
+                var frameInfo = Codec.FrameInfo[CurrentFrame];
+
+                var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
+                
+                // フレーム0または前のフレーム情報がない場合はバッファをクリア
+                if (PriorFrame == -1 || CurrentFrame == 0)
+                {
+                    Bitmap.Erase(SKColors.Transparent);
+                    PriorFrame = -1;
+                }
+
+                var options = new SKCodecOptions
+                {
+                    FrameIndex = CurrentFrame,
+                    PriorFrame = PriorFrame
+                };
+
+                Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
+                PriorFrame = CurrentFrame;
+                CurrentFrameDuration = frameInfo.Duration > 0 ? frameInfo.Duration : 100;
+
+                return CurrentFrameDuration;
+            }
         }
 
         /// <summary>
         /// キャンバスにビットマップを描画する。
         /// </summary>
-        /// <param name="canvas">描画対象のSKCanvas</param>
-        /// <param name="info">キャンバスの描画情報</param>
-        /// <param name="horizontalAlignment">0=Left, 1=Center, 2=Right</param>
-        /// <param name="verticalAlignment">0=Top, 1=Center, 2=Bottom</param>
         public void Paint(SKCanvas canvas, SKImageInfo info, int horizontalAlignment, int verticalAlignment = 1)
         {
             lock (this)
             {
-                if (Codec != null && FrameCount > 1)
-                {
-                    var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
-                    if (Bitmap == null || Bitmap.Width != imageInfo.Width || Bitmap.Height != imageInfo.Height)
-                    {
-                        Bitmap?.Dispose();
-                        Bitmap = new SKBitmap(imageInfo);
-                        PriorFrame = -1;
-                    }
-
-                    if (PriorFrame == -1 || CurrentFrame == 0)
-                    {
-                        Bitmap.Erase(SKColors.Transparent);
-                        PriorFrame = -1;
-                    }
-
-                    var options = new SKCodecOptions
-                    {
-                        FrameIndex = CurrentFrame,
-                        PriorFrame = PriorFrame
-                    };
-                    Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
-                    PriorFrame = CurrentFrame;
-                }
-
                 if (Bitmap != null)
                 {
                     float scale;

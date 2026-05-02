@@ -101,16 +101,6 @@ namespace grid_image_viewer
             _viewerManager = new ViewerManager(this, _settings);
             _editorManager = new EditorManager(this, _settings);
 
-            string lastPath = _settings.LastImagePath;
-            if (!string.IsNullOrEmpty(lastPath))
-            {
-                var dir = Path.GetDirectoryName(lastPath);
-                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-                {
-                    LoadDirectory(dir, lastPath);
-                }
-            }
-
             ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
         }
 
