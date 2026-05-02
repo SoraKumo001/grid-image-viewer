@@ -15,7 +15,7 @@
     </Window.SystemBackdrop>
 
     <Grid
-        x:Name="RootGrid"
+        x:Name="RootGrid" x:FieldModifier="internal"
         AllowDrop="True"
         IsTabStop="True"
         KeyDown="RootGrid_KeyDown"
@@ -37,13 +37,13 @@
 
         <ScrollViewer
             Grid.Row="1"
-            x:Name="ImageScrollViewer"
+            x:Name="ImageScrollViewer" x:FieldModifier="internal"
             HorizontalScrollBarVisibility="Hidden"
             VerticalScrollBarVisibility="Hidden"
             ZoomMode="Enabled"
             MinZoomFactor="0.1"
             MaxZoomFactor="10.0">
-            <Grid x:Name="PagesGrid" 
+            <Grid x:Name="PagesGrid" x:FieldModifier="internal"
                   Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
                   Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
                   RightTapped="PagesGrid_RightTapped" 
@@ -52,42 +52,42 @@
                   PointerReleased="PagesGrid_PointerReleased"
                   PointerCanceled="PagesGrid_PointerReleased">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" x:Name="Col0"/>
-                    <ColumnDefinition Width="*" x:Name="Col1"/>
-                    <ColumnDefinition Width="*" x:Name="Col2"/>
-                    <ColumnDefinition Width="*" x:Name="Col3"/>
+                    <ColumnDefinition Width="*" x:Name="Col0" x:FieldModifier="internal"/>
+                    <ColumnDefinition Width="*" x:Name="Col1" x:FieldModifier="internal"/>
+                    <ColumnDefinition Width="*" x:Name="Col2" x:FieldModifier="internal"/>
+                    <ColumnDefinition Width="*" x:Name="Col3" x:FieldModifier="internal"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*" x:Name="Row0"/>
-                    <RowDefinition Height="*" x:Name="Row1"/>
+                    <RowDefinition Height="*" x:Name="Row0" x:FieldModifier="internal"/>
+                    <RowDefinition Height="*" x:Name="Row1" x:FieldModifier="internal"/>
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="PageGrid4" Visibility="Collapsed">
-                    <Image x:Name="Image4" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas4" Visibility="Collapsed" PaintSurface="Canvas4_PaintSurface" />
-                    <ProgressRing x:Name="LoadingRing4" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                <Grid x:Name="PageGrid4" x:FieldModifier="internal" Visibility="Collapsed">
+                    <Image x:Name="Image4" x:FieldModifier="internal" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas4" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas4_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing4" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Grid x:Name="PageGrid3" Visibility="Collapsed">
-                    <Image x:Name="Image3" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas3" Visibility="Collapsed" PaintSurface="Canvas3_PaintSurface" />
-                    <ProgressRing x:Name="LoadingRing3" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                <Grid x:Name="PageGrid3" x:FieldModifier="internal" Visibility="Collapsed">
+                    <Image x:Name="Image3" x:FieldModifier="internal" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas3" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas3_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing3" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Grid x:Name="PageGrid2" Visibility="Collapsed">
-                    <Image x:Name="Image2" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas2" Visibility="Collapsed" PaintSurface="Canvas2_PaintSurface" />
-                    <ProgressRing x:Name="LoadingRing2" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                <Grid x:Name="PageGrid2" x:FieldModifier="internal" Visibility="Collapsed">
+                    <Image x:Name="Image2" x:FieldModifier="internal" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas2" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas2_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing2" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Grid x:Name="PageGrid1" Visibility="Collapsed">
-                    <Image x:Name="Image1" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas1" Visibility="Collapsed" PaintSurface="Canvas1_PaintSurface" />
-                    <ProgressRing x:Name="LoadingRing1" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                <Grid x:Name="PageGrid1" x:FieldModifier="internal" Visibility="Collapsed">
+                    <Image x:Name="Image1" x:FieldModifier="internal" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas1" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas1_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing1" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
                 <Canvas Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayCanvas" Background="Transparent">
-                    <Rectangle x:Name="SelectionRectangle" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
+                    <Rectangle x:Name="SelectionRectangle" x:FieldModifier="internal" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
                 </Canvas>
 
                 <Grid.ContextFlyout>
@@ -100,12 +100,12 @@
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem Text="Overwrite" Click="MenuOverwrite_Click" />
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="MenuCrop" Text="Crop (Selection)" Click="MenuCrop_Click" IsEnabled="False" />
-                        <MenuFlyoutItem Text="Resize" Click="MenuResize_Click" />
+                        <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" Text="Crop (Selection)" Click="MenuCrop_Click" IsEnabled="False" />
+                        <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" Text="Resize" Click="MenuResize_Click" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="MenuToggleManga" Text="View Mode: Single" Click="MenuToggleManga_Click" />
+                        <MenuFlyoutItem x:Name="MenuToggleManga" x:FieldModifier="internal" Text="View Mode: Single" Click="MenuToggleManga_Click" />
                         <MenuFlyoutSubItem x:Name="MenuQuadLayout" Text="Quad Layout">
                             <MenuFlyoutItem x:Name="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" />
                             <MenuFlyoutItem x:Name="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" />
@@ -154,7 +154,7 @@
         </GridView>
         
         <!-- Folder Searching Overlay -->
-            <Border x:Name="FolderSearchingOverlay" Grid.Row="1" Background="#88000000" Visibility="Collapsed" IsHitTestVisible="True">
+            <Border x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Background="#88000000" Visibility="Collapsed" IsHitTestVisible="True">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                     <ProgressRing IsActive="True" Width="64" Height="64" Foreground="#00A2ED" />
                     <TextBlock Text="Searching for images..." Foreground="White" FontSize="18" FontWeight="SemiBold" />
@@ -162,8 +162,8 @@
             </Border>
 
             <!-- Notification Overlay -->
-            <Border x:Name="NotificationOverlay" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="40,24" Background="#CC000000" CornerRadius="16" Visibility="Collapsed" IsHitTestVisible="False">
-                <TextBlock x:Name="NotificationText" Foreground="White" FontSize="36" FontWeight="Bold" />
+            <Border x:Name="NotificationOverlay" x:FieldModifier="internal" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="40,24" Background="#CC000000" CornerRadius="16" Visibility="Collapsed" IsHitTestVisible="False">
+                <TextBlock x:Name="NotificationText" x:FieldModifier="internal" Foreground="White" FontSize="36" FontWeight="Bold" />
             </Border>
         
         <ContentDialog x:Name="SlideshowDialog" x:FieldModifier="internal"

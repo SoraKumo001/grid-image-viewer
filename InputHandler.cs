@@ -192,37 +192,55 @@ namespace grid_image_viewer
 
         public void HandlePointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
-            if (!_window.IsGridMode) return;
-            
+            var props = e.GetCurrentPoint(_window.RootGrid).Properties;
             bool isCtrl = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control);
-            if (isCtrl) return;
+            bool isShift = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Shift);
 
-            var props = e.GetCurrentPoint(_window.ImageGridView).Properties;
+            if (isCtrl)
+            {
+                // Let ScrollViewer handle Zoom
+                return;
+            }
             
-            if (_gridScrollViewer == null)
+            if (_window.IsGridMode)
             {
-                _gridScrollViewer = GetScrollViewer(_window.ImageGridView);
+                if (_gridScrollViewer == null)
+                {
+                    _gridScrollViewer = GetScrollViewer(_window.ImageGridView);
+                }
+
+                if (_gridScrollViewer != null)
+                {
+                    if (props.MouseWheelDelta < 0) // 下へスクロール
+                    {
+                        if (_gridScrollViewer.VerticalOffset >= _gridScrollViewer.ScrollableHeight - 0.5)
+                        {
+                            _window.NavigateFolder(1);
+                            e.Handled = true;
+                        }
+                    }
+                    else // 上へスクロール
+                    {
+                        if (_gridScrollViewer.VerticalOffset <= 0.5)
+                        {
+                            _window.NavigateFolder(-1);
+                            e.Handled = true;
+                        }
+                    }
+                }
+                return;
             }
 
-            if (_gridScrollViewer != null)
+            // Navigate images (単一画像表示モード)
+            if (props.MouseWheelDelta < 0)
             {
-                if (props.MouseWheelDelta < 0) // 下へスクロール
-                {
-                    if (_gridScrollViewer.VerticalOffset >= _gridScrollViewer.ScrollableHeight - 0.5)
-                    {
-                        _window.NavigateFolder(1);
-                        e.Handled = true;
-                    }
-                }
-                else // 上へスクロール
-                {
-                    if (_gridScrollViewer.VerticalOffset <= 0.5)
-                    {
-                        _window.NavigateFolder(-1);
-                        e.Handled = true;
-                    }
-                }
+                _window.Navigate(1, isShift); // Next
             }
+            else
+            {
+                _window.Navigate(-1, isShift); // Prev
+            }
+            e.Handled = true;
         }
 
         public void HandleDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
