@@ -391,16 +391,29 @@ namespace grid_image_viewer
                 var bitmap = _pages[pageIndex].Bitmap;
                 if (bitmap != null)
                 {
-                    try
+                    // Dispose対策として、不変なSKImageのスナップショットを作成してから別スレッドに渡す
+                    using var snapshot = SKImage.FromBitmap(bitmap);
+                    if (snapshot != null)
                     {
-                        using var ms = new System.IO.MemoryStream();
-                        bitmap.Encode(ms, SKEncodedImageFormat.Png, 100);
-                        ms.Position = 0;
-                        var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                        _prevImages[pageIndex].Source = bitmapImage;
+                        try
+                        {
+                            var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                            using var ms = new System.IO.MemoryStream();
+                            await Task.Run(() =>
+                            {
+                                using var data = snapshot.Encode(SKEncodedImageFormat.Png, 100);
+                                if (data != null) data.SaveTo(ms);
+                            });
+                            ms.Position = 0;
+                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                            _prevImages[pageIndex].Source = bitmapImage;
+                        }
+                        catch { _prevImages[pageIndex].Source = null; }
                     }
-                    catch { _prevImages[pageIndex].Source = null; }
+                    else
+                    {
+                        _prevImages[pageIndex].Source = null;
+                    }
                 }
                 else
                 {
@@ -464,7 +477,7 @@ namespace grid_image_viewer
 
                         if (nativeDecodeFailed)
                         {
-                            var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);
+                            var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
                             if (bmpBytes != null)
                             {
                                 var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
