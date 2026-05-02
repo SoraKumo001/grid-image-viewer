@@ -666,7 +666,8 @@ namespace grid_image_viewer
 
                 if (!string.IsNullOrEmpty(nextImageFolder))
                 {
-                    _window.LoadDirectory(nextImageFolder);
+                    bool includeSiblings = _window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowIncludeSiblings;
+                    _window.LoadDirectory(nextImageFolder, includeSiblings: includeSiblings);
                 }
             }
             finally

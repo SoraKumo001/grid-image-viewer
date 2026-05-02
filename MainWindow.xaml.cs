@@ -140,35 +140,65 @@ namespace grid_image_viewer
 
         private void RootGrid_DragOver(object sender, DragEventArgs e) => _inputHandler.HandleDragOver(sender, e);
         private void RootGrid_Drop(object sender, DragEventArgs e) => _inputHandler.HandleDrop(sender, e);
-        public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false)
+        public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false)
         {
             _currentDirectory = path;
             try
             {
                 var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" };
 
-                IEnumerable<string> files;
+                List<string> fileList = new List<string>();
+                List<string> targetDirs = new List<string>();
+
                 if (includeSiblings)
                 {
-                    string? parent = Path.GetDirectoryName(path);
+                    // Ensure we get the actual parent by trimming any trailing slashes first
+                    string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    string? parent = Path.GetDirectoryName(cleanPath);
                     if (!string.IsNullOrEmpty(parent))
                     {
-                        files = Directory.EnumerateDirectories(parent)
-                                         .SelectMany(d =>
-                                         {
-                                             try { return Directory.EnumerateFiles(d); }
-                                             catch { return Enumerable.Empty<string>(); }
-                                         })
-                                         .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                        // Add parent folder itself to include images directly in it
+                        targetDirs.Add(parent);
+                        
+                        // Add all sibling subdirectories
+                        try
+                        {
+                            foreach (var d in Directory.EnumerateDirectories(parent))
+                            {
+                                targetDirs.Add(d);
+                            }
+                        }
+                        catch { }
                     }
-                    else files = Directory.EnumerateFiles(path).Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                    else
+                    {
+                        targetDirs.Add(path);
+                    }
                 }
                 else
                 {
-                    files = Directory.EnumerateFiles(path).Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                    targetDirs.Add(path);
                 }
 
-                _playlist = files.OrderBy(f => f, new NaturalStringComparer()).ToList();
+                // Gather files from all target directories robustly
+                var searchOption = includeSubfolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                foreach (var dir in targetDirs)
+                {
+                    try
+                    {
+                        var files = includeSubfolders ? Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories) : Directory.EnumerateFiles(dir);
+                        foreach (var f in files)
+                        {
+                            if (extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
+                            {
+                                fileList.Add(f);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                _playlist = fileList.OrderBy(f => f, new NaturalStringComparer()).ToList();
 
                 if (_playlist.Count > 0)
                 {

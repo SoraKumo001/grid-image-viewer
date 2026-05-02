@@ -51,6 +51,7 @@ namespace grid_image_viewer
             _mainWindow.SlideshowLoop.IsChecked = _settings.SlideshowLoop;
             _mainWindow.SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
             _mainWindow.SlideshowIncludeSiblings.IsChecked = _settings.SlideshowIncludeSiblings;
+            _mainWindow.SlideshowCurrentFolderOnly.IsChecked = _settings.SlideshowCurrentFolderOnly;
             _mainWindow.SlideshowUniformToFill.IsChecked = _settings.SlideshowUniformToFill;
             _mainWindow.SlideshowInterval.Value = _settings.SlideshowInterval;
             _mainWindow.SlideshowCrossfade.IsChecked = _settings.SlideshowCrossfade;
@@ -101,6 +102,7 @@ namespace grid_image_viewer
             _settings.SlideshowLoop = _mainWindow.SlideshowLoop.IsChecked ?? false;
             _settings.SlideshowNextFolder = _mainWindow.SlideshowNextFolder.IsChecked ?? false;
             _settings.SlideshowIncludeSiblings = _mainWindow.SlideshowIncludeSiblings.IsChecked ?? false;
+            _settings.SlideshowCurrentFolderOnly = _mainWindow.SlideshowCurrentFolderOnly.IsChecked ?? false;
             _settings.SlideshowUniformToFill = _mainWindow.SlideshowUniformToFill.IsChecked ?? false;
             _settings.SlideshowInterval = _mainWindow.SlideshowInterval.Value;
             _settings.SlideshowCrossfade = _mainWindow.SlideshowCrossfade.IsChecked ?? false;
@@ -121,11 +123,11 @@ namespace grid_image_viewer
                 _mainWindow.IsFullscreen = true;
             }
 
-            if (_settings.SlideshowIncludeSiblings)
+            if (_settings.SlideshowIncludeSiblings || _settings.SlideshowCurrentFolderOnly)
             {
                 _wasExpanded = true;
                 string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
-                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, true);
+                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly);
             }
 
             _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
@@ -149,7 +151,7 @@ namespace grid_image_viewer
             {
                 _wasExpanded = false;
                 string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
-                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, false);
+                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, false, false);
             }
 
             SetSlideshowControlsEnabled(true);

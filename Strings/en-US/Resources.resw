@@ -128,7 +128,7 @@
     <value>Show next folder(_N)</value>
   </data>
   <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
-    <value>Start folder and subfolders only(_B)</value>
+    <value>Include subfolders(_B)</value>
   </data>
   <data name="SlideshowUniformToFill.Content" xml:space="preserve">
     <value>Scale to fill (Cover)(_C)</value>

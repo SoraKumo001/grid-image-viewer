@@ -128,7 +128,7 @@
     <value>次のフォルダも表示(_N)</value>
   </data>
   <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
-    <value>開始フォルダと下位フォルダだけ表示(_B)</value>
+    <value>下位フォルダも含める(_B)</value>
   </data>
   <data name="SlideshowUniformToFill.Content" xml:space="preserve">
     <value>拡大して全体を埋める (Cover)(_C)</value>
