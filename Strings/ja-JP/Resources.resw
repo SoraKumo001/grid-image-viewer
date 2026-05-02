@@ -130,6 +130,9 @@
   <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
     <value>開始フォルダと下位フォルダだけ表示(_B)</value>
   </data>
+  <data name="SlideshowUniformToFill.Content" xml:space="preserve">
+    <value>拡大して全体を埋める (Cover)(_C)</value>
+  </data>
   <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
     <value>時間(_T)：</value>
   </data>

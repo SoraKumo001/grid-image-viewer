@@ -192,6 +192,7 @@
                 <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" x:Uid="SlideshowLoop" Content="ループする(_L)"/>
                 <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" x:Uid="SlideshowNextFolder" Content="次のフォルダも表示(_N)"/>
                 <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
+                <CheckBox x:Name="SlideshowUniformToFill" x:FieldModifier="internal" x:Uid="SlideshowUniformToFill" Content="拡大して全体を埋める(_C)"/>
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
                     <TextBlock x:Uid="SlideshowIntervalLabel" Text="時間(_T)：" VerticalAlignment="Center"/>
                     <NumberBox x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="200"/>

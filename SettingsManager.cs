@@ -57,6 +57,7 @@ namespace grid_image_viewer
         public bool SlideshowLoop { get; set; } = true;
         public bool SlideshowNextFolder { get; set; } = false;
         public bool SlideshowCurrentFolderOnly { get; set; } = false;
+        public bool SlideshowUniformToFill { get; set; } = false;
         public double SlideshowInterval { get; set; } = 2.0;
 
         public int WindowWidth { get; set; } = -1;
@@ -89,6 +90,7 @@ namespace grid_image_viewer
         public bool SlideshowLoop { get => _data.SlideshowLoop; set => _data.SlideshowLoop = value; }
         public bool SlideshowNextFolder { get => _data.SlideshowNextFolder; set => _data.SlideshowNextFolder = value; }
         public bool SlideshowCurrentFolderOnly { get => _data.SlideshowCurrentFolderOnly; set => _data.SlideshowCurrentFolderOnly = value; }
+        public bool SlideshowUniformToFill { get => _data.SlideshowUniformToFill; set => _data.SlideshowUniformToFill = value; }
         public double SlideshowInterval { get => _data.SlideshowInterval; set => _data.SlideshowInterval = value; }
 
         public string LastImagePath { get => _data.LastImagePath; }

@@ -130,6 +130,9 @@
   <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
     <value>Start folder and subfolders only(_B)</value>
   </data>
+  <data name="SlideshowUniformToFill.Content" xml:space="preserve">
+    <value>Scale to fill (Cover)(_C)</value>
+  </data>
   <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
     <value>Interval(_T):</value>
   </data>

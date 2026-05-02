@@ -94,6 +94,7 @@ namespace grid_image_viewer
             }
 
             StopAnimation();
+            UpdateStretch();
             _displayCts?.Cancel();
             _displayCts?.Dispose();
             _displayCts = new CancellationTokenSource();
@@ -399,6 +400,22 @@ namespace grid_image_viewer
         {
             _animationTimer.Stop();
             foreach (var p in _pages) p.Reset();
+        }
+
+        public void UpdateStretch()
+        {
+            var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill) 
+                ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill 
+                : Microsoft.UI.Xaml.Media.Stretch.Uniform;
+            
+            bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
+
+            for (int i = 0; i < 4; i++)
+            {
+                PageImages[i].Stretch = stretch;
+                _pages[i].UniformToFill = uniformToFill;
+                _pageCanvases[i].Invalidate();
+            }
         }
 
         private void AnimationTimer_Tick(object? sender, object e)

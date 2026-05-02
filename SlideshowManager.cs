@@ -38,6 +38,7 @@ namespace grid_image_viewer
             _mainWindow.SlideshowRandom.IsChecked = _settings.SlideshowRandom;
             _mainWindow.SlideshowLoop.IsChecked = _settings.SlideshowLoop;
             _mainWindow.SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
+            _mainWindow.SlideshowUniformToFill.IsChecked = _settings.SlideshowUniformToFill;
             _mainWindow.SlideshowInterval.Value = _settings.SlideshowInterval;
 
             SetSlideshowControlsEnabled(false);
@@ -71,6 +72,7 @@ namespace grid_image_viewer
             _mainWindow.SlideshowLoop.IsEnabled = enabled;
             _mainWindow.SlideshowNextFolder.IsEnabled = enabled;
             _mainWindow.SlideshowCurrentFolderOnly.IsEnabled = enabled;
+            _mainWindow.SlideshowUniformToFill.IsEnabled = enabled;
             _mainWindow.SlideshowInterval.IsEnabled = enabled;
         }
 
@@ -80,6 +82,7 @@ namespace grid_image_viewer
             _settings.SlideshowRandom = _mainWindow.SlideshowRandom.IsChecked ?? false;
             _settings.SlideshowLoop = _mainWindow.SlideshowLoop.IsChecked ?? false;
             _settings.SlideshowNextFolder = _mainWindow.SlideshowNextFolder.IsChecked ?? false;
+            _settings.SlideshowUniformToFill = _mainWindow.SlideshowUniformToFill.IsChecked ?? false;
             _settings.SlideshowInterval = _mainWindow.SlideshowInterval.Value;
             _settings.SaveSlideshowSettings();
 
@@ -95,6 +98,7 @@ namespace grid_image_viewer
                 _mainWindow.AppTitleBar.Visibility = Visibility.Collapsed;
             }
 
+            _mainWindow.ViewerManager.UpdateStretch();
             _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
             _slideshowTimer.Start();
             _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
@@ -105,6 +109,7 @@ namespace grid_image_viewer
             IsSlideshowRunning = false;
             _slideshowTimer.Stop();
             for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
+            _mainWindow.ViewerManager.UpdateStretch();
             _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
         }
 

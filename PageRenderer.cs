@@ -18,6 +18,7 @@ namespace grid_image_viewer
         public int CurrentFrame { get; set; } = -1;
         public int PriorFrame { get; set; } = -1;
         public string? CurrentFilePath { get; set; }
+        public bool UniformToFill { get; set; } = false;
         public int FrameCount { get; private set; } = 0;
 
         public bool IsAnimated => Codec != null && FrameCount > 1;
@@ -126,7 +127,11 @@ namespace grid_image_viewer
 
                 if (Bitmap != null)
                 {
-                    float scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
+                    float scale;
+                    if (UniformToFill)
+                        scale = Math.Max((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
+                    else
+                        scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
                     
                     float x = (info.Width - Bitmap.Width * scale) / 2;
                     if (horizontalAlignment == 0) x = 0;
