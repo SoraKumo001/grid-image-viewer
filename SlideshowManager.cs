@@ -15,6 +15,7 @@ namespace grid_image_viewer
         public int[] SlideshowRandomIndices { get; private set; } = new int[4] { -1, -1, -1, -1 };
         private Random _random = new Random();
         private ResourceLoader _resourceLoader = new ResourceLoader();
+        private bool _wasExpanded = false;
 
         public SlideshowManager(MainWindow mainWindow, SettingsManager settings)
         {
@@ -49,6 +50,7 @@ namespace grid_image_viewer
             _mainWindow.SlideshowRandom.IsChecked = _settings.SlideshowRandom;
             _mainWindow.SlideshowLoop.IsChecked = _settings.SlideshowLoop;
             _mainWindow.SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
+            _mainWindow.SlideshowIncludeSiblings.IsChecked = _settings.SlideshowIncludeSiblings;
             _mainWindow.SlideshowUniformToFill.IsChecked = _settings.SlideshowUniformToFill;
             _mainWindow.SlideshowInterval.Value = _settings.SlideshowInterval;
             _mainWindow.SlideshowCrossfade.IsChecked = _settings.SlideshowCrossfade;
@@ -84,6 +86,7 @@ namespace grid_image_viewer
             _mainWindow.SlideshowRandom.IsEnabled = enabled;
             _mainWindow.SlideshowLoop.IsEnabled = enabled;
             _mainWindow.SlideshowNextFolder.IsEnabled = enabled;
+            _mainWindow.SlideshowIncludeSiblings.IsEnabled = enabled;
             _mainWindow.SlideshowCurrentFolderOnly.IsEnabled = enabled;
             _mainWindow.SlideshowUniformToFill.IsEnabled = enabled;
             _mainWindow.SlideshowInterval.IsEnabled = enabled;
@@ -97,6 +100,7 @@ namespace grid_image_viewer
             _settings.SlideshowRandom = _mainWindow.SlideshowRandom.IsChecked ?? false;
             _settings.SlideshowLoop = _mainWindow.SlideshowLoop.IsChecked ?? false;
             _settings.SlideshowNextFolder = _mainWindow.SlideshowNextFolder.IsChecked ?? false;
+            _settings.SlideshowIncludeSiblings = _mainWindow.SlideshowIncludeSiblings.IsChecked ?? false;
             _settings.SlideshowUniformToFill = _mainWindow.SlideshowUniformToFill.IsChecked ?? false;
             _settings.SlideshowInterval = _mainWindow.SlideshowInterval.Value;
             _settings.SlideshowCrossfade = _mainWindow.SlideshowCrossfade.IsChecked ?? false;
@@ -108,26 +112,47 @@ namespace grid_image_viewer
 
         public void StartSlideshow()
         {
-            IsSlideshowRunning = true;
-            if (_settings.SlideshowFullscreen && !_mainWindow.AppWindow.Presenter.Kind.Equals(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen))
+            if (IsSlideshowRunning) return;
+
+            SetSlideshowControlsEnabled(false);
+
+            if (_settings.SlideshowFullscreen)
             {
-                _mainWindow.AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
-                _mainWindow.AppTitleBar.Visibility = Visibility.Collapsed;
+                _mainWindow.IsFullscreen = true;
             }
 
-            _ = _mainWindow.UpdateDisplayAsync();
+            if (_settings.SlideshowIncludeSiblings)
+            {
+                _wasExpanded = true;
+                string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
+                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, true);
+            }
+
             _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
             _slideshowTimer.Start();
-            _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
+            IsSlideshowRunning = true;
         }
 
         public void StopSlideshow()
         {
-            IsSlideshowRunning = false;
+            if (!IsSlideshowRunning) return;
+
             _slideshowTimer.Stop();
-            for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
-            _ = _mainWindow.UpdateDisplayAsync();
-            _mainWindow.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
+            IsSlideshowRunning = false;
+
+            if (_settings.SlideshowFullscreen)
+            {
+                _mainWindow.IsFullscreen = false;
+            }
+
+            if (_wasExpanded)
+            {
+                _wasExpanded = false;
+                string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
+                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, false);
+            }
+
+            SetSlideshowControlsEnabled(true);
         }
 
         private void SlideshowTimer_Tick(object? sender, object e)
@@ -173,12 +198,21 @@ namespace grid_image_viewer
             }
             else
             {
+                if (_mainWindow.IsSearchingFolder) return;
+
                 int increment = _settings.MangaSplitCount;
                 if (currentIndex + increment >= playlist.Count)
                 {
                     if (_settings.SlideshowNextFolder)
                     {
+                        // Stop timer during search to prevent multiple triggers
+                        _slideshowTimer.Stop();
                         _mainWindow.NavigateFolder(1);
+
+                        // NavigateFolder will call LoadDirectory which updates display.
+                        // We need to restart the timer once the new folder is loaded.
+                        // But NavigateFolder is async void, so we'll poll or use a Task.
+                        _ = RestartTimerAfterFolderLoad();
                     }
                     else if (_settings.SlideshowLoop)
                     {
@@ -193,6 +227,38 @@ namespace grid_image_viewer
                 else
                 {
                     _mainWindow.Navigate(1);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task RestartTimerAfterFolderLoad()
+        {
+            // Wait for searching to start
+            int timeout = 0;
+            while (!_mainWindow.IsSearchingFolder && timeout < 20) { await System.Threading.Tasks.Task.Delay(50); timeout++; }
+
+            // Wait for searching to finish
+            while (_mainWindow.IsSearchingFolder) { await System.Threading.Tasks.Task.Delay(100); }
+
+            if (IsSlideshowRunning)
+            {
+                // If we successfully loaded a new playlist, start the timer again
+                if (_mainWindow.Playlist.Count > 0)
+                {
+                    _slideshowTimer.Start();
+                }
+                else
+                {
+                    // If no images found in the next folder, try searching again or stop
+                    if (_settings.SlideshowLoop)
+                    {
+                        _mainWindow.NavigateFolder(1);
+                        _ = RestartTimerAfterFolderLoad();
+                    }
+                    else
+                    {
+                        StopSlideshow();
+                    }
                 }
             }
         }

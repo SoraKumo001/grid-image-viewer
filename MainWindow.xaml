@@ -254,6 +254,7 @@
                 <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" x:Uid="SlideshowRandom" Content="ランダムな並び順(_R)"/>
                 <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" x:Uid="SlideshowLoop" Content="ループする(_L)"/>
                 <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" x:Uid="SlideshowNextFolder" Content="次のフォルダも表示(_N)"/>
+                <CheckBox x:Name="SlideshowIncludeSiblings" x:FieldModifier="internal" Content="兄弟フォルダも対象にする(_S)"/>
                 <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
                 <CheckBox x:Name="SlideshowUniformToFill" x:FieldModifier="internal" x:Uid="SlideshowUniformToFill" Content="拡大して全体を埋める(_C)"/>
                 <CheckBox x:Name="SlideshowCrossfade" x:FieldModifier="internal" Content="クロスフェードを有効にする"/>

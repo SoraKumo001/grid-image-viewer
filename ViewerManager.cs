@@ -391,7 +391,7 @@ namespace grid_image_viewer
 
         private async Task LoadPageAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, int pageIndex, CancellationToken token)
         {
-               // Prepare previous image for crossfade or to prevent blackout
+            // Prepare previous image for crossfade or to prevent blackout
             if (imageCtrl.Visibility == Visibility.Visible && imageCtrl.Source != null)
             {
                 _prevImages[pageIndex].Source = imageCtrl.Source;
@@ -424,7 +424,7 @@ namespace grid_image_viewer
 
             // Show previous image in the background container
             _prevContainers[pageIndex].Opacity = 1;
-            
+
             // NOTE: We don't hide CurrentContainer here to prevent blackout.
             // It will be hidden/faded only when the new content is ready.
 
@@ -439,7 +439,8 @@ namespace grid_image_viewer
                 if (useSkia)
                 {
                     // Load Skia content in background
-                    await Task.Run(() => {
+                    await Task.Run(() =>
+                    {
                         var tempRenderer = new PageRenderer();
                         tempRenderer.LoadSkia(filePath, token);
                         if (!token.IsCancellationRequested)
@@ -482,7 +483,7 @@ namespace grid_image_viewer
                             bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                             await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
                         }
-                        catch 
+                        catch
                         {
                             var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
                             if (bmpBytes != null)

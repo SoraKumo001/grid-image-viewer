@@ -1,6 +1,5 @@
 using SkiaSharp;
 using System;
-using System.IO;
 using System.Threading;
 
 namespace grid_image_viewer
@@ -77,7 +76,7 @@ namespace grid_image_viewer
                     var imageInfo = new SKImageInfo(codec.Info.Width, codec.Info.Height, codec.Info.ColorType, codec.Info.AlphaType);
                     var options = new SKCodecOptions { FrameIndex = 0 };
                     codec.GetPixels(imageInfo, bitmap.GetPixels(), options);
-                    
+
                     CurrentFrame = 0;
                     PriorFrame = 0;
                     CurrentFrameDuration = codec.FrameInfo[0].Duration > 0 ? codec.FrameInfo[0].Duration : 100;
@@ -99,7 +98,7 @@ namespace grid_image_viewer
                 var frameInfo = Codec.FrameInfo[CurrentFrame];
 
                 var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
-                
+
                 // フレーム0または前のフレーム情報がない場合はバッファをクリア
                 if (PriorFrame == -1 || CurrentFrame == 0)
                 {

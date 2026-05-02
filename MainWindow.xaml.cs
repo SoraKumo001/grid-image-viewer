@@ -29,6 +29,24 @@ namespace grid_image_viewer
         internal bool IsSearchingFolder { get => _isSearchingFolder; set => _isSearchingFolder = value; }
         internal EditorManager EditorManager => _editorManager;
 
+        internal bool IsFullscreen
+        {
+            get => AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen;
+            set
+            {
+                if (value)
+                {
+                    AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
+                    AppTitleBar.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
+                    AppTitleBar.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
         private int _currentIndex = -1;
         private string _currentDirectory = string.Empty;
 
@@ -122,20 +140,40 @@ namespace grid_image_viewer
 
         private void RootGrid_DragOver(object sender, DragEventArgs e) => _inputHandler.HandleDragOver(sender, e);
         private void RootGrid_Drop(object sender, DragEventArgs e) => _inputHandler.HandleDrop(sender, e);
-        public void LoadDirectory(string path, string initialFile = "")
+        public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false)
         {
             _currentDirectory = path;
             try
             {
                 var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" };
-                _playlist = Directory.EnumerateFiles(path)
-                                     .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
-                                     .OrderBy(f => f, new NaturalStringComparer())
-                                     .ToList();
+
+                IEnumerable<string> files;
+                if (includeSiblings)
+                {
+                    string? parent = Path.GetDirectoryName(path);
+                    if (!string.IsNullOrEmpty(parent))
+                    {
+                        files = Directory.EnumerateDirectories(parent)
+                                         .SelectMany(d =>
+                                         {
+                                             try { return Directory.EnumerateFiles(d); }
+                                             catch { return Enumerable.Empty<string>(); }
+                                         })
+                                         .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                    }
+                    else files = Directory.EnumerateFiles(path).Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                }
+                else
+                {
+                    files = Directory.EnumerateFiles(path).Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                }
+
+                _playlist = files.OrderBy(f => f, new NaturalStringComparer()).ToList();
 
                 if (_playlist.Count > 0)
                 {
-                    _currentIndex = string.IsNullOrEmpty(initialFile) ? 0 : Math.Max(0, _playlist.IndexOf(initialFile));
+                    _currentIndex = string.IsNullOrEmpty(initialFile) ? 0 : _playlist.IndexOf(initialFile);
+                    if (_currentIndex == -1) _currentIndex = 0;
 
                     _gridItems.Clear();
                     foreach (var f in _playlist)
