@@ -39,6 +39,7 @@ namespace grid_image_viewer
         public KeyBindingData KeyExit { get; set; } = new KeyBindingData(VirtualKey.Escape);
         public KeyBindingData KeyToggleGrid { get; set; } = new KeyBindingData(VirtualKey.Enter);
         public KeyBindingData KeySlideshow { get; set; } = new KeyBindingData(VirtualKey.A);
+        public KeyBindingData KeyMetadata { get; set; } = new KeyBindingData(VirtualKey.I);
 
         // Legacy properties for migration
         public VirtualKey? LegacyKeyNextImage { get; set; }
@@ -81,6 +82,7 @@ namespace grid_image_viewer
         public KeyBindingData KeyExit { get => _data.KeyExit; set => _data.KeyExit = value; }
         public KeyBindingData KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
         public KeyBindingData KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
+        public KeyBindingData KeyMetadata { get => _data.KeyMetadata; set => _data.KeyMetadata = value; }
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }

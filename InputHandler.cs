@@ -58,6 +58,13 @@ namespace grid_image_viewer
                 return;
             }
 
+            if (IsMatch(_settings.KeyMetadata, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.ViewerManager.ToggleMetadataPanel();
+                e.Handled = true;
+                return;
+            }
+
             if (IsMatch(_settings.KeyToggleManga, e.Key, isCtrl, isShift, isAlt))
             {
                 _settings.MangaSplitCount = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);

@@ -106,9 +106,52 @@
                     <ProgressRing x:Name="LoadingRing1" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Canvas Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayCanvas" x:FieldModifier="internal" Background="Transparent">
-                    <Rectangle x:Name="SelectionRectangle" x:FieldModifier="internal" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
-                </Canvas>
+                <Grid Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayGrid" x:FieldModifier="internal" Background="Transparent" IsHitTestVisible="False">
+                    <Canvas x:Name="OverlayCanvas" x:FieldModifier="internal" Background="Transparent" IsHitTestVisible="True">
+                        <Rectangle x:Name="SelectionRectangle" x:FieldModifier="internal" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
+                    </Canvas>
+
+                    <!-- Metadata Overlay Panel -->
+                    <Border x:Name="MetadataPanel" x:FieldModifier="internal"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,20,20,0"
+                            Background="#CC000000" CornerRadius="8" Padding="16"
+                            Visibility="Collapsed" MaxWidth="350" IsHitTestVisible="True">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="IMAGE INFORMATION" FontSize="10" Foreground="#888888" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="TxtMetaFileName" x:FieldModifier="internal" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="TxtMetaDimensions" x:FieldModifier="internal" Foreground="#00A2ED" FontSize="12"/>
+                            <TextBlock x:Name="TxtMetaFileSize" x:FieldModifier="internal" Foreground="#AAAAAA" FontSize="12"/>
+                            
+                            <Border x:Name="ExifDivider" x:FieldModifier="internal" Height="1" Background="#333333" Margin="0,8"/>
+                            
+                            <Grid x:Name="ExifGrid" x:FieldModifier="internal">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Camera" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock x:Name="TxtMetaCamera" x:FieldModifier="internal" Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="11" Margin="0,0,0,2"/>
+                                
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Lens" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock x:Name="TxtMetaLens" x:FieldModifier="internal" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Settings" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock x:Name="TxtMetaSettings" x:FieldModifier="internal" Grid.Row="2" Grid.Column="1" Foreground="#FFD700" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Date" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock x:Name="TxtMetaDate" x:FieldModifier="internal" Grid.Row="3" Grid.Column="1" Foreground="White" FontSize="11" Margin="0,0,0,2"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
                 <Grid.ContextFlyout>
                     <MenuFlyout x:Name="EditMenuFlyout" Opening="EditMenuFlyout_Opening">

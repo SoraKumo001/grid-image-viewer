@@ -652,6 +652,49 @@ namespace grid_image_viewer
             _notificationTimer.Start();
         }
 
+        public void ToggleMetadataPanel()
+        {
+            if (_window.MetadataPanel.Visibility == Visibility.Visible)
+            {
+                _window.MetadataPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                _window.MetadataPanel.Visibility = Visibility.Visible;
+                UpdateMetadataPanel();
+            }
+        }
+
+        public void UpdateMetadataPanel()
+        {
+            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
+
+            int index = _window.CurrentIndex;
+            if (index < 0 || index >= _window.Playlist.Count) return;
+
+            string filePath = _window.Playlist[index];
+            var meta = MetadataService.GetMetadata(filePath);
+
+            _window.TxtMetaFileName.Text = meta.FileName;
+            _window.TxtMetaDimensions.Text = meta.Dimensions;
+            _window.TxtMetaFileSize.Text = meta.FileSize;
+
+            if (meta.HasExif)
+            {
+                _window.ExifDivider.Visibility = Visibility.Visible;
+                _window.ExifGrid.Visibility = Visibility.Visible;
+                _window.TxtMetaCamera.Text = $"{meta.Make} {meta.Model}".Trim();
+                _window.TxtMetaLens.Text = meta.LensModel ?? "-";
+                _window.TxtMetaSettings.Text = $"{meta.FNumber}  {meta.ExposureTime}  ISO {meta.Iso}  {meta.FocalLength}".Trim();
+                _window.TxtMetaDate.Text = meta.DateTaken ?? "-";
+            }
+            else
+            {
+                _window.ExifDivider.Visibility = Visibility.Collapsed;
+                _window.ExifGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private void StartCrossfade(int pageIndex)
         {
             var sb = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
@@ -679,6 +722,9 @@ namespace grid_image_viewer
             sb.Children.Add(animOut);
 
             sb.Begin();
+
+            // 画像が切り替わったのでメタデータも更新（パネルが開いている場合のみ）
+            if (pageIndex == 0) UpdateMetadataPanel();
         }
 
         public void Dispose()
