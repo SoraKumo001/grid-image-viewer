@@ -17,8 +17,8 @@ namespace grid_image_viewer
         public VirtualKey KeyToggleGrid { get; set; } = VirtualKey.Enter;
         public VirtualKey KeySlideshow { get; set; } = VirtualKey.A;
 
-        public bool IsMangaMode { get; set; } = false;
-        
+        public int MangaSplitCount { get; set; } = 1; // 1, 2, or 4
+        public int QuadLayoutMode { get; set; } = 0; // 0: Auto, 1: Horizontal, 2: 2x2 Grid
         public bool SlideshowFullscreen { get; set; } = false;
         public bool SlideshowRandom { get; set; } = true;
         public bool SlideshowLoop { get; set; } = true;
@@ -48,7 +48,8 @@ namespace grid_image_viewer
         public VirtualKey KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
         public VirtualKey KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
 
-        public bool IsMangaMode { get => _data.IsMangaMode; set => _data.IsMangaMode = value; }
+        public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
+        public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
         
         public bool SlideshowFullscreen { get => _data.SlideshowFullscreen; set => _data.SlideshowFullscreen = value; }
         public bool SlideshowRandom { get => _data.SlideshowRandom; set => _data.SlideshowRandom = value; }

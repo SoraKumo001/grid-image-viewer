@@ -52,23 +52,41 @@
                   PointerReleased="PagesGrid_PointerReleased"
                   PointerCanceled="PagesGrid_PointerReleased">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="0" x:Name="LeftColumn"/>
-                    <ColumnDefinition Width="*" x:Name="RightColumn"/>
+                    <ColumnDefinition Width="*" x:Name="Col0"/>
+                    <ColumnDefinition Width="*" x:Name="Col1"/>
+                    <ColumnDefinition Width="*" x:Name="Col2"/>
+                    <ColumnDefinition Width="*" x:Name="Col3"/>
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" x:Name="Row0"/>
+                    <RowDefinition Height="*" x:Name="Row1"/>
+                </Grid.RowDefinitions>
 
-                <Grid Grid.Column="0" x:Name="LeftPageGrid" Visibility="Collapsed">
-                    <Image x:Name="LeftImage" Stretch="Uniform" HorizontalAlignment="Right" />
-                    <skia:SKXamlCanvas x:Name="LeftSkiaCanvas" Visibility="Collapsed" PaintSurface="LeftSkiaCanvas_PaintSurface" />
-                    <ProgressRing x:Name="LeftLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                <Grid x:Name="PageGrid4" Visibility="Collapsed">
+                    <Image x:Name="Image4" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas4" Visibility="Collapsed" PaintSurface="Canvas4_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing4" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Grid Grid.Column="1" x:Name="RightPageGrid">
-                    <Image x:Name="RightImage" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="RightSkiaCanvas" Visibility="Collapsed" PaintSurface="RightSkiaCanvas_PaintSurface" />
-                    <ProgressRing x:Name="RightLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                <Grid x:Name="PageGrid3" Visibility="Collapsed">
+                    <Image x:Name="Image3" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas3" Visibility="Collapsed" PaintSurface="Canvas3_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing3" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
                 </Grid>
 
-                <Canvas Grid.ColumnSpan="2" x:Name="OverlayCanvas" Background="Transparent">
+                <Grid x:Name="PageGrid2" Visibility="Collapsed">
+                    <Image x:Name="Image2" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas2" Visibility="Collapsed" PaintSurface="Canvas2_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing2" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                </Grid>
+
+                <Grid x:Name="PageGrid1" Visibility="Collapsed">
+                    <Image x:Name="Image1" Stretch="Uniform" />
+                    <skia:SKXamlCanvas x:Name="Canvas1" Visibility="Collapsed" PaintSurface="Canvas1_PaintSurface" />
+                    <ProgressRing x:Name="LoadingRing1" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                </Grid>
+
+                <Canvas Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayCanvas" Background="Transparent">
                     <Rectangle x:Name="SelectionRectangle" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
                 </Canvas>
 
@@ -87,7 +105,12 @@
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
-                        <ToggleMenuFlyoutItem x:Name="MenuToggleManga" Text="Manga Mode" Click="MenuToggleManga_Click" />
+                        <MenuFlyoutItem x:Name="MenuToggleManga" Text="View Mode: Single" Click="MenuToggleManga_Click" />
+                        <MenuFlyoutSubItem x:Name="MenuQuadLayout" Text="Quad Layout">
+                            <MenuFlyoutItem x:Name="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" />
+                            <MenuFlyoutItem x:Name="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" />
+                            <MenuFlyoutItem x:Name="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" />
+                        </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
                     </MenuFlyout>
@@ -147,7 +170,9 @@
                        Title="自動再生設定"
                        PrimaryButtonText="OK"
                        CloseButtonText="キャンセル"
-                       PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick">
+                       DefaultButton="Primary"
+                       PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick"
+                       Opened="SlideshowDialog_Opened">
             <StackPanel Spacing="12">
                 <CheckBox x:Name="SlideshowFullscreen" Content="全画面表示(_F)"/>
                 <CheckBox x:Name="SlideshowRandom" Content="ランダムな並び順(_R)"/>
@@ -156,7 +181,7 @@
                 <CheckBox x:Name="SlideshowCurrentFolderOnly" Content="開始フォルダと下位フォルダだけ表示(_B)" IsEnabled="False"/>
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
                     <TextBlock Text="時間(_T)：" VerticalAlignment="Center"/>
-                    <NumberBox x:Name="SlideshowInterval" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="120"/>
+                    <NumberBox x:Name="SlideshowInterval" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Width="200"/>
                     <TextBlock Text="秒毎" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
