@@ -74,9 +74,10 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 
 - **Mica Backdrop**: Modern translucent design of Windows 11
 - **Custom Title Bar**: Title bar design that blends seamlessly into the app
-- **Full Screen**: Toggle full screen display with a double click
+- **Full Screen**: Toggle full screen display with a double click or `F` key
 - **Area Selection**: Drag to select an area and right-click to copy
-- **State Preservation**: Restore window size, position, and the currently viewed image on the next startup
+- **State Preservation**: Restore window size, position (including maximized state), and the currently viewed image on the next startup
+- **Pointer-Aware Operations**: When multiple images are displayed, operations like rotation, deletion, and copying target the image directly under the mouse cursor.
 
 ### ⌨️ Keybindings
 
@@ -91,6 +92,15 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 | Autoplay (Slideshow) | `A` |
 | Toggle Bookmark Panel | `B` |
 | Toggle Metadata Display | `I` |
+| **Toggle Fullscreen** | `F` |
+| **Zoom In / Out** | `Ctrl + +` / `Ctrl + -` |
+| **Reset Zoom (Fit)** | `Ctrl + 0` |
+| **Actual Size (100%)** | `Ctrl + 1` |
+| **Rotate Right / Left** | `R` / `L` |
+| **Flip Horizontal** | `H` |
+| **Bookmark Folder** | `D` |
+| **Copy File Path** | `Ctrl + C` |
+| **Delete File** | `Delete` |
 | Exit App | `Escape` |
 
 - Mouse Wheel: Move to previous/next image (Press Shift to turn 1 page in manga mode)
