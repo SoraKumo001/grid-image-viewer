@@ -28,6 +28,7 @@ namespace grid_image_viewer
         internal string CurrentDirectory { get => _currentDirectory; set => _currentDirectory = value; }
         internal bool IsSearchingFolder { get => _isSearchingFolder; set => _isSearchingFolder = value; }
         internal EditorManager EditorManager => _editorManager;
+        internal ImageEditService ImageEditService => _imageEditService;
 
         internal bool IsFullscreen
         {
@@ -60,6 +61,7 @@ namespace grid_image_viewer
         private GridManager _gridManager;
         private ViewerManager _viewerManager;
         internal EditorManager _editorManager;
+        private ImageEditService _imageEditService;
         private bool _isDialogOpen = false;
         private Random _random = new Random();
         private bool _isSearchingFolder = false;
@@ -116,6 +118,7 @@ namespace grid_image_viewer
             _slideshowManager = new SlideshowManager(this, _settings);
             _inputHandler = new InputHandler(this, _settings);
             _gridManager = new GridManager(this, _settings);
+            _imageEditService = new ImageEditService(this);
             _viewerManager = new ViewerManager(this, _settings);
             _editorManager = new EditorManager(this, _settings);
 

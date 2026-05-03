@@ -36,7 +36,8 @@ namespace grid_image_viewer
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private const int MAX_CACHE_SIZE = 20;
 
-        public Dictionary<string, EditSession> PendingEdits { get; } = new Dictionary<string, EditSession>();
+        public Dictionary<string, EditSession> PendingEdits => _window.ImageEditService.PendingEdits;
+        public void AddPendingEdit(string path, SKBitmap bitmap) => _window.ImageEditService.AddPendingEdit(path, bitmap);
 
         public ViewerManager(MainWindow window, SettingsManager settings)
         {
@@ -964,92 +965,13 @@ namespace grid_image_viewer
             if (pageIndex == 0) UpdateMetadataPanel();
         }
 
-        public void AddPendingEdit(string filePath, SKBitmap bitmap)
-        {
-            if (!PendingEdits.TryGetValue(filePath, out var session))
-            {
-                session = new EditSession();
-                PendingEdits[filePath] = session;
 
-                // For the first edit, push the original state so it can be undone.
-                try
-                {
-                    var original = SKBitmap.Decode(filePath);
-                    if (original != null)
-                    {
-                        session.AddState(original);
-                    }
-                }
-                catch { }
-            }
-            session.AddState(bitmap);
-        }
-
-        public void UndoEdit(string filePath)
-        {
-            if (PendingEdits.TryGetValue(filePath, out var session))
-            {
-                session.Undo();
-                _ = UpdateDisplayAsync();
-            }
-        }
-
-        public void RedoEdit(string filePath)
-        {
-            if (PendingEdits.TryGetValue(filePath, out var session))
-            {
-                session.Redo();
-                _ = UpdateDisplayAsync();
-            }
-        }
 
         public void Dispose()
         {
             StopAnimation();
             _displayCts?.Cancel();
             _displayCts?.Dispose();
-            foreach (var s in PendingEdits.Values) s.Dispose();
-            PendingEdits.Clear();
-        }
-    }
-
-    internal class EditSession : IDisposable
-    {
-        private List<SKBitmap> _history = new List<SKBitmap>();
-        private int _currentIndex = -1;
-        private const int MAX_HISTORY = 10;
-
-        public SKBitmap? Current => _currentIndex >= 0 ? _history[_currentIndex] : null;
-        public bool CanUndo => _currentIndex > 0;
-        public bool CanRedo => _currentIndex < _history.Count - 1;
-
-        public void AddState(SKBitmap newBmp)
-        {
-            while (_history.Count > _currentIndex + 1)
-            {
-                _history[^1].Dispose();
-                _history.RemoveAt(_history.Count - 1);
-            }
-
-            _history.Add(newBmp);
-            _currentIndex++;
-
-            if (_history.Count > MAX_HISTORY)
-            {
-                _history[0].Dispose();
-                _history.RemoveAt(0);
-                _currentIndex--;
-            }
-        }
-
-        public void Undo() { if (CanUndo) _currentIndex--; }
-        public void Redo() { if (CanRedo) _currentIndex++; }
-
-        public void Dispose()
-        {
-            foreach (var bmp in _history) bmp.Dispose();
-            _history.Clear();
-            _currentIndex = -1;
         }
     }
 }

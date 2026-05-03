@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
 using Windows.Storage;
 using Windows.System;
+using grid_image_viewer.Controls;
 
 namespace grid_image_viewer
 {
@@ -299,31 +300,11 @@ namespace grid_image_viewer
 
                 var cropRect = new SKRectI((int)cropX, (int)cropY, (int)(cropX + cropW), (int)(cropY + cropH));
 
-                _window.ViewerManager.StopAnimation();
-                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-
-                // Clear EditedBitmap references in PageRenderers BEFORE disposing the old bitmap.
-                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                {
-                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
-                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                }
-
                 _window.SelectionRectangle.Visibility = Visibility.Collapsed;
                 _hasSelection = false;
 
-                await Task.Run(() =>
-                {
-                    var newBmp = ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
-                    if (newBmp != null)
-                    {
-                        _window.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
-                            _ = _window.UpdateDisplayAsync();
-                        });
-                    }
-                });
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                    (current) => ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, current));
             }
             catch (Exception ex)
             {
@@ -334,81 +315,31 @@ namespace grid_image_viewer
 
         public void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
-            var resLoader = ResourceLoader.GetForViewIndependentUse();
-            string titleStr = resLoader.GetString("Settings_Title/Text") ?? "Save Settings";
-            string qualityStr = resLoader.GetString("Settings_JpegQuality/Text") ?? "JPEG/WebP Quality";
-            string closeStr = resLoader.GetString("ToneAdjustment_Close/Content") ?? "Close";
-
-            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is Grid g && g.Name == "SettingsOverlay");
+            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is FrameworkElement fe && fe.Name == "SettingsOverlay");
             if (existing != null) _window.RootGrid.Children.Remove(existing);
 
-            var sliderQuality = new Slider { Minimum = 1, Maximum = 100, Value = _settings.JpegQuality, StepFrequency = 1, Width = 200 };
-            var textQuality = new TextBlock { Text = _settings.JpegQuality.ToString(), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) };
-            sliderQuality.ValueChanged += (s, ev) => { textQuality.Text = sliderQuality.Value.ToString("F0"); };
-
-            var overlay = new Grid { Name = "SettingsOverlay", Background = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0)), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
-            Grid.SetRowSpan(overlay, 10);
-
-            var panel = new StackPanel
+            var overlay = new SettingsOverlay(_window, _settings)
             {
-                Spacing = 16,
-                Padding = new Thickness(24),
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)),
-                CornerRadius = new CornerRadius(8),
-                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 64, 64, 64)),
-                BorderThickness = new Thickness(1),
-                Width = 320,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                RequestedTheme = ElementTheme.Dark
+                Name = "SettingsOverlay"
             };
+            Grid.SetRowSpan(overlay, 2);
 
-            panel.Children.Add(new TextBlock { Text = titleStr, FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8), Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-
-            var rowQ = new StackPanel { Spacing = 4 };
-            rowQ.Children.Add(new TextBlock { Text = qualityStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-            var gridQ = new Grid(); gridQ.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridQ.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            gridQ.Children.Add(sliderQuality); Grid.SetColumn(textQuality, 1); gridQ.Children.Add(textQuality);
-            rowQ.Children.Add(gridQ); panel.Children.Add(rowQ);
-
-            var btnClose = new Button { Content = closeStr, Width = 80, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0), Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
-            btnClose.Click += (s, ev) =>
-            {
-                _settings.JpegQuality = (int)sliderQuality.Value;
-                _settings.SaveSettings();
-                _window.RootGrid.Children.Remove(overlay);
-                _window.IsDialogOpen = false;
-            };
-
-            overlay.KeyDown += (s, ev) =>
-            {
-                if (ev.Key == Windows.System.VirtualKey.Escape)
-                {
-                    _window.RootGrid.Children.Remove(overlay);
-                    _window.IsDialogOpen = false;
-                    ev.Handled = true;
-                }
-            };
-
-            panel.Children.Add(btnClose);
-            overlay.Children.Add(panel);
             _window.IsDialogOpen = true;
             _window.RootGrid.Children.Add(overlay);
-            btnClose.Focus(FocusState.Programmatic);
         }
 
         public void MenuUndo_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = _window.CurrentImagePath;
             if (!string.IsNullOrEmpty(sourcePath))
-                _window.ViewerManager.UndoEdit(sourcePath);
+                _window.ImageEditService.UndoEdit(sourcePath);
         }
 
         public void MenuRedo_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = _window.CurrentImagePath;
             if (!string.IsNullOrEmpty(sourcePath))
-                _window.ViewerManager.RedoEdit(sourcePath);
+                _window.ImageEditService.RedoEdit(sourcePath);
         }
 
         public void MenuMetadata_Click(object sender, RoutedEventArgs e)
@@ -462,28 +393,8 @@ namespace grid_image_viewer
                     int newHeight = (int)heightBox.Value;
                     if (newWidth <= 0 || newHeight <= 0) return;
 
-                    _window.ViewerManager.StopAnimation();
-                    foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-
-                    // Clear EditedBitmap references before disposing old bitmap
-                    for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                    {
-                        if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
-                            _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                    }
-
-                    await Task.Run(() =>
-                    {
-                        var newBmp = ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
-                        if (newBmp != null)
-                        {
-                            _window.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
-                                _ = _window.UpdateDisplayAsync();
-                            });
-                        }
-                    });
+                    await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                        (current) => ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, current));
                 }
             }
             catch { }
@@ -508,153 +419,17 @@ namespace grid_image_viewer
             }
 
             // Remove any existing tone overlay
-            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is Grid g && g.Name == "ToneAdjustmentOverlay");
+            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is FrameworkElement fe && fe.Name == "ToneAdjustmentOverlay");
             if (existing != null) _window.RootGrid.Children.Remove(existing);
 
-            // Create controls programmatically to avoid XAML compiler bugs and forced dimming
-            var sliderBrightness = new Slider { Minimum = -255, Maximum = 255, Value = 0, StepFrequency = 1, Width = 200 };
-            var textBrightness = new TextBlock { Text = "0", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40 };
-            var sliderContrast = new Slider { Minimum = 0.0, Maximum = 2.0, Value = 1.0, StepFrequency = 0.01, Width = 200 };
-            var textContrast = new TextBlock { Text = "1.00", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40 };
-            var sliderSaturation = new Slider { Minimum = 0.0, Maximum = 2.0, Value = 1.0, StepFrequency = 0.01, Width = 200 };
-            var textSaturation = new TextBlock { Text = "1.00", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40 };
-
-            DispatcherTimer updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-            updateTimer.Tick += async (s, ev) =>
+            var overlay = new ToneAdjustmentOverlay(_window, sourcePath, baseBmp)
             {
-                updateTimer.Stop();
-                float b = (float)sliderBrightness.Value;
-                float c = (float)sliderContrast.Value;
-                float sVal = (float)sliderSaturation.Value;
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        var newBmp = ImageProcessor.ApplyToneAdjustment(sourcePath, b, c, sVal, baseBmp);
-                        if (newBmp != null)
-                        {
-                            _window.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                if (_window.ViewerManager == null) return;
-                                _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
-                                _window.ViewerManager.StopAnimation();
-                                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-                                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                                {
-                                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
-                                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                                }
-                                _ = _window.UpdateDisplayAsync();
-                            });
-                        }
-                    }
-                    catch { }
-                });
+                Name = "ToneAdjustmentOverlay"
             };
-
-            void OnValueChanged(object s, RangeBaseValueChangedEventArgs ev)
-            {
-                textBrightness.Text = sliderBrightness.Value.ToString("F0");
-                textContrast.Text = sliderContrast.Value.ToString("F2");
-                textSaturation.Text = sliderSaturation.Value.ToString("F2");
-                updateTimer.Stop(); updateTimer.Start();
-            }
-            sliderBrightness.ValueChanged += OnValueChanged;
-            sliderContrast.ValueChanged += OnValueChanged;
-            sliderSaturation.ValueChanged += OnValueChanged;
-
-            // Localization
-            var resLoader = ResourceLoader.GetForViewIndependentUse();
-            string titleStr = resLoader.GetString("ToneAdjustment_Title/Text");
-            string brightnessStr = resLoader.GetString("ToneAdjustment_Brightness/Text");
-            string contrastStr = resLoader.GetString("ToneAdjustment_Contrast/Text");
-            string saturationStr = resLoader.GetString("ToneAdjustment_Saturation/Text");
-            string resetStr = resLoader.GetString("ToneAdjustment_Reset/Content");
-            string closeStr = resLoader.GetString("ToneAdjustment_Close/Content");
-
-            // Fallbacks if resources are missing
-            if (string.IsNullOrEmpty(titleStr)) titleStr = "Tone Adjustment";
-            if (string.IsNullOrEmpty(brightnessStr)) brightnessStr = "Brightness";
-            if (string.IsNullOrEmpty(contrastStr)) contrastStr = "Contrast";
-            if (string.IsNullOrEmpty(saturationStr)) saturationStr = "Saturation";
-            if (string.IsNullOrEmpty(resetStr)) resetStr = "Reset";
-            if (string.IsNullOrEmpty(closeStr)) closeStr = "Close";
-
-            var overlay = new Grid
-            {
-                Name = "ToneAdjustmentOverlay",
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0)),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-            Grid.SetRowSpan(overlay, 10);
-
-            var panel = new StackPanel
-            {
-                Spacing = 16,
-                Padding = new Thickness(24),
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)),
-                CornerRadius = new CornerRadius(8),
-                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 64, 64, 64)),
-                BorderThickness = new Thickness(1),
-                Width = 320,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                RequestedTheme = ElementTheme.Dark
-            };
-
-            panel.Children.Add(new TextBlock { Text = titleStr, FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8), Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-
-            var rowB = new StackPanel { Spacing = 4 };
-            rowB.Children.Add(new TextBlock { Text = brightnessStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-            var gridB = new Grid(); gridB.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridB.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            gridB.Children.Add(sliderBrightness); Grid.SetColumn(textBrightness, 1); gridB.Children.Add(textBrightness);
-            textBrightness.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
-            rowB.Children.Add(gridB); panel.Children.Add(rowB);
-
-            var rowC = new StackPanel { Spacing = 4 };
-            rowC.Children.Add(new TextBlock { Text = contrastStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-            var gridC = new Grid(); gridC.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridC.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            gridC.Children.Add(sliderContrast); Grid.SetColumn(textContrast, 1); gridC.Children.Add(textContrast);
-            textContrast.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
-            rowC.Children.Add(gridC); panel.Children.Add(rowC);
-
-            var rowS = new StackPanel { Spacing = 4 };
-            rowS.Children.Add(new TextBlock { Text = saturationStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-            var gridS = new Grid(); gridS.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridS.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            gridS.Children.Add(sliderSaturation); Grid.SetColumn(textSaturation, 1); gridS.Children.Add(textSaturation);
-            textSaturation.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
-            rowS.Children.Add(gridS); panel.Children.Add(rowS);
-
-            var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 16, 0, 0) };
-            var btnReset = new Button { Content = resetStr, Width = 80 };
-            var btnClose = new Button { Content = closeStr, Width = 80, Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
-            buttonPanel.Children.Add(btnReset); buttonPanel.Children.Add(btnClose);
-            panel.Children.Add(buttonPanel);
-
-            overlay.Children.Add(panel);
-            btnReset.Click += (s, ev) => { sliderBrightness.Value = 0; sliderContrast.Value = 1.0; sliderSaturation.Value = 1.0; };
-            btnClose.Click += (s, ev) =>
-            {
-                _window.RootGrid.Children.Remove(overlay);
-                _window.IsDialogOpen = false;
-                baseBmp?.Dispose();
-            };
-
-            overlay.KeyDown += (s, ev) =>
-            {
-                if (ev.Key == Windows.System.VirtualKey.Escape)
-                {
-                    _window.RootGrid.Children.Remove(overlay);
-                    _window.IsDialogOpen = false;
-                    baseBmp?.Dispose();
-                    ev.Handled = true;
-                }
-            };
+            Grid.SetRowSpan(overlay, 2);
 
             _window.IsDialogOpen = true;
             _window.RootGrid.Children.Add(overlay);
-            btnClose.Focus(FocusState.Programmatic);
         }
 
         public async void MenuFilter_Click(object sender, RoutedEventArgs e)
@@ -664,27 +439,8 @@ namespace grid_image_viewer
                 string sourcePath = _window.CurrentImagePath;
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
-                _window.ViewerManager.StopAnimation();
-                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-
-                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                {
-                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
-                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                }
-
-                await Task.Run(() =>
-                {
-                    var newBmp = ImageProcessor.ApplyFilter(sourcePath, filterType, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
-                    if (newBmp != null)
-                    {
-                        _window.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
-                            _ = _window.UpdateDisplayAsync();
-                        });
-                    }
-                });
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                    (current) => ImageProcessor.ApplyFilter(sourcePath, filterType, current));
             }
         }
 
@@ -695,27 +451,8 @@ namespace grid_image_viewer
                 string sourcePath = _window.CurrentImagePath;
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
-                _window.ViewerManager.StopAnimation();
-                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-
-                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                {
-                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
-                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                }
-
-                await Task.Run(() =>
-                {
-                    var newBmp = ImageProcessor.GetRotatedBitmap(sourcePath, degrees, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
-                    if (newBmp != null)
-                    {
-                        _window.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
-                            _ = _window.UpdateDisplayAsync();
-                        });
-                    }
-                });
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                    (current) => ImageProcessor.GetRotatedBitmap(sourcePath, degrees, current));
             }
         }
 
@@ -727,28 +464,8 @@ namespace grid_image_viewer
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
                 bool horizontal = flipMode == "Horz";
-
-                _window.ViewerManager.StopAnimation();
-                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-
-                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                {
-                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
-                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                }
-
-                await Task.Run(() =>
-                {
-                    var newBmp = ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
-                    if (newBmp != null)
-                    {
-                        _window.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
-                            _ = _window.UpdateDisplayAsync();
-                        });
-                    }
-                });
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                    (current) => ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, current));
             }
         }
 
