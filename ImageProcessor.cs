@@ -110,7 +110,7 @@ namespace grid_image_viewer
             return null;
         }
 
-        public static SKBitmap? ApplyToneAdjustment(string path, float brightness, float contrast, SKBitmap? currentBitmap = null)
+        public static SKBitmap? ApplyToneAdjustment(string path, float brightness, float contrast, float saturation, SKBitmap? currentBitmap = null)
         {
             try
             {
@@ -130,11 +130,10 @@ namespace grid_image_viewer
                 {
                     canvas.Clear(SKColors.Transparent);
 
-                    // Apply Brightness/Contrast via Color Matrix
+                    // 1. Brightness/Contrast Matrix
                     float bNormalized = brightness / 255f;
                     float offsetNormalized = 0.5f * (1f - contrast) + bNormalized;
-
-                    var matrix = new float[]
+                    var bcMatrix = new float[]
                     {
                         contrast, 0, 0, 0, offsetNormalized,
                         0, contrast, 0, 0, offsetNormalized,
@@ -142,8 +141,25 @@ namespace grid_image_viewer
                         0, 0, 0, 1, 0
                     };
 
-                    using (var matrixFilter = SKColorFilter.CreateColorMatrix(matrix))
-                    using (var paint = new SKPaint { ColorFilter = matrixFilter })
+                    // 2. Saturation Matrix (Luminance weights: R=0.2126, G=0.7152, B=0.0722)
+                    float s = saturation;
+                    float invS = 1.0f - s;
+                    float r = 0.2126f * invS;
+                    float g = 0.7152f * invS;
+                    float b = 0.0722f * invS;
+
+                    var satMatrix = new float[]
+                    {
+                        r + s, g,     b,     0, 0,
+                        r,     g + s, b,     0, 0,
+                        r,     g,     b + s, 0, 0,
+                        0,     0,     0,     1, 0
+                    };
+
+                    using (var bcFilter = SKColorFilter.CreateColorMatrix(bcMatrix))
+                    using (var satFilter = SKColorFilter.CreateColorMatrix(satMatrix))
+                    using (var combinedFilter = SKColorFilter.CreateCompose(bcFilter, satFilter))
+                    using (var paint = new SKPaint { ColorFilter = combinedFilter })
                     {
                         canvas.DrawBitmap(source, 0, 0, paint);
                     }

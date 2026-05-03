@@ -121,6 +121,9 @@
   <data name="ToneAdjustment_Contrast.Text" xml:space="preserve">
     <value>Contrast</value>
   </data>
+  <data name="ToneAdjustment_Saturation.Text" xml:space="preserve">
+    <value>Saturation</value>
+  </data>
   <data name="ToneAdjustment_Reset.Content" xml:space="preserve">
     <value>Reset</value>
   </data>

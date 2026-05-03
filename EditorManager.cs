@@ -389,6 +389,8 @@ namespace grid_image_viewer
             var textBrightness = new TextBlock { Text = "0", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40 };
             var sliderContrast = new Slider { Minimum = 0.0, Maximum = 2.0, Value = 1.0, StepFrequency = 0.01, Width = 200 };
             var textContrast = new TextBlock { Text = "1.00", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40 };
+            var sliderSaturation = new Slider { Minimum = 0.0, Maximum = 2.0, Value = 1.0, StepFrequency = 0.01, Width = 200 };
+            var textSaturation = new TextBlock { Text = "1.00", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40 };
 
             DispatcherTimer updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             updateTimer.Tick += async (s, ev) =>
@@ -396,11 +398,12 @@ namespace grid_image_viewer
                 updateTimer.Stop();
                 float b = (float)sliderBrightness.Value;
                 float c = (float)sliderContrast.Value;
+                float sVal = (float)sliderSaturation.Value;
                 await Task.Run(() =>
                 {
                     try
                     {
-                        var newBmp = ImageProcessor.ApplyToneAdjustment(sourcePath, b, c, baseBmp);
+                        var newBmp = ImageProcessor.ApplyToneAdjustment(sourcePath, b, c, sVal, baseBmp);
                         if (newBmp != null)
                         {
                             _window.DispatcherQueue.TryEnqueue(() =>
@@ -427,16 +430,19 @@ namespace grid_image_viewer
             {
                 textBrightness.Text = sliderBrightness.Value.ToString("F0");
                 textContrast.Text = sliderContrast.Value.ToString("F2");
+                textSaturation.Text = sliderSaturation.Value.ToString("F2");
                 updateTimer.Stop(); updateTimer.Start();
             }
             sliderBrightness.ValueChanged += OnValueChanged;
             sliderContrast.ValueChanged += OnValueChanged;
+            sliderSaturation.ValueChanged += OnValueChanged;
 
             // Localization
             var resLoader = ResourceLoader.GetForViewIndependentUse();
             string titleStr = resLoader.GetString("ToneAdjustment_Title/Text");
             string brightnessStr = resLoader.GetString("ToneAdjustment_Brightness/Text");
             string contrastStr = resLoader.GetString("ToneAdjustment_Contrast/Text");
+            string saturationStr = resLoader.GetString("ToneAdjustment_Saturation/Text");
             string resetStr = resLoader.GetString("ToneAdjustment_Reset/Content");
             string closeStr = resLoader.GetString("ToneAdjustment_Close/Content");
 
@@ -444,6 +450,7 @@ namespace grid_image_viewer
             if (string.IsNullOrEmpty(titleStr)) titleStr = "Tone Adjustment";
             if (string.IsNullOrEmpty(brightnessStr)) brightnessStr = "Brightness";
             if (string.IsNullOrEmpty(contrastStr)) contrastStr = "Contrast";
+            if (string.IsNullOrEmpty(saturationStr)) saturationStr = "Saturation";
             if (string.IsNullOrEmpty(resetStr)) resetStr = "Reset";
             if (string.IsNullOrEmpty(closeStr)) closeStr = "Close";
 
@@ -486,6 +493,13 @@ namespace grid_image_viewer
             textContrast.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
             rowC.Children.Add(gridC); panel.Children.Add(rowC);
 
+            var rowS = new StackPanel { Spacing = 4 };
+            rowS.Children.Add(new TextBlock { Text = saturationStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
+            var gridS = new Grid(); gridS.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridS.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            gridS.Children.Add(sliderSaturation); Grid.SetColumn(textSaturation, 1); gridS.Children.Add(textSaturation);
+            textSaturation.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
+            rowS.Children.Add(gridS); panel.Children.Add(rowS);
+
             var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 16, 0, 0) };
             var btnReset = new Button { Content = resetStr, Width = 80 };
             var btnClose = new Button { Content = closeStr, Width = 80, Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
@@ -493,7 +507,7 @@ namespace grid_image_viewer
             panel.Children.Add(buttonPanel);
 
             overlay.Children.Add(panel);
-            btnReset.Click += (s, ev) => { sliderBrightness.Value = 0; sliderContrast.Value = 1.0; };
+            btnReset.Click += (s, ev) => { sliderBrightness.Value = 0; sliderContrast.Value = 1.0; sliderSaturation.Value = 1.0; };
             btnClose.Click += (s, ev) => { 
                 _window.RootGrid.Children.Remove(overlay);
                 baseBmp?.Dispose();
