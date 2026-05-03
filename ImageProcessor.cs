@@ -110,6 +110,73 @@ namespace grid_image_viewer
             return null;
         }
 
+        public static SKBitmap ApplyToneAdjustment(string path, float brightness, float contrast, float gamma, SKBitmap currentBitmap = null)
+        {
+            try
+            {
+                SKBitmap source = currentBitmap;
+                bool disposeSource = false;
+
+                if (source == null)
+                {
+                    source = SKBitmap.Decode(path);
+                    disposeSource = true;
+                }
+
+                if (source == null) return null;
+
+                var result = new SKBitmap(source.Width, source.Height);
+                using (var canvas = new SKCanvas(result))
+                {
+                    canvas.Clear(SKColors.Transparent);
+
+                    // 1. Apply Brightness/Contrast via Color Matrix
+                    float bNormalized = brightness / 255f;
+                    float offsetNormalized = 0.5f * (1f - contrast) + bNormalized;
+
+                    var matrix = new float[]
+                    {
+                        contrast, 0, 0, 0, offsetNormalized,
+                        0, contrast, 0, 0, offsetNormalized,
+                        0, 0, contrast, 0, offsetNormalized,
+                        0, 0, 0, 1, 0
+                    };
+
+                    using (var matrixFilter = SKColorFilter.CreateColorMatrix(matrix))
+                    using (var paint = new SKPaint { ColorFilter = matrixFilter })
+                    {
+                        // 2. Apply Gamma via Table Filter
+                        // If gamma is 1.0, we can skip this part to optimize, 
+                        // but for simplicity we'll create a table.
+                        if (Math.Abs(gamma - 1.0f) > 0.001f)
+                        {
+                            byte[] gammaTable = new byte[256];
+                            for (int i = 0; i < 256; i++)
+                            {
+                                float val = i / 255f;
+                                float corrected = (float)Math.Pow(val, 1.0 / gamma);
+                                gammaTable[i] = (byte)Math.Clamp(corrected * 255f, 0, 255);
+                            }
+                            using (var tableFilter = SKColorFilter.CreateTable(null, gammaTable, gammaTable, gammaTable))
+                            {
+                                // Chain filters: Matrix then Gamma
+                                paint.ColorFilter = SKColorFilter.CreateCompose(tableFilter, matrixFilter);
+                                canvas.DrawBitmap(source, 0, 0, paint);
+                            }
+                        }
+                        else
+                        {
+                            canvas.DrawBitmap(source, 0, 0, paint);
+                        }
+                    }
+                }
+
+                if (disposeSource) source.Dispose();
+                return result;
+            }
+            catch { return null; }
+        }
+
         public static SKBitmap? GetFlippedBitmap(string sourcePath, bool horizontal, SKBitmap? currentBmp)
         {
             SKBitmap? bitmap = currentBmp;

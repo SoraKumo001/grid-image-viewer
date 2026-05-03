@@ -184,6 +184,8 @@
                             <MenuFlyoutItem x:Uid="MenuFlip_Vert" Text="Flip Vertical" Click="MenuFlip_Click" Tag="Vert" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuTone" x:FieldModifier="internal" x:Uid="MenuTone" Text="Tone Adjustment" Click="MenuTone_Click" />
+                        <MenuFlyoutSeparator />
                         <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutSubItem x:Name="MenuViewMode" x:FieldModifier="internal" x:Uid="MenuViewMode" Text="View Mode">

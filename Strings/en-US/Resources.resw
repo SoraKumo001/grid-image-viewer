@@ -97,6 +97,24 @@
   <data name="MenuOpenExplorer.Text" xml:space="preserve">
     <value>Open in Explorer</value>
   </data>
+  <data name="MenuTone.Text" xml:space="preserve">
+    <value>Tone Adjustment</value>
+  </data>
+  <data name="ToneAdjustment_Title.Text" xml:space="preserve">
+    <value>Tone Adjustment</value>
+  </data>
+  <data name="ToneAdjustment_Brightness.Text" xml:space="preserve">
+    <value>Brightness</value>
+  </data>
+  <data name="ToneAdjustment_Contrast.Text" xml:space="preserve">
+    <value>Contrast</value>
+  </data>
+  <data name="ToneAdjustment_Reset.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="ToneAdjustment_Close.Content" xml:space="preserve">
+    <value>Close</value>
+  </data>
   <data name="MenuViewMode.Text" xml:space="preserve">
     <value>View Mode</value>
   </data>

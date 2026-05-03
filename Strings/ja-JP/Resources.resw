@@ -97,6 +97,24 @@
   <data name="MenuOpenExplorer.Text" xml:space="preserve">
     <value>エクスプローラーで開く</value>
   </data>
+  <data name="MenuTone.Text" xml:space="preserve">
+    <value>色調補正</value>
+  </data>
+  <data name="ToneAdjustment_Title.Text" xml:space="preserve">
+    <value>色調補正</value>
+  </data>
+  <data name="ToneAdjustment_Brightness.Text" xml:space="preserve">
+    <value>明るさ</value>
+  </data>
+  <data name="ToneAdjustment_Contrast.Text" xml:space="preserve">
+    <value>コントラスト</value>
+  </data>
+  <data name="ToneAdjustment_Reset.Content" xml:space="preserve">
+    <value>リセット</value>
+  </data>
+  <data name="ToneAdjustment_Close.Content" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
   <data name="MenuViewMode.Text" xml:space="preserve">
     <value>表示モード</value>
   </data>

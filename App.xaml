@@ -8,9 +8,12 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+            
+            <!-- Remove the smoke layer (dimming effect) for ContentDialogs -->
+            <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="Transparent" />
+            <SolidColorBrush x:Key="SystemControlPageBackgroundMediumAltMediumBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="SystemControlPageBackgroundBaseLowBrush" Color="Transparent" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
