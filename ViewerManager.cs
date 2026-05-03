@@ -728,7 +728,7 @@ namespace grid_image_viewer
 
         public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) => _window.MetadataDisplayService.HandlePointerMoved(_pageGrids, e);
 
-        public string GetPathForPage(int pageIndex)
+        public string? GetPathForPage(int pageIndex)
         {
             if (pageIndex >= 0 && pageIndex < _pages.Length)
             {

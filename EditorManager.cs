@@ -77,7 +77,7 @@ namespace grid_image_viewer
                     localPoint.Y >= 0 && localPoint.Y <= pageGrids[i].ActualHeight)
                 {
                     _contextTargetIndex = i;
-                    _contextTargetPath = _window.ViewerManager.GetPathForPage(i);
+                    _contextTargetPath = _window.ViewerManager.GetPathForPage(i) ?? string.Empty;
                     return;
                 }
             }
