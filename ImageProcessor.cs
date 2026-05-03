@@ -110,11 +110,11 @@ namespace grid_image_viewer
             return null;
         }
 
-        public static SKBitmap ApplyToneAdjustment(string path, float brightness, float contrast, float gamma, SKBitmap currentBitmap = null)
+        public static SKBitmap? ApplyToneAdjustment(string path, float brightness, float contrast, SKBitmap? currentBitmap = null)
         {
             try
             {
-                SKBitmap source = currentBitmap;
+                SKBitmap? source = currentBitmap;
                 bool disposeSource = false;
 
                 if (source == null)
@@ -130,7 +130,7 @@ namespace grid_image_viewer
                 {
                     canvas.Clear(SKColors.Transparent);
 
-                    // 1. Apply Brightness/Contrast via Color Matrix
+                    // Apply Brightness/Contrast via Color Matrix
                     float bNormalized = brightness / 255f;
                     float offsetNormalized = 0.5f * (1f - contrast) + bNormalized;
 
@@ -145,29 +145,74 @@ namespace grid_image_viewer
                     using (var matrixFilter = SKColorFilter.CreateColorMatrix(matrix))
                     using (var paint = new SKPaint { ColorFilter = matrixFilter })
                     {
-                        // 2. Apply Gamma via Table Filter
-                        // If gamma is 1.0, we can skip this part to optimize, 
-                        // but for simplicity we'll create a table.
-                        if (Math.Abs(gamma - 1.0f) > 0.001f)
+                        canvas.DrawBitmap(source, 0, 0, paint);
+                    }
+                }
+
+                if (disposeSource) source.Dispose();
+                return result;
+            }
+            catch { return null; }
+        }
+
+        public static SKBitmap? ApplyFilter(string path, string filterType, SKBitmap? currentBitmap = null)
+        {
+            try
+            {
+                SKBitmap? source = currentBitmap;
+                bool disposeSource = false;
+
+                if (source == null)
+                {
+                    source = SKBitmap.Decode(path);
+                    disposeSource = true;
+                }
+
+                if (source == null) return null;
+
+                var result = new SKBitmap(source.Width, source.Height);
+                using (var canvas = new SKCanvas(result))
+                {
+                    canvas.Clear(SKColors.Transparent);
+                    using (var paint = new SKPaint())
+                    {
+                        float[]? matrix = null;
+                        if (filterType == "Grayscale")
                         {
-                            byte[] gammaTable = new byte[256];
-                            for (int i = 0; i < 256; i++)
+                            matrix = new float[]
                             {
-                                float val = i / 255f;
-                                float corrected = (float)Math.Pow(val, 1.0 / gamma);
-                                gammaTable[i] = (byte)Math.Clamp(corrected * 255f, 0, 255);
-                            }
-                            using (var tableFilter = SKColorFilter.CreateTable(null, gammaTable, gammaTable, gammaTable))
-                            {
-                                // Chain filters: Matrix then Gamma
-                                paint.ColorFilter = SKColorFilter.CreateCompose(tableFilter, matrixFilter);
-                                canvas.DrawBitmap(source, 0, 0, paint);
-                            }
+                                0.2126f, 0.7152f, 0.0722f, 0, 0,
+                                0.2126f, 0.7152f, 0.0722f, 0, 0,
+                                0.2126f, 0.7152f, 0.0722f, 0, 0,
+                                0, 0, 0, 1, 0
+                            };
                         }
-                        else
+                        else if (filterType == "Sepia")
                         {
-                            canvas.DrawBitmap(source, 0, 0, paint);
+                            matrix = new float[]
+                            {
+                                0.393f, 0.769f, 0.189f, 0, 0,
+                                0.349f, 0.686f, 0.168f, 0, 0,
+                                0.272f, 0.534f, 0.131f, 0, 0,
+                                0, 0, 0, 1, 0
+                            };
                         }
+                        else if (filterType == "Invert")
+                        {
+                            matrix = new float[]
+                            {
+                                -1, 0, 0, 0, 1,
+                                0, -1, 0, 0, 1,
+                                0, 0, -1, 0, 1,
+                                0, 0, 0, 1, 0
+                            };
+                        }
+
+                        if (matrix != null)
+                        {
+                            paint.ColorFilter = SKColorFilter.CreateColorMatrix(matrix);
+                        }
+                        canvas.DrawBitmap(source, 0, 0, paint);
                     }
                 }
 

@@ -100,6 +100,18 @@
   <data name="MenuTone.Text" xml:space="preserve">
     <value>Tone Adjustment</value>
   </data>
+  <data name="MenuFilter.Text" xml:space="preserve">
+    <value>Filters</value>
+  </data>
+  <data name="MenuFilter_Grayscale.Text" xml:space="preserve">
+    <value>Grayscale</value>
+  </data>
+  <data name="MenuFilter_Sepia.Text" xml:space="preserve">
+    <value>Sepia</value>
+  </data>
+  <data name="MenuFilter_Invert.Text" xml:space="preserve">
+    <value>Negative/Positive</value>
+  </data>
   <data name="ToneAdjustment_Title.Text" xml:space="preserve">
     <value>Tone Adjustment</value>
   </data>

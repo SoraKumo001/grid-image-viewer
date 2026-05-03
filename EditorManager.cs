@@ -369,6 +369,17 @@ namespace grid_image_viewer
             string sourcePath = _window.CurrentImagePath;
             if (string.IsNullOrEmpty(sourcePath)) return;
 
+            // Capture base bitmap for non-cumulative adjustment
+            SKBitmap? baseBmp = null;
+            if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var currentPb))
+            {
+                baseBmp = currentPb.Copy();
+            }
+            else
+            {
+                try { baseBmp = SKBitmap.Decode(sourcePath); } catch { }
+            }
+
             // Remove any existing tone overlay
             var existing = _window.RootGrid.Children.FirstOrDefault(c => c is Grid g && g.Name == "ToneAdjustmentOverlay");
             if (existing != null) _window.RootGrid.Children.Remove(existing);
@@ -389,7 +400,7 @@ namespace grid_image_viewer
                 {
                     try
                     {
-                        var newBmp = ImageProcessor.ApplyToneAdjustment(sourcePath, b, c, null);
+                        var newBmp = ImageProcessor.ApplyToneAdjustment(sourcePath, b, c, baseBmp);
                         if (newBmp != null)
                         {
                             _window.DispatcherQueue.TryEnqueue(() =>
@@ -483,9 +494,41 @@ namespace grid_image_viewer
 
             overlay.Children.Add(panel);
             btnReset.Click += (s, ev) => { sliderBrightness.Value = 0; sliderContrast.Value = 1.0; };
-            btnClose.Click += (s, ev) => { _window.RootGrid.Children.Remove(overlay); };
+            btnClose.Click += (s, ev) => { 
+                _window.RootGrid.Children.Remove(overlay);
+                baseBmp?.Dispose();
+            };
 
             _window.RootGrid.Children.Add(overlay);
+        }
+
+        public async void MenuFilter_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is string filterType)
+            {
+                string sourcePath = _window.CurrentImagePath;
+                if (string.IsNullOrEmpty(sourcePath)) return;
+
+                _window.ViewerManager.StopAnimation();
+                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+
+                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                {
+                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
+                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                }
+
+                await Task.Run(() =>
+                {
+                    var newBmp = ImageProcessor.ApplyFilter(sourcePath, filterType, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                    if (newBmp != null)
+                    {
+                        if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
+                        _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                    }
+                });
+                _ = _window.UpdateDisplayAsync();
+            }
         }
 
         public async void MenuRotate_Click(object sender, RoutedEventArgs e)

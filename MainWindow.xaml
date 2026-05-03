@@ -185,6 +185,11 @@
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem x:Name="MenuTone" x:FieldModifier="internal" x:Uid="MenuTone" Text="Tone Adjustment" Click="MenuTone_Click" />
+                        <MenuFlyoutSubItem x:Name="MenuFilter" x:FieldModifier="internal" x:Uid="MenuFilter" Text="Filters">
+                            <MenuFlyoutItem x:Uid="MenuFilter_Grayscale" Text="Grayscale" Click="MenuFilter_Click" Tag="Grayscale" />
+                            <MenuFlyoutItem x:Uid="MenuFilter_Sepia" Text="Sepia" Click="MenuFilter_Click" Tag="Sepia" />
+                            <MenuFlyoutItem x:Uid="MenuFilter_Invert" Text="Negative/Positive" Click="MenuFilter_Click" Tag="Invert" />
+                        </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
