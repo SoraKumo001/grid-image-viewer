@@ -172,23 +172,50 @@
   <data name="SlideshowFullscreen.Content" xml:space="preserve">
     <value>全画面表示(_F)</value>
   </data>
+  <data name="SlideshowFullscreen.AccessKey" xml:space="preserve">
+    <value>F</value>
+  </data>
   <data name="SlideshowRandom.Content" xml:space="preserve">
     <value>ランダムな並び順(_R)</value>
+  </data>
+  <data name="SlideshowRandom.AccessKey" xml:space="preserve">
+    <value>R</value>
   </data>
   <data name="SlideshowLoop.Content" xml:space="preserve">
     <value>ループする(_L)</value>
   </data>
+  <data name="SlideshowLoop.AccessKey" xml:space="preserve">
+    <value>L</value>
+  </data>
   <data name="SlideshowNextFolder.Content" xml:space="preserve">
     <value>次のフォルダも表示(_N)</value>
+  </data>
+  <data name="SlideshowNextFolder.AccessKey" xml:space="preserve">
+    <value>N</value>
+  </data>
+  <data name="SlideshowIncludeSiblings.Content" xml:space="preserve">
+    <value>兄弟フォルダも含める(_S)</value>
+  </data>
+  <data name="SlideshowIncludeSiblings.AccessKey" xml:space="preserve">
+    <value>S</value>
   </data>
   <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
     <value>下位フォルダも含める(_B)</value>
   </data>
+  <data name="SlideshowCurrentFolderOnly.AccessKey" xml:space="preserve">
+    <value>B</value>
+  </data>
   <data name="SlideshowUniformToFill.Content" xml:space="preserve">
     <value>拡大して全体を埋める (Cover)(_C)</value>
   </data>
+  <data name="SlideshowUniformToFill.AccessKey" xml:space="preserve">
+    <value>C</value>
+  </data>
   <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
     <value>時間(_T)：</value>
+  </data>
+  <data name="SlideshowIntervalLabel.AccessKey" xml:space="preserve">
+    <value>T</value>
   </data>
   <data name="SlideshowIntervalUnit.Text" xml:space="preserve">
     <value>秒毎</value>
@@ -255,5 +282,23 @@
   </data>
   <data name="MenuRedo.Text" xml:space="preserve">
     <value>やり直し</value>
+  </data>
+  <data name="KeyBinding_Metadata" xml:space="preserve">
+    <value>メタデータ表示切替</value>
+  </data>
+  <data name="KeyBinding_ResetAll" xml:space="preserve">
+    <value>デフォルトに戻す</value>
+  </data>
+  <data name="KeyBinding_Clear" xml:space="preserve">
+    <value>キー設定をクリア</value>
+  </data>
+  <data name="SlideshowCrossfade.Content" xml:space="preserve">
+    <value>クロスフェードを有効にする</value>
+  </data>
+  <data name="SlideshowCrossfadeDurationLabel.Text" xml:space="preserve">
+    <value>フェード時間：</value>
+  </data>
+  <data name="SlideshowCrossfadeDurationUnit.Text" xml:space="preserve">
+    <value>秒</value>
   </data>
 </root>

@@ -152,23 +152,28 @@ namespace grid_image_viewer
 
                 if (includeSiblings)
                 {
-                    // Ensure we get the actual parent by trimming any trailing slashes first
                     string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     string? parent = Path.GetDirectoryName(cleanPath);
                     if (!string.IsNullOrEmpty(parent))
                     {
-                        // Add parent folder itself to include images directly in it
-                        targetDirs.Add(parent);
-
-                        // Add all sibling subdirectories
-                        try
+                        if (includeSubfolders)
                         {
-                            foreach (var d in Directory.EnumerateDirectories(parent))
-                            {
-                                targetDirs.Add(d);
-                            }
+                            // If both are true, we just need to search from the parent recursively once.
+                            targetDirs.Add(parent);
                         }
-                        catch { }
+                        else
+                        {
+                            // Include parent and all immediate siblings
+                            targetDirs.Add(parent);
+                            try
+                            {
+                                foreach (var d in Directory.EnumerateDirectories(parent))
+                                {
+                                    targetDirs.Add(d);
+                                }
+                            }
+                            catch { }
+                        }
                     }
                     else
                     {
@@ -181,7 +186,6 @@ namespace grid_image_viewer
                 }
 
                 // Gather files from all target directories robustly
-                var searchOption = includeSubfolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
                 foreach (var dir in targetDirs)
                 {
                     try
@@ -198,7 +202,7 @@ namespace grid_image_viewer
                     catch { }
                 }
 
-                _playlist = fileList.OrderBy(f => f, new NaturalStringComparer()).ToList();
+                _playlist = fileList.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
 
                 if (_playlist.Count > 0)
                 {

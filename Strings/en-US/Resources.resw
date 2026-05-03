@@ -172,23 +172,44 @@
   <data name="SlideshowFullscreen.Content" xml:space="preserve">
     <value>Fullscreen(_F)</value>
   </data>
+  <data name="SlideshowFullscreen.AccessKey" xml:space="preserve">
+    <value>F</value>
+  </data>
   <data name="SlideshowRandom.Content" xml:space="preserve">
     <value>Random order(_R)</value>
+  </data>
+  <data name="SlideshowRandom.AccessKey" xml:space="preserve">
+    <value>R</value>
   </data>
   <data name="SlideshowLoop.Content" xml:space="preserve">
     <value>Loop(_L)</value>
   </data>
+  <data name="SlideshowLoop.AccessKey" xml:space="preserve">
+    <value>L</value>
+  </data>
   <data name="SlideshowNextFolder.Content" xml:space="preserve">
     <value>Show next folder(_N)</value>
+  </data>
+  <data name="SlideshowNextFolder.AccessKey" xml:space="preserve">
+    <value>N</value>
   </data>
   <data name="SlideshowCurrentFolderOnly.Content" xml:space="preserve">
     <value>Include subfolders(_B)</value>
   </data>
+  <data name="SlideshowCurrentFolderOnly.AccessKey" xml:space="preserve">
+    <value>B</value>
+  </data>
   <data name="SlideshowUniformToFill.Content" xml:space="preserve">
     <value>Scale to fill (Cover)(_C)</value>
   </data>
+  <data name="SlideshowUniformToFill.AccessKey" xml:space="preserve">
+    <value>C</value>
+  </data>
   <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
     <value>Interval(_T):</value>
+  </data>
+  <data name="SlideshowIntervalLabel.AccessKey" xml:space="preserve">
+    <value>T</value>
   </data>
   <data name="SlideshowIntervalUnit.Text" xml:space="preserve">
     <value>sec</value>
@@ -255,5 +276,29 @@
   </data>
   <data name="MenuRedo.Text" xml:space="preserve">
     <value>Redo</value>
+  </data>
+  <data name="KeyBinding_Metadata" xml:space="preserve">
+    <value>Toggle Metadata</value>
+  </data>
+  <data name="KeyBinding_ResetAll" xml:space="preserve">
+    <value>Reset to Defaults</value>
+  </data>
+  <data name="KeyBinding_Clear" xml:space="preserve">
+    <value>Clear binding</value>
+  </data>
+  <data name="SlideshowIncludeSiblings.Content" xml:space="preserve">
+    <value>Include sibling folders(_S)</value>
+  </data>
+  <data name="SlideshowIncludeSiblings.AccessKey" xml:space="preserve">
+    <value>S</value>
+  </data>
+  <data name="SlideshowCrossfade.Content" xml:space="preserve">
+    <value>Enable crossfade</value>
+  </data>
+  <data name="SlideshowCrossfadeDurationLabel.Text" xml:space="preserve">
+    <value>Fade duration:</value>
+  </data>
+  <data name="SlideshowCrossfadeDurationUnit.Text" xml:space="preserve">
+    <value>sec</value>
   </data>
 </root>
