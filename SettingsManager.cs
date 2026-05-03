@@ -25,6 +25,13 @@ namespace grid_image_viewer
         public KeyBindingData Clone() => new KeyBindingData(Key, Ctrl, Shift, Alt);
     }
 
+    public class BookmarkItem
+    {
+        public string Path { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public bool IsFolder { get; set; } = true;
+    }
+
 
 
 
@@ -40,6 +47,7 @@ namespace grid_image_viewer
         public KeyBindingData KeyToggleGrid { get; set; } = new KeyBindingData(VirtualKey.Enter);
         public KeyBindingData KeySlideshow { get; set; } = new KeyBindingData(VirtualKey.A);
         public KeyBindingData KeyMetadata { get; set; } = new KeyBindingData(VirtualKey.I);
+        public KeyBindingData KeyToggleBookmarks { get; set; } = new KeyBindingData(VirtualKey.B);
 
         // Legacy properties for migration
         public VirtualKey? LegacyKeyNextImage { get; set; }
@@ -73,6 +81,7 @@ namespace grid_image_viewer
         public int WindowY { get; set; } = -1;
 
         public string LastImagePath { get; set; } = string.Empty;
+        public System.Collections.Generic.List<BookmarkItem> Bookmarks { get; set; } = new System.Collections.Generic.List<BookmarkItem>();
     }
 
     public class SettingsManager
@@ -89,6 +98,7 @@ namespace grid_image_viewer
         public KeyBindingData KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
         public KeyBindingData KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
         public KeyBindingData KeyMetadata { get => _data.KeyMetadata; set => _data.KeyMetadata = value; }
+        public KeyBindingData KeyToggleBookmarks { get => _data.KeyToggleBookmarks; set => _data.KeyToggleBookmarks = value; }
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
@@ -108,6 +118,7 @@ namespace grid_image_viewer
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 
         public string LastImagePath { get => _data.LastImagePath; }
+        public System.Collections.Generic.List<BookmarkItem> Bookmarks { get => _data.Bookmarks; }
 
         public SettingsManager()
         {
@@ -190,6 +201,28 @@ namespace grid_image_viewer
             }
 
             Save();
+        }
+
+        public bool ToggleBookmark(string path, bool isFolder)
+        {
+            var existing = _data.Bookmarks.Find(b => b.Path == path);
+            if (existing != null)
+            {
+                _data.Bookmarks.Remove(existing);
+                Save();
+                return false; // Removed
+            }
+            else
+            {
+                _data.Bookmarks.Add(new BookmarkItem
+                {
+                    Path = path,
+                    Name = isFolder ? Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) : Path.GetFileName(path),
+                    IsFolder = isFolder
+                });
+                Save();
+                return true; // Added
+            }
         }
     }
 }

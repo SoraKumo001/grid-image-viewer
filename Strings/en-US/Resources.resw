@@ -337,4 +337,34 @@
   <data name="TxtMetaDateLabel.Text" xml:space="preserve">
     <value>Date</value>
   </data>
+  <data name="MenuBookmarksSub.Text" xml:space="preserve">
+    <value>Bookmarks</value>
+  </data>
+  <data name="MenuBookmark_Add" xml:space="preserve">
+    <value>Bookmark this folder</value>
+  </data>
+  <data name="MenuBookmark_Remove" xml:space="preserve">
+    <value>Remove bookmark</value>
+  </data>
+  <data name="MenuBookmarksToggle.Text" xml:space="preserve">
+    <value>Show Bookmark Panel</value>
+  </data>
+  <data name="MenuBookmarkList.Text" xml:space="preserve">
+    <value>Bookmark List</value>
+  </data>
+  <data name="BookmarkPanel_Title.Text" xml:space="preserve">
+    <value>Bookmarks</value>
+  </data>
+  <data name="Bookmark_Empty.Text" xml:space="preserve">
+    <value>No bookmarks</value>
+  </data>
+  <data name="KeyBinding_ToggleBookmarks" xml:space="preserve">
+    <value>Toggle Bookmark Panel</value>
+  </data>
+  <data name="Bookmark_MoveUp.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Move Up</value>
+  </data>
+  <data name="Bookmark_MoveDown.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Move Down</value>
+  </data>
 </root>

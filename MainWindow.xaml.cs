@@ -55,6 +55,14 @@ namespace grid_image_viewer
 
         private int _currentIndex = -1;
         private string _currentDirectory = string.Empty;
+
+        public static readonly string[] SupportedExtensions =
+        {
+            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
+            ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
+        };
+
+        public static bool IsSupportedExtension(string extension) => SupportedExtensions.Contains(extension.ToLowerInvariant());
         private SettingsManager _settings;
         private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
         private bool _isGridMode = false;
@@ -153,10 +161,9 @@ namespace grid_image_viewer
             _currentDirectory = path;
             try
             {
-                var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" };
-
                 List<string> fileList = new List<string>();
                 List<string> targetDirs = new List<string>();
+                targetDirs.Add(path); // Ensure the current directory is always included
 
                 if (includeSiblings)
                 {
@@ -201,7 +208,7 @@ namespace grid_image_viewer
                         var files = includeSubfolders ? Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories) : Directory.EnumerateFiles(dir);
                         foreach (var f in files)
                         {
-                            if (extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
+                            if (IsSupportedExtension(Path.GetExtension(f)))
                             {
                                 fileList.Add(f);
                             }
@@ -270,6 +277,30 @@ namespace grid_image_viewer
         private void MenuRedo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuRedo_Click(sender, e);
         private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
         private void MenuSlideshow_Click(object sender, RoutedEventArgs e) => SlideshowManager.OpenSlideshowDialogAsync();
+        private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuBookmarksToggle_Click(sender, e);
+        private void MenuBookmark_Click(object sender, RoutedEventArgs e) => EditorManager.MenuBookmark_Click(sender, e);
+        private void MenuBookmarkPanel_Close_Click(object sender, RoutedEventArgs e) => BookmarkPanel.Visibility = Visibility.Collapsed;
+        private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is BookmarkItem item)
+            {
+                LoadDirectory(item.Path);
+                BookmarkPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+        private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string path)
+            {
+                _settings.ToggleBookmark(path, true);
+                EditorManager.UpdateBookmarkList();
+            }
+        }
+        private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        {
+            _settings.SaveSettings();
+            EditorManager.UpdateMenuStates();
+        }
 
         private void OpenSlideshowDialogAsync() => SlideshowManager.OpenSlideshowDialogAsync();
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);

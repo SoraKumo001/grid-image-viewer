@@ -10,10 +10,16 @@ https://github.com/SoraKumo001/grid-image-viewer/releases
 
 ### 🖼️ 画像表示
 
-- **対応フォーマット**: JPG, JPEG, PNG, BMP, GIF, WebP（アニメーション対応）, AVIF, HEIC, JPEG XL, SVG, PSD, ICO 等 (Magick.NET フォールバックデコード対応)
+- **対応フォーマット**: JPG, JPEG, PNG, BMP, GIF, WebP（アニメーション対応）, AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX 等
 - **高品質レンダリング**: SkiaSharp による高速な画像描画
 - **ズーム**: Ctrl + マウスホイールで拡大・縮小
 - **ドラッグ&ドロップ**: 画像ファイルやフォルダをウィンドウにドロップして開く
+
+### 🔖 ブックマーク機能
+- **お気に入り登録**: 頻繁に閲覧するフォルダをブックマークとして保存
+- **クイックアクセス**: サイドパネルまたは右クリックメニューから瞬時にフォルダを切り替え
+- **並び替え**: ブックマークパネル内でドラッグ＆ドロップによる直感的な順序変更が可能
+- **多言語対応**: 日本語と英語の表示を自動切り替え
 
 ### 🖼️ 表示モード
 
@@ -75,6 +81,8 @@ https://github.com/SoraKumo001/grid-image-viewer/releases
 | 漫画モード切替             | `Ctrl+G`       |
 | グリッドモード切替         | `Enter`        |
 | 自動再生（スライドショー） | `A`            |
+| ブックマークパネル切替     | `B`            |
+| メタデータ表示切替         | `I`            |
 | アプリ終了                 | `Escape`       |
 
 - マウスホイール: 前後の画像に移動（Shiftキー押下で漫画モード時1ページ送り）
@@ -92,6 +100,7 @@ https://github.com/SoraKumo001/grid-image-viewer/releases
 - **Filters**: カラーフィルタの適用
 - **Undo/Redo**: 編集操作の取り消し・やり直し
 - **Show Metadata**: EXIF情報等の詳細表示（`I`キーで順次切り替え）
+- **Bookmark**: 現在のフォルダをブックマークに追加/解除
 - **Open in Explorer**: エクスプローラーでファイルの場所を開く
 - **Settings**: キーバインドや表示設定の変更
 

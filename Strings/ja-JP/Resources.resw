@@ -337,4 +337,34 @@
   <data name="TxtMetaDateLabel.Text" xml:space="preserve">
     <value>日時</value>
   </data>
+  <data name="MenuBookmarksSub.Text" xml:space="preserve">
+    <value>ブックマーク</value>
+  </data>
+  <data name="MenuBookmark_Add" xml:space="preserve">
+    <value>フォルダをブックマークに登録</value>
+  </data>
+  <data name="MenuBookmark_Remove" xml:space="preserve">
+    <value>ブックマークを解除</value>
+  </data>
+  <data name="MenuBookmarksToggle.Text" xml:space="preserve">
+    <value>ブックマークパネルを表示</value>
+  </data>
+  <data name="MenuBookmarkList.Text" xml:space="preserve">
+    <value>ブックマーク一覧</value>
+  </data>
+  <data name="BookmarkPanel_Title.Text" xml:space="preserve">
+    <value>ブックマーク</value>
+  </data>
+  <data name="Bookmark_Empty.Text" xml:space="preserve">
+    <value>ブックマークがありません</value>
+  </data>
+  <data name="KeyBinding_ToggleBookmarks" xml:space="preserve">
+    <value>ブックマークパネル切替</value>
+  </data>
+  <data name="Bookmark_MoveUp.ToolTipService.ToolTip" xml:space="preserve">
+    <value>上に移動</value>
+  </data>
+  <data name="Bookmark_MoveDown.ToolTipService.ToolTip" xml:space="preserve">
+    <value>下に移動</value>
+  </data>
 </root>

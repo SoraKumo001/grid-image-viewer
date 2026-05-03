@@ -163,6 +163,15 @@
                         <MenuFlyoutItem x:Name="MenuUndo" x:FieldModifier="internal" x:Uid="MenuUndo" Text="Undo" Click="MenuUndo_Click" />
                         <MenuFlyoutItem x:Name="MenuRedo" x:FieldModifier="internal" x:Uid="MenuRedo" Text="Redo" Click="MenuRedo_Click" />
                         <MenuFlyoutSeparator />
+                        <MenuFlyoutSubItem x:Name="MenuBookmarksSub" x:FieldModifier="internal" x:Uid="MenuBookmarksSub" Text="Bookmarks">
+                            <MenuFlyoutItem x:Name="MenuBookmark" x:FieldModifier="internal" x:Uid="MenuBookmark" Text="Bookmark this folder" Click="MenuBookmark_Click" />
+                            <ToggleMenuFlyoutItem x:Name="MenuBookmarksToggle" x:FieldModifier="internal" x:Uid="MenuBookmarksToggle" Text="Show Bookmark Panel" Click="MenuBookmarksToggle_Click" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutSubItem x:Name="MenuBookmarkList" x:FieldModifier="internal" x:Uid="MenuBookmarkList" Text="Bookmark List">
+                                <!-- Dynamically populated -->
+                            </MenuFlyoutSubItem>
+                        </MenuFlyoutSubItem>
+                        <MenuFlyoutSeparator />
                         <MenuFlyoutSubItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As...">
                             <MenuFlyoutItem Text="JPEG" Click="MenuSaveAs_Click" Tag=".jpg" />
                             <MenuFlyoutItem Text="PNG" Click="MenuSaveAs_Click" Tag=".png" />
@@ -218,8 +227,52 @@
                     </MenuFlyout>
                 </Grid.ContextFlyout>
             </Grid>
-        </Grid>
+            </Grid>
         </ScrollViewer>
+
+        <!-- Bookmark Panel (Overlay) -->
+        <Border x:Name="BookmarkPanel" x:FieldModifier="internal"
+                Grid.Row="1" HorizontalAlignment="Left" Width="280"
+                Background="#EE1F1F1F" BorderBrush="#333333" BorderThickness="0,0,1,0"
+                Visibility="Collapsed" Canvas.ZIndex="100">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Padding="16">
+                    <TextBlock x:Uid="BookmarkPanel_Title" Text="BOOKMARKS" FontSize="12" FontWeight="Bold" Foreground="#888888" VerticalAlignment="Center"/>
+                    <Button HorizontalAlignment="Right" Style="{ThemeResource SubtleButtonStyle}" Click="MenuBookmarkPanel_Close_Click">
+                        <FontIcon Glyph="&#xE894;" FontSize="14"/>
+                    </Button>
+                </Grid>
+                <ListView x:Name="BookmarkListView" x:FieldModifier="internal" Grid.Row="1" Padding="0,0,0,16" 
+                          SelectionMode="None" IsItemClickEnabled="True" ItemClick="BookmarkListView_ItemClick"
+                          CanReorderItems="True" CanDragItems="True" AllowDrop="True" DragItemsCompleted="BookmarkListView_DragItemsCompleted">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:BookmarkItem">
+                            <Grid Padding="16,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="&#xED41;" FontSize="16" Foreground="#FFD700" Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{x:Bind Name}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{x:Bind Path}" Foreground="#666666" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                    <Button Style="{ThemeResource SubtleButtonStyle}" Tag="{x:Bind Path}" Click="MenuBookmarkRemove_Click">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="#666666"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
 
         <!-- Grid Mode UI -->
         <GridView x:Name="ImageGridView" x:FieldModifier="internal"

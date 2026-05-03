@@ -132,6 +132,40 @@ namespace grid_image_viewer
 
             // Update Metadata checked state
             _window.MenuMetadata.IsChecked = (_window.MetadataPanel.Visibility == Visibility.Visible);
+
+            // Update Bookmark state
+            string? dir = !string.IsNullOrEmpty(path) ? Path.GetDirectoryName(path) : _window.CurrentDirectory;
+            if (!string.IsNullOrEmpty(dir))
+            {
+                bool isBookmarked = _settings.Bookmarks.Exists(b => b.Path == dir);
+                _window.MenuBookmark.Text = isBookmarked ? GetString("MenuBookmark_Remove") : GetString("MenuBookmark_Add");
+            }
+
+            _window.MenuBookmarksToggle.IsChecked = (_window.BookmarkPanel.Visibility == Visibility.Visible);
+
+            // Populate Bookmark List Sub-menu
+            _window.MenuBookmarkList.Items.Clear();
+            if (_settings.Bookmarks.Count == 0)
+            {
+                _window.MenuBookmarkList.Items.Add(new MenuFlyoutItem { Text = GetString("Bookmark_Empty"), IsEnabled = false });
+            }
+            else
+            {
+                foreach (var bm in _settings.Bookmarks)
+                {
+                    var bmItem = new MenuFlyoutItem { Text = bm.Name, Tag = bm.Path };
+                    bmItem.Click += MenuBookmarkListItem_Click;
+                    _window.MenuBookmarkList.Items.Add(bmItem);
+                }
+            }
+        }
+
+        private void MenuBookmarkListItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is string path)
+            {
+                _window.LoadDirectory(path);
+            }
         }
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
@@ -439,6 +473,49 @@ namespace grid_image_viewer
         {
             _window.DialogService.Show(new KeyBindingsOverlay(_window, _settings) { Name = "KeyBindingsOverlay" });
         }
+
+        public void MenuBookmark_Click(object sender, RoutedEventArgs e)
+        {
+            string dir = _window.CurrentDirectory;
+            if (string.IsNullOrEmpty(dir)) return;
+
+            bool added = _settings.ToggleBookmark(dir, true);
+            UpdateMenuStates();
+            UpdateBookmarkList();
+            _window.ViewerManager.ShowNotification(added ? "Added to bookmarks" : "Removed from bookmarks");
+        }
+
+        public void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e)
+        {
+            bool show = _window.BookmarkPanel.Visibility != Visibility.Visible;
+            _window.BookmarkPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            if (show) UpdateBookmarkList();
+            UpdateMenuStates();
+        }
+
+        public void UpdateBookmarkList()
+        {
+            _window.BookmarkListView.ItemsSource = null;
+            _window.BookmarkListView.ItemsSource = _settings.Bookmarks;
+        }
+
+        public void MoveBookmark(string path, int direction)
+        {
+            int index = _settings.Bookmarks.FindIndex(b => b.Path == path);
+            if (index == -1) return;
+
+            int newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= _settings.Bookmarks.Count) return;
+
+            var item = _settings.Bookmarks[index];
+            _settings.Bookmarks.RemoveAt(index);
+            _settings.Bookmarks.Insert(newIndex, item);
+            _settings.SaveSettings();
+
+            UpdateBookmarkList();
+            UpdateMenuStates();
+        }
+
         internal string GetString(string key)
         {
             if (_stringCache.TryGetValue(key, out var cached)) return cached;
