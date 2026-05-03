@@ -345,57 +345,34 @@ namespace grid_image_viewer
             _window.ViewerManager.ToggleMetadataPanel(cycle: false);
         }
 
-        public async void MenuResize_Click(object sender, RoutedEventArgs e)
+        public void MenuResize_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = _window.CurrentImagePath;
             if (string.IsNullOrEmpty(sourcePath)) return;
 
-            var dialog = new ContentDialog
+            int origW, origH;
+            var currentBmp = _window.ImageEditService.GetCurrentBitmap(sourcePath);
+            if (currentBmp != null)
             {
-                Title = "Resize Image",
-                PrimaryButtonText = "Resize",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = _window.Content.XamlRoot
-            };
-
-            var stackPanel = new StackPanel { Spacing = 10 };
-            var widthBox = new NumberBox { Header = "Width" };
-            var heightBox = new NumberBox { Header = "Height" };
-            stackPanel.Children.Add(widthBox);
-            stackPanel.Children.Add(heightBox);
-            dialog.Content = stackPanel;
-
-            try
-            {
-                int origW, origH;
-                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending) && pending.Current != null)
-                {
-                    origW = pending.Current.Width;
-                    origH = pending.Current.Height;
-                }
-                else
-                {
-                    (origW, origH) = ImageProcessor.GetImageSize(sourcePath);
-                }
-                widthBox.Value = origW;
-                heightBox.Value = origH;
-
-                _window.IsDialogOpen = true;
-                var result = await dialog.ShowAsync();
-                _window.IsDialogOpen = false;
-
-                if (result == ContentDialogResult.Primary)
-                {
-                    int newWidth = (int)widthBox.Value;
-                    int newHeight = (int)heightBox.Value;
-                    if (newWidth <= 0 || newHeight <= 0) return;
-
-                    await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
-                        (current) => ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, current));
-                }
+                origW = currentBmp.Width;
+                origH = currentBmp.Height;
             }
-            catch { }
+            else
+            {
+                (origW, origH) = ImageProcessor.GetImageSize(sourcePath);
+            }
+
+            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is FrameworkElement fe && fe.Name == "ResizeOverlay");
+            if (existing != null) _window.RootGrid.Children.Remove(existing);
+
+            var overlay = new ResizeOverlay(_window, sourcePath, origW, origH)
+            {
+                Name = "ResizeOverlay"
+            };
+            Grid.SetRowSpan(overlay, 2);
+
+            _window.IsDialogOpen = true;
+            _window.RootGrid.Children.Add(overlay);
         }
 
         public void MenuTone_Click(object sender, RoutedEventArgs e)
@@ -406,17 +383,12 @@ namespace grid_image_viewer
             if (string.IsNullOrEmpty(sourcePath)) return;
 
             // Capture base bitmap for non-cumulative adjustment
-            SKBitmap? baseBmp = null;
-            if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session))
-            {
-                baseBmp = session.Current?.Copy();
-            }
-            else
+            SKBitmap? baseBmp = _window.ImageEditService.GetCurrentBitmap(sourcePath)?.Copy();
+            if (baseBmp == null)
             {
                 try { baseBmp = SKBitmap.Decode(sourcePath); } catch { }
             }
 
-            // Remove any existing tone overlay
             var existing = _window.RootGrid.Children.FirstOrDefault(c => c is FrameworkElement fe && fe.Name == "ToneAdjustmentOverlay");
             if (existing != null) _window.RootGrid.Children.Remove(existing);
 
@@ -437,8 +409,7 @@ namespace grid_image_viewer
                 string sourcePath = _window.CurrentImagePath;
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
-                    (current) => ImageProcessor.ApplyFilter(sourcePath, filterType, current));
+                await _window.ImageEditService.FilterAsync(sourcePath, filterType);
             }
         }
 
@@ -449,8 +420,7 @@ namespace grid_image_viewer
                 string sourcePath = _window.CurrentImagePath;
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
-                    (current) => ImageProcessor.GetRotatedBitmap(sourcePath, degrees, current));
+                await _window.ImageEditService.RotateAsync(sourcePath, degrees);
             }
         }
 
@@ -462,8 +432,7 @@ namespace grid_image_viewer
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
                 bool horizontal = flipMode == "Horz";
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
-                    (current) => ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, current));
+                await _window.ImageEditService.FlipAsync(sourcePath, horizontal);
             }
         }
 
@@ -537,238 +506,32 @@ namespace grid_image_viewer
             }
         }
 
-        private string GetBindingString(KeyBindingData binding)
+
+
+        public void MenuKeyBindings_Click(object sender, RoutedEventArgs e)
         {
-            if (binding.Key == VirtualKey.None) return "None";
-            var sb = new System.Text.StringBuilder();
-            if (binding.Ctrl) sb.Append("Ctrl + ");
-            if (binding.Shift) sb.Append("Shift + ");
-            if (binding.Alt) sb.Append("Alt + ");
-            sb.Append(binding.Key.ToString());
-            return sb.ToString();
-        }
+            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is FrameworkElement fe && fe.Name == "KeyBindingsOverlay");
+            if (existing != null) _window.RootGrid.Children.Remove(existing);
 
-        private UIElement CreateKeyBindingRow(string header, KeyBindingData binding)
-        {
-            var card = new Grid
+            var overlay = new KeyBindingsOverlay(_window, _settings)
             {
-                Padding = new Thickness(16, 8, 12, 8),
-                Margin = new Thickness(0, 0, 0, 4),
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(15, 255, 255, 255)),
-                CornerRadius = new CornerRadius(8),
-                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(20, 255, 255, 255)),
-                BorderThickness = new Thickness(1)
+                Name = "KeyBindingsOverlay"
             };
-            card.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            card.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var title = new TextBlock
-            {
-                Text = header,
-                VerticalAlignment = VerticalAlignment.Center,
-                FontSize = 14,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200))
-            };
-            Grid.SetColumn(title, 0);
-
-            var rightStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            Grid.SetColumn(rightStack, 1);
-
-            var btnKey = new Button
-            {
-                Content = GetBindingString(binding),
-                MinWidth = 160,
-                Height = 32,
-                FontSize = 13,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255)),
-                BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255)),
-                CornerRadius = new CornerRadius(4)
-            };
-
-            btnKey.Click += (s, e) =>
-            {
-                btnKey.Content = "...";
-                btnKey.Background = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"];
-            };
-
-            btnKey.PreviewKeyDown += (s, e) =>
-            {
-                if (btnKey.Content.ToString() == "...")
-                {
-                    var key = e.Key;
-                    var ctrl = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                    var shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-                    var alt = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-
-                    if (key != VirtualKey.Control && key != VirtualKey.Shift && key != VirtualKey.Menu && key != VirtualKey.LeftWindows && key != VirtualKey.RightWindows)
-                    {
-                        binding.Key = key;
-                        binding.Ctrl = ctrl;
-                        binding.Shift = shift;
-                        binding.Alt = alt;
-                        btnKey.Content = GetBindingString(binding);
-                        btnKey.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255));
-                        e.Handled = true;
-                    }
-                }
-            };
-
-            var btnClear = new Button
-            {
-                Content = "\uE74D", // Trash icon
-                FontFamily = new FontFamily("Segoe MDL2 Assets"),
-                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                BorderThickness = new Thickness(0),
-                Width = 32,
-                Height = 32,
-                Padding = new Thickness(0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            ToolTipService.SetToolTip(btnClear, GetString("KeyBinding_Clear"));
-            btnClear.Click += (s, e) =>
-            {
-                binding.Key = VirtualKey.None;
-                binding.Ctrl = false;
-                binding.Shift = false;
-                binding.Alt = false;
-                btnKey.Content = GetBindingString(binding);
-            };
-
-            rightStack.Children.Add(btnKey);
-            rightStack.Children.Add(btnClear);
-
-            card.Children.Add(title);
-            card.Children.Add(rightStack);
-
-            return card;
-        }
-
-        public async void MenuKeyBindings_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = GetString("KeyBinding_Title"),
-                PrimaryButtonText = GetString("KeyBinding_Save"),
-                CloseButtonText = GetString("KeyBinding_Cancel"),
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = _window.Content.XamlRoot,
-                RequestedTheme = ElementTheme.Dark
-            };
-
-            var stackPanel = new StackPanel { Spacing = 4, Padding = new Thickness(0, 0, 16, 20), MinWidth = 440 };
-
-            var tempNextImage = _settings.KeyNextImage.Clone();
-            var tempPrevImage = _settings.KeyPrevImage.Clone();
-            var tempNextFolder = _settings.KeyNextFolder.Clone();
-            var tempPrevFolder = _settings.KeyPrevFolder.Clone();
-            var tempToggleManga = _settings.KeyToggleManga.Clone();
-            var tempExit = _settings.KeyExit.Clone();
-            var tempToggleGrid = _settings.KeyToggleGrid.Clone();
-            var tempSlideshow = _settings.KeySlideshow.Clone();
-            var tempMetadata = _settings.KeyMetadata.Clone();
-
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_NextImage"), tempNextImage));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_PrevImage"), tempPrevImage));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_NextFolder"), tempNextFolder));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_PrevFolder"), tempPrevFolder));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleManga"), tempToggleManga));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleGrid"), tempToggleGrid));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_ToggleSlideshow"), tempSlideshow));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_Metadata"), tempMetadata));
-            stackPanel.Children.Add(CreateKeyBindingRow(GetString("KeyBinding_Exit"), tempExit));
-
-            var btnResetAll = new Button
-            {
-                Content = GetString("KeyBinding_ResetAll"),
-                Margin = new Thickness(0, 12, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            btnResetAll.Click += (s, ev) =>
-            {
-                var defaults = new SettingsData();
-                tempNextImage.Key = defaults.KeyNextImage.Key; tempNextImage.Ctrl = defaults.KeyNextImage.Ctrl; tempNextImage.Shift = defaults.KeyNextImage.Shift; tempNextImage.Alt = defaults.KeyNextImage.Alt;
-                tempPrevImage.Key = defaults.KeyPrevImage.Key; tempPrevImage.Ctrl = defaults.KeyPrevImage.Ctrl; tempPrevImage.Shift = defaults.KeyPrevImage.Shift; tempPrevImage.Alt = defaults.KeyPrevImage.Alt;
-                tempNextFolder.Key = defaults.KeyNextFolder.Key; tempNextFolder.Ctrl = defaults.KeyNextFolder.Ctrl; tempNextFolder.Shift = defaults.KeyNextFolder.Shift; tempNextFolder.Alt = defaults.KeyNextFolder.Alt;
-                tempPrevFolder.Key = defaults.KeyPrevFolder.Key; tempPrevFolder.Ctrl = defaults.KeyPrevFolder.Ctrl; tempPrevFolder.Shift = defaults.KeyPrevFolder.Shift; tempPrevFolder.Alt = defaults.KeyPrevFolder.Alt;
-                tempToggleManga.Key = defaults.KeyToggleManga.Key; tempToggleManga.Ctrl = defaults.KeyToggleManga.Ctrl; tempToggleManga.Shift = defaults.KeyToggleManga.Shift; tempToggleManga.Alt = defaults.KeyToggleManga.Alt;
-                tempExit.Key = defaults.KeyExit.Key; tempExit.Ctrl = defaults.KeyExit.Ctrl; tempExit.Shift = defaults.KeyExit.Shift; tempExit.Alt = defaults.KeyExit.Alt;
-                tempToggleGrid.Key = defaults.KeyToggleGrid.Key; tempToggleGrid.Ctrl = defaults.KeyToggleGrid.Ctrl; tempToggleGrid.Shift = defaults.KeyToggleGrid.Shift; tempToggleGrid.Alt = defaults.KeyToggleGrid.Alt;
-                tempSlideshow.Key = defaults.KeySlideshow.Key; tempSlideshow.Ctrl = defaults.KeySlideshow.Ctrl; tempSlideshow.Shift = defaults.KeySlideshow.Shift; tempSlideshow.Alt = defaults.KeySlideshow.Alt;
-                tempMetadata.Key = defaults.KeyMetadata.Key; tempMetadata.Ctrl = defaults.KeyMetadata.Ctrl; tempMetadata.Shift = defaults.KeyMetadata.Shift; tempMetadata.Alt = defaults.KeyMetadata.Alt;
-
-                // Refresh all UI rows
-                foreach (var child in stackPanel.Children)
-                {
-                    if (child is Grid card && card.ColumnDefinitions.Count == 2)
-                    {
-                        var stack = card.Children.OfType<StackPanel>().FirstOrDefault();
-                        var btn = stack?.Children.OfType<Button>().FirstOrDefault();
-                        if (btn != null && btn.Content.ToString() != "Reset to Defaults")
-                        {
-                            // This is a bit hacky since we don't have direct access to the binding in this loop, 
-                            // but we can refresh based on the row index if we had it.
-                            // Since we have limited rows, we can just find them by label.
-                        }
-                    }
-                }
-                // Re-open dialog or refresh logic - simpler to just update the content manually or re-bind
-                // For now, let's just update the objects and tell the user they need to re-open if it doesn't refresh visually, 
-                // but actually I'll just find the buttons.
-
-                // Let's improve the reset logic to be more reliable.
-                _window.RootGrid.Children.Remove(dialog); // This doesn't work for ContentDialog
-                                                          // Better: just refresh the content of the buttons.
-
-                void RefreshAll()
-                {
-                    // We can't easily iterate and match without more structure.
-                    // Let's just update the content of the dialog.
-                    dialog.Hide();
-                    MenuKeyBindings_Click(null!, null!);
-                }
-                RefreshAll();
-            };
-            stackPanel.Children.Add(btnResetAll);
-
-            dialog.Content = new ScrollViewer
-            {
-                Content = stackPanel,
-                MaxHeight = 500,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Padding = new Thickness(0, 0, 12, 0)
-            };
+            Grid.SetRowSpan(overlay, 2);
 
             _window.IsDialogOpen = true;
-            var resultKb = await dialog.ShowAsync();
-            _window.IsDialogOpen = false;
-
-            if (resultKb == ContentDialogResult.Primary)
-            {
-                _settings.KeyNextImage = tempNextImage;
-                _settings.KeyPrevImage = tempPrevImage;
-                _settings.KeyNextFolder = tempNextFolder;
-                _settings.KeyPrevFolder = tempPrevFolder;
-                _settings.KeyToggleManga = tempToggleManga;
-                _settings.KeyExit = tempExit;
-                _settings.KeyToggleGrid = tempToggleGrid;
-                _settings.KeySlideshow = tempSlideshow;
-                _settings.KeyMetadata = tempMetadata;
-                _settings.SaveKeyBindings();
-            }
+            _window.RootGrid.Children.Add(overlay);
         }
-        private string GetString(string key)
+        internal string GetString(string key)
         {
+            if (_stringCache.TryGetValue(key, out var cached)) return cached;
             try
             {
-                // Dots are used for properties in x:Uid, but for simple strings they might be just names.
-                // ResourceManager uses / as separator.
                 var resourceKey = "Resources/" + key.Replace(".", "/");
                 var candidate = _resourceManager.MainResourceMap.GetValue(resourceKey, _resourceContext);
-                return candidate?.ValueAsString ?? key;
+                var val = candidate?.ValueAsString ?? key;
+                _stringCache[key] = val;
+                return val;
             }
             catch { return key; }
         }

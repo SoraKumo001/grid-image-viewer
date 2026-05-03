@@ -1,0 +1,187 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace grid_image_viewer.Controls
+{
+    public sealed partial class KeyBindingsOverlay : UserControl
+    {
+        private readonly MainWindow _window;
+        private readonly SettingsManager _settings;
+        
+        private KeyBindingData _tempNextImage;
+        private KeyBindingData _tempPrevImage;
+        private KeyBindingData _tempNextFolder;
+        private KeyBindingData _tempPrevFolder;
+        private KeyBindingData _tempToggleManga;
+        private KeyBindingData _tempExit;
+        private KeyBindingData _tempToggleGrid;
+        private KeyBindingData _tempSlideshow;
+        private KeyBindingData _tempMetadata;
+
+        public KeyBindingsOverlay(MainWindow window, SettingsManager settings)
+        {
+            this.InitializeComponent();
+            _window = window;
+            _settings = settings;
+
+            // Clone current settings
+            _tempNextImage = _settings.KeyNextImage.Clone();
+            _tempPrevImage = _settings.KeyPrevImage.Clone();
+            _tempNextFolder = _settings.KeyNextFolder.Clone();
+            _tempPrevFolder = _settings.KeyPrevFolder.Clone();
+            _tempToggleManga = _settings.KeyToggleManga.Clone();
+            _tempExit = _settings.KeyExit.Clone();
+            _tempToggleGrid = _settings.KeyToggleGrid.Clone();
+            _tempSlideshow = _settings.KeySlideshow.Clone();
+            _tempMetadata = _settings.KeyMetadata.Clone();
+
+            InitializeList();
+        }
+
+        private void InitializeList()
+        {
+            BindingsStack.Children.Clear();
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_NextImage"), _tempNextImage));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_PrevImage"), _tempPrevImage));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_NextFolder"), _tempNextFolder));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_PrevFolder"), _tempPrevFolder));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleManga"), _tempToggleManga));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleGrid"), _tempToggleGrid));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleSlideshow"), _tempSlideshow));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Metadata"), _tempMetadata));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Exit"), _tempExit));
+        }
+
+        private UIElement CreateRow(string label, KeyBindingData binding)
+        {
+            var grid = new Grid
+            {
+                Padding = new Thickness(12, 8, 12, 8),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(15, 255, 255, 255)),
+                CornerRadius = new CornerRadius(8)
+            };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var txtLabel = new TextBlock 
+            { 
+                Text = label, 
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200))
+            };
+            Grid.SetColumn(txtLabel, 0);
+
+            var btn = new Button
+            {
+                Content = GetBindingString(binding),
+                MinWidth = 140,
+                HorizontalContentAlignment = HorizontalAlignment.Center
+            };
+            Grid.SetColumn(btn, 1);
+
+            btn.Click += (s, e) =>
+            {
+                btn.Content = "...";
+                btn.Background = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"];
+            };
+
+            btn.PreviewKeyDown += (s, e) =>
+            {
+                if (btn.Content.ToString() == "...")
+                {
+                    e.Handled = true;
+                    var key = e.Key;
+                    if (key == Windows.System.VirtualKey.Control || key == Windows.System.VirtualKey.Shift || 
+                        key == Windows.System.VirtualKey.Menu || key == Windows.System.VirtualKey.LeftWindows || 
+                        key == Windows.System.VirtualKey.RightWindows)
+                        return;
+
+                    binding.Key = key;
+                    binding.Ctrl = (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control) & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+                    binding.Shift = (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift) & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+                    binding.Alt = (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu) & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+
+                    btn.Content = GetBindingString(binding);
+                    btn.ClearValue(Button.BackgroundProperty);
+                }
+            };
+
+            grid.Children.Add(txtLabel);
+            grid.Children.Add(btn);
+            return grid;
+        }
+
+        private string GetBindingString(KeyBindingData b)
+        {
+            var parts = new List<string>();
+            if (b.Ctrl) parts.Add("Ctrl");
+            if (b.Shift) parts.Add("Shift");
+            if (b.Alt) parts.Add("Alt");
+            parts.Add(b.Key.ToString());
+            return string.Join(" + ", parts);
+        }
+
+        private string GetString(string key) => _window.EditorManager.GetString(key);
+
+        private void BtnResetAll_Click(object sender, RoutedEventArgs e)
+        {
+            var defaults = new SettingsData();
+            CopyBinding(defaults.KeyNextImage, _tempNextImage);
+            CopyBinding(defaults.KeyPrevImage, _tempPrevImage);
+            CopyBinding(defaults.KeyNextFolder, _tempNextFolder);
+            CopyBinding(defaults.KeyPrevFolder, _tempPrevFolder);
+            CopyBinding(defaults.KeyToggleManga, _tempToggleManga);
+            CopyBinding(defaults.KeyExit, _tempExit);
+            CopyBinding(defaults.KeyToggleGrid, _tempToggleGrid);
+            CopyBinding(defaults.KeySlideshow, _tempSlideshow);
+            CopyBinding(defaults.KeyMetadata, _tempMetadata);
+            InitializeList();
+        }
+
+        private void CopyBinding(KeyBindingData src, KeyBindingData dest)
+        {
+            dest.Key = src.Key;
+            dest.Ctrl = src.Ctrl;
+            dest.Shift = src.Shift;
+            dest.Alt = src.Alt;
+        }
+
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.KeyNextImage = _tempNextImage;
+            _settings.KeyPrevImage = _tempPrevImage;
+            _settings.KeyNextFolder = _tempNextFolder;
+            _settings.KeyPrevFolder = _tempPrevFolder;
+            _settings.KeyToggleManga = _tempToggleManga;
+            _settings.KeyExit = _tempExit;
+            _settings.KeyToggleGrid = _tempToggleGrid;
+            _settings.KeySlideshow = _tempSlideshow;
+            _settings.KeyMetadata = _tempMetadata;
+            _settings.SaveKeyBindings();
+            Close();
+        }
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void Overlay_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Escape)
+            {
+                Close();
+                e.Handled = true;
+            }
+        }
+
+        private void Close()
+        {
+            var parent = this.Parent as Panel;
+            parent?.Children.Remove(this);
+            _window.IsDialogOpen = false;
+        }
+    }
+}

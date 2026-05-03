@@ -1,0 +1,36 @@
+<UserControl
+    x:Class="grid_image_viewer.Controls.ResizeOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
+    RequestedTheme="Dark"
+    KeyDown="Overlay_KeyDown">
+
+    <Grid Background="#CC000000">
+        <Border
+            Background="#FF202020"
+            CornerRadius="8"
+            BorderBrush="#FF404040"
+            BorderThickness="1"
+            Width="320"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Padding="24">
+            <StackPanel Spacing="16">
+                <TextBlock x:Uid="Resize_Title" Text="Resize Image" FontSize="18" FontWeight="SemiBold" Foreground="White" />
+
+                <NumberBox x:Name="BoxWidth" x:Uid="Resize_Width" Header="Width" Value="0" SpinButtonPlacementMode="Compact" />
+                <NumberBox x:Name="BoxHeight" x:Uid="Resize_Height" Header="Height" Value="0" SpinButtonPlacementMode="Compact" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+                    <Button x:Uid="Resize_Cancel" Content="Cancel" Width="80" Click="BtnCancel_Click" />
+                    <Button x:Uid="Resize_Apply" Content="Resize" Width="80" Style="{StaticResource AccentButtonStyle}" Click="BtnApply_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

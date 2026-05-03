@@ -34,7 +34,7 @@ namespace grid_image_viewer
         private const int MAX_CACHE_SIZE = 20;
 
         public Dictionary<string, EditSession> PendingEdits => _window.ImageEditService.PendingEdits;
-        public void AddPendingEdit(string path, SKBitmap bitmap) => _window.ImageEditService.AddPendingEdit(path, bitmap);
+
 
         public ViewerManager(MainWindow window, SettingsManager settings)
         {

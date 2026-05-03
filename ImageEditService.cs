@@ -66,6 +66,35 @@ namespace grid_image_viewer
             }
         }
 
+        public async Task RotateAsync(string path, float degrees)
+        {
+            await ApplyTransformationAsync(path, (current) => ImageProcessor.GetRotatedBitmap(path, degrees, current));
+        }
+
+        public async Task FlipAsync(string path, bool horizontal)
+        {
+            await ApplyTransformationAsync(path, (current) => ImageProcessor.GetFlippedBitmap(path, horizontal, current));
+        }
+
+        public async Task FilterAsync(string path, string filterType)
+        {
+            await ApplyTransformationAsync(path, (current) => ImageProcessor.ApplyFilter(path, filterType, current));
+        }
+
+        public async Task ResizeAsync(string path, int width, int height)
+        {
+            await ApplyTransformationAsync(path, (current) => ImageProcessor.GetResizedBitmap(path, width, height, current));
+        }
+
+        public SKBitmap? GetCurrentBitmap(string path)
+        {
+            if (_pendingEdits.TryGetValue(path, out var session))
+            {
+                return session.Current;
+            }
+            return null;
+        }
+
         public async Task ApplyTransformationAsync(string path, Func<SKBitmap?, SKBitmap?> transform)
         {
             _window.ViewerManager?.StopAnimation();
@@ -78,12 +107,7 @@ namespace grid_image_viewer
 
             await Task.Run(() =>
             {
-                SKBitmap? baseBmp = null;
-                if (_pendingEdits.TryGetValue(path, out var session))
-                {
-                    baseBmp = session.Current;
-                }
-
+                SKBitmap? baseBmp = GetCurrentBitmap(path);
                 var newBmp = transform(baseBmp);
                 if (newBmp != null)
                 {
@@ -98,7 +122,7 @@ namespace grid_image_viewer
                             {
                                 if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
                                 {
-                                    _window.ViewerManager.Pages[i].EditedBitmap = null; // Force LoadPageAsync logic or direct update
+                                    _window.ViewerManager.Pages[i].EditedBitmap = null; 
                                 }
                             }
                         }

@@ -45,15 +45,17 @@ namespace grid_image_viewer.Controls
                     {
                         _window.DispatcherQueue.TryEnqueue(() =>
                         {
-                            if (_window.ViewerManager == null) return;
-                            _window.ViewerManager.AddPendingEdit(_sourcePath, newBmp);
-                            _window.ViewerManager.StopAnimation();
+                            _window.ImageEditService.AddPendingEdit(_sourcePath, newBmp);
+                            _window.ViewerManager?.StopAnimation();
 
-                            foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
-                            for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                            if (_window.ViewerManager != null)
                             {
-                                if (_window.ViewerManager.Pages[pi].CurrentFilePath == _sourcePath)
-                                    _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+                                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                                {
+                                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == _sourcePath)
+                                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                                }
                             }
                             _ = _window.UpdateDisplayAsync();
                         });
