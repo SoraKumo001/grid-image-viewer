@@ -18,6 +18,7 @@ namespace grid_image_viewer
         public int StretchMode { get; set; } = 2; // 0: None, 2: Uniform, 3: UniformToFill
         public int FrameCount { get; internal set; } = 0;
         public int CurrentFrameDuration { get; internal set; } = 100;
+        public bool UseHighQualityScaling { get; set; } = true;
 
         public bool IsAnimated => Codec != null && FrameCount > 1;
 
@@ -153,7 +154,22 @@ namespace grid_image_viewer
                     }
 
                     var destRect = new SKRect(x, y, x + bmpToDraw.Width * scale, y + bmpToDraw.Height * scale);
-                    canvas.DrawBitmap(bmpToDraw, destRect);
+
+                    if (scale != 1.0f)
+                    {
+                        var sampling = UseHighQualityScaling
+                            ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
+                            : new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
+
+                        using (var image = SKImage.FromBitmap(bmpToDraw))
+                        {
+                            canvas.DrawImage(image, destRect, sampling, null);
+                        }
+                    }
+                    else
+                    {
+                        canvas.DrawBitmap(bmpToDraw, destRect);
+                    }
                 }
             }
         }

@@ -22,7 +22,7 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Center">
 
-            <TextBlock x:Uid="Settings_Title" Text="Save Settings" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="White" />
+            <TextBlock x:Uid="Settings_Title" Text="General Settings" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="White" />
 
             <StackPanel Spacing="4">
                 <TextBlock x:Uid="Settings_JpegQuality" Text="JPEG/WebP Quality" FontWeight="SemiBold" Foreground="White" />
@@ -35,6 +35,26 @@
                     <TextBlock Grid.Column="1" Text="{Binding ElementName=SliderQuality, Path=Value}" VerticalAlignment="Center" Margin="8,0,0,0" Width="40" Foreground="White" />
                 </Grid>
             </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock x:Uid="Settings_Background" Text="Background Color" FontWeight="SemiBold" Foreground="White" />
+                <ComboBox x:Name="ComboBackground" HorizontalAlignment="Stretch">
+                    <ComboBoxItem x:Uid="Settings_Background_System" Content="System (Mica)" />
+                    <ComboBoxItem x:Uid="Settings_Background_Black" Content="Black" />
+                    <ComboBoxItem x:Uid="Settings_Background_White" Content="White" />
+                </ComboBox>
+            </StackPanel>
+
+            <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" />
+
+            <Grid ColumnSpacing="8" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="BtnExport" x:Uid="Settings_Export" Content="Export Settings" HorizontalAlignment="Stretch" Click="BtnExport_Click" />
+                <Button x:Name="BtnImport" x:Uid="Settings_Import" Grid.Column="1" Content="Import Settings" HorizontalAlignment="Stretch" Click="BtnImport_Click" />
+            </Grid>
 
             <Button x:Name="BtnClose" x:Uid="ToneAdjustment_Close" Content="Close" Width="80" HorizontalAlignment="Right" Margin="0,16,0,0" Style="{StaticResource AccentButtonStyle}" Click="BtnClose_Click" />
         </StackPanel>

@@ -275,10 +275,10 @@
     <value>設定</value>
   </data>
   <data name="MenuSettings.Text" xml:space="preserve">
-    <value>保存設定...</value>
+    <value>全般設定...</value>
   </data>
   <data name="Settings_Title.Text" xml:space="preserve">
-    <value>保存設定</value>
+    <value>全般設定</value>
   </data>
   <data name="Settings_JpegQuality.Text" xml:space="preserve">
     <value>JPEG/WebP 保存品質</value>
@@ -418,5 +418,26 @@
   </data>
   <data name="KeyBinding_Zoom100" xml:space="preserve">
     <value>100%表示 (実寸)</value>
+  </data>
+  <data name="Settings_Background.Text" xml:space="preserve">
+    <value>背景色</value>
+  </data>
+  <data name="Settings_Background_System.Content" xml:space="preserve">
+    <value>システム (Mica)</value>
+  </data>
+  <data name="Settings_Background_Black.Content" xml:space="preserve">
+    <value>ブラック</value>
+  </data>
+  <data name="Settings_Background_White.Content" xml:space="preserve">
+    <value>ホワイト</value>
+  </data>
+  <data name="Settings_HighQuality.Content" xml:space="preserve">
+    <value>高品質スケーリング</value>
+  </data>
+  <data name="Settings_Export.Content" xml:space="preserve">
+    <value>設定のエクスポート</value>
+  </data>
+  <data name="Settings_Import.Content" xml:space="preserve">
+    <value>設定のインポート</value>
   </data>
 </root>

@@ -83,6 +83,8 @@ namespace grid_image_viewer
         public bool SlideshowCrossfade { get; set; } = true;
         public double SlideshowCrossfadeDuration { get; set; } = 0.4;
         public int ImageStretchMode { get; set; } = 2; // 0: None, 2: Uniform (Contain), 3: UniformToFill (Cover)
+        public int BackgroundColorMode { get; set; } = 0; // 0: System (Mica), 1: Black, 2: White
+        public bool UseHighQualityScaling { get; set; } = true;
 
         public int JpegQuality { get; set; } = 90;
 
@@ -137,6 +139,8 @@ namespace grid_image_viewer
         public bool SlideshowCrossfade { get => _data.SlideshowCrossfade; set => _data.SlideshowCrossfade = value; }
         public double SlideshowCrossfadeDuration { get => _data.SlideshowCrossfadeDuration; set => _data.SlideshowCrossfadeDuration = value; }
         public int ImageStretchMode { get => _data.ImageStretchMode; set => _data.ImageStretchMode = value; }
+        public int BackgroundColorMode { get => _data.BackgroundColorMode; set => _data.BackgroundColorMode = value; }
+        public bool UseHighQualityScaling { get => _data.UseHighQualityScaling; set => _data.UseHighQualityScaling = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 
@@ -194,6 +198,48 @@ namespace grid_image_viewer
         public void SaveMangaMode() => Save();
         public void SaveSlideshowSettings() => Save();
         public void SaveSettings() => Save();
+
+        public async System.Threading.Tasks.Task ExportSettingsAsync(IntPtr windowHandle)
+        {
+            var picker = new Windows.Storage.Pickers.FileSavePicker();
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
+            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            picker.FileTypeChoices.Add("JSON", new System.Collections.Generic.List<string>() { ".json" });
+            picker.SuggestedFileName = "quick-image-viewer-settings";
+
+            var file = await picker.PickSaveFileAsync();
+            if (file != null)
+            {
+                Save(); // Ensure current data is saved
+                File.Copy(_settingsFilePath, file.Path, true);
+            }
+        }
+
+        public async System.Threading.Tasks.Task<bool> ImportSettingsAsync(IntPtr windowHandle)
+        {
+            var picker = new Windows.Storage.Pickers.FileOpenPicker();
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
+            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add(".json");
+
+            var file = await picker.PickSingleFileAsync();
+            if (file != null)
+            {
+                try
+                {
+                    string json = File.ReadAllText(file.Path);
+                    var test = JsonSerializer.Deserialize<SettingsData>(json);
+                    if (test != null)
+                    {
+                        File.Copy(file.Path, _settingsFilePath, true);
+                        LoadSettings();
+                        return true;
+                    }
+                }
+                catch { }
+            }
+            return false;
+        }
 
         public void LoadWindowState(AppWindow appWindow)
         {

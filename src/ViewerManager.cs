@@ -654,6 +654,7 @@ namespace grid_image_viewer
                 }
             }
 
+            _pages[index].UseHighQualityScaling = _settings.UseHighQualityScaling;
             _pages[index].Paint(canvas, e.Info, hAlign, vAlign);
         }
 

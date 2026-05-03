@@ -415,6 +415,8 @@ namespace grid_image_viewer
 
         public void HandleDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
+            if (_window.IsDialogOpen) return;
+
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
@@ -487,7 +489,7 @@ namespace grid_image_viewer
                 try
                 {
                     int deleteIndex = _window.Playlist.IndexOf(path);
-                    
+
                     // If we are deleting the current image, move to the next one
                     if (path == _window.CurrentImagePath)
                     {
@@ -502,7 +504,7 @@ namespace grid_image_viewer
                     {
                         _window.Playlist.RemoveAt(deleteIndex);
                         _window.GridItems.RemoveAt(deleteIndex);
-                        
+
                         // Adjust current index if we deleted something before it
                         if (_window.CurrentIndex > deleteIndex) _window.CurrentIndex--;
                         if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;

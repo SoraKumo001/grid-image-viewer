@@ -16,8 +16,29 @@ namespace grid_image_viewer.Controls
             _settings = settings;
 
             SliderQuality.Value = _settings.JpegQuality;
+            ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
+            CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
 
             BtnClose.Focus(FocusState.Programmatic);
+        }
+
+        private async void BtnExport_Click(object sender, RoutedEventArgs e)
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            await _settings.ExportSettingsAsync(hwnd);
+        }
+
+        private async void BtnImport_Click(object sender, RoutedEventArgs e)
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            if (await _settings.ImportSettingsAsync(hwnd))
+            {
+                // Refresh UI after import
+                SliderQuality.Value = _settings.JpegQuality;
+                ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
+                CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
+                _window.ApplyBackgroundSettings();
+            }
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)
@@ -37,7 +58,11 @@ namespace grid_image_viewer.Controls
         private void SaveAndClose()
         {
             _settings.JpegQuality = (int)SliderQuality.Value;
+            _settings.BackgroundColorMode = ComboBackground.SelectedIndex;
+            _settings.UseHighQualityScaling = CheckHighQuality.IsChecked ?? true;
             _settings.SaveSettings();
+
+            _window.ApplyBackgroundSettings();
 
             var parent = this.Parent as Panel;
             parent?.Children.Remove(this);

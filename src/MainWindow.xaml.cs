@@ -99,6 +99,8 @@ namespace grid_image_viewer
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
 
+            ApplyBackgroundSettings();
+
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
@@ -163,6 +165,23 @@ namespace grid_image_viewer
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
             _settings.SaveWindowState(appWindow, CurrentImagePath);
+        }
+
+        public void ApplyBackgroundSettings()
+        {
+            int mode = _settings.BackgroundColorMode;
+            if (mode == 1) // Black
+            {
+                RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 0, 0));
+            }
+            else if (mode == 2) // White
+            {
+                RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
+            }
+            else // System (Mica)
+            {
+                RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+            }
         }
 
         private void ImageGridView_ItemClick(object sender, ItemClickEventArgs e) => GridManager.ImageGridView_ItemClick(sender, e);

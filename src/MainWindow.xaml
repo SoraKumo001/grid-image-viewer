@@ -222,10 +222,8 @@
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem x:Name="MenuSlideshow" x:FieldModifier="internal" x:Uid="MenuSlideshow" Text="Slideshow" Click="MenuSlideshow_Click" />
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutSubItem x:Name="MenuGlobalSettings" x:FieldModifier="internal" x:Uid="MenuGlobalSettings" Text="Settings">
-                            <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="Save Settings..." Click="MenuSettings_Click" />
-                            <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
-                        </MenuFlyoutSubItem>
+                        <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="General Settings..." Click="MenuSettings_Click" />
+                        <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem x:Name="MenuSupport" x:FieldModifier="internal" x:Uid="MenuSupport" Text="Support" Click="MenuSupport_Click" />
                     </MenuFlyout>
