@@ -71,6 +71,7 @@
                         <skia:SKXamlCanvas x:Name="Canvas4" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas4_PaintSurface" />
                     </Grid>
                     <ProgressRing x:Name="LoadingRing4" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="FocusBorder4" x:FieldModifier="internal" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
 
                 <Grid x:Name="PageGrid3" x:FieldModifier="internal" Visibility="Collapsed">
@@ -82,6 +83,7 @@
                         <skia:SKXamlCanvas x:Name="Canvas3" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas3_PaintSurface" />
                     </Grid>
                     <ProgressRing x:Name="LoadingRing3" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="FocusBorder3" x:FieldModifier="internal" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
 
                 <Grid x:Name="PageGrid2" x:FieldModifier="internal" Visibility="Collapsed">
@@ -93,6 +95,7 @@
                         <skia:SKXamlCanvas x:Name="Canvas2" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas2_PaintSurface" />
                     </Grid>
                     <ProgressRing x:Name="LoadingRing2" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="FocusBorder2" x:FieldModifier="internal" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
 
                 <Grid x:Name="PageGrid1" x:FieldModifier="internal" Visibility="Collapsed">
@@ -104,6 +107,7 @@
                         <skia:SKXamlCanvas x:Name="Canvas1" x:FieldModifier="internal" Visibility="Collapsed" PaintSurface="Canvas1_PaintSurface" />
                     </Grid>
                     <ProgressRing x:Name="LoadingRing1" x:FieldModifier="internal" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="FocusBorder1" x:FieldModifier="internal" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
 
                 <Grid Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayGrid" x:FieldModifier="internal" Background="Transparent" IsHitTestVisible="False">
@@ -118,7 +122,7 @@
                             Background="#CC000000" CornerRadius="8" Padding="16"
                             Visibility="Collapsed" MaxWidth="350" IsHitTestVisible="True">
                         <StackPanel Spacing="4">
-                            <TextBlock Text="IMAGE INFORMATION" FontSize="10" Foreground="#888888" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="TxtMetaTitle" x:FieldModifier="internal" Text="IMAGE INFORMATION" FontSize="10" Foreground="#888888" FontWeight="Bold" Margin="0,0,0,4"/>
                             <TextBlock x:Name="TxtMetaFileName" x:FieldModifier="internal" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             <TextBlock x:Name="TxtMetaDimensions" x:FieldModifier="internal" Foreground="#00A2ED" FontSize="12"/>
                             <TextBlock x:Name="TxtMetaFileSize" x:FieldModifier="internal" Foreground="#AAAAAA" FontSize="12"/>
@@ -197,6 +201,8 @@
                         <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Click="MenuOpenExplorer_Click" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutSubItem x:Name="MenuViewMode" x:FieldModifier="internal" x:Uid="MenuViewMode" Text="View Mode">
+                            <ToggleMenuFlyoutItem x:Name="MenuMetadata" x:FieldModifier="internal" x:Uid="MenuMetadata" Text="Show Image Information" Click="MenuMetadata_Click" />
+                            <MenuFlyoutSeparator />
                             <ToggleMenuFlyoutItem x:Name="MenuViewSingle" x:FieldModifier="internal" x:Uid="MenuViewMode_Single" Text="Single" Click="MenuViewMode_Click" Tag="1" />
                             <ToggleMenuFlyoutItem x:Name="MenuViewDouble" x:FieldModifier="internal" x:Uid="MenuViewMode_Double" Text="Manga (2-split)" Click="MenuViewMode_Click" Tag="2" />
                             <ToggleMenuFlyoutItem x:Name="MenuViewQuad" x:FieldModifier="internal" x:Uid="MenuViewMode_Quad" Text="Quad (4-split)" Click="MenuViewMode_Click" Tag="4" />

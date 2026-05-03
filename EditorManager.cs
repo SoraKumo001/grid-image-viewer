@@ -78,6 +78,8 @@ namespace grid_image_viewer
                 _window.SelectionRectangle.Height = height;
                 e.Handled = true;
             }
+
+            _window.ViewerManager.HandlePointerMoved(e);
         }
 
         public void PagesGrid_PointerReleased(object sender, PointerRoutedEventArgs e)
@@ -140,6 +142,9 @@ namespace grid_image_viewer
             _window.MenuStretchOriginal.IsChecked = (stretchMode == 0);
             _window.MenuStretchContain.IsChecked = (stretchMode == 2);
             _window.MenuStretchCover.IsChecked = (stretchMode == 3);
+
+            // Update Metadata checked state
+            _window.MenuMetadata.IsChecked = (_window.MetadataPanel.Visibility == Visibility.Visible);
         }
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
@@ -404,6 +409,11 @@ namespace grid_image_viewer
             string sourcePath = _window.CurrentImagePath;
             if (!string.IsNullOrEmpty(sourcePath))
                 _window.ViewerManager.RedoEdit(sourcePath);
+        }
+
+        public void MenuMetadata_Click(object sender, RoutedEventArgs e)
+        {
+            _window.ViewerManager.ToggleMetadataPanel(cycle: false);
         }
 
         public async void MenuResize_Click(object sender, RoutedEventArgs e)

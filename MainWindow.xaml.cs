@@ -261,6 +261,7 @@ namespace grid_image_viewer
         private void MenuSettings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSettings_Click(sender, e);
         private void MenuUndo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuUndo_Click(sender, e);
         private void MenuRedo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuRedo_Click(sender, e);
+        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => _editorManager.MenuMetadata_Click(sender, e);
 
         private void OpenSlideshowDialogAsync() => _slideshowManager.OpenSlideshowDialogAsync();
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => _slideshowManager.SlideshowDialog_Opened(sender, args);

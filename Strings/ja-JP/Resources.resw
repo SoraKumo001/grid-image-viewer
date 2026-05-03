@@ -313,4 +313,10 @@
   <data name="MenuStretchOriginal.Text" xml:space="preserve">
     <value>オリジナルサイズ</value>
   </data>
+  <data name="Metadata_Title" xml:space="preserve">
+    <value>画像情報</value>
+  </data>
+  <data name="MenuMetadata.Text" xml:space="preserve">
+    <value>画像情報表示</value>
+  </data>
 </root>

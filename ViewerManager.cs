@@ -25,10 +25,12 @@ namespace grid_image_viewer
         private Microsoft.UI.Xaml.Controls.Image[] _pageImages;
         private SkiaSharp.Views.Windows.SKXamlCanvas[] _pageCanvases;
         private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
+        private Border[] _focusBorders;
         private DispatcherTimer _animationTimer;
         private DispatcherTimer _notificationTimer;
         private CancellationTokenSource? _displayCts;
         private int _cachedQuadLayout = 1;
+        private int _focusedPageIndex = 0;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
@@ -48,6 +50,7 @@ namespace grid_image_viewer
             _pageImages = new Microsoft.UI.Xaml.Controls.Image[] { _window.Image1, _window.Image2, _window.Image3, _window.Image4 };
             _pageCanvases = new SkiaSharp.Views.Windows.SKXamlCanvas[] { _window.Canvas1, _window.Canvas2, _window.Canvas3, _window.Canvas4 };
             _pageLoadingRings = new Microsoft.UI.Xaml.Controls.ProgressRing[] { _window.LoadingRing1, _window.LoadingRing2, _window.LoadingRing3, _window.LoadingRing4 };
+            _focusBorders = new Border[] { _window.FocusBorder1, _window.FocusBorder2, _window.FocusBorder3, _window.FocusBorder4 };
 
             _animationTimer = new DispatcherTimer();
             _animationTimer.Interval = TimeSpan.FromMilliseconds(30);
@@ -66,6 +69,7 @@ namespace grid_image_viewer
 
         public async Task UpdateDisplayAsync()
         {
+            _focusedPageIndex = 0;
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count) return;
 
             if (_window.IsGridMode)
@@ -778,25 +782,127 @@ namespace grid_image_viewer
             _notificationTimer.Start();
         }
 
-        public void ToggleMetadataPanel()
+        public void ToggleMetadataPanel(bool cycle = true)
         {
             if (_window.MetadataPanel.Visibility == Visibility.Visible)
             {
-                _window.MetadataPanel.Visibility = Visibility.Collapsed;
+                int total = 0;
+                int splitCount = _settings.MangaSplitCount;
+                for (int i = 0; i < splitCount; i++)
+                {
+                    if (_window.CurrentIndex + i < _window.Playlist.Count) total++;
+                }
+
+                if (total > 1 && cycle)
+                {
+                    _focusedPageIndex++;
+                    if (_focusedPageIndex >= total)
+                    {
+                        _focusedPageIndex = 0;
+                        _window.MetadataPanel.Visibility = Visibility.Collapsed;
+                        UpdateFocusBorders();
+                    }
+                    else
+                    {
+                        UpdateMetadataPanel();
+                    }
+                }
+                else
+                {
+                    _window.MetadataPanel.Visibility = Visibility.Collapsed;
+                    UpdateFocusBorders();
+                }
             }
             else
             {
+                _focusedPageIndex = 0;
                 _window.MetadataPanel.Visibility = Visibility.Visible;
+                UpdateMetadataPanel();
+            }
+        }
+
+        private void UpdateFocusBorders()
+        {
+            bool panelVisible = _window.MetadataPanel.Visibility == Visibility.Visible;
+            for (int i = 0; i < 4; i++)
+            {
+                _focusBorders[i].Visibility = (panelVisible && i == _focusedPageIndex) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
+
+            var point = e.GetCurrentPoint(_window.PagesGrid).Position;
+            int splitCount = _settings.MangaSplitCount;
+
+            int hoveredIndex = -1;
+            for (int i = 0; i < splitCount; i++)
+            {
+                if (_window.CurrentIndex + i >= _window.Playlist.Count) break;
+
+                var grid = _pageGrids[i];
+                if (grid.Visibility == Visibility.Visible)
+                {
+                    try
+                    {
+                        var transform = grid.TransformToVisual(_window.PagesGrid);
+                        var bounds = transform.TransformBounds(new Windows.Foundation.Rect(0, 0, grid.ActualWidth, grid.ActualHeight));
+
+                        if (bounds.Contains(point))
+                        {
+                            hoveredIndex = i;
+                            break;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            if (hoveredIndex != -1 && hoveredIndex != _focusedPageIndex)
+            {
+                _focusedPageIndex = hoveredIndex;
                 UpdateMetadataPanel();
             }
         }
 
         public void UpdateMetadataPanel()
         {
-            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
+            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0)
+            {
+                UpdateFocusBorders();
+                return;
+            }
 
-            int index = _window.CurrentIndex;
-            if (index < 0 || index >= _window.Playlist.Count) return;
+            int index = _window.CurrentIndex + _focusedPageIndex;
+            if (index < 0 || index >= _window.Playlist.Count)
+            {
+                _window.MetadataPanel.Visibility = Visibility.Collapsed;
+                UpdateFocusBorders();
+                return;
+            }
+
+            UpdateFocusBorders();
+
+            int total = 0;
+            int splitCount = _settings.MangaSplitCount;
+            for (int i = 0; i < splitCount; i++)
+            {
+                if (_window.CurrentIndex + i < _window.Playlist.Count) total++;
+            }
+
+            string title = _resourceLoader.GetString("Metadata_Title");
+            if (string.IsNullOrEmpty(title)) title = "IMAGE INFORMATION";
+
+            if (total > 1)
+            {
+                _window.TxtMetaTitle.Text = $"{title} ({_focusedPageIndex + 1}/{total})";
+            }
+            else
+            {
+                _window.TxtMetaTitle.Text = title;
+            }
 
             string filePath = _window.Playlist[index];
             var meta = MetadataService.GetMetadata(filePath);
