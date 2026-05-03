@@ -36,6 +36,28 @@ namespace grid_image_viewer
             bool isShift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
             bool isAlt = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Menu).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
+            if (isCtrl)
+            {
+                if (e.Key == VirtualKey.Z)
+                {
+                    _window._editorManager.MenuUndo_Click(sender, new RoutedEventArgs());
+                    e.Handled = true;
+                    return;
+                }
+                if (e.Key == VirtualKey.Y)
+                {
+                    _window._editorManager.MenuRedo_Click(sender, new RoutedEventArgs());
+                    e.Handled = true;
+                    return;
+                }
+                if (e.Key == VirtualKey.S)
+                {
+                    _window._editorManager.MenuOverwrite_Click(sender, new RoutedEventArgs());
+                    e.Handled = true;
+                    return;
+                }
+            }
+
             if (_window.SlideshowManager.IsSlideshowRunning && !IsMatch(_settings.KeySlideshow, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.SlideshowManager.StopSlideshow();

@@ -164,6 +164,9 @@
                                 </Setter>
                             </Style>
                         </MenuFlyout.MenuFlyoutPresenterStyle>
+                        <MenuFlyoutItem x:Name="MenuUndo" x:FieldModifier="internal" x:Uid="MenuUndo" Text="Undo" Click="MenuUndo_Click" />
+                        <MenuFlyoutItem x:Name="MenuRedo" x:FieldModifier="internal" x:Uid="MenuRedo" Text="Redo" Click="MenuRedo_Click" />
+                        <MenuFlyoutSeparator />
                         <MenuFlyoutSubItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As...">
                             <MenuFlyoutItem Text="JPEG" Click="MenuSaveAs_Click" Tag=".jpg" />
                             <MenuFlyoutItem Text="PNG" Click="MenuSaveAs_Click" Tag=".png" />

@@ -59,7 +59,7 @@ namespace grid_image_viewer
         private InputHandler _inputHandler;
         private GridManager _gridManager;
         private ViewerManager _viewerManager;
-        private EditorManager _editorManager;
+        internal EditorManager _editorManager;
         private bool _isDialogOpen = false;
         private Random _random = new Random();
         private bool _isSearchingFolder = false;
@@ -254,6 +254,8 @@ namespace grid_image_viewer
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuLayoutMode_Click(sender, e);
         private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuKeyBindings_Click(sender, e);
         private void MenuSettings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSettings_Click(sender, e);
+        private void MenuUndo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuUndo_Click(sender, e);
+        private void MenuRedo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuRedo_Click(sender, e);
 
         private void OpenSlideshowDialogAsync() => _slideshowManager.OpenSlideshowDialogAsync();
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => _slideshowManager.SlideshowDialog_Opened(sender, args);

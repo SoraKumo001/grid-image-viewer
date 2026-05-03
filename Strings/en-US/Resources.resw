@@ -250,4 +250,10 @@
   <data name="Settings_JpegQuality.Text" xml:space="preserve">
     <value>JPEG/WebP Save Quality</value>
   </data>
+  <data name="MenuUndo.Text" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="MenuRedo.Text" xml:space="preserve">
+    <value>Redo</value>
+  </data>
 </root>

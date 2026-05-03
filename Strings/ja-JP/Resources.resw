@@ -250,4 +250,10 @@
   <data name="Settings_JpegQuality.Text" xml:space="preserve">
     <value>JPEG/WebP 保存品質</value>
   </data>
+  <data name="MenuUndo.Text" xml:space="preserve">
+    <value>元に戻す</value>
+  </data>
+  <data name="MenuRedo.Text" xml:space="preserve">
+    <value>やり直し</value>
+  </data>
 </root>

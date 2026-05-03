@@ -101,14 +101,27 @@ namespace grid_image_viewer
 
         public void EditMenuFlyout_Opening(object sender, object e)
         {
-            try
+            string path = _window.CurrentImagePath;
+            bool hasPath = !string.IsNullOrEmpty(path);
+            bool canUndo = false;
+            bool canRedo = false;
+
+            if (hasPath && _window.ViewerManager.PendingEdits.TryGetValue(path, out var session))
             {
-                _window.MenuCrop.IsEnabled = _hasSelection;
+                canUndo = session.CanUndo;
+                canRedo = session.CanRedo;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Menu Opening error: {ex.Message}");
-            }
+
+            _window.MenuUndo.IsEnabled = canUndo;
+            _window.MenuRedo.IsEnabled = canRedo;
+            _window.MenuSaveAs.IsEnabled = hasPath;
+            _window.MenuOverwrite.IsEnabled = hasPath;
+            _window.MenuCrop.IsEnabled = hasPath && HasSelection;
+            _window.MenuResize.IsEnabled = hasPath;
+            _window.MenuRotate.IsEnabled = hasPath;
+            _window.MenuFlip.IsEnabled = hasPath;
+            _window.MenuTone.IsEnabled = hasPath;
+            _window.MenuFilter.IsEnabled = hasPath;
         }
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
@@ -155,9 +168,9 @@ namespace grid_image_viewer
                 await Task.Run(() =>
                 {
                     int quality = _settings.JpegQuality;
-                    if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pendingBmp))
+                    if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) && session.Current != null)
                     {
-                        ImageProcessor.SaveBitmap(pendingBmp, destPath, targetExtension, quality);
+                        ImageProcessor.SaveBitmap(session.Current, destPath, targetExtension, quality);
                     }
                     else
                     {
@@ -170,7 +183,7 @@ namespace grid_image_viewer
             catch { }
         }
 
-        public void MenuCrop_Click(object sender, RoutedEventArgs e)
+        public async void MenuCrop_Click(object sender, RoutedEventArgs e)
         {
             if (!_hasSelection) return;
 
@@ -205,10 +218,10 @@ namespace grid_image_viewer
                 }
 
                 int imgW, imgH;
-                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending))
+                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending) && pending.Current != null)
                 {
-                    imgW = pending.Width;
-                    imgH = pending.Height;
+                    imgW = pending.Current.Width;
+                    imgH = pending.Current.Height;
                 }
                 else
                 {
@@ -267,23 +280,27 @@ namespace grid_image_viewer
                 foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
 
                 // Clear EditedBitmap references in PageRenderers BEFORE disposing the old bitmap.
-                // This prevents LoadPageAsync's crossfade prep from accessing a disposed bitmap.
                 for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
                 {
                     if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
                         _window.ViewerManager.Pages[pi].EditedBitmap = null;
                 }
 
-                var newBmp = ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
-                if (newBmp != null)
-                {
-                    if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
-                    _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
-                }
-
                 _window.SelectionRectangle.Visibility = Visibility.Collapsed;
                 _hasSelection = false;
-                _ = _window.UpdateDisplayAsync();
+
+                await Task.Run(() =>
+                {
+                    var newBmp = ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
+                    if (newBmp != null)
+                    {
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
+                            _ = _window.UpdateDisplayAsync();
+                        });
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -343,6 +360,20 @@ namespace grid_image_viewer
             _window.RootGrid.Children.Add(overlay);
         }
 
+        public void MenuUndo_Click(object sender, RoutedEventArgs e)
+        {
+            string sourcePath = _window.CurrentImagePath;
+            if (!string.IsNullOrEmpty(sourcePath))
+                _window.ViewerManager.UndoEdit(sourcePath);
+        }
+
+        public void MenuRedo_Click(object sender, RoutedEventArgs e)
+        {
+            string sourcePath = _window.CurrentImagePath;
+            if (!string.IsNullOrEmpty(sourcePath))
+                _window.ViewerManager.RedoEdit(sourcePath);
+        }
+
         public async void MenuResize_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = _window.CurrentImagePath;
@@ -367,10 +398,10 @@ namespace grid_image_viewer
             try
             {
                 int origW, origH;
-                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending))
+                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending) && pending.Current != null)
                 {
-                    origW = pending.Width;
-                    origH = pending.Height;
+                    origW = pending.Current.Width;
+                    origH = pending.Current.Height;
                 }
                 else
                 {
@@ -401,14 +432,16 @@ namespace grid_image_viewer
 
                     await Task.Run(() =>
                     {
-                        var newBmp = ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                        var newBmp = ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
                         if (newBmp != null)
                         {
-                            if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
-                            _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                            _window.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
+                                _ = _window.UpdateDisplayAsync();
+                            });
                         }
                     });
-                    _ = _window.UpdateDisplayAsync();
                 }
             }
             catch { }
@@ -423,9 +456,9 @@ namespace grid_image_viewer
 
             // Capture base bitmap for non-cumulative adjustment
             SKBitmap? baseBmp = null;
-            if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var currentPb))
+            if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session))
             {
-                baseBmp = currentPb.Copy();
+                baseBmp = session.Current?.Copy();
             }
             else
             {
@@ -461,8 +494,7 @@ namespace grid_image_viewer
                             _window.DispatcherQueue.TryEnqueue(() =>
                             {
                                 if (_window.ViewerManager == null) return;
-                                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
-                                _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                                _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
                                 _window.ViewerManager.StopAnimation();
                                 foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
                                 for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
@@ -587,14 +619,16 @@ namespace grid_image_viewer
 
                 await Task.Run(() =>
                 {
-                    var newBmp = ImageProcessor.ApplyFilter(sourcePath, filterType, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                    var newBmp = ImageProcessor.ApplyFilter(sourcePath, filterType, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
                     if (newBmp != null)
                     {
-                        if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
-                        _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
+                            _ = _window.UpdateDisplayAsync();
+                        });
                     }
                 });
-                _ = _window.UpdateDisplayAsync();
             }
         }
 
@@ -616,14 +650,16 @@ namespace grid_image_viewer
 
                 await Task.Run(() =>
                 {
-                    var newBmp = ImageProcessor.GetRotatedBitmap(sourcePath, degrees, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                    var newBmp = ImageProcessor.GetRotatedBitmap(sourcePath, degrees, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
                     if (newBmp != null)
                     {
-                        if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
-                        _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
+                            _ = _window.UpdateDisplayAsync();
+                        });
                     }
                 });
-                _ = _window.UpdateDisplayAsync();
             }
         }
 
@@ -647,14 +683,16 @@ namespace grid_image_viewer
 
                 await Task.Run(() =>
                 {
-                    var newBmp = ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                    var newBmp = ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) ? session.Current : null);
                     if (newBmp != null)
                     {
-                        if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
-                        _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            _window.ViewerManager.AddPendingEdit(sourcePath, newBmp);
+                            _ = _window.UpdateDisplayAsync();
+                        });
                     }
                 });
-                _ = _window.UpdateDisplayAsync();
             }
         }
 
