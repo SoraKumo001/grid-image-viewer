@@ -1,6 +1,8 @@
 using ImageMagick;
 using SkiaSharp;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace grid_image_viewer
 {
@@ -73,6 +75,66 @@ namespace grid_image_viewer
                 var resizedBitmap = bitmap.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKCubicResampler.Mitchell));
                 if (disposeBitmap) bitmap.Dispose();
                 return resizedBitmap;
+            }
+            return null;
+        }
+
+        public static SKBitmap? GetRotatedBitmap(string sourcePath, float degrees, SKBitmap? currentBmp)
+        {
+            SKBitmap? bitmap = currentBmp;
+            bool disposeBitmap = false;
+
+            if (bitmap == null)
+            {
+                byte[] fileBytes = File.ReadAllBytes(sourcePath);
+                using var data = SKData.CreateCopy(fileBytes);
+                using var codec = SKCodec.Create(data);
+                bitmap = SKBitmap.Decode(codec);
+                disposeBitmap = true;
+            }
+
+            if (bitmap != null)
+            {
+                var rotatedBitmap = new SKBitmap(Math.Abs(degrees) == 90 || Math.Abs(degrees) == 270 ? bitmap.Height : bitmap.Width, Math.Abs(degrees) == 90 || Math.Abs(degrees) == 270 ? bitmap.Width : bitmap.Height);
+                using (var canvas = new SKCanvas(rotatedBitmap))
+                {
+                    canvas.Clear();
+                    canvas.Translate(rotatedBitmap.Width / 2f, rotatedBitmap.Height / 2f);
+                    canvas.RotateDegrees(degrees);
+                    canvas.Translate(-bitmap.Width / 2f, -bitmap.Height / 2f);
+                    canvas.DrawBitmap(bitmap, 0, 0);
+                }
+                if (disposeBitmap) bitmap.Dispose();
+                return rotatedBitmap;
+            }
+            return null;
+        }
+
+        public static SKBitmap? GetFlippedBitmap(string sourcePath, bool horizontal, SKBitmap? currentBmp)
+        {
+            SKBitmap? bitmap = currentBmp;
+            bool disposeBitmap = false;
+
+            if (bitmap == null)
+            {
+                byte[] fileBytes = File.ReadAllBytes(sourcePath);
+                using var data = SKData.CreateCopy(fileBytes);
+                using var codec = SKCodec.Create(data);
+                bitmap = SKBitmap.Decode(codec);
+                disposeBitmap = true;
+            }
+
+            if (bitmap != null)
+            {
+                var flippedBitmap = new SKBitmap(bitmap.Width, bitmap.Height);
+                using (var canvas = new SKCanvas(flippedBitmap))
+                {
+                    canvas.Clear();
+                    canvas.Scale(horizontal ? -1 : 1, horizontal ? 1 : -1, horizontal ? bitmap.Width / 2f : 0, horizontal ? 0 : bitmap.Height / 2f);
+                    canvas.DrawBitmap(bitmap, 0, 0);
+                }
+                if (disposeBitmap) bitmap.Dispose();
+                return flippedBitmap;
             }
             return null;
         }

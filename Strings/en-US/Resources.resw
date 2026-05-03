@@ -73,6 +73,27 @@
   <data name="MenuResize.Text" xml:space="preserve">
     <value>Resize</value>
   </data>
+  <data name="MenuRotate.Text" xml:space="preserve">
+    <value>Rotate</value>
+  </data>
+  <data name="MenuRotate_Right90.Text" xml:space="preserve">
+    <value>Rotate Right 90°</value>
+  </data>
+  <data name="MenuRotate_Left90.Text" xml:space="preserve">
+    <value>Rotate Left 90°</value>
+  </data>
+  <data name="MenuRotate_180.Text" xml:space="preserve">
+    <value>Rotate 180°</value>
+  </data>
+  <data name="MenuFlip.Text" xml:space="preserve">
+    <value>Flip</value>
+  </data>
+  <data name="MenuFlip_Horz.Text" xml:space="preserve">
+    <value>Flip Horizontal</value>
+  </data>
+  <data name="MenuFlip_Vert.Text" xml:space="preserve">
+    <value>Flip Vertical</value>
+  </data>
   <data name="MenuOpenExplorer.Text" xml:space="preserve">
     <value>Open in Explorer</value>
   </data>

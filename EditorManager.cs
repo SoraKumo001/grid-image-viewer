@@ -359,6 +359,66 @@ namespace grid_image_viewer
             catch { }
         }
 
+        public async void MenuRotate_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is string tagStr && float.TryParse(tagStr, out float degrees))
+            {
+                string sourcePath = _window.CurrentImagePath;
+                if (string.IsNullOrEmpty(sourcePath)) return;
+
+                _window.ViewerManager.StopAnimation();
+                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+
+                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                {
+                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
+                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                }
+
+                await Task.Run(() =>
+                {
+                    var newBmp = ImageProcessor.GetRotatedBitmap(sourcePath, degrees, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                    if (newBmp != null)
+                    {
+                        if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
+                        _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                    }
+                });
+                _ = _window.UpdateDisplayAsync();
+            }
+        }
+
+        public async void MenuFlip_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is string flipMode)
+            {
+                string sourcePath = _window.CurrentImagePath;
+                if (string.IsNullOrEmpty(sourcePath)) return;
+
+                bool horizontal = flipMode == "Horz";
+
+                _window.ViewerManager.StopAnimation();
+                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+
+                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                {
+                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
+                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                }
+
+                await Task.Run(() =>
+                {
+                    var newBmp = ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                    if (newBmp != null)
+                    {
+                        if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
+                        _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                    }
+                });
+                _ = _window.UpdateDisplayAsync();
+            }
+        }
+
         public async void MenuOpenExplorer_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = _window.CurrentImagePath;
