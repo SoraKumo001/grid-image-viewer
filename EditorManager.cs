@@ -2,7 +2,6 @@ using grid_image_viewer.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -107,10 +106,14 @@ namespace grid_image_viewer
             bool canUndo = false;
             bool canRedo = false;
 
-            if (hasPath && _window.ViewerManager.PendingEdits.TryGetValue(path, out var session))
+            if (hasPath)
             {
-                canUndo = session.CanUndo;
-                canRedo = session.CanRedo;
+                var session = _window.ImageEditService.GetSession(path);
+                if (session != null)
+                {
+                    canUndo = session.CanUndo;
+                    canRedo = session.CanRedo;
+                }
             }
 
             _window.MenuUndo.IsEnabled = canUndo;
@@ -190,9 +193,10 @@ namespace grid_image_viewer
                 await Task.Run(() =>
                 {
                     int quality = _settings.JpegQuality;
-                    if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var session) && session.Current != null)
+                    var current = _window.ImageEditService.GetCurrentBitmap(sourcePath);
+                    if (current != null)
                     {
-                        ImageProcessor.SaveBitmap(session.Current, destPath, targetExtension, quality);
+                        ImageProcessor.SaveBitmap(current, destPath, targetExtension, quality);
                     }
                     else
                     {
@@ -239,16 +243,7 @@ namespace grid_image_viewer
                     return;
                 }
 
-                int imgW, imgH;
-                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending) && pending.Current != null)
-                {
-                    imgW = pending.Current.Width;
-                    imgH = pending.Current.Height;
-                }
-                else
-                {
-                    (imgW, imgH) = ImageProcessor.GetImageSize(sourcePath);
-                }
+                var (imgW, imgH) = _window.ImageEditService.GetImageSize(sourcePath);
                 if (imgW == 0 || imgH == 0)
                 {
                     _window.ViewerManager.ShowNotification("Crop failed: Could not get image size (possibly unsupported format)");
@@ -301,8 +296,7 @@ namespace grid_image_viewer
                 _window.SelectionRectangle.Visibility = Visibility.Collapsed;
                 _hasSelection = false;
 
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
-                    (current) => ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, current));
+                await _window.ImageEditService.CropAsync(sourcePath, cropRect);
             }
             catch (Exception ex)
             {

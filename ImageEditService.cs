@@ -86,6 +86,11 @@ namespace grid_image_viewer
             await ApplyTransformationAsync(path, (current) => ImageProcessor.GetResizedBitmap(path, width, height, current));
         }
 
+        public async Task CropAsync(string path, SKRectI region)
+        {
+            await ApplyTransformationAsync(path, (current) => ImageProcessor.GetCroppedBitmap(path, region, current));
+        }
+
         public SKBitmap? GetCurrentBitmap(string path)
         {
             if (_pendingEdits.TryGetValue(path, out var session))
@@ -93,6 +98,40 @@ namespace grid_image_viewer
                 return session.Current;
             }
             return null;
+        }
+
+        public EditSession? GetSession(string path)
+        {
+            _pendingEdits.TryGetValue(path, out var session);
+            return session;
+        }
+
+        public (int width, int height) GetImageSize(string path)
+        {
+            if (_pendingEdits.TryGetValue(path, out var session) && session.Current != null)
+            {
+                return (session.Current.Width, session.Current.Height);
+            }
+            return ImageProcessor.GetImageSize(path);
+        }
+
+        public void CleanupSessions(IEnumerable<string> activePaths)
+        {
+            var activeSet = new HashSet<string>(activePaths);
+            var keysToRemove = new List<string>();
+            foreach (var key in _pendingEdits.Keys)
+            {
+                if (!activeSet.Contains(key))
+                {
+                    keysToRemove.Add(key);
+                }
+            }
+
+            foreach (var key in keysToRemove)
+            {
+                _pendingEdits[key].Dispose();
+                _pendingEdits.Remove(key);
+            }
         }
 
         public async Task ApplyTransformationAsync(string path, Func<SKBitmap?, SKBitmap?> transform)
@@ -122,7 +161,7 @@ namespace grid_image_viewer
                             {
                                 if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
                                 {
-                                    _window.ViewerManager.Pages[i].EditedBitmap = null; 
+                                    _window.ViewerManager.Pages[i].EditedBitmap = null;
                                 }
                             }
                         }

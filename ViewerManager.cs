@@ -33,7 +33,7 @@ namespace grid_image_viewer
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private const int MAX_CACHE_SIZE = 20;
 
-        public Dictionary<string, EditSession> PendingEdits => _window.ImageEditService.PendingEdits;
+
 
 
         public ViewerManager(MainWindow window, SettingsManager settings)
@@ -138,12 +138,7 @@ namespace grid_image_viewer
                     }
                 }
 
-                var keysToRemove = PendingEdits.Keys.Where(k => !currentFiles.Contains(k)).ToList();
-                foreach (var k in keysToRemove)
-                {
-                    PendingEdits[k].Dispose();
-                    PendingEdits.Remove(k);
-                }
+                _window.ImageEditService.CleanupSessions(currentFiles);
 
                 try
                 {
@@ -428,7 +423,8 @@ namespace grid_image_viewer
 
             try
             {
-                if (PendingEdits.TryGetValue(filePath, out var session))
+                var session = _window.ImageEditService.GetSession(filePath);
+                if (session != null)
                 {
                     _pages[pageIndex].Reset();
                     _pages[pageIndex].CurrentFilePath = filePath;
@@ -601,16 +597,7 @@ namespace grid_image_viewer
                     try
                     {
                         var path = _window.Playlist[indexToLoad];
-                        int w, h;
-                        if (PendingEdits.TryGetValue(path, out var session))
-                        {
-                            w = session.Current?.Width ?? 0;
-                            h = session.Current?.Height ?? 0;
-                        }
-                        else
-                        {
-                            (w, h) = ImageProcessor.GetImageSize(path);
-                        }
+                        var (w, h) = _window.ImageEditService.GetImageSize(path);
 
                         if (w > 0 && h > 0)
                         {

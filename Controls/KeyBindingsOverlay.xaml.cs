@@ -2,9 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace grid_image_viewer.Controls
 {
@@ -12,7 +10,7 @@ namespace grid_image_viewer.Controls
     {
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
-        
+
         private KeyBindingData _tempNextImage;
         private KeyBindingData _tempPrevImage;
         private KeyBindingData _tempNextFolder;
@@ -68,9 +66,9 @@ namespace grid_image_viewer.Controls
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var txtLabel = new TextBlock 
-            { 
-                Text = label, 
+            var txtLabel = new TextBlock
+            {
+                Text = label,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200))
             };
@@ -96,8 +94,8 @@ namespace grid_image_viewer.Controls
                 {
                     e.Handled = true;
                     var key = e.Key;
-                    if (key == Windows.System.VirtualKey.Control || key == Windows.System.VirtualKey.Shift || 
-                        key == Windows.System.VirtualKey.Menu || key == Windows.System.VirtualKey.LeftWindows || 
+                    if (key == Windows.System.VirtualKey.Control || key == Windows.System.VirtualKey.Shift ||
+                        key == Windows.System.VirtualKey.Menu || key == Windows.System.VirtualKey.LeftWindows ||
                         key == Windows.System.VirtualKey.RightWindows)
                         return;
 
