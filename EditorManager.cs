@@ -122,6 +122,18 @@ namespace grid_image_viewer
             _window.MenuFlip.IsEnabled = hasPath;
             _window.MenuTone.IsEnabled = hasPath;
             _window.MenuFilter.IsEnabled = hasPath;
+
+            // Update View Mode checked states
+            int splitCount = _settings.MangaSplitCount;
+            _window.MenuViewSingle.IsChecked = (splitCount == 1);
+            _window.MenuViewDouble.IsChecked = (splitCount == 2);
+            _window.MenuViewQuad.IsChecked = (splitCount == 4);
+
+            // Update Quad Layout checked states
+            int layoutMode = _settings.QuadLayoutMode;
+            _window.MenuLayoutAuto.IsChecked = (layoutMode == 0);
+            _window.MenuLayoutHorz.IsChecked = (layoutMode == 1);
+            _window.MenuLayoutGrid.IsChecked = (layoutMode == 2);
         }
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
@@ -717,20 +729,32 @@ namespace grid_image_viewer
 
         public void MenuViewMode_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuFlyoutItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int count))
+            if (sender is ToggleMenuFlyoutItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int count))
             {
                 _settings.MangaSplitCount = count;
                 _settings.SaveMangaMode();
+
+                // Ensure radio behavior
+                _window.MenuViewSingle.IsChecked = (count == 1);
+                _window.MenuViewDouble.IsChecked = (count == 2);
+                _window.MenuViewQuad.IsChecked = (count == 4);
+
                 _ = _window.UpdateDisplayAsync();
             }
         }
 
         public void MenuLayoutMode_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuFlyoutItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int mode))
+            if (sender is ToggleMenuFlyoutItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int mode))
             {
                 _settings.QuadLayoutMode = mode;
                 _settings.SaveMangaMode();
+
+                // Ensure radio behavior
+                _window.MenuLayoutAuto.IsChecked = (mode == 0);
+                _window.MenuLayoutHorz.IsChecked = (mode == 1);
+                _window.MenuLayoutGrid.IsChecked = (mode == 2);
+
                 if (_settings.MangaSplitCount == 4)
                 {
                     _ = _window.UpdateDisplayAsync();
