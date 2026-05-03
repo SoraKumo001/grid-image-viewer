@@ -27,10 +27,8 @@ namespace grid_image_viewer
         private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
         private Border[] _focusBorders;
         private DispatcherTimer _animationTimer;
-        private DispatcherTimer _notificationTimer;
         private CancellationTokenSource? _displayCts;
         private int _cachedQuadLayout = 1;
-        private int _focusedPageIndex = 0;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
@@ -56,13 +54,6 @@ namespace grid_image_viewer
             _animationTimer = new DispatcherTimer();
             _animationTimer.Interval = TimeSpan.FromMilliseconds(30);
             _animationTimer.Tick += AnimationTimer_Tick;
-
-            _notificationTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-            _notificationTimer.Tick += (s, e) =>
-            {
-                _notificationTimer.Stop();
-                _window.NotificationOverlay.Visibility = Visibility.Collapsed;
-            };
         }
 
         public PageRenderer[] Pages => _pages;
@@ -70,7 +61,6 @@ namespace grid_image_viewer
 
         public async Task UpdateDisplayAsync()
         {
-            _focusedPageIndex = 0;
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count) return;
 
             if (_window.IsGridMode)
@@ -768,165 +758,18 @@ namespace grid_image_viewer
 
             if (looped)
             {
-                string resKey = offset > 0 ? "Notification_LoopedStart" : "Notification_LoopedEnd";
-                ShowNotification(_resourceLoader.GetString(resKey));
+                ShowNotification(_resourceLoader.GetString(offset > 0 ? "Notification_LoopedStart" : "Notification_LoopedEnd"));
             }
 
             _ = UpdateDisplayAsync();
         }
+        public void ShowNotification(string message) => _window.NotificationService.Show(message);
 
-        public void ShowNotification(string message)
-        {
-            _window.NotificationText.Text = message;
-            _window.NotificationOverlay.Visibility = Visibility.Visible;
-            _notificationTimer.Stop();
-            _notificationTimer.Start();
-        }
+        public void ToggleMetadataPanel(bool cycle = true) => _window.MetadataDisplayService.ToggleMetadataPanel(cycle);
 
-        public void ToggleMetadataPanel(bool cycle = true)
-        {
-            if (_window.MetadataPanel.Visibility == Visibility.Visible)
-            {
-                int total = 0;
-                int splitCount = _settings.MangaSplitCount;
-                for (int i = 0; i < splitCount; i++)
-                {
-                    if (_window.CurrentIndex + i < _window.Playlist.Count) total++;
-                }
+        public void UpdateMetadataPanel() => _window.MetadataDisplayService.UpdateMetadataPanel();
 
-                if (total > 1 && cycle)
-                {
-                    _focusedPageIndex++;
-                    if (_focusedPageIndex >= total)
-                    {
-                        _focusedPageIndex = 0;
-                        _window.MetadataPanel.Visibility = Visibility.Collapsed;
-                        UpdateFocusBorders();
-                    }
-                    else
-                    {
-                        UpdateMetadataPanel();
-                    }
-                }
-                else
-                {
-                    _window.MetadataPanel.Visibility = Visibility.Collapsed;
-                    UpdateFocusBorders();
-                }
-            }
-            else
-            {
-                _focusedPageIndex = 0;
-                _window.MetadataPanel.Visibility = Visibility.Visible;
-                UpdateMetadataPanel();
-            }
-        }
-
-        private void UpdateFocusBorders()
-        {
-            bool panelVisible = _window.MetadataPanel.Visibility == Visibility.Visible;
-            for (int i = 0; i < 4; i++)
-            {
-                _focusBorders[i].Visibility = (panelVisible && i == _focusedPageIndex) ? Visibility.Visible : Visibility.Collapsed;
-            }
-        }
-
-        public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
-
-            var point = e.GetCurrentPoint(_window.PagesGrid).Position;
-            int splitCount = _settings.MangaSplitCount;
-
-            int hoveredIndex = -1;
-            for (int i = 0; i < splitCount; i++)
-            {
-                if (_window.CurrentIndex + i >= _window.Playlist.Count) break;
-
-                var grid = _pageGrids[i];
-                if (grid.Visibility == Visibility.Visible)
-                {
-                    try
-                    {
-                        var transform = grid.TransformToVisual(_window.PagesGrid);
-                        var bounds = transform.TransformBounds(new Windows.Foundation.Rect(0, 0, grid.ActualWidth, grid.ActualHeight));
-
-                        if (bounds.Contains(point))
-                        {
-                            hoveredIndex = i;
-                            break;
-                        }
-                    }
-                    catch { }
-                }
-            }
-
-            if (hoveredIndex != -1 && hoveredIndex != _focusedPageIndex)
-            {
-                _focusedPageIndex = hoveredIndex;
-                UpdateMetadataPanel();
-            }
-        }
-
-        public void UpdateMetadataPanel()
-        {
-            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0)
-            {
-                UpdateFocusBorders();
-                return;
-            }
-
-            int index = _window.CurrentIndex + _focusedPageIndex;
-            if (index < 0 || index >= _window.Playlist.Count)
-            {
-                _window.MetadataPanel.Visibility = Visibility.Collapsed;
-                UpdateFocusBorders();
-                return;
-            }
-
-            UpdateFocusBorders();
-
-            int total = 0;
-            int splitCount = _settings.MangaSplitCount;
-            for (int i = 0; i < splitCount; i++)
-            {
-                if (_window.CurrentIndex + i < _window.Playlist.Count) total++;
-            }
-
-            string title = _resourceLoader.GetString("Metadata_Title");
-            if (string.IsNullOrEmpty(title)) title = "IMAGE INFORMATION";
-
-            if (total > 1)
-            {
-                _window.TxtMetaTitle.Text = $"{title} ({_focusedPageIndex + 1}/{total})";
-            }
-            else
-            {
-                _window.TxtMetaTitle.Text = title;
-            }
-
-            string filePath = _window.Playlist[index];
-            var meta = MetadataService.GetMetadata(filePath);
-
-            _window.TxtMetaFileName.Text = meta.FileName;
-            _window.TxtMetaDimensions.Text = meta.Dimensions;
-            _window.TxtMetaFileSize.Text = meta.FileSize;
-
-            if (meta.HasExif)
-            {
-                _window.ExifDivider.Visibility = Visibility.Visible;
-                _window.ExifGrid.Visibility = Visibility.Visible;
-                _window.TxtMetaCamera.Text = $"{meta.Make} {meta.Model}".Trim();
-                _window.TxtMetaLens.Text = meta.LensModel ?? "-";
-                _window.TxtMetaSettings.Text = $"{meta.FNumber}  {meta.ExposureTime}  ISO {meta.Iso}  {meta.FocalLength}".Trim();
-                _window.TxtMetaDate.Text = meta.DateTaken ?? "-";
-            }
-            else
-            {
-                _window.ExifDivider.Visibility = Visibility.Collapsed;
-                _window.ExifGrid.Visibility = Visibility.Collapsed;
-            }
-        }
+        public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) => _window.MetadataDisplayService.HandlePointerMoved(_pageGrids, e);
 
         private void StartCrossfade(int pageIndex)
         {
@@ -962,7 +805,7 @@ namespace grid_image_viewer
             sb.Begin();
 
             // 画像が切り替わったのでメタデータも更新（パネルが開いている場合のみ）
-            if (pageIndex == 0) UpdateMetadataPanel();
+            if (pageIndex == 0) _window.MetadataDisplayService.UpdateMetadataPanel();
         }
 
 

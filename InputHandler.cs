@@ -40,19 +40,19 @@ namespace grid_image_viewer
             {
                 if (e.Key == VirtualKey.Z)
                 {
-                    _window._editorManager.MenuUndo_Click(sender, new RoutedEventArgs());
+                    _window.EditorManager.MenuUndo_Click(sender, new RoutedEventArgs());
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == VirtualKey.Y)
                 {
-                    _window._editorManager.MenuRedo_Click(sender, new RoutedEventArgs());
+                    _window.EditorManager.MenuRedo_Click(sender, new RoutedEventArgs());
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == VirtualKey.S)
                 {
-                    _window._editorManager.MenuOverwrite_Click(sender, new RoutedEventArgs());
+                    _window.EditorManager.MenuOverwrite_Click(sender, new RoutedEventArgs());
                     e.Handled = true;
                     return;
                 }

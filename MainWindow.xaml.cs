@@ -15,11 +15,16 @@ namespace grid_image_viewer
     {
         private List<string> _playlist = new List<string>();
 
-        // === Properties exposed for SlideshowManager / InputHandler ===
-        internal SlideshowManager SlideshowManager => _slideshowManager;
-        internal InputHandler InputHandler => _inputHandler;
-        internal GridManager GridManager => _gridManager;
-        internal ViewerManager ViewerManager => _viewerManager;
+        // === Components and Services ===
+        internal SlideshowManager SlideshowManager { get; private set; }
+        internal InputHandler InputHandler { get; private set; }
+        internal GridManager GridManager { get; private set; }
+        internal ViewerManager ViewerManager { get; private set; }
+        internal EditorManager EditorManager { get; private set; }
+        internal ImageEditService ImageEditService { get; private set; }
+        internal MetadataDisplayService MetadataDisplayService { get; private set; }
+        internal NotificationService NotificationService { get; private set; }
+
         internal bool IsGridMode { get => _isGridMode; set => _isGridMode = value; }
         internal ObservableCollection<ImageItem> GridItems => _gridItems;
         internal bool IsDialogOpen { get => _isDialogOpen; set => _isDialogOpen = value; }
@@ -27,8 +32,6 @@ namespace grid_image_viewer
         internal int CurrentIndex { get => _currentIndex; set => _currentIndex = value; }
         internal string CurrentDirectory { get => _currentDirectory; set => _currentDirectory = value; }
         internal bool IsSearchingFolder { get => _isSearchingFolder; set => _isSearchingFolder = value; }
-        internal EditorManager EditorManager => _editorManager;
-        internal ImageEditService ImageEditService => _imageEditService;
 
         internal bool IsFullscreen
         {
@@ -50,25 +53,30 @@ namespace grid_image_viewer
 
         private int _currentIndex = -1;
         private string _currentDirectory = string.Empty;
-
-        private SettingsManager _settings = new SettingsManager();
-
+        private SettingsManager _settings;
         private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
         private bool _isGridMode = false;
-
-        private SlideshowManager _slideshowManager;
-        private InputHandler _inputHandler;
-        private GridManager _gridManager;
-        private ViewerManager _viewerManager;
-        internal EditorManager _editorManager;
-        private ImageEditService _imageEditService;
         private bool _isDialogOpen = false;
         private Random _random = new Random();
         private bool _isSearchingFolder = false;
 
         public MainWindow()
         {
-            InitializeComponent();
+            this.InitializeComponent();
+            _settings = new SettingsManager();
+
+            // Initialize Services
+            ImageEditService = new ImageEditService(this);
+            MetadataDisplayService = new MetadataDisplayService(this, _settings);
+            NotificationService = new NotificationService(this);
+
+            // Initialize Managers
+            ViewerManager = new ViewerManager(this, _settings);
+            GridManager = new GridManager(this, _settings);
+            EditorManager = new EditorManager(this, _settings);
+            SlideshowManager = new SlideshowManager(this, _settings);
+            InputHandler = new InputHandler(this, _settings);
+
             _gridItems = new ObservableCollection<ImageItem>();
             ImageGridView.ItemsSource = _gridItems;
 
@@ -115,20 +123,13 @@ namespace grid_image_viewer
                 titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
             }
 
-            _slideshowManager = new SlideshowManager(this, _settings);
-            _inputHandler = new InputHandler(this, _settings);
-            _gridManager = new GridManager(this, _settings);
-            _imageEditService = new ImageEditService(this);
-            _viewerManager = new ViewerManager(this, _settings);
-            _editorManager = new EditorManager(this, _settings);
-
             ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            _viewerManager.Dispose();
-            _gridManager.Dispose();
+            ViewerManager.Dispose();
+            GridManager.Dispose();
             foreach (var item in _gridItems) item.DisposeCodec();
 
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -137,12 +138,12 @@ namespace grid_image_viewer
             _settings.SaveWindowState(appWindow, CurrentImagePath);
         }
 
-        private void ImageGridView_ItemClick(object sender, ItemClickEventArgs e) => _gridManager.ImageGridView_ItemClick(sender, e);
-        private void ImageGridView_SizeChanged(object sender, SizeChangedEventArgs e) => _gridManager.ImageGridView_SizeChanged(sender, e);
+        private void ImageGridView_ItemClick(object sender, ItemClickEventArgs e) => GridManager.ImageGridView_ItemClick(sender, e);
+        private void ImageGridView_SizeChanged(object sender, SizeChangedEventArgs e) => GridManager.ImageGridView_SizeChanged(sender, e);
+        private void MenuThumbnailRefresh_Click(object sender, RoutedEventArgs e) => GridManager.RefreshThumbnails();
 
-
-        private void RootGrid_DragOver(object sender, DragEventArgs e) => _inputHandler.HandleDragOver(sender, e);
-        private void RootGrid_Drop(object sender, DragEventArgs e) => _inputHandler.HandleDrop(sender, e);
+        private void RootGrid_DragOver(object sender, DragEventArgs e) => InputHandler.HandleDragOver(sender, e);
+        private void RootGrid_Drop(object sender, DragEventArgs e) => InputHandler.HandleDrop(sender, e);
         public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false)
         {
             _currentDirectory = path;
@@ -217,7 +218,7 @@ namespace grid_image_viewer
                     {
                         _gridItems.Add(new ImageItem { FilePath = f, IsLoading = true });
                     }
-                    _gridManager.RefreshThumbnails();
+                    GridManager.RefreshThumbnails();
                     _ = UpdateDisplayAsync();
                 }
             }
@@ -228,46 +229,46 @@ namespace grid_image_viewer
         }
 
 
-        internal Task UpdateDisplayAsync() => _viewerManager.UpdateDisplayAsync();
-        private void Canvas1_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => _viewerManager.PaintCanvas(0, e);
-        private void Canvas2_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => _viewerManager.PaintCanvas(1, e);
-        private void Canvas3_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => _viewerManager.PaintCanvas(2, e);
-        private void Canvas4_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => _viewerManager.PaintCanvas(3, e);
+        internal Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
+        private void Canvas1_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(0, e);
+        private void Canvas2_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(1, e);
+        private void Canvas3_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(2, e);
+        private void Canvas4_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(3, e);
 
         internal string CurrentImagePath => _playlist != null && _currentIndex >= 0 && _currentIndex < _playlist.Count ? _playlist[_currentIndex] : string.Empty;
-        internal void ShowNotification(string message) => _viewerManager.ShowNotification(message);
-        internal void Navigate(int offset, bool forceSingleStep = false) => _viewerManager.Navigate(offset, forceSingleStep);
-        internal void NavigateFolder(int offset) => _viewerManager.NavigateFolder(offset);
+        internal void ShowNotification(string message) => ViewerManager.ShowNotification(message);
+        internal void Navigate(int offset, bool forceSingleStep = false) => ViewerManager.Navigate(offset, forceSingleStep);
+        internal void NavigateFolder(int offset) => ViewerManager.NavigateFolder(offset);
 
-        private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => _inputHandler.HandlePointerWheelChanged(sender, e);
-        private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => _inputHandler.HandlePointerWheelChanged(sender, e);
-        private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => _inputHandler.HandleDoubleTapped(sender, e);
-        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => _inputHandler.HandleKeyDown(sender, e);
+        private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
+        private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
+        private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
+        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 
-        private void PagesGrid_PointerPressed(object sender, PointerRoutedEventArgs e) => _editorManager.PagesGrid_PointerPressed(sender, e);
-        private void PagesGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => _editorManager.PagesGrid_PointerMoved(sender, e);
-        private void PagesGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => _editorManager.PagesGrid_PointerReleased(sender, e);
-        private void EditMenuFlyout_Opening(object sender, object e) => _editorManager.EditMenuFlyout_Opening(sender, e);
-        private void MenuSaveAs_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSaveAs_Click(sender, e);
-        private void MenuOverwrite_Click(object sender, RoutedEventArgs e) => _editorManager.MenuOverwrite_Click(sender, e);
-        private void MenuCrop_Click(object sender, RoutedEventArgs e) => _editorManager.MenuCrop_Click(sender, e);
-        private void MenuResize_Click(object sender, RoutedEventArgs e) => _editorManager.MenuResize_Click(sender, e);
-        private void MenuRotate_Click(object sender, RoutedEventArgs e) => _editorManager.MenuRotate_Click(sender, e);
-        private void MenuFlip_Click(object sender, RoutedEventArgs e) => _editorManager.MenuFlip_Click(sender, e);
-        private void MenuTone_Click(object sender, RoutedEventArgs e) => _editorManager.MenuTone_Click(sender, e);
-        private void MenuFilter_Click(object sender, RoutedEventArgs e) => _editorManager.MenuFilter_Click(sender, e);
-        private void MenuOpenExplorer_Click(object sender, RoutedEventArgs e) => _editorManager.MenuOpenExplorer_Click(sender, e);
-        private void MenuViewMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuViewMode_Click(sender, e);
-        private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuLayoutMode_Click(sender, e);
-        private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuStretchMode_Click(sender, e);
-        private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuKeyBindings_Click(sender, e);
-        private void MenuSettings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSettings_Click(sender, e);
-        private void MenuUndo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuUndo_Click(sender, e);
-        private void MenuRedo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuRedo_Click(sender, e);
-        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => _editorManager.MenuMetadata_Click(sender, e);
+        private void PagesGrid_PointerPressed(object sender, PointerRoutedEventArgs e) => EditorManager.PagesGrid_PointerPressed(sender, e);
+        private void PagesGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => EditorManager.PagesGrid_PointerMoved(sender, e);
+        private void PagesGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => EditorManager.PagesGrid_PointerReleased(sender, e);
+        private void EditMenuFlyout_Opening(object sender, object e) => EditorManager.EditMenuFlyout_Opening(sender, e);
+        private void MenuSaveAs_Click(object sender, RoutedEventArgs e) => EditorManager.MenuSaveAs_Click(sender, e);
+        private void MenuOverwrite_Click(object sender, RoutedEventArgs e) => EditorManager.MenuOverwrite_Click(sender, e);
+        private void MenuCrop_Click(object sender, RoutedEventArgs e) => EditorManager.MenuCrop_Click(sender, e);
+        private void MenuResize_Click(object sender, RoutedEventArgs e) => EditorManager.MenuResize_Click(sender, e);
+        private void MenuRotate_Click(object sender, RoutedEventArgs e) => EditorManager.MenuRotate_Click(sender, e);
+        private void MenuFlip_Click(object sender, RoutedEventArgs e) => EditorManager.MenuFlip_Click(sender, e);
+        private void MenuTone_Click(object sender, RoutedEventArgs e) => EditorManager.MenuTone_Click(sender, e);
+        private void MenuFilter_Click(object sender, RoutedEventArgs e) => EditorManager.MenuFilter_Click(sender, e);
+        private void MenuOpenExplorer_Click(object sender, RoutedEventArgs e) => EditorManager.MenuOpenExplorer_Click(sender, e);
+        private void MenuViewMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuViewMode_Click(sender, e);
+        private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuLayoutMode_Click(sender, e);
+        private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuStretchMode_Click(sender, e);
+        private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => EditorManager.MenuKeyBindings_Click(sender, e);
+        private void MenuSettings_Click(object sender, RoutedEventArgs e) => EditorManager.MenuSettings_Click(sender, e);
+        private void MenuUndo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuUndo_Click(sender, e);
+        private void MenuRedo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuRedo_Click(sender, e);
+        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
 
-        private void OpenSlideshowDialogAsync() => _slideshowManager.OpenSlideshowDialogAsync();
-        private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => _slideshowManager.SlideshowDialog_Opened(sender, args);
-        private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) => _slideshowManager.SlideshowDialog_PrimaryButtonClick(sender, args);
+        private void OpenSlideshowDialogAsync() => SlideshowManager.OpenSlideshowDialogAsync();
+        private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);
+        private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) => SlideshowManager.SlideshowDialog_PrimaryButtonClick(sender, args);
     }
 }
