@@ -123,7 +123,7 @@ namespace grid_image_viewer
         public SettingsManager()
         {
             string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string appFolder = Path.Combine(appDataFolder, "grid-image-viewer");
+            string appFolder = Path.Combine(appDataFolder, "quick-image-viewer");
             Directory.CreateDirectory(appFolder);
             _settingsFilePath = Path.Combine(appFolder, "settings.json");
 

@@ -12,9 +12,9 @@
   <Identity
     Name="5A5F4AA2.grid-image-viewer"
     Publisher="CN=2ABC7F34-7AF6-4C95-8D60-39CD8D415607"
-    Version="1.0.0.0" />
+    Version="1.0.1.0" />
 
-  <mp:PhoneIdentity PhoneProductId="e16ad104-7ac3-44d9-91e5-0f1869294ec7" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="233838d5-f8c2-4c49-87bd-470dc159fa0d" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Quick Image Viewer</DisplayName>

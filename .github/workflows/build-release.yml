@@ -22,10 +22,10 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore grid-image-viewer.csproj
+      run: dotnet restore src/grid-image-viewer.csproj
 
     - name: Build app (Unpackaged)
-      run: dotnet build grid-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64
+      run: dotnet build src/grid-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64
 
     - name: Create ZIP archive
       run: |

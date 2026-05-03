@@ -114,7 +114,12 @@ namespace grid_image_viewer
                 else
                 {
                     // Fallback to project root if running from source/debug differently
-                    var fallbackPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "Assets", "AppIcon.ico");
+                    var fallbackPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "..", "Assets", "AppIcon.ico");
+                    if (!System.IO.File.Exists(fallbackPath))
+                    {
+                        // One more level up if needed (depends on bin depth)
+                        fallbackPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Assets", "AppIcon.ico");
+                    }
                     if (System.IO.File.Exists(fallbackPath)) appWindow.SetIcon(fallbackPath);
                 }
             }
