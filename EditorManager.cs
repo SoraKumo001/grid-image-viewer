@@ -1,6 +1,6 @@
+using grid_image_viewer.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using SkiaSharp;
@@ -9,10 +9,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Resources;
 using Windows.Storage;
 using Windows.System;
-using grid_image_viewer.Controls;
 
 namespace grid_image_viewer
 {
@@ -303,7 +301,7 @@ namespace grid_image_viewer
                 _window.SelectionRectangle.Visibility = Visibility.Collapsed;
                 _hasSelection = false;
 
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
                     (current) => ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, current));
             }
             catch (Exception ex)
@@ -393,7 +391,7 @@ namespace grid_image_viewer
                     int newHeight = (int)heightBox.Value;
                     if (newWidth <= 0 || newHeight <= 0) return;
 
-                    await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                    await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
                         (current) => ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, current));
                 }
             }
@@ -439,7 +437,7 @@ namespace grid_image_viewer
                 string sourcePath = _window.CurrentImagePath;
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
                     (current) => ImageProcessor.ApplyFilter(sourcePath, filterType, current));
             }
         }
@@ -451,7 +449,7 @@ namespace grid_image_viewer
                 string sourcePath = _window.CurrentImagePath;
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
                     (current) => ImageProcessor.GetRotatedBitmap(sourcePath, degrees, current));
             }
         }
@@ -464,7 +462,7 @@ namespace grid_image_viewer
                 if (string.IsNullOrEmpty(sourcePath)) return;
 
                 bool horizontal = flipMode == "Horz";
-                await _window.ImageEditService.ApplyTransformationAsync(sourcePath, 
+                await _window.ImageEditService.ApplyTransformationAsync(sourcePath,
                     (current) => ImageProcessor.GetFlippedBitmap(sourcePath, horizontal, current));
             }
         }

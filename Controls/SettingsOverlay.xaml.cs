@@ -16,7 +16,7 @@ namespace grid_image_viewer.Controls
             _settings = settings;
 
             SliderQuality.Value = _settings.JpegQuality;
-            
+
             BtnClose.Focus(FocusState.Programmatic);
         }
 

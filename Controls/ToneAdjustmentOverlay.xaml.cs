@@ -24,7 +24,7 @@ namespace grid_image_viewer.Controls
 
             _updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _updateTimer.Tick += OnUpdateTimerTick;
-            
+
             // Initial focus
             BtnClose.Focus(FocusState.Programmatic);
         }
@@ -48,7 +48,7 @@ namespace grid_image_viewer.Controls
                             if (_window.ViewerManager == null) return;
                             _window.ViewerManager.AddPendingEdit(_sourcePath, newBmp);
                             _window.ViewerManager.StopAnimation();
-                            
+
                             foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
                             for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
                             {
@@ -67,7 +67,7 @@ namespace grid_image_viewer.Controls
         {
             if (TextContrast != null) TextContrast.Text = SliderContrast.Value.ToString("F2");
             if (TextSaturation != null) TextSaturation.Text = SliderSaturation.Value.ToString("F2");
-            
+
             _updateTimer?.Stop();
             _updateTimer?.Start();
         }

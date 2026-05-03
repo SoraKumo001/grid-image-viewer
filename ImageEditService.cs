@@ -1,8 +1,6 @@
-using Microsoft.UI.Xaml;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace grid_image_viewer
@@ -71,7 +69,7 @@ namespace grid_image_viewer
         public async Task ApplyTransformationAsync(string path, Func<SKBitmap?, SKBitmap?> transform)
         {
             _window.ViewerManager?.StopAnimation();
-            
+
             // Clear current image sources to prevent access violations during update
             if (_window.ViewerManager != null)
             {
@@ -92,7 +90,7 @@ namespace grid_image_viewer
                     _window.DispatcherQueue.TryEnqueue(() =>
                     {
                         AddPendingEdit(path, newBmp);
-                        
+
                         // Force refresh of the relevant page
                         if (_window.ViewerManager != null)
                         {
