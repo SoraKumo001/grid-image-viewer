@@ -319,4 +319,22 @@
   <data name="MenuMetadata.Text" xml:space="preserve">
     <value>Show Image Information</value>
   </data>
+  <data name="MenuSlideshow.Text" xml:space="preserve">
+    <value>Slideshow</value>
+  </data>
+  <data name="TxtMetaTitle.Text" xml:space="preserve">
+    <value>IMAGE INFORMATION</value>
+  </data>
+  <data name="TxtMetaCameraLabel.Text" xml:space="preserve">
+    <value>Camera</value>
+  </data>
+  <data name="TxtMetaLensLabel.Text" xml:space="preserve">
+    <value>Lens</value>
+  </data>
+  <data name="TxtMetaSettingsLabel.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="TxtMetaDateLabel.Text" xml:space="preserve">
+    <value>Date</value>
+  </data>
 </root>

@@ -319,4 +319,22 @@
   <data name="MenuMetadata.Text" xml:space="preserve">
     <value>画像情報表示</value>
   </data>
+  <data name="MenuSlideshow.Text" xml:space="preserve">
+    <value>自動再生 (スライドショー)</value>
+  </data>
+  <data name="TxtMetaTitle.Text" xml:space="preserve">
+    <value>画像情報</value>
+  </data>
+  <data name="TxtMetaCameraLabel.Text" xml:space="preserve">
+    <value>カメラ</value>
+  </data>
+  <data name="TxtMetaLensLabel.Text" xml:space="preserve">
+    <value>レンズ</value>
+  </data>
+  <data name="TxtMetaSettingsLabel.Text" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="TxtMetaDateLabel.Text" xml:space="preserve">
+    <value>日時</value>
+  </data>
 </root>

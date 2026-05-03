@@ -115,7 +115,7 @@
                             Background="#CC000000" CornerRadius="8" Padding="16"
                             Visibility="Collapsed" MaxWidth="350" IsHitTestVisible="True">
                         <StackPanel Spacing="4">
-                            <TextBlock x:Name="TxtMetaTitle" x:FieldModifier="internal" Text="IMAGE INFORMATION" FontSize="10" Foreground="#888888" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="TxtMetaTitle" x:FieldModifier="internal" x:Uid="TxtMetaTitle" Text="IMAGE INFORMATION" FontSize="10" Foreground="#888888" FontWeight="Bold" Margin="0,0,0,4"/>
                             <TextBlock x:Name="TxtMetaFileName" x:FieldModifier="internal" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             <TextBlock x:Name="TxtMetaDimensions" x:FieldModifier="internal" Foreground="#00A2ED" FontSize="12"/>
                             <TextBlock x:Name="TxtMetaFileSize" x:FieldModifier="internal" Foreground="#AAAAAA" FontSize="12"/>
@@ -134,16 +134,16 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Camera" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" x:Uid="TxtMetaCameraLabel" Text="Camera" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
                                 <TextBlock x:Name="TxtMetaCamera" x:FieldModifier="internal" Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="11" Margin="0,0,0,2"/>
                                 
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Lens" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" x:Uid="TxtMetaLensLabel" Text="Lens" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
                                 <TextBlock x:Name="TxtMetaLens" x:FieldModifier="internal" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,2"/>
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Settings" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" x:Uid="TxtMetaSettingsLabel" Text="Settings" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
                                 <TextBlock x:Name="TxtMetaSettings" x:FieldModifier="internal" Grid.Row="2" Grid.Column="1" Foreground="#FFD700" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,2"/>
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Date" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" x:Uid="TxtMetaDateLabel" Text="Date" FontSize="11" Foreground="#888888" Margin="0,0,12,2"/>
                                 <TextBlock x:Name="TxtMetaDate" x:FieldModifier="internal" Grid.Row="3" Grid.Column="1" Foreground="White" FontSize="11" Margin="0,0,0,2"/>
                             </Grid>
                         </StackPanel>
@@ -208,6 +208,8 @@
                             <ToggleMenuFlyoutItem x:Name="MenuLayoutHorz" x:FieldModifier="internal" x:Uid="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" />
                             <ToggleMenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" />
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuSlideshow" x:FieldModifier="internal" x:Uid="MenuSlideshow" Text="Slideshow" Click="MenuSlideshow_Click" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutSubItem x:Name="MenuGlobalSettings" x:FieldModifier="internal" x:Uid="MenuGlobalSettings" Text="Settings">
                             <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="Save Settings..." Click="MenuSettings_Click" />
