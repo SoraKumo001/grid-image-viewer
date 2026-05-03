@@ -149,7 +149,17 @@ namespace grid_image_viewer
                     foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
                 }
 
-                await Task.Run(() => ImageProcessor.SaveImage(sourcePath, destPath, targetExtension));
+                await Task.Run(() => 
+                {
+                    if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pendingBmp))
+                    {
+                        ImageProcessor.SaveBitmap(pendingBmp, destPath, targetExtension);
+                    }
+                    else
+                    {
+                        ImageProcessor.SaveImage(sourcePath, destPath, targetExtension);
+                    }
+                });
 
                 if (overwrite) _ = _window.UpdateDisplayAsync();
             }
@@ -184,10 +194,27 @@ namespace grid_image_viewer
                 }
 
                 string? sourcePath = _window.ViewerManager.Pages[targetIdx].CurrentFilePath;
-                if (string.IsNullOrEmpty(sourcePath)) return;
+                if (string.IsNullOrEmpty(sourcePath))
+                {
+                    _window.ViewerManager.ShowNotification("Crop failed: sourcePath is null");
+                    return;
+                }
 
-                var (imgW, imgH) = ImageProcessor.GetImageSize(sourcePath);
-                if (imgW == 0 || imgH == 0) return;
+                int imgW, imgH;
+                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending))
+                {
+                    imgW = pending.Width;
+                    imgH = pending.Height;
+                }
+                else
+                {
+                    (imgW, imgH) = ImageProcessor.GetImageSize(sourcePath);
+                }
+                if (imgW == 0 || imgH == 0)
+                {
+                    _window.ViewerManager.ShowNotification("Crop failed: Could not get image size (possibly unsupported format)");
+                    return;
+                }
 
                 FrameworkElement targetElement = _window.ViewerManager.PageImages[targetIdx];
 
@@ -235,7 +262,20 @@ namespace grid_image_viewer
                 _window.ViewerManager.StopAnimation();
                 foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
 
-                ImageProcessor.CropImage(sourcePath, cropRect);
+                // Clear EditedBitmap references in PageRenderers BEFORE disposing the old bitmap.
+                // This prevents LoadPageAsync's crossfade prep from accessing a disposed bitmap.
+                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                {
+                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
+                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                }
+
+                var newBmp = ImageProcessor.GetCroppedBitmap(sourcePath, cropRect, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                if (newBmp != null)
+                {
+                    if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
+                    _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                }
 
                 _window.SelectionRectangle.Visibility = Visibility.Collapsed;
                 _hasSelection = false;
@@ -244,6 +284,7 @@ namespace grid_image_viewer
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Crop error: {ex.Message}");
+                _window.ViewerManager.ShowNotification($"Crop exception: {ex.Message}");
             }
         }
 
@@ -270,7 +311,16 @@ namespace grid_image_viewer
 
             try
             {
-                var (origW, origH) = ImageProcessor.GetImageSize(sourcePath);
+                int origW, origH;
+                if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pending))
+                {
+                    origW = pending.Width;
+                    origH = pending.Height;
+                }
+                else
+                {
+                    (origW, origH) = ImageProcessor.GetImageSize(sourcePath);
+                }
                 widthBox.Value = origW;
                 heightBox.Value = origH;
 
@@ -287,7 +337,22 @@ namespace grid_image_viewer
                     _window.ViewerManager.StopAnimation();
                     foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
 
-                    await Task.Run(() => ImageProcessor.ResizeImage(sourcePath, newWidth, newHeight));
+                    // Clear EditedBitmap references before disposing old bitmap
+                    for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
+                    {
+                        if (_window.ViewerManager.Pages[pi].CurrentFilePath == sourcePath)
+                            _window.ViewerManager.Pages[pi].EditedBitmap = null;
+                    }
+
+                    await Task.Run(() => 
+                    {
+                        var newBmp = ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
+                        if (newBmp != null)
+                        {
+                            if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var oldPb)) oldPb.Dispose();
+                            _window.ViewerManager.PendingEdits[sourcePath] = newBmp;
+                        }
+                    });
                     _ = _window.UpdateDisplayAsync();
                 }
             }

@@ -34,6 +34,8 @@ namespace grid_image_viewer
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private const int MAX_CACHE_SIZE = 20;
 
+        public Dictionary<string, SKBitmap> PendingEdits { get; } = new Dictionary<string, SKBitmap>();
+
         public ViewerManager(MainWindow window, SettingsManager settings)
         {
             _window = window;
@@ -118,6 +120,7 @@ namespace grid_image_viewer
                 _cachedQuadLayout = await Task.Run(() => GetEffectiveQuadLayout());
                 UpdateLayoutGrid(splitCount, effectiveSplitCount, _cachedQuadLayout);
 
+                var currentFiles = new List<string>();
                 var loadTasks = new List<Task>();
                 for (int i = 0; i < effectiveSplitCount; i++)
                 {
@@ -140,8 +143,16 @@ namespace grid_image_viewer
 
                     if (indexToLoad != -1)
                     {
+                        currentFiles.Add(_window.Playlist[indexToLoad]);
                         loadTasks.Add(LoadPageAsync(_window.Playlist[indexToLoad], _pageImages[i], _pageCanvases[i], _pageLoadingRings[i], i, token));
                     }
+                }
+
+                var keysToRemove = PendingEdits.Keys.Where(k => !currentFiles.Contains(k)).ToList();
+                foreach (var k in keysToRemove)
+                {
+                    PendingEdits[k].Dispose();
+                    PendingEdits.Remove(k);
                 }
 
                 try
@@ -398,13 +409,13 @@ namespace grid_image_viewer
             }
             else if (canvasCtrl.Visibility == Visibility.Visible)
             {
-                var bitmap = _pages[pageIndex].Bitmap;
-                if (bitmap != null)
+                try
                 {
-                    using var snapshot = SKImage.FromBitmap(bitmap);
-                    if (snapshot != null)
+                    var bitmap = _pages[pageIndex].EditedBitmap ?? _pages[pageIndex].Bitmap;
+                    if (bitmap != null)
                     {
-                        try
+                        using var snapshot = SKImage.FromBitmap(bitmap);
+                        if (snapshot != null)
                         {
                             var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                             using var ms = new System.IO.MemoryStream();
@@ -417,8 +428,12 @@ namespace grid_image_viewer
                             await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                             _prevImages[pageIndex].Source = bitmapImage;
                         }
-                        catch { _prevImages[pageIndex].Source = null; }
                     }
+                }
+                catch
+                {
+                    // Bitmap may have been disposed by an edit operation - safe to skip crossfade
+                    _prevImages[pageIndex].Source = null;
                 }
             }
 
@@ -433,6 +448,31 @@ namespace grid_image_viewer
 
             try
             {
+                if (PendingEdits.TryGetValue(filePath, out var editedBmp))
+                {
+                    _pages[pageIndex].Reset();
+                    _pages[pageIndex].CurrentFilePath = filePath;
+                    _pages[pageIndex].EditedBitmap = editedBmp;
+                    _pages[pageIndex].FrameCount = 1;
+                    
+                    imageCtrl.Visibility = Visibility.Collapsed;
+                    canvasCtrl.Visibility = Visibility.Visible;
+                    canvasCtrl.Invalidate();
+                    
+                    if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
+                    {
+                        _currentContainers[pageIndex].Opacity = 0;
+                        StartCrossfade(pageIndex);
+                    }
+                    else
+                    {
+                        _currentContainers[pageIndex].Opacity = 1;
+                        _prevContainers[pageIndex].Opacity = 0;
+                        if (pageIndex == 0) UpdateMetadataPanel();
+                    }
+                    return;
+                }
+
                 var ext = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
                 bool useSkia = ext == ".webp" || ext == ".gif" || ext == ".avis";
 
@@ -446,6 +486,7 @@ namespace grid_image_viewer
                         if (!token.IsCancellationRequested)
                         {
                             _pages[pageIndex].Reset();
+                            _pages[pageIndex].CurrentFilePath = filePath;
                             _pages[pageIndex].Data = tempRenderer.Data;
                             _pages[pageIndex].Codec = tempRenderer.Codec;
                             _pages[pageIndex].Bitmap = tempRenderer.Bitmap;
@@ -498,6 +539,7 @@ namespace grid_image_viewer
                     if (token.IsCancellationRequested) return;
 
                     _pages[pageIndex].Reset();
+                    _pages[pageIndex].CurrentFilePath = filePath;
                     canvasCtrl.Visibility = Visibility.Collapsed;
                     imageCtrl.Visibility = Visibility.Visible;
                     imageCtrl.Source = bitmapImage;
@@ -601,7 +643,18 @@ namespace grid_image_viewer
                 {
                     try
                     {
-                        var (w, h) = ImageProcessor.GetImageSize(_window.Playlist[indexToLoad]);
+                        var path = _window.Playlist[indexToLoad];
+                        int w, h;
+                        if (PendingEdits.TryGetValue(path, out var pending))
+                        {
+                            w = pending.Width;
+                            h = pending.Height;
+                        }
+                        else
+                        {
+                            (w, h) = ImageProcessor.GetImageSize(path);
+                        }
+
                         if (w > 0 && h > 0)
                         {
                             if ((double)w / h > 1.2) wideCount++;

@@ -54,41 +54,67 @@ namespace grid_image_viewer
         /// <summary>
         /// 画像をリサイズして上書き保存する。
         /// </summary>
-        public static void ResizeImage(string sourcePath, int newWidth, int newHeight)
+        public static SKBitmap? GetResizedBitmap(string sourcePath, int newWidth, int newHeight, SKBitmap? currentBmp)
         {
-            byte[] fileBytes = File.ReadAllBytes(sourcePath);
-            using var data = SKData.CreateCopy(fileBytes);
-            using var codec = SKCodec.Create(data);
-            using var bitmap = SKBitmap.Decode(codec);
+            SKBitmap? bitmap = currentBmp;
+            bool disposeBitmap = false;
+
+            if (bitmap == null)
+            {
+                byte[] fileBytes = File.ReadAllBytes(sourcePath);
+                using var data = SKData.CreateCopy(fileBytes);
+                using var codec = SKCodec.Create(data);
+                bitmap = SKBitmap.Decode(codec);
+                disposeBitmap = true;
+            }
+
             if (bitmap != null)
             {
-                using var resizedBitmap = bitmap.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKCubicResampler.Mitchell));
-                using var image = SKImage.FromBitmap(resizedBitmap);
-                using var skData = image.Encode(GetSKEncodedImageFormat(Path.GetExtension(sourcePath)), 100);
-                using var stream = File.Open(sourcePath, FileMode.Create, FileAccess.Write);
-                skData.SaveTo(stream);
+                var resizedBitmap = bitmap.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKCubicResampler.Mitchell));
+                if (disposeBitmap) bitmap.Dispose();
+                return resizedBitmap;
             }
+            return null;
+        }
+
+        public static SKBitmap? GetCroppedBitmap(string sourcePath, SKRectI cropRect, SKBitmap? currentBmp)
+        {
+            SKBitmap? bitmap = currentBmp;
+            bool disposeBitmap = false;
+
+            if (bitmap == null)
+            {
+                byte[] fileBytes = File.ReadAllBytes(sourcePath);
+                using var data = SKData.CreateCopy(fileBytes);
+                using var codec = SKCodec.Create(data);
+                bitmap = SKBitmap.Decode(codec);
+                disposeBitmap = true;
+            }
+
+            if (bitmap != null)
+            {
+                var croppedBitmap = new SKBitmap(new SKImageInfo(cropRect.Width, cropRect.Height, bitmap.ColorType, bitmap.AlphaType));
+                using (var canvas = new SKCanvas(croppedBitmap))
+                {
+                    canvas.DrawBitmap(bitmap, cropRect, new SKRect(0, 0, cropRect.Width, cropRect.Height));
+                }
+                if (disposeBitmap) bitmap.Dispose();
+                return croppedBitmap;
+            }
+            return null;
+        }
+
+        public static void SaveBitmap(SKBitmap bitmap, string destPath, string targetExtension)
+        {
+            using var image = SKImage.FromBitmap(bitmap);
+            using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), 100);
+            using var stream = File.Open(destPath, FileMode.Create, FileAccess.Write);
+            skData.SaveTo(stream);
         }
 
         /// <summary>
-        /// 画像をクロップして上書き保存する。
+        /// 画像の元のサイズを取得する。
         /// </summary>
-        public static void CropImage(string sourcePath, SKRectI cropRect)
-        {
-            byte[] fileBytes = File.ReadAllBytes(sourcePath);
-            using var data = SKData.CreateCopy(fileBytes);
-            using var codec = SKCodec.Create(data);
-            using var bitmap = SKBitmap.Decode(codec);
-            if (bitmap != null)
-            {
-                using var croppedBitmap = new SKBitmap(cropRect.Width, cropRect.Height);
-                bitmap.ExtractSubset(croppedBitmap, cropRect);
-                using var image = SKImage.FromBitmap(croppedBitmap);
-                using var skData = image.Encode(GetSKEncodedImageFormat(Path.GetExtension(sourcePath)), 100);
-                using var stream = File.Open(sourcePath, FileMode.Create, FileAccess.Write);
-                skData.SaveTo(stream);
-            }
-        }
 
         /// <summary>
         /// 画像の元のサイズを取得する。

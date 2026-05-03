@@ -127,30 +127,31 @@ namespace grid_image_viewer
         {
             lock (this)
             {
-                if (Bitmap != null)
+                var bmpToDraw = EditedBitmap ?? Bitmap;
+                if (bmpToDraw != null)
                 {
                     float scale;
                     if (UniformToFill)
-                        scale = Math.Max((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
+                        scale = Math.Max((float)info.Width / bmpToDraw.Width, (float)info.Height / bmpToDraw.Height);
                     else
-                        scale = Math.Min((float)info.Width / Bitmap.Width, (float)info.Height / Bitmap.Height);
+                        scale = Math.Min((float)info.Width / bmpToDraw.Width, (float)info.Height / bmpToDraw.Height);
 
-                    float x = (info.Width - Bitmap.Width * scale) / 2;
+                    float x = (info.Width - bmpToDraw.Width * scale) / 2;
                     if (!UniformToFill)
                     {
                         if (horizontalAlignment == 0) x = 0;
-                        else if (horizontalAlignment == 2) x = info.Width - Bitmap.Width * scale;
+                        else if (horizontalAlignment == 2) x = info.Width - bmpToDraw.Width * scale;
                     }
 
-                    float y = (info.Height - Bitmap.Height * scale) / 2;
+                    float y = (info.Height - bmpToDraw.Height * scale) / 2;
                     if (!UniformToFill)
                     {
                         if (verticalAlignment == 0) y = 0;
-                        else if (verticalAlignment == 2) y = info.Height - Bitmap.Height * scale;
+                        else if (verticalAlignment == 2) y = info.Height - bmpToDraw.Height * scale;
                     }
 
-                    var destRect = new SKRect(x, y, x + Bitmap.Width * scale, y + Bitmap.Height * scale);
-                    canvas.DrawBitmap(Bitmap, destRect);
+                    var destRect = new SKRect(x, y, x + bmpToDraw.Width * scale, y + bmpToDraw.Height * scale);
+                    canvas.DrawBitmap(bmpToDraw, destRect);
                 }
             }
         }
@@ -158,6 +159,8 @@ namespace grid_image_viewer
         /// <summary>
         /// リソースを解放する。
         /// </summary>
+        public SKBitmap? EditedBitmap { get; set; }
+
         public void Reset()
         {
             lock (this)
@@ -165,6 +168,7 @@ namespace grid_image_viewer
                 Codec?.Dispose(); Codec = null;
                 Data?.Dispose(); Data = null;
                 Bitmap?.Dispose(); Bitmap = null;
+                EditedBitmap = null;
                 CurrentFilePath = null;
                 FrameCount = 0;
                 CurrentFrame = -1;
