@@ -289,6 +289,9 @@
   <data name="KeyBinding_ToggleFullscreen" xml:space="preserve">
     <value>Toggle Fullscreen</value>
   </data>
+  <data name="KeyBinding_ToggleStretchMode" xml:space="preserve">
+    <value>Toggle Stretch Mode</value>
+  </data>
   <data name="KeyBinding_ResetAll" xml:space="preserve">
     <value>Reset to Defaults</value>
   </data>

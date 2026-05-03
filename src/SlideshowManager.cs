@@ -123,6 +123,8 @@ namespace grid_image_viewer
                 _mainWindow.IsFullscreen = true;
             }
 
+            _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
+
             if (_settings.SlideshowIncludeSiblings || _settings.SlideshowCurrentFolderOnly)
             {
                 _wasExpanded = true;
@@ -141,6 +143,7 @@ namespace grid_image_viewer
 
             _slideshowTimer.Stop();
             IsSlideshowRunning = false;
+            _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
 
             if (_settings.SlideshowFullscreen)
             {

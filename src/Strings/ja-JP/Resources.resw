@@ -295,6 +295,9 @@
   <data name="KeyBinding_ToggleFullscreen" xml:space="preserve">
     <value>フルスクリーン切替</value>
   </data>
+  <data name="KeyBinding_ToggleStretchMode" xml:space="preserve">
+    <value>表示サイズ切替 (全体/一杯/実寸)</value>
+  </data>
   <data name="KeyBinding_ResetAll" xml:space="preserve">
     <value>デフォルトに戻す</value>
   </data>

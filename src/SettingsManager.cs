@@ -49,6 +49,7 @@ namespace grid_image_viewer
         public KeyBindingData KeyMetadata { get; set; } = new KeyBindingData(VirtualKey.I);
         public KeyBindingData KeyToggleBookmarks { get; set; } = new KeyBindingData(VirtualKey.B);
         public KeyBindingData KeyToggleFullscreen { get; set; } = new KeyBindingData(VirtualKey.F);
+        public KeyBindingData KeyToggleStretchMode { get; set; } = new KeyBindingData(VirtualKey.S);
         public KeyBindingData KeyAddBookmark { get; set; } = new KeyBindingData(VirtualKey.D);
         public KeyBindingData KeyRotateRight { get; set; } = new KeyBindingData(VirtualKey.R);
         public KeyBindingData KeyRotateLeft { get; set; } = new KeyBindingData(VirtualKey.L);
@@ -114,6 +115,7 @@ namespace grid_image_viewer
         public KeyBindingData KeyMetadata { get => _data.KeyMetadata; set => _data.KeyMetadata = value; }
         public KeyBindingData KeyToggleBookmarks { get => _data.KeyToggleBookmarks; set => _data.KeyToggleBookmarks = value; }
         public KeyBindingData KeyToggleFullscreen { get => _data.KeyToggleFullscreen; set => _data.KeyToggleFullscreen = value; }
+        public KeyBindingData KeyToggleStretchMode { get => _data.KeyToggleStretchMode; set => _data.KeyToggleStretchMode = value; }
         public KeyBindingData KeyAddBookmark { get => _data.KeyAddBookmark; set => _data.KeyAddBookmark = value; }
         public KeyBindingData KeyRotateRight { get => _data.KeyRotateRight; set => _data.KeyRotateRight = value; }
         public KeyBindingData KeyRotateLeft { get => _data.KeyRotateLeft; set => _data.KeyRotateLeft = value; }

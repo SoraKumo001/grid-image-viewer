@@ -21,6 +21,7 @@ namespace grid_image_viewer.Controls
         private KeyBindingData _tempSlideshow;
         private KeyBindingData _tempMetadata;
         private KeyBindingData _tempToggleFullscreen;
+        private KeyBindingData _tempToggleStretchMode;
         private KeyBindingData _tempAddBookmark;
         private KeyBindingData _tempRotateRight;
         private KeyBindingData _tempRotateLeft;
@@ -49,6 +50,7 @@ namespace grid_image_viewer.Controls
             _tempSlideshow = _settings.KeySlideshow.Clone();
             _tempMetadata = _settings.KeyMetadata.Clone();
             _tempToggleFullscreen = _settings.KeyToggleFullscreen.Clone();
+            _tempToggleStretchMode = _settings.KeyToggleStretchMode.Clone();
             _tempAddBookmark = _settings.KeyAddBookmark.Clone();
             _tempRotateRight = _settings.KeyRotateRight.Clone();
             _tempRotateLeft = _settings.KeyRotateLeft.Clone();
@@ -75,6 +77,7 @@ namespace grid_image_viewer.Controls
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleSlideshow"), _tempSlideshow));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Metadata"), _tempMetadata));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleFullscreen"), _tempToggleFullscreen));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleStretchMode"), _tempToggleStretchMode));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_AddBookmark"), _tempAddBookmark));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateRight"), _tempRotateRight));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateLeft"), _tempRotateLeft));
@@ -172,6 +175,7 @@ namespace grid_image_viewer.Controls
             CopyBinding(defaults.KeySlideshow, _tempSlideshow);
             CopyBinding(defaults.KeyMetadata, _tempMetadata);
             CopyBinding(defaults.KeyToggleFullscreen, _tempToggleFullscreen);
+            CopyBinding(defaults.KeyToggleStretchMode, _tempToggleStretchMode);
             CopyBinding(defaults.KeyAddBookmark, _tempAddBookmark);
             CopyBinding(defaults.KeyRotateRight, _tempRotateRight);
             CopyBinding(defaults.KeyRotateLeft, _tempRotateLeft);
@@ -205,6 +209,7 @@ namespace grid_image_viewer.Controls
             _settings.KeySlideshow = _tempSlideshow;
             _settings.KeyMetadata = _tempMetadata;
             _settings.KeyToggleFullscreen = _tempToggleFullscreen;
+            _settings.KeyToggleStretchMode = _tempToggleStretchMode;
             _settings.KeyAddBookmark = _tempAddBookmark;
             _settings.KeyRotateRight = _tempRotateRight;
             _settings.KeyRotateLeft = _tempRotateLeft;

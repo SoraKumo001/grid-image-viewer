@@ -217,15 +217,39 @@ namespace grid_image_viewer
             if (IsMatch(_settings.KeyToggleFullscreen, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.IsFullscreen = !_window.IsFullscreen;
+                string state = _window.IsFullscreen ? "ON" : "OFF";
+                _window.ViewerManager.ShowNotification($"Fullscreen: {state}");
+                e.Handled = true;
+                return;
+            }
+
+            if (IsMatch(_settings.KeyToggleStretchMode, e.Key, isCtrl, isShift, isAlt))
+            {
+                int current = _settings.ImageStretchMode;
+                int next = current == 2 ? 3 : (current == 3 ? 0 : 2);
+                _settings.ImageStretchMode = next;
+                _settings.SaveSettings();
+                _window.ViewerManager.UpdateStretch();
+                
+                string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
+                string modeName = _resourceLoader.GetString(modeKey);
+                _window.ViewerManager.ShowNotification(modeName);
+                
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleManga, e.Key, isCtrl, isShift, isAlt))
             {
-                _settings.MangaSplitCount = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
+                int count = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
+                _settings.MangaSplitCount = count;
                 _settings.SaveMangaMode();
                 _ = _window.UpdateDisplayAsync();
+                
+                string modeKey = count == 1 ? "MenuViewMode_Single/Text" : (count == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
+                string modeName = _resourceLoader.GetString(modeKey);
+                _window.ViewerManager.ShowNotification(modeName);
+                
                 e.Handled = true;
                 return;
             }
@@ -233,6 +257,8 @@ namespace grid_image_viewer
             if (IsMatch(_settings.KeyToggleGrid, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.IsGridMode = !_window.IsGridMode;
+                string state = _window.IsGridMode ? "ON" : "OFF";
+                _window.ViewerManager.ShowNotification($"Grid Mode: {state}");
                 _ = _window.UpdateDisplayAsync();
                 e.Handled = true;
                 return;
