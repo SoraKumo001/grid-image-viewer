@@ -1,129 +1,132 @@
 # Quick Image Viewer
 
-Windows 向けの高速・軽量な画像ビューアアプリです。フォルダ内の画像をグリッド一覧で素早く閲覧でき、見開き表示（漫画モード）にも対応しています。
+A fast and lightweight image viewer application for Windows. It allows you to quickly browse images in a folder using a grid view and supports a spread view (manga mode).
+
+* [日本語のドキュメントはこちら](README_ja.md)
 
 ## Download
 
-https://github.com/SoraKumo001/grid-image-viewer/releases
+https://github.com/SoraKumo001/quick-image-viewer/releases
 
-## 主な機能
+## Key Features
 
-### 🖼️ 画像表示
+### 🖼️ Image Viewing
 
-- **対応フォーマット**: JPG, JPEG, PNG, BMP, GIF, WebP（アニメーション対応）, AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX 等
-- **高品質レンダリング**: SkiaSharp による高速な画像描画
-- **ズーム**: Ctrl + マウスホイールで拡大・縮小
-- **ドラッグ&ドロップ**: 画像ファイルやフォルダをウィンドウにドロップして開く
+- **Supported Formats**: JPG, JPEG, PNG, BMP, GIF, WebP (animation supported), AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX, etc.
+- **High-Quality Rendering**: Fast image drawing using SkiaSharp
+- **Zoom**: Zoom in/out using Ctrl + Mouse Wheel
+- **Drag & Drop**: Open images and folders by dropping them into the window
 
-### 🔖 ブックマーク機能
-- **お気に入り登録**: 頻繁に閲覧するフォルダをブックマークとして保存
-- **クイックアクセス**: サイドパネルまたは右クリックメニューから瞬時にフォルダを切り替え
-- **並び替え**: ブックマークパネル内でドラッグ＆ドロップによる直感的な順序変更が可能
-- **多言語対応**: 日本語と英語の表示を自動切り替え
+### 🔖 Bookmark Feature
 
-### 🖼️ 表示モード
+- **Add to Favorites**: Save frequently viewed folders as bookmarks
+- **Quick Access**: Instantly switch folders from the side panel or context menu
+- **Reordering**: Intuitive reordering by drag & drop within the bookmark panel
+- **Multilingual Support**: Automatic switching between Japanese and English display
 
-- **単一表示**: 1枚の画像を画面いっぱいに表示
-- **2分割表示（漫画モード）**: 2ページを左右に並べて表示。右から左への読み順に対応し、見開きのズレ補正（Shift+ページ送り）も可能
-- **4分割表示**: 4枚の画像を格子状（2x2）または横並び（1x4）で表示。アスペクト比に応じた自動レイアウトにも対応
-- `Ctrl+G` でモードを順次切り替え可能
+### 🖼️ View Modes
 
-### 🔲 グリッドモード
+- **Single View**: Display a single image filling the screen
+- **Split View (Manga Mode)**: Display two pages side by side. Supports right-to-left reading order and spread offset correction (Shift + Page Turn).
+- **Quad View**: Display 4 images in a grid (2x2) or horizontally (1x4). Also supports automatic layout based on aspect ratio.
+- Cycle through modes sequentially using `Ctrl+G`
 
-- フォルダ内の全画像をサムネイルで一覧表示
-- **動的レイアウト最適化**: ファイル数とウィンドウサイズに応じて、画像が最も大きく表示されるレイアウトを自動計算
-- **アスペクト比対応**: フォルダ内で最も多いアスペクト比に基づいてグリッドセルの縦横比を最適化
-- **スマートフォールバック**: ファイル数が多い場合は自動でスクロールモードに切り替え
-- サムネイルをクリックで通常表示へ移行
-- `Enter` で切り替え（カスタマイズ可能）
+### 🔲 Grid Mode
 
-### 📂 フォルダナビゲーション
+- Display all images in a folder as thumbnails
+- **Dynamic Layout Optimization**: Automatically calculate the layout where images appear largest according to the number of files and window size
+- **Aspect Ratio Support**: Optimize grid cell aspect ratios based on the most common aspect ratio in the folder
+- **Smart Fallback**: Automatically switch to scroll mode if there are too many files
+- Click a thumbnail to transition to normal view
+- Toggle with `Enter` (customizable)
 
-- フォルダツリーを深さ優先探索で自動巡回
-- 上下キーで前後のフォルダへ移動（通常モード）
-- グリッドモードでは先頭行/末尾行から上下キーでフォルダ移動
+### 📂 Folder Navigation
 
-### ⏱️ 自動再生（スライドショー）
+- Automatically traverse the folder tree with a depth-first search
+- Move to previous/next folders with Up/Down keys (in normal mode)
+- Navigate folders from the first/last row using Up/Down keys in grid mode
 
-- 指定した間隔（秒単位）で自動的に画像を遷移
-- **クロスフェード**: 画像切り替え時に滑らかなフェード効果を適用
-- **柔軟な検索範囲**: ループ再生、ランダム順再生に加え、次のフォルダ、兄弟フォルダ、下位フォルダを自動的に含めるオプションに対応
-- フルスクリーンへの自動移行オプション付き
-- `A` キーで設定ダイアログを表示して開始
+### ⏱️ Autoplay (Slideshow)
 
-### 🛠️ 非破壊画像編集
+- Automatically transition images at specified intervals (in seconds)
+- **Crossfade**: Apply smooth fade effects during image transitions
+- **Flexible Search Scope**: Supports options to include the next folder, sibling folders, and subfolders automatically, in addition to loop and random playback
+- Auto-transition to full screen option included
+- Press `A` to display the settings dialog and start
 
-- **インメモリ編集**: 元ファイルを変更せずに、表示中にリアルタイムで画像を加工
-- **トーン調整**: 明るさ、コントラスト、ガンマ値をスライダーで微調整。変更は即座に反映
-- **回転・反転**: 90度単位の回転、上下左右の反転に対応
-- **フィルタ**: グレースケール、セピア、ネガ反転などのカラーフィルタを適用
-- **ターゲット指定**: 分割表示時、右クリックした位置の画像を正確に判別して編集対象に。表示位置を維持したまま、特定の画像だけを操作可能
-- **Undo/Redo**: 編集履歴を管理し、元の状態にいつでも戻すことが可能
-- `Ctrl+Z` / `Ctrl+Y` で直感的な取り消し・やり直しに対応
-- 編集した状態での別名保存・上書き保存が可能
+### 🛠️ Non-Destructive Image Editing
 
-### 🖨️ 印刷
+- **In-Memory Editing**: Process images in real-time while viewing without modifying the original files
+- **Tone Adjustment**: Fine-tune brightness, contrast, and gamma with sliders. Changes are reflected instantly.
+- **Rotate/Flip**: Rotate in 90-degree increments, and flip horizontally/vertically
+- **Filters**: Apply color filters such as grayscale, sepia, and negative invert
+- **Target Specification**: During split view, accurately identify the right-clicked image as the editing target. Manipulate specific images while maintaining the display position.
+- **Undo/Redo**: Manage edit history and revert to the original state at any time
+- Intuitive undo/redo using `Ctrl+Z` / `Ctrl+Y`
+- Save as a new file or overwrite the edited state
 
-- **印刷プレビュー**: OS標準の印刷ダイアログを呼び出し、印刷前にプレビューを確認可能
-- **自動サイズ調整**: アスペクト比を維持したまま、用紙の印刷可能領域に収まるように自動調整
+### 🖨️ Printing
+
+- **Print Preview**: Call the OS standard print dialog to check the preview before printing
+- **Auto Size Adjustment**: Automatically fit the image within the printable area of the paper while maintaining the aspect ratio
 
 ### 🎨 UI/UX
 
-- **Mica バックドロップ**: Windows 11 のモダンな半透明デザイン
-- **カスタムタイトルバー**: アプリに溶け込むタイトルバーデザイン
-- **フルスクリーン**: ダブルクリックで全画面表示を切り替え
-- **範囲選択**: ドラッグで領域を選択し、右クリックからコピー
-- **状態の保存**: ウィンドウサイズ・位置・表示中の画像を次回起動時に復元
+- **Mica Backdrop**: Modern translucent design of Windows 11
+- **Custom Title Bar**: Title bar design that blends seamlessly into the app
+- **Full Screen**: Toggle full screen display with a double click
+- **Area Selection**: Drag to select an area and right-click to copy
+- **State Preservation**: Restore window size, position, and the currently viewed image on the next startup
 
-### ⌨️ キーバインド
+### ⌨️ Keybindings
 
-| 操作                       | デフォルトキー |
-| -------------------------- | -------------- |
-| 次の画像                   | `Space`        |
-| 前の画像                   | `BackSpace`    |
-| 次のフォルダ               | `↓`            |
-| 前のフォルダ               | `↑`            |
-| 漫画モード切替             | `Ctrl+G`       |
-| グリッドモード切替         | `Enter`        |
-| 自動再生（スライドショー） | `A`            |
-| ブックマークパネル切替     | `B`            |
-| メタデータ表示切替         | `I`            |
-| アプリ終了                 | `Escape`       |
+| Action | Default Key |
+| --- | --- |
+| Next Image | `Space` |
+| Previous Image | `BackSpace` |
+| Next Folder | `↓` |
+| Previous Folder | `↑` |
+| Toggle Manga Mode | `Ctrl+G` |
+| Toggle Grid Mode | `Enter` |
+| Autoplay (Slideshow) | `A` |
+| Toggle Bookmark Panel | `B` |
+| Toggle Metadata Display | `I` |
+| Exit App | `Escape` |
 
-- マウスホイール: 前後の画像に移動（Shiftキー押下で漫画モード時1ページ送り）
-- 左右カーソルキー: 前後の画像に移動（漫画モードでは方向が反転、Shiftキー押下で1ページ送り）
-- すべてのキーバインドは右クリックメニューの「Settings」からカスタマイズ可能
+- Mouse Wheel: Move to previous/next image (Press Shift to turn 1 page in manga mode)
+- Left/Right Cursor Keys: Move to previous/next image (Direction is reversed in manga mode, Press Shift to turn 1 page)
+- All keybindings can be customized from the "Settings" in the context menu
 
-### 🖱️ 右クリックメニュー
+### 🖱️ Context Menu
 
-- **Save As**: 指定した形式（JPEG, PNG, WebP, BMP）で保存
-- **Overwrite**: 上書き保存
-- **Print**: 用紙サイズに合わせた画像の印刷
-- **Crop**: 選択範囲の切り抜き
-- **Resize**: 画像のリサイズ
-- **Rotation/Flip**: 画像の回転・反転
-- **Tone Adjustment**: 明るさ・コントラスト等の調整
-- **Filters**: カラーフィルタの適用
-- **Undo/Redo**: 編集操作の取り消し・やり直し
-- **Show Metadata**: EXIF情報等の詳細表示（`I`キーで順次切り替え）
-- **Bookmark**: 現在のフォルダをブックマークに追加/解除
-- **Open in Explorer**: エクスプローラーでファイルの場所を開く
-- **Settings**: キーバインドや表示設定の変更
+- **Save As**: Save in the specified format (JPEG, PNG, WebP, BMP)
+- **Overwrite**: Overwrite and save
+- **Print**: Print images fitted to paper size
+- **Crop**: Crop the selected area
+- **Resize**: Resize the image
+- **Rotation/Flip**: Rotate and flip the image
+- **Tone Adjustment**: Adjust brightness, contrast, etc.
+- **Filters**: Apply color filters
+- **Undo/Redo**: Undo and redo editing operations
+- **Show Metadata**: Detailed display of EXIF info, etc. (Cycle with `I` key)
+- **Bookmark**: Add/remove current folder from bookmarks
+- **Open in Explorer**: Open file location in Explorer
+- **Settings**: Change keybindings and display settings
 
-## 動作要件
+## Requirements
 
-- Windows 10 (1809) 以降
+- Windows 10 (1809) or later
 - .NET 8.0
 
-## ビルド
+## Build
 
 ```bash
 dotnet build -c Release -a x64
 ```
 
-## 技術スタック
+## Tech Stack
 
-- **UI フレームワーク**: WinUI 3 (Windows App SDK 2.0)
-- **画像レンダリング**: SkiaSharp 3.x
-- **言語**: C# (.NET 8.0)
-- **設定管理**: JSON形式による永続化 (LocalApplicationData)
+- **UI Framework**: WinUI 3 (Windows App SDK 2.0)
+- **Image Rendering**: SkiaSharp 3.x
+- **Language**: C# (.NET 8.0)
+- **Settings Management**: Persistence via JSON format (LocalApplicationData)

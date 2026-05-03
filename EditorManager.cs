@@ -319,6 +319,18 @@ namespace grid_image_viewer
             _window.DialogService.Show(new SettingsOverlay(_window, _settings) { Name = "SettingsOverlay" });
         }
 
+        public async void MenuSupport_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await Launcher.LaunchUriAsync(new Uri("https://github.com/SoraKumo001/quick-image-viewer"));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to open support link: {ex.Message}");
+            }
+        }
+
         public void MenuUndo_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _window.CurrentImagePath;

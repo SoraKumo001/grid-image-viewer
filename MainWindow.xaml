@@ -226,6 +226,8 @@
                             <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="Save Settings..." Click="MenuSettings_Click" />
                             <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuSupport" x:FieldModifier="internal" x:Uid="MenuSupport" Text="Support" Click="MenuSupport_Click" />
                     </MenuFlyout>
                 </Grid.ContextFlyout>
             </Grid>

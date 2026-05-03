@@ -370,4 +370,7 @@
   <data name="Bookmark_MoveDown.ToolTipService.ToolTip" xml:space="preserve">
     <value>下に移動</value>
   </data>
+  <data name="MenuSupport.Text" xml:space="preserve">
+    <value>サポート</value>
+  </data>
 </root>
