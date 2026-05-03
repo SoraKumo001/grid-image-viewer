@@ -1,4 +1,4 @@
-# Grid Image Viewer
+# Quick Image Viewer
 
 Windows 向けの高速・軽量な画像ビューアアプリです。フォルダ内の画像をグリッド一覧で素早く閲覧でき、見開き表示（漫画モード）にも対応しています。
 
@@ -62,6 +62,11 @@ https://github.com/SoraKumo001/grid-image-viewer/releases
 - `Ctrl+Z` / `Ctrl+Y` で直感的な取り消し・やり直しに対応
 - 編集した状態での別名保存・上書き保存が可能
 
+### 🖨️ 印刷
+
+- **印刷プレビュー**: OS標準の印刷ダイアログを呼び出し、印刷前にプレビューを確認可能
+- **自動サイズ調整**: アスペクト比を維持したまま、用紙の印刷可能領域に収まるように自動調整
+
 ### 🎨 UI/UX
 
 - **Mica バックドロップ**: Windows 11 のモダンな半透明デザイン
@@ -93,6 +98,7 @@ https://github.com/SoraKumo001/grid-image-viewer/releases
 
 - **Save As**: 指定した形式（JPEG, PNG, WebP, BMP）で保存
 - **Overwrite**: 上書き保存
+- **Print**: 用紙サイズに合わせた画像の印刷
 - **Crop**: 選択範囲の切り抜き
 - **Resize**: 画像のリサイズ
 - **Rotation/Flip**: 画像の回転・反転

@@ -17,7 +17,7 @@
   <mp:PhoneIdentity PhoneProductId="e16ad104-7ac3-44d9-91e5-0f1869294ec7" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>grid-image-viewer</DisplayName>
+    <DisplayName>Quick Image Viewer</DisplayName>
     <PublisherDisplayName>空雲</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -36,8 +36,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="grid-image-viewer"
-        Description="Grid Image Viewer"
+        DisplayName="Quick Image Viewer"
+        Description="Quick Image Viewer"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
