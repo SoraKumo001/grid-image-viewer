@@ -24,6 +24,7 @@ namespace grid_image_viewer
         internal ImageEditService ImageEditService { get; private set; }
         internal MetadataDisplayService MetadataDisplayService { get; private set; }
         internal NotificationService NotificationService { get; private set; }
+        internal AnimationService AnimationService { get; private set; }
 
         internal bool IsGridMode { get => _isGridMode; set => _isGridMode = value; }
         internal ObservableCollection<ImageItem> GridItems => _gridItems;
@@ -69,6 +70,7 @@ namespace grid_image_viewer
             ImageEditService = new ImageEditService(this);
             MetadataDisplayService = new MetadataDisplayService(this, _settings);
             NotificationService = new NotificationService(this);
+            AnimationService = new AnimationService(this, _settings);
 
             // Initialize Managers
             ViewerManager = new ViewerManager(this, _settings);

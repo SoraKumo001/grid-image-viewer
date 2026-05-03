@@ -26,7 +26,6 @@ namespace grid_image_viewer
         private SkiaSharp.Views.Windows.SKXamlCanvas[] _pageCanvases;
         private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
         private Border[] _focusBorders;
-        private DispatcherTimer _animationTimer;
         private CancellationTokenSource? _displayCts;
         private int _cachedQuadLayout = 1;
         private ResourceLoader _resourceLoader = new ResourceLoader();
@@ -50,10 +49,6 @@ namespace grid_image_viewer
             _pageCanvases = new SkiaSharp.Views.Windows.SKXamlCanvas[] { _window.Canvas1, _window.Canvas2, _window.Canvas3, _window.Canvas4 };
             _pageLoadingRings = new Microsoft.UI.Xaml.Controls.ProgressRing[] { _window.LoadingRing1, _window.LoadingRing2, _window.LoadingRing3, _window.LoadingRing4 };
             _focusBorders = new Border[] { _window.FocusBorder1, _window.FocusBorder2, _window.FocusBorder3, _window.FocusBorder4 };
-
-            _animationTimer = new DispatcherTimer();
-            _animationTimer.Interval = TimeSpan.FromMilliseconds(30);
-            _animationTimer.Tick += AnimationTimer_Tick;
         }
 
         public PageRenderer[] Pages => _pages;
@@ -67,7 +62,7 @@ namespace grid_image_viewer
             {
                 _window.ImageScrollViewer.Visibility = Visibility.Collapsed;
                 _window.ImageGridView.Visibility = Visibility.Visible;
-                StopAnimation();
+                _window.AnimationService.StopAnimation();
                 _window.GridManager.StartGridAnimation();
 
                 _window.ImageGridView.SelectedIndex = _window.CurrentIndex;
@@ -97,7 +92,7 @@ namespace grid_image_viewer
                 _window.RootGrid.Focus(FocusState.Programmatic);
             }
 
-            StopAnimation();
+            _window.AnimationService.StopAnimation();
             UpdateStretch();
             _displayCts?.Cancel();
             _displayCts?.Dispose();
@@ -173,17 +168,7 @@ namespace grid_image_viewer
             {
             }
 
-            if (_pages.Any(p => p.IsAnimated))
-            {
-                int minInterval = 1000;
-                for (int i = 0; i < 4; i++)
-                {
-                    if (_pages[i].IsAnimated && _pages[i].CurrentFrameDuration < minInterval)
-                        minInterval = _pages[i].CurrentFrameDuration;
-                }
-                _animationTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(10, minInterval));
-                _animationTimer.Start();
-            }
+            _window.AnimationService.StartAnimation();
         }
 
         private void UpdateLayoutGrid(int splitCount, int effectiveSplitCount, int currentQuadLayout)
@@ -457,7 +442,7 @@ namespace grid_image_viewer
                     if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
                     {
                         _currentContainers[pageIndex].Opacity = 0;
-                        StartCrossfade(pageIndex);
+                        _window.AnimationService.StartCrossfade(pageIndex, _currentContainers, _prevContainers);
                     }
                     else
                     {
@@ -544,7 +529,7 @@ namespace grid_image_viewer
                 {
                     // For crossfade, we need to start from Opacity 0
                     _currentContainers[pageIndex].Opacity = 0;
-                    StartCrossfade(pageIndex);
+                    _window.AnimationService.StartCrossfade(pageIndex, _currentContainers, _prevContainers);
                 }
                 else
                 {
@@ -560,9 +545,11 @@ namespace grid_image_viewer
             }
         }
 
-        public void StopAnimation()
+        public void StopAnimation() => _window.AnimationService.StopAnimation();
+
+        internal void InvalidatePage(int index)
         {
-            _animationTimer.Stop();
+            _pageCanvases[index].Invalidate();
         }
 
         public void UpdateStretch()
@@ -582,31 +569,6 @@ namespace grid_image_viewer
             }
         }
 
-        private void AnimationTimer_Tick(object? sender, object e)
-        {
-            _animationTimer.Stop();
-
-            int minInterval = 1000;
-            bool anyAnimated = false;
-
-            for (int i = 0; i < 4; i++)
-            {
-                if (_pages[i].IsAnimated)
-                {
-                    int interval = _pages[i].AdvanceFrame();
-                    if (interval < minInterval) minInterval = interval;
-                    anyAnimated = true;
-                    _pageCanvases[i].Invalidate();
-                }
-            }
-
-            if (anyAnimated)
-            {
-                // Ensure interval is at least 10ms to prevent CPU saturation
-                _animationTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(10, minInterval));
-                _animationTimer.Start();
-            }
-        }
 
         private int GetEffectiveQuadLayout()
         {
@@ -771,42 +733,6 @@ namespace grid_image_viewer
 
         public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) => _window.MetadataDisplayService.HandlePointerMoved(_pageGrids, e);
 
-        private void StartCrossfade(int pageIndex)
-        {
-            var sb = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
-
-            var animIn = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
-            {
-                From = 0,
-                To = 1,
-                Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
-            };
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animIn, _currentContainers[pageIndex]);
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animIn, "Opacity");
-            sb.Children.Add(animIn);
-
-            var animOut = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
-            {
-                From = 1,
-                To = 0,
-                Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut }
-            };
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animOut, _prevContainers[pageIndex]);
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animOut, "Opacity");
-            sb.Children.Add(animOut);
-
-            sb.Completed += (s, e) =>
-            {
-                _prevContainers[pageIndex].Opacity = 0;
-            };
-
-            sb.Begin();
-
-            // 画像が切り替わったのでメタデータも更新（パネルが開いている場合のみ）
-            if (pageIndex == 0) _window.MetadataDisplayService.UpdateMetadataPanel();
-        }
 
 
 
