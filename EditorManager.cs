@@ -111,6 +111,7 @@ namespace grid_image_viewer
             _window.MenuFlip.IsEnabled = hasPath;
             _window.MenuTone.IsEnabled = hasPath;
             _window.MenuFilter.IsEnabled = hasPath;
+            _window.MenuPrint.IsEnabled = hasPath;
 
             // Update View Mode checked states
             int splitCount = _settings.MangaSplitCount;
@@ -395,6 +396,14 @@ namespace grid_image_viewer
                 bool horizontal = flipMode == "Horz";
                 await _window.ImageEditService.FlipAsync(sourcePath, horizontal);
             }
+        }
+
+        public async void MenuPrint_Click(object sender, RoutedEventArgs e)
+        {
+            string sourcePath = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _window.CurrentImagePath;
+            if (string.IsNullOrEmpty(sourcePath)) return;
+
+            await _window.PrintService.PrintImageAsync(sourcePath);
         }
 
         public async void MenuOpenExplorer_Click(object sender, RoutedEventArgs e)

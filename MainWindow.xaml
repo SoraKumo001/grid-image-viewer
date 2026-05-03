@@ -180,6 +180,8 @@
                         </MenuFlyoutSubItem>
                         <MenuFlyoutItem x:Name="MenuOverwrite" x:FieldModifier="internal" x:Uid="MenuOverwrite" Text="Overwrite" Click="MenuOverwrite_Click" />
                         <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuPrint" x:FieldModifier="internal" x:Uid="MenuPrint" Text="Print" Click="MenuPrint_Click" />
+                        <MenuFlyoutSeparator />
                         <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" x:Uid="MenuCrop" Text="Crop (Selection)" Click="MenuCrop_Click" IsEnabled="False" />
                         <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" x:Uid="MenuResize" Text="Resize" Click="MenuResize_Click" />
                         <MenuFlyoutSubItem x:Name="MenuRotate" x:FieldModifier="internal" x:Uid="MenuRotate" Text="Rotate">

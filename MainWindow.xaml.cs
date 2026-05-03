@@ -23,6 +23,7 @@ namespace grid_image_viewer
         internal EditorManager EditorManager { get; private set; }
         internal ImageEditService ImageEditService { get; private set; }
         internal MetadataDisplayService MetadataDisplayService { get; private set; }
+        internal PrintService PrintService { get; private set; }
         internal NotificationService NotificationService { get; private set; }
         internal AnimationService AnimationService { get; private set; }
         internal DialogService DialogService { get; private set; }
@@ -81,6 +82,7 @@ namespace grid_image_viewer
             NotificationService = new NotificationService(this);
             AnimationService = new AnimationService(this, _settings);
             DialogService = new DialogService(this);
+            PrintService = new PrintService(this);
 
             // Initialize Managers
             ViewerManager = new ViewerManager(this, _settings);
@@ -140,6 +142,7 @@ namespace grid_image_viewer
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
+            PrintService.UnregisterForPrinting();
             ViewerManager.Dispose();
             GridManager.Dispose();
             foreach (var item in _gridItems) item.DisposeCodec();
@@ -268,6 +271,7 @@ namespace grid_image_viewer
         private void MenuTone_Click(object sender, RoutedEventArgs e) => EditorManager.MenuTone_Click(sender, e);
         private void MenuFilter_Click(object sender, RoutedEventArgs e) => EditorManager.MenuFilter_Click(sender, e);
         private void MenuOpenExplorer_Click(object sender, RoutedEventArgs e) => EditorManager.MenuOpenExplorer_Click(sender, e);
+        private void MenuPrint_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPrint_Click(sender, e);
         private void MenuViewMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuLayoutMode_Click(sender, e);
         private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuStretchMode_Click(sender, e);

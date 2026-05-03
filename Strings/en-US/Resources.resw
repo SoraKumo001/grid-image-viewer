@@ -67,6 +67,9 @@
   <data name="MenuOverwrite.Text" xml:space="preserve">
     <value>Overwrite</value>
   </data>
+  <data name="MenuPrint.Text" xml:space="preserve">
+    <value>Print</value>
+  </data>
   <data name="MenuCrop.Text" xml:space="preserve">
     <value>Crop (Selection)</value>
   </data>

@@ -67,6 +67,9 @@
   <data name="MenuOverwrite.Text" xml:space="preserve">
     <value>上書き保存</value>
   </data>
+  <data name="MenuPrint.Text" xml:space="preserve">
+    <value>印刷</value>
+  </data>
   <data name="MenuCrop.Text" xml:space="preserve">
     <value>切り抜き (選択範囲)</value>
   </data>
