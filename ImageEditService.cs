@@ -141,7 +141,13 @@ namespace grid_image_viewer
             // Clear current image sources to prevent access violations during update
             if (_window.ViewerManager != null)
             {
-                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+                for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
+                {
+                    if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
+                    {
+                        _window.ViewerManager.PageImages[i].Source = null;
+                    }
+                }
             }
 
             await Task.Run(() =>

@@ -377,6 +377,14 @@ namespace grid_image_viewer
 
         private async Task LoadPageAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, int pageIndex, CancellationToken token)
         {
+            // Skip if same file is already displayed and no edit changes
+            if (_pages[pageIndex].CurrentFilePath == filePath && (imageCtrl.Source != null || canvasCtrl.Visibility == Visibility.Visible))
+            {
+                var session = _window.ImageEditService.GetSession(filePath);
+                if (session == null && _pages[pageIndex].EditedBitmap == null) return;
+                if (session != null && _pages[pageIndex].EditedBitmap == session.Current) return;
+            }
+
             // Prepare previous image for crossfade or to prevent blackout
             if (imageCtrl.Visibility == Visibility.Visible && imageCtrl.Source != null)
             {
@@ -719,6 +727,15 @@ namespace grid_image_viewer
         public void UpdateMetadataPanel() => _window.MetadataDisplayService.UpdateMetadataPanel();
 
         public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) => _window.MetadataDisplayService.HandlePointerMoved(_pageGrids, e);
+
+        public string GetPathForPage(int pageIndex)
+        {
+            if (pageIndex >= 0 && pageIndex < _pages.Length)
+            {
+                return _pages[pageIndex].CurrentFilePath;
+            }
+            return null;
+        }
 
 
 

@@ -46,11 +46,7 @@
             <Grid x:Name="PagesGrid" x:FieldModifier="internal"
                   Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
                   Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
-                  Background="Transparent"
-                  PointerPressed="PagesGrid_PointerPressed" 
-                  PointerMoved="PagesGrid_PointerMoved" 
-                  PointerReleased="PagesGrid_PointerReleased"
-                  PointerCanceled="PagesGrid_PointerReleased">
+                  Background="Transparent">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="Col0" x:FieldModifier="internal"/>
                     <ColumnDefinition Width="*" x:Name="Col1" x:FieldModifier="internal"/>
@@ -110,10 +106,7 @@
                     <Border x:Name="FocusBorder1" x:FieldModifier="internal" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
 
-                <Grid Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayGrid" x:FieldModifier="internal" Background="Transparent" IsHitTestVisible="False">
-                    <Canvas x:Name="OverlayCanvas" x:FieldModifier="internal" Background="Transparent" IsHitTestVisible="True">
-                        <Rectangle x:Name="SelectionRectangle" x:FieldModifier="internal" Stroke="CornflowerBlue" StrokeThickness="2" Fill="#446495ED" Visibility="Collapsed" />
-                    </Canvas>
+                <Grid Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayGrid" x:FieldModifier="internal" Background="Transparent" IsHitTestVisible="True" RightTapped="OverlayGrid_RightTapped">
 
                     <!-- Metadata Overlay Panel -->
                     <Border x:Name="MetadataPanel" x:FieldModifier="internal"
@@ -155,7 +148,6 @@
                             </Grid>
                         </StackPanel>
                     </Border>
-                </Grid>
 
                 <Grid.ContextFlyout>
                     <MenuFlyout x:Name="EditMenuFlyout" Opening="EditMenuFlyout_Opening">
@@ -224,6 +216,7 @@
                     </MenuFlyout>
                 </Grid.ContextFlyout>
             </Grid>
+        </Grid>
         </ScrollViewer>
 
         <!-- Grid Mode UI -->

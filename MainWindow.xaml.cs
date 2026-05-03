@@ -25,6 +25,7 @@ namespace grid_image_viewer
         internal MetadataDisplayService MetadataDisplayService { get; private set; }
         internal NotificationService NotificationService { get; private set; }
         internal AnimationService AnimationService { get; private set; }
+        internal DialogService DialogService { get; private set; }
 
         internal bool IsGridMode { get => _isGridMode; set => _isGridMode = value; }
         internal ObservableCollection<ImageItem> GridItems => _gridItems;
@@ -71,6 +72,7 @@ namespace grid_image_viewer
             MetadataDisplayService = new MetadataDisplayService(this, _settings);
             NotificationService = new NotificationService(this);
             AnimationService = new AnimationService(this, _settings);
+            DialogService = new DialogService(this);
 
             // Initialize Managers
             ViewerManager = new ViewerManager(this, _settings);
@@ -232,6 +234,7 @@ namespace grid_image_viewer
 
 
         internal Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
+        internal List<Grid> GetPageGrids() => new List<Grid> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
         private void Canvas1_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(0, e);
         private void Canvas2_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(1, e);
         private void Canvas3_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(2, e);
@@ -247,10 +250,8 @@ namespace grid_image_viewer
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 
-        private void PagesGrid_PointerPressed(object sender, PointerRoutedEventArgs e) => EditorManager.PagesGrid_PointerPressed(sender, e);
-        private void PagesGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => EditorManager.PagesGrid_PointerMoved(sender, e);
-        private void PagesGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => EditorManager.PagesGrid_PointerReleased(sender, e);
         private void EditMenuFlyout_Opening(object sender, object e) => EditorManager.EditMenuFlyout_Opening(sender, e);
+        private void OverlayGrid_RightTapped(object sender, RightTappedRoutedEventArgs e) => EditorManager.UpdateTargetIndexAtPoint(e.GetPosition(PagesGrid));
         private void MenuSaveAs_Click(object sender, RoutedEventArgs e) => EditorManager.MenuSaveAs_Click(sender, e);
         private void MenuOverwrite_Click(object sender, RoutedEventArgs e) => EditorManager.MenuOverwrite_Click(sender, e);
         private void MenuCrop_Click(object sender, RoutedEventArgs e) => EditorManager.MenuCrop_Click(sender, e);
