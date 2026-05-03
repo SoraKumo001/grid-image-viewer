@@ -152,15 +152,16 @@ namespace grid_image_viewer
                     foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
                 }
 
-                await Task.Run(() => 
+                await Task.Run(() =>
                 {
+                    int quality = _settings.JpegQuality;
                     if (_window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pendingBmp))
                     {
-                        ImageProcessor.SaveBitmap(pendingBmp, destPath, targetExtension);
+                        ImageProcessor.SaveBitmap(pendingBmp, destPath, targetExtension, quality);
                     }
                     else
                     {
-                        ImageProcessor.SaveImage(sourcePath, destPath, targetExtension);
+                        ImageProcessor.SaveImage(sourcePath, destPath, targetExtension, quality);
                     }
                 });
 
@@ -291,6 +292,57 @@ namespace grid_image_viewer
             }
         }
 
+        public void MenuSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var resLoader = ResourceLoader.GetForViewIndependentUse();
+            string titleStr = resLoader.GetString("Settings_Title/Text") ?? "Settings";
+            string qualityStr = resLoader.GetString("Settings_JpegQuality/Text") ?? "JPEG/WebP Quality";
+            string closeStr = resLoader.GetString("ToneAdjustment_Close/Content") ?? "Close";
+
+            var existing = _window.RootGrid.Children.FirstOrDefault(c => c is Grid g && g.Name == "SettingsOverlay");
+            if (existing != null) _window.RootGrid.Children.Remove(existing);
+
+            var sliderQuality = new Slider { Minimum = 1, Maximum = 100, Value = _settings.JpegQuality, StepFrequency = 1, Width = 200 };
+            var textQuality = new TextBlock { Text = _settings.JpegQuality.ToString(), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Width = 40, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) };
+            sliderQuality.ValueChanged += (s, ev) => { textQuality.Text = sliderQuality.Value.ToString("F0"); };
+
+            var overlay = new Grid { Name = "SettingsOverlay", Background = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0)), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
+            Grid.SetRowSpan(overlay, 10);
+
+            var panel = new StackPanel
+            {
+                Spacing = 16,
+                Padding = new Thickness(24),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)),
+                CornerRadius = new CornerRadius(8),
+                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 64, 64, 64)),
+                BorderThickness = new Thickness(1),
+                Width = 320,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                RequestedTheme = ElementTheme.Dark
+            };
+
+            panel.Children.Add(new TextBlock { Text = titleStr, FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8), Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
+
+            var rowQ = new StackPanel { Spacing = 4 };
+            rowQ.Children.Add(new TextBlock { Text = qualityStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
+            var gridQ = new Grid(); gridQ.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridQ.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            gridQ.Children.Add(sliderQuality); Grid.SetColumn(textQuality, 1); gridQ.Children.Add(textQuality);
+            rowQ.Children.Add(gridQ); panel.Children.Add(rowQ);
+
+            var btnClose = new Button { Content = closeStr, Width = 80, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0), Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
+            btnClose.Click += (s, ev) =>
+            {
+                _settings.JpegQuality = (int)sliderQuality.Value;
+                _settings.SaveSettings();
+                _window.RootGrid.Children.Remove(overlay);
+            };
+            panel.Children.Add(btnClose);
+            overlay.Children.Add(panel);
+            _window.RootGrid.Children.Add(overlay);
+        }
+
         public async void MenuResize_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = _window.CurrentImagePath;
@@ -347,7 +399,7 @@ namespace grid_image_viewer
                             _window.ViewerManager.Pages[pi].EditedBitmap = null;
                     }
 
-                    await Task.Run(() => 
+                    await Task.Run(() =>
                     {
                         var newBmp = ImageProcessor.GetResizedBitmap(sourcePath, newWidth, newHeight, _window.ViewerManager.PendingEdits.TryGetValue(sourcePath, out var pb) ? pb : null);
                         if (newBmp != null)
@@ -454,31 +506,31 @@ namespace grid_image_viewer
             if (string.IsNullOrEmpty(resetStr)) resetStr = "Reset";
             if (string.IsNullOrEmpty(closeStr)) closeStr = "Close";
 
-            var overlay = new Grid 
-            { 
-                Name = "ToneAdjustmentOverlay", 
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0)), 
-                HorizontalAlignment = HorizontalAlignment.Stretch, 
-                VerticalAlignment = VerticalAlignment.Stretch 
+            var overlay = new Grid
+            {
+                Name = "ToneAdjustmentOverlay",
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0)),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
             };
             Grid.SetRowSpan(overlay, 10);
 
-            var panel = new StackPanel 
-            { 
-                Spacing = 16, 
-                Padding = new Thickness(24), 
+            var panel = new StackPanel
+            {
+                Spacing = 16,
+                Padding = new Thickness(24),
                 Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)),
-                CornerRadius = new CornerRadius(8), 
-                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 64, 64, 64)), 
-                BorderThickness = new Thickness(1), 
-                Width = 320, 
-                HorizontalAlignment = HorizontalAlignment.Center, 
+                CornerRadius = new CornerRadius(8),
+                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 64, 64, 64)),
+                BorderThickness = new Thickness(1),
+                Width = 320,
+                HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 RequestedTheme = ElementTheme.Dark
             };
 
             panel.Children.Add(new TextBlock { Text = titleStr, FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8), Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
-            
+
             var rowB = new StackPanel { Spacing = 4 };
             rowB.Children.Add(new TextBlock { Text = brightnessStr, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) });
             var gridB = new Grid(); gridB.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); gridB.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -508,7 +560,8 @@ namespace grid_image_viewer
 
             overlay.Children.Add(panel);
             btnReset.Click += (s, ev) => { sliderBrightness.Value = 0; sliderContrast.Value = 1.0; sliderSaturation.Value = 1.0; };
-            btnClose.Click += (s, ev) => { 
+            btnClose.Click += (s, ev) =>
+            {
                 _window.RootGrid.Children.Remove(overlay);
                 baseBmp?.Dispose();
             };

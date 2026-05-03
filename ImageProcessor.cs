@@ -2,7 +2,6 @@ using ImageMagick;
 using SkiaSharp;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace grid_image_viewer
 {
@@ -38,7 +37,7 @@ namespace grid_image_viewer
         /// <summary>
         /// 画像を指定フォーマットで保存する。
         /// </summary>
-        public static void SaveImage(string sourcePath, string destPath, string targetExtension)
+        public static void SaveImage(string sourcePath, string destPath, string targetExtension, int quality = 100)
         {
             byte[] fileBytes = File.ReadAllBytes(sourcePath);
             using var data = SKData.CreateCopy(fileBytes);
@@ -47,7 +46,7 @@ namespace grid_image_viewer
             if (bitmap != null)
             {
                 using var image = SKImage.FromBitmap(bitmap);
-                using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), 100);
+                using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), quality);
                 using var stream = File.Open(destPath, FileMode.Create, FileAccess.Write);
                 skData.SaveTo(stream);
             }
@@ -294,10 +293,10 @@ namespace grid_image_viewer
             return null;
         }
 
-        public static void SaveBitmap(SKBitmap bitmap, string destPath, string targetExtension)
+        public static void SaveBitmap(SKBitmap bitmap, string destPath, string targetExtension, int quality = 100)
         {
             using var image = SKImage.FromBitmap(bitmap);
-            using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), 100);
+            using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), quality);
             using var stream = File.Open(destPath, FileMode.Create, FileAccess.Write);
             skData.SaveTo(stream);
         }

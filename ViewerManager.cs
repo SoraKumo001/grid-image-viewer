@@ -454,11 +454,11 @@ namespace grid_image_viewer
                     _pages[pageIndex].CurrentFilePath = filePath;
                     _pages[pageIndex].EditedBitmap = editedBmp;
                     _pages[pageIndex].FrameCount = 1;
-                    
+
                     imageCtrl.Visibility = Visibility.Collapsed;
                     canvasCtrl.Visibility = Visibility.Visible;
                     canvasCtrl.Invalidate();
-                    
+
                     if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
                     {
                         _currentContainers[pageIndex].Opacity = 0;

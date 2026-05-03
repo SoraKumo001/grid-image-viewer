@@ -204,6 +204,7 @@
                             <MenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="Settings..." Click="MenuSettings_Click" />
                         <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
                     </MenuFlyout>
                 </Grid.ContextFlyout>

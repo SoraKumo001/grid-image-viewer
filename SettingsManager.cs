@@ -64,6 +64,8 @@ namespace grid_image_viewer
         public bool SlideshowCrossfade { get; set; } = true;
         public double SlideshowCrossfadeDuration { get; set; } = 0.4;
 
+        public int JpegQuality { get; set; } = 90;
+
         public int WindowWidth { get; set; } = -1;
         public int WindowHeight { get; set; } = -1;
         public int WindowX { get; set; } = -1;
@@ -100,6 +102,8 @@ namespace grid_image_viewer
         public double SlideshowInterval { get => _data.SlideshowInterval; set => _data.SlideshowInterval = value; }
         public bool SlideshowCrossfade { get => _data.SlideshowCrossfade; set => _data.SlideshowCrossfade = value; }
         public double SlideshowCrossfadeDuration { get => _data.SlideshowCrossfadeDuration; set => _data.SlideshowCrossfadeDuration = value; }
+
+        public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 
         public string LastImagePath { get => _data.LastImagePath; }
 
@@ -153,6 +157,7 @@ namespace grid_image_viewer
         public void SaveKeyBindings() => Save();
         public void SaveMangaMode() => Save();
         public void SaveSlideshowSettings() => Save();
+        public void SaveSettings() => Save();
 
         public void LoadWindowState(AppWindow appWindow)
         {

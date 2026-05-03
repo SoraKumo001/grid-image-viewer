@@ -159,7 +159,7 @@ namespace grid_image_viewer
                     {
                         // Add parent folder itself to include images directly in it
                         targetDirs.Add(parent);
-                        
+
                         // Add all sibling subdirectories
                         try
                         {
@@ -253,6 +253,7 @@ namespace grid_image_viewer
         private void MenuViewMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuLayoutMode_Click(sender, e);
         private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuKeyBindings_Click(sender, e);
+        private void MenuSettings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSettings_Click(sender, e);
 
         private void OpenSlideshowDialogAsync() => _slideshowManager.OpenSlideshowDialogAsync();
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => _slideshowManager.SlideshowDialog_Opened(sender, args);
