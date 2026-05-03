@@ -1002,12 +1002,13 @@ namespace grid_image_viewer
                 // Re-open dialog or refresh logic - simpler to just update the content manually or re-bind
                 // For now, let's just update the objects and tell the user they need to re-open if it doesn't refresh visually, 
                 // but actually I'll just find the buttons.
-                
+
                 // Let's improve the reset logic to be more reliable.
                 _window.RootGrid.Children.Remove(dialog); // This doesn't work for ContentDialog
-                // Better: just refresh the content of the buttons.
-                
-                void RefreshAll() {
+                                                          // Better: just refresh the content of the buttons.
+
+                void RefreshAll()
+                {
                     // We can't easily iterate and match without more structure.
                     // Let's just update the content of the dialog.
                     dialog.Hide();
