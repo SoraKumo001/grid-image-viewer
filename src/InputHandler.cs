@@ -16,11 +16,47 @@ namespace grid_image_viewer
         private readonly SettingsManager _settings;
         private ScrollViewer? _gridScrollViewer;
         private ResourceLoader _resourceLoader = new ResourceLoader();
+        private Windows.Foundation.Point _lastPointerPoint;
 
         public InputHandler(MainWindow window, SettingsManager settings)
         {
             _window = window;
             _settings = settings;
+        }
+
+        public void HandlePointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            _lastPointerPoint = e.GetCurrentPoint(_window.PagesGrid).Position;
+        }
+
+        private string GetPathAtPointer()
+        {
+            if (_window.IsGridMode)
+            {
+                // In grid mode, we use the selected item or fallback to current index
+                return _window.CurrentImagePath;
+            }
+
+            var pageGrids = _window.GetPageGrids();
+            for (int i = 0; i < pageGrids.Count; i++)
+            {
+                if (pageGrids[i].Visibility != Visibility.Visible) continue;
+
+                // Check if point is inside this page grid
+                var ttv = _window.PagesGrid.TransformToVisual(pageGrids[i]);
+                try
+                {
+                    var localPoint = ttv.TransformPoint(_lastPointerPoint);
+                    if (localPoint.X >= 0 && localPoint.X <= pageGrids[i].ActualWidth &&
+                        localPoint.Y >= 0 && localPoint.Y <= pageGrids[i].ActualHeight)
+                    {
+                        return _window.ViewerManager.GetPathForPage(i) ?? _window.CurrentImagePath;
+                    }
+                }
+                catch { }
+            }
+
+            return _window.CurrentImagePath;
         }
 
         private bool IsMatch(KeyBindingData binding, VirtualKey key, bool ctrl, bool shift, bool alt)
@@ -58,6 +94,90 @@ namespace grid_image_viewer
                 }
             }
 
+            if (IsMatch(_settings.KeyCopyPath, e.Key, isCtrl, isShift, isAlt))
+            {
+                string path = GetPathAtPointer();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    var dataPackage = new DataPackage();
+                    dataPackage.SetText(path);
+                    Clipboard.SetContent(dataPackage);
+                    _window.ViewerManager.ShowNotification("Path copied to clipboard");
+                }
+                e.Handled = true;
+                return;
+            }
+
+            if (IsMatch(_settings.KeyZoomIn, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.ImageScrollViewer.ChangeView(null, null, _window.ImageScrollViewer.ZoomFactor * 1.2f);
+                e.Handled = true;
+                return;
+            }
+            if (IsMatch(_settings.KeyZoomOut, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.ImageScrollViewer.ChangeView(null, null, _window.ImageScrollViewer.ZoomFactor / 1.2f);
+                e.Handled = true;
+                return;
+            }
+            if (IsMatch(_settings.KeyZoomReset, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.ImageScrollViewer.ChangeView(null, null, 1.0f);
+                e.Handled = true;
+                return;
+            }
+            if (IsMatch(_settings.KeyZoom100, e.Key, isCtrl, isShift, isAlt))
+            {
+                var path = GetPathAtPointer();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    var (w, h) = _window.ImageEditService.GetImageSize(path);
+                    if (w > 0 && _window.ImageScrollViewer.ViewportWidth > 0)
+                    {
+                        float factor = (float)(w / _window.ImageScrollViewer.ViewportWidth);
+                        _window.ImageScrollViewer.ChangeView(null, null, factor);
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+
+            if (IsMatch(_settings.KeyRotateRight, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.EditorManager.ContextTargetPath = GetPathAtPointer();
+                _window.EditorManager.MenuRotate_Click(new MenuFlyoutItem { Tag = "90" }, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+            if (IsMatch(_settings.KeyRotateLeft, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.EditorManager.ContextTargetPath = GetPathAtPointer();
+                _window.EditorManager.MenuRotate_Click(new MenuFlyoutItem { Tag = "-90" }, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+            if (IsMatch(_settings.KeyFlipHorizontal, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.EditorManager.ContextTargetPath = GetPathAtPointer();
+                _window.EditorManager.MenuFlip_Click(new MenuFlyoutItem { Tag = "Horz" }, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+            if (IsMatch(_settings.KeyAddBookmark, e.Key, isCtrl, isShift, isAlt))
+            {
+                // Bookmark is usually folder-based, so it targets current folder
+                _window.EditorManager.MenuBookmark_Click(sender, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+
+            if (IsMatch(_settings.KeyDeleteFile, e.Key, isCtrl, isShift, isAlt))
+            {
+                _ = HandleDeleteFileAsync(GetPathAtPointer());
+                e.Handled = true;
+                return;
+            }
+
             if (_window.SlideshowManager.IsSlideshowRunning && !IsMatch(_settings.KeySlideshow, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.SlideshowManager.StopSlideshow();
@@ -90,6 +210,13 @@ namespace grid_image_viewer
             if (IsMatch(_settings.KeyToggleBookmarks, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.EditorManager.MenuBookmarksToggle_Click(sender, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+
+            if (IsMatch(_settings.KeyToggleFullscreen, e.Key, isCtrl, isShift, isAlt))
+            {
+                _window.IsFullscreen = !_window.IsFullscreen;
                 e.Handled = true;
                 return;
             }
@@ -335,6 +462,60 @@ namespace grid_image_viewer
         public void HandleDragOver(object sender, DragEventArgs e)
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
+        }
+
+        private async System.Threading.Tasks.Task HandleDeleteFileAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = _resourceLoader.GetString("DeleteDialog_Title") ?? "Delete File",
+                Content = string.Format(_resourceLoader.GetString("DeleteDialog_Content") ?? "Are you sure you want to delete this file?\n{0}", Path.GetFileName(path)),
+                PrimaryButtonText = _resourceLoader.GetString("DeleteDialog_PrimaryButton") ?? "Delete",
+                CloseButtonText = _resourceLoader.GetString("DeleteDialog_CloseButton") ?? "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = _window.Content.XamlRoot
+            };
+
+            _window.IsDialogOpen = true;
+            var result = await dialog.ShowAsync();
+            _window.IsDialogOpen = false;
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    int deleteIndex = _window.Playlist.IndexOf(path);
+                    
+                    // If we are deleting the current image, move to the next one
+                    if (path == _window.CurrentImagePath)
+                    {
+                        _window.Navigate(1, true);
+                    }
+
+                    // Delete file
+                    File.Delete(path);
+
+                    // Remove from playlist
+                    if (deleteIndex != -1)
+                    {
+                        _window.Playlist.RemoveAt(deleteIndex);
+                        _window.GridItems.RemoveAt(deleteIndex);
+                        
+                        // Adjust current index if we deleted something before it
+                        if (_window.CurrentIndex > deleteIndex) _window.CurrentIndex--;
+                        if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;
+                    }
+
+                    _window.ViewerManager.ShowNotification("File deleted");
+                    _ = _window.UpdateDisplayAsync();
+                }
+                catch (Exception ex)
+                {
+                    _window.ViewerManager.ShowNotification("Delete failed: " + ex.Message);
+                }
+            }
         }
     }
 }

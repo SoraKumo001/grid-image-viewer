@@ -292,6 +292,9 @@
   <data name="KeyBinding_Metadata" xml:space="preserve">
     <value>メタデータ表示切替</value>
   </data>
+  <data name="KeyBinding_ToggleFullscreen" xml:space="preserve">
+    <value>フルスクリーン切替</value>
+  </data>
   <data name="KeyBinding_ResetAll" xml:space="preserve">
     <value>デフォルトに戻す</value>
   </data>
@@ -372,5 +375,48 @@
   </data>
   <data name="MenuSupport.Text" xml:space="preserve">
     <value>サポート</value>
+  </data>
+  <data name="DeleteDialog_Title" xml:space="preserve">
+    <value>ファイルを削除</value>
+  </data>
+  <data name="DeleteDialog_Content" xml:space="preserve">
+    <value>このファイルを削除してもよろしいですか？
+{0}</value>
+  </data>
+  <data name="DeleteDialog_PrimaryButton" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="DeleteDialog_CloseButton" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="KeyBinding_AddBookmark" xml:space="preserve">
+    <value>ブックマークに追加</value>
+  </data>
+  <data name="KeyBinding_RotateRight" xml:space="preserve">
+    <value>右に90度回転</value>
+  </data>
+  <data name="KeyBinding_RotateLeft" xml:space="preserve">
+    <value>左に90度回転</value>
+  </data>
+  <data name="KeyBinding_FlipHorizontal" xml:space="preserve">
+    <value>左右反転</value>
+  </data>
+  <data name="KeyBinding_CopyPath" xml:space="preserve">
+    <value>ファイルパスをコピー</value>
+  </data>
+  <data name="KeyBinding_DeleteFile" xml:space="preserve">
+    <value>ファイルを削除</value>
+  </data>
+  <data name="KeyBinding_ZoomIn" xml:space="preserve">
+    <value>拡大</value>
+  </data>
+  <data name="KeyBinding_ZoomOut" xml:space="preserve">
+    <value>縮小</value>
+  </data>
+  <data name="KeyBinding_ZoomReset" xml:space="preserve">
+    <value>ズームリセット (全体表示)</value>
+  </data>
+  <data name="KeyBinding_Zoom100" xml:space="preserve">
+    <value>100%表示 (実寸)</value>
   </data>
 </root>

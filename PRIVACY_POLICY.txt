@@ -1,0 +1,21 @@
+Quick Image Viewer Privacy Policy
+
+Quick Image Viewer (hereinafter referred to as "the App") respects your privacy and is committed to protecting your personal information. This policy explains how information is handled within the App.
+
+1. Collection and Use of Personal Information
+The App does not collect, store, or transmit any personal information such as usernames, email addresses, or phone numbers.
+
+2. Data Handling
+The App is a local image viewer and is used only to display image files selected by the user. The App does not send the contents of your files to external servers or share them with third parties.
+
+3. Application Permissions
+The App uses only the permissions necessary to load files specified by the user (such as file system access). These permissions are used solely to provide the App's functionality.
+
+4. Third-Party Services
+The App does not use third-party services (such as SDKs) for advertising or data analysis.
+
+5. Changes to the Privacy Policy
+This policy may be updated as necessary. Any changes will be notified through App updates or related websites.
+
+6. Contact Us
+If you have any questions regarding this Privacy Policy, please contact us through the Issues section of the GitHub repository (https://github.com/SoraKumo001/quick-image-viewer).

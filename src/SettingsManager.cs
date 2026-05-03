@@ -48,6 +48,17 @@ namespace grid_image_viewer
         public KeyBindingData KeySlideshow { get; set; } = new KeyBindingData(VirtualKey.A);
         public KeyBindingData KeyMetadata { get; set; } = new KeyBindingData(VirtualKey.I);
         public KeyBindingData KeyToggleBookmarks { get; set; } = new KeyBindingData(VirtualKey.B);
+        public KeyBindingData KeyToggleFullscreen { get; set; } = new KeyBindingData(VirtualKey.F);
+        public KeyBindingData KeyAddBookmark { get; set; } = new KeyBindingData(VirtualKey.D);
+        public KeyBindingData KeyRotateRight { get; set; } = new KeyBindingData(VirtualKey.R);
+        public KeyBindingData KeyRotateLeft { get; set; } = new KeyBindingData(VirtualKey.L);
+        public KeyBindingData KeyFlipHorizontal { get; set; } = new KeyBindingData(VirtualKey.H);
+        public KeyBindingData KeyCopyPath { get; set; } = new KeyBindingData(VirtualKey.C, ctrl: true);
+        public KeyBindingData KeyDeleteFile { get; set; } = new KeyBindingData(VirtualKey.Delete);
+        public KeyBindingData KeyZoomIn { get; set; } = new KeyBindingData(VirtualKey.Add, ctrl: true);
+        public KeyBindingData KeyZoomOut { get; set; } = new KeyBindingData(VirtualKey.Subtract, ctrl: true);
+        public KeyBindingData KeyZoomReset { get; set; } = new KeyBindingData(VirtualKey.Number0, ctrl: true);
+        public KeyBindingData KeyZoom100 { get; set; } = new KeyBindingData(VirtualKey.Number1, ctrl: true);
 
         // Legacy properties for migration
         public VirtualKey? LegacyKeyNextImage { get; set; }
@@ -79,6 +90,7 @@ namespace grid_image_viewer
         public int WindowHeight { get; set; } = -1;
         public int WindowX { get; set; } = -1;
         public int WindowY { get; set; } = -1;
+        public bool IsMaximized { get; set; } = false;
 
         public string LastImagePath { get; set; } = string.Empty;
         public System.Collections.Generic.List<BookmarkItem> Bookmarks { get; set; } = new System.Collections.Generic.List<BookmarkItem>();
@@ -99,6 +111,17 @@ namespace grid_image_viewer
         public KeyBindingData KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
         public KeyBindingData KeyMetadata { get => _data.KeyMetadata; set => _data.KeyMetadata = value; }
         public KeyBindingData KeyToggleBookmarks { get => _data.KeyToggleBookmarks; set => _data.KeyToggleBookmarks = value; }
+        public KeyBindingData KeyToggleFullscreen { get => _data.KeyToggleFullscreen; set => _data.KeyToggleFullscreen = value; }
+        public KeyBindingData KeyAddBookmark { get => _data.KeyAddBookmark; set => _data.KeyAddBookmark = value; }
+        public KeyBindingData KeyRotateRight { get => _data.KeyRotateRight; set => _data.KeyRotateRight = value; }
+        public KeyBindingData KeyRotateLeft { get => _data.KeyRotateLeft; set => _data.KeyRotateLeft = value; }
+        public KeyBindingData KeyFlipHorizontal { get => _data.KeyFlipHorizontal; set => _data.KeyFlipHorizontal = value; }
+        public KeyBindingData KeyCopyPath { get => _data.KeyCopyPath; set => _data.KeyCopyPath = value; }
+        public KeyBindingData KeyDeleteFile { get => _data.KeyDeleteFile; set => _data.KeyDeleteFile = value; }
+        public KeyBindingData KeyZoomIn { get => _data.KeyZoomIn; set => _data.KeyZoomIn = value; }
+        public KeyBindingData KeyZoomOut { get => _data.KeyZoomOut; set => _data.KeyZoomOut = value; }
+        public KeyBindingData KeyZoomReset { get => _data.KeyZoomReset; set => _data.KeyZoomReset = value; }
+        public KeyBindingData KeyZoom100 { get => _data.KeyZoom100; set => _data.KeyZoom100 = value; }
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
@@ -183,16 +206,29 @@ namespace grid_image_viewer
             {
                 appWindow.Move(new Windows.Graphics.PointInt32(_data.WindowX, _data.WindowY));
             }
+
+            if (_data.IsMaximized && appWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                overlapped.Maximize();
+            }
         }
 
         public void SaveWindowState(AppWindow appWindow, string currentImagePath)
         {
-            if (appWindow.Presenter.Kind == AppWindowPresenterKind.Default)
+            if (appWindow.Presenter is OverlappedPresenter overlapped)
             {
-                _data.WindowWidth = appWindow.Size.Width;
-                _data.WindowHeight = appWindow.Size.Height;
-                _data.WindowX = appWindow.Position.X;
-                _data.WindowY = appWindow.Position.Y;
+                if (overlapped.State == OverlappedPresenterState.Restored)
+                {
+                    _data.WindowWidth = appWindow.Size.Width;
+                    _data.WindowHeight = appWindow.Size.Height;
+                    _data.WindowX = appWindow.Position.X;
+                    _data.WindowY = appWindow.Position.Y;
+                    _data.IsMaximized = false;
+                }
+                else if (overlapped.State == OverlappedPresenterState.Maximized)
+                {
+                    _data.IsMaximized = true;
+                }
             }
 
             if (!string.IsNullOrEmpty(currentImagePath))
@@ -201,6 +237,19 @@ namespace grid_image_viewer
             }
 
             Save();
+        }
+
+        public void UpdateNormalWindowState(AppWindow appWindow)
+        {
+            if (appWindow.Presenter is OverlappedPresenter overlapped &&
+                overlapped.State == OverlappedPresenterState.Restored)
+            {
+                _data.WindowWidth = appWindow.Size.Width;
+                _data.WindowHeight = appWindow.Size.Height;
+                _data.WindowX = appWindow.Position.X;
+                _data.WindowY = appWindow.Position.Y;
+                _data.IsMaximized = false;
+            }
         }
 
         public bool ToggleBookmark(string path, bool isFolder)

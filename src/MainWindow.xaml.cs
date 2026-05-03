@@ -104,6 +104,13 @@ namespace grid_image_viewer
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
 
             _settings.LoadWindowState(appWindow);
+            appWindow.Changed += (s, e) =>
+            {
+                if (e.DidPositionChange || e.DidSizeChange)
+                {
+                    _settings.UpdateNormalWindowState(appWindow);
+                }
+            };
             try
             {
                 var iconPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "AppIcon.ico");
@@ -262,6 +269,7 @@ namespace grid_image_viewer
 
         private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
         private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
+        private void OverlayGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerMoved(sender, e);
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 

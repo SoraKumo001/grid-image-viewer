@@ -20,6 +20,17 @@ namespace grid_image_viewer.Controls
         private KeyBindingData _tempToggleGrid;
         private KeyBindingData _tempSlideshow;
         private KeyBindingData _tempMetadata;
+        private KeyBindingData _tempToggleFullscreen;
+        private KeyBindingData _tempAddBookmark;
+        private KeyBindingData _tempRotateRight;
+        private KeyBindingData _tempRotateLeft;
+        private KeyBindingData _tempFlipHorizontal;
+        private KeyBindingData _tempCopyPath;
+        private KeyBindingData _tempDeleteFile;
+        private KeyBindingData _tempZoomIn;
+        private KeyBindingData _tempZoomOut;
+        private KeyBindingData _tempZoomReset;
+        private KeyBindingData _tempZoom100;
 
         public KeyBindingsOverlay(MainWindow window, SettingsManager settings)
         {
@@ -37,6 +48,17 @@ namespace grid_image_viewer.Controls
             _tempToggleGrid = _settings.KeyToggleGrid.Clone();
             _tempSlideshow = _settings.KeySlideshow.Clone();
             _tempMetadata = _settings.KeyMetadata.Clone();
+            _tempToggleFullscreen = _settings.KeyToggleFullscreen.Clone();
+            _tempAddBookmark = _settings.KeyAddBookmark.Clone();
+            _tempRotateRight = _settings.KeyRotateRight.Clone();
+            _tempRotateLeft = _settings.KeyRotateLeft.Clone();
+            _tempFlipHorizontal = _settings.KeyFlipHorizontal.Clone();
+            _tempCopyPath = _settings.KeyCopyPath.Clone();
+            _tempDeleteFile = _settings.KeyDeleteFile.Clone();
+            _tempZoomIn = _settings.KeyZoomIn.Clone();
+            _tempZoomOut = _settings.KeyZoomOut.Clone();
+            _tempZoomReset = _settings.KeyZoomReset.Clone();
+            _tempZoom100 = _settings.KeyZoom100.Clone();
 
             InitializeList();
         }
@@ -52,6 +74,17 @@ namespace grid_image_viewer.Controls
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleGrid"), _tempToggleGrid));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleSlideshow"), _tempSlideshow));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Metadata"), _tempMetadata));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleFullscreen"), _tempToggleFullscreen));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_AddBookmark"), _tempAddBookmark));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateRight"), _tempRotateRight));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateLeft"), _tempRotateLeft));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_FlipHorizontal"), _tempFlipHorizontal));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ZoomIn"), _tempZoomIn));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ZoomOut"), _tempZoomOut));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ZoomReset"), _tempZoomReset));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Zoom100"), _tempZoom100));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_CopyPath"), _tempCopyPath));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_DeleteFile"), _tempDeleteFile));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Exit"), _tempExit));
         }
 
@@ -138,6 +171,17 @@ namespace grid_image_viewer.Controls
             CopyBinding(defaults.KeyToggleGrid, _tempToggleGrid);
             CopyBinding(defaults.KeySlideshow, _tempSlideshow);
             CopyBinding(defaults.KeyMetadata, _tempMetadata);
+            CopyBinding(defaults.KeyToggleFullscreen, _tempToggleFullscreen);
+            CopyBinding(defaults.KeyAddBookmark, _tempAddBookmark);
+            CopyBinding(defaults.KeyRotateRight, _tempRotateRight);
+            CopyBinding(defaults.KeyRotateLeft, _tempRotateLeft);
+            CopyBinding(defaults.KeyFlipHorizontal, _tempFlipHorizontal);
+            CopyBinding(defaults.KeyCopyPath, _tempCopyPath);
+            CopyBinding(defaults.KeyDeleteFile, _tempDeleteFile);
+            CopyBinding(defaults.KeyZoomIn, _tempZoomIn);
+            CopyBinding(defaults.KeyZoomOut, _tempZoomOut);
+            CopyBinding(defaults.KeyZoomReset, _tempZoomReset);
+            CopyBinding(defaults.KeyZoom100, _tempZoom100);
             InitializeList();
         }
 
@@ -160,6 +204,17 @@ namespace grid_image_viewer.Controls
             _settings.KeyToggleGrid = _tempToggleGrid;
             _settings.KeySlideshow = _tempSlideshow;
             _settings.KeyMetadata = _tempMetadata;
+            _settings.KeyToggleFullscreen = _tempToggleFullscreen;
+            _settings.KeyAddBookmark = _tempAddBookmark;
+            _settings.KeyRotateRight = _tempRotateRight;
+            _settings.KeyRotateLeft = _tempRotateLeft;
+            _settings.KeyFlipHorizontal = _tempFlipHorizontal;
+            _settings.KeyCopyPath = _tempCopyPath;
+            _settings.KeyDeleteFile = _tempDeleteFile;
+            _settings.KeyZoomIn = _tempZoomIn;
+            _settings.KeyZoomOut = _tempZoomOut;
+            _settings.KeyZoomReset = _tempZoomReset;
+            _settings.KeyZoom100 = _tempZoom100;
             _settings.SaveKeyBindings();
             Close();
         }

@@ -286,6 +286,9 @@
   <data name="KeyBinding_Metadata" xml:space="preserve">
     <value>Toggle Metadata</value>
   </data>
+  <data name="KeyBinding_ToggleFullscreen" xml:space="preserve">
+    <value>Toggle Fullscreen</value>
+  </data>
   <data name="KeyBinding_ResetAll" xml:space="preserve">
     <value>Reset to Defaults</value>
   </data>
@@ -372,5 +375,48 @@
   </data>
   <data name="MenuSupport.Text" xml:space="preserve">
     <value>Support</value>
+  </data>
+  <data name="DeleteDialog_Title" xml:space="preserve">
+    <value>Delete File</value>
+  </data>
+  <data name="DeleteDialog_Content" xml:space="preserve">
+    <value>Are you sure you want to delete this file?
+{0}</value>
+  </data>
+  <data name="DeleteDialog_PrimaryButton" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="DeleteDialog_CloseButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="KeyBinding_AddBookmark" xml:space="preserve">
+    <value>Add Bookmark</value>
+  </data>
+  <data name="KeyBinding_RotateRight" xml:space="preserve">
+    <value>Rotate Right 90°</value>
+  </data>
+  <data name="KeyBinding_RotateLeft" xml:space="preserve">
+    <value>Rotate Left 90°</value>
+  </data>
+  <data name="KeyBinding_FlipHorizontal" xml:space="preserve">
+    <value>Flip Horizontal</value>
+  </data>
+  <data name="KeyBinding_CopyPath" xml:space="preserve">
+    <value>Copy File Path</value>
+  </data>
+  <data name="KeyBinding_DeleteFile" xml:space="preserve">
+    <value>Delete File</value>
+  </data>
+  <data name="KeyBinding_ZoomIn" xml:space="preserve">
+    <value>Zoom In</value>
+  </data>
+  <data name="KeyBinding_ZoomOut" xml:space="preserve">
+    <value>Zoom Out</value>
+  </data>
+  <data name="KeyBinding_ZoomReset" xml:space="preserve">
+    <value>Zoom Reset (Fit)</value>
+  </data>
+  <data name="KeyBinding_Zoom100" xml:space="preserve">
+    <value>Zoom to 100% (Actual Size)</value>
   </data>
 </root>

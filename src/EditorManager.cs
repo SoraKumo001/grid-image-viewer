@@ -23,6 +23,8 @@ namespace grid_image_viewer
         private int _contextTargetIndex = -1;
         private string _contextTargetPath = string.Empty;
 
+        public string ContextTargetPath { get => _contextTargetPath; set => _contextTargetPath = value; }
+
         public EditorManager(MainWindow window, SettingsManager settings)
         {
             _window = window;
