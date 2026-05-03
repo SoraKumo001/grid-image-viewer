@@ -256,6 +256,7 @@ namespace grid_image_viewer
         private void MenuOpenExplorer_Click(object sender, RoutedEventArgs e) => _editorManager.MenuOpenExplorer_Click(sender, e);
         private void MenuViewMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuLayoutMode_Click(sender, e);
+        private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => _editorManager.MenuStretchMode_Click(sender, e);
         private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuKeyBindings_Click(sender, e);
         private void MenuSettings_Click(object sender, RoutedEventArgs e) => _editorManager.MenuSettings_Click(sender, e);
         private void MenuUndo_Click(object sender, RoutedEventArgs e) => _editorManager.MenuUndo_Click(sender, e);

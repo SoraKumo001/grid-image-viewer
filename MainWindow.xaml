@@ -200,6 +200,10 @@
                             <ToggleMenuFlyoutItem x:Name="MenuViewSingle" x:FieldModifier="internal" x:Uid="MenuViewMode_Single" Text="Single" Click="MenuViewMode_Click" Tag="1" />
                             <ToggleMenuFlyoutItem x:Name="MenuViewDouble" x:FieldModifier="internal" x:Uid="MenuViewMode_Double" Text="Manga (2-split)" Click="MenuViewMode_Click" Tag="2" />
                             <ToggleMenuFlyoutItem x:Name="MenuViewQuad" x:FieldModifier="internal" x:Uid="MenuViewMode_Quad" Text="Quad (4-split)" Click="MenuViewMode_Click" Tag="4" />
+                            <MenuFlyoutSeparator />
+                            <ToggleMenuFlyoutItem x:Name="MenuStretchContain" x:FieldModifier="internal" x:Uid="MenuStretchContain" Text="Contain (Uniform)" Click="MenuStretchMode_Click" Tag="2" />
+                            <ToggleMenuFlyoutItem x:Name="MenuStretchCover" x:FieldModifier="internal" x:Uid="MenuStretchCover" Text="Cover (UniformToFill)" Click="MenuStretchMode_Click" Tag="3" />
+                            <ToggleMenuFlyoutItem x:Name="MenuStretchOriginal" x:FieldModifier="internal" x:Uid="MenuStretchOriginal" Text="Original Size (None)" Click="MenuStretchMode_Click" Tag="0" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSubItem x:Name="MenuQuadLayout" x:FieldModifier="internal" x:Uid="MenuQuadLayout" Text="Quad Layout">
                             <ToggleMenuFlyoutItem x:Name="MenuLayoutAuto" x:FieldModifier="internal" x:Uid="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" />
@@ -207,8 +211,10 @@
                             <ToggleMenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" />
                         </MenuFlyoutSubItem>
                         <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="Settings..." Click="MenuSettings_Click" />
-                        <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
+                        <MenuFlyoutSubItem x:Name="MenuGlobalSettings" x:FieldModifier="internal" x:Uid="MenuGlobalSettings" Text="Settings">
+                            <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="Save Settings..." Click="MenuSettings_Click" />
+                            <MenuFlyoutItem x:Name="MenuKeyBindings" x:FieldModifier="internal" x:Uid="MenuKeyBindings" Text="Key Bindings Settings..." Click="MenuKeyBindings_Click" />
+                        </MenuFlyoutSubItem>
                     </MenuFlyout>
                 </Grid.ContextFlyout>
             </Grid>

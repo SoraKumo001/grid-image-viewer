@@ -134,6 +134,12 @@ namespace grid_image_viewer
             _window.MenuLayoutAuto.IsChecked = (layoutMode == 0);
             _window.MenuLayoutHorz.IsChecked = (layoutMode == 1);
             _window.MenuLayoutGrid.IsChecked = (layoutMode == 2);
+
+            // Update Stretch Mode checked states
+            int stretchMode = _settings.ImageStretchMode;
+            _window.MenuStretchOriginal.IsChecked = (stretchMode == 0);
+            _window.MenuStretchContain.IsChecked = (stretchMode == 2);
+            _window.MenuStretchCover.IsChecked = (stretchMode == 3);
         }
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
@@ -324,7 +330,7 @@ namespace grid_image_viewer
         public void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
             var resLoader = ResourceLoader.GetForViewIndependentUse();
-            string titleStr = resLoader.GetString("Settings_Title/Text") ?? "Settings";
+            string titleStr = resLoader.GetString("Settings_Title/Text") ?? "Save Settings";
             string qualityStr = resLoader.GetString("Settings_JpegQuality/Text") ?? "JPEG/WebP Quality";
             string closeStr = resLoader.GetString("ToneAdjustment_Close/Content") ?? "Close";
 
@@ -366,10 +372,24 @@ namespace grid_image_viewer
                 _settings.JpegQuality = (int)sliderQuality.Value;
                 _settings.SaveSettings();
                 _window.RootGrid.Children.Remove(overlay);
+                _window.IsDialogOpen = false;
             };
+
+            overlay.KeyDown += (s, ev) =>
+            {
+                if (ev.Key == Windows.System.VirtualKey.Escape)
+                {
+                    _window.RootGrid.Children.Remove(overlay);
+                    _window.IsDialogOpen = false;
+                    ev.Handled = true;
+                }
+            };
+
             panel.Children.Add(btnClose);
             overlay.Children.Add(panel);
+            _window.IsDialogOpen = true;
             _window.RootGrid.Children.Add(overlay);
+            btnClose.Focus(FocusState.Programmatic);
         }
 
         public void MenuUndo_Click(object sender, RoutedEventArgs e)
@@ -607,10 +627,24 @@ namespace grid_image_viewer
             btnClose.Click += (s, ev) =>
             {
                 _window.RootGrid.Children.Remove(overlay);
+                _window.IsDialogOpen = false;
                 baseBmp?.Dispose();
             };
 
+            overlay.KeyDown += (s, ev) =>
+            {
+                if (ev.Key == Windows.System.VirtualKey.Escape)
+                {
+                    _window.RootGrid.Children.Remove(overlay);
+                    _window.IsDialogOpen = false;
+                    baseBmp?.Dispose();
+                    ev.Handled = true;
+                }
+            };
+
+            _window.IsDialogOpen = true;
             _window.RootGrid.Children.Add(overlay);
+            btnClose.Focus(FocusState.Programmatic);
         }
 
         public async void MenuFilter_Click(object sender, RoutedEventArgs e)
@@ -759,6 +793,22 @@ namespace grid_image_viewer
                 {
                     _ = _window.UpdateDisplayAsync();
                 }
+            }
+        }
+
+        public void MenuStretchMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem item && item.Tag is string tagStr && int.TryParse(tagStr, out int mode))
+            {
+                _settings.ImageStretchMode = mode;
+                _settings.SaveSettings();
+
+                // Ensure radio behavior
+                _window.MenuStretchOriginal.IsChecked = (mode == 0);
+                _window.MenuStretchContain.IsChecked = (mode == 2);
+                _window.MenuStretchCover.IsChecked = (mode == 3);
+
+                _window.ViewerManager.UpdateStretch();
             }
         }
 

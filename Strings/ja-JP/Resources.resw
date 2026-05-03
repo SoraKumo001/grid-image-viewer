@@ -268,11 +268,14 @@
   <data name="Notification_NotAnImage" xml:space="preserve">
     <value>画像ファイルではありません</value>
   </data>
+  <data name="MenuGlobalSettings.Text" xml:space="preserve">
+    <value>設定</value>
+  </data>
   <data name="MenuSettings.Text" xml:space="preserve">
-    <value>設定...</value>
+    <value>保存設定...</value>
   </data>
   <data name="Settings_Title.Text" xml:space="preserve">
-    <value>設定</value>
+    <value>保存設定</value>
   </data>
   <data name="Settings_JpegQuality.Text" xml:space="preserve">
     <value>JPEG/WebP 保存品質</value>
@@ -300,5 +303,14 @@
   </data>
   <data name="SlideshowCrossfadeDurationUnit.Text" xml:space="preserve">
     <value>秒</value>
+  </data>
+  <data name="MenuStretchContain.Text" xml:space="preserve">
+    <value>全体を表示 (Contain)</value>
+  </data>
+  <data name="MenuStretchCover.Text" xml:space="preserve">
+    <value>ウィンドウ一杯に広げる (Cover)</value>
+  </data>
+  <data name="MenuStretchOriginal.Text" xml:space="preserve">
+    <value>オリジナルサイズ</value>
   </data>
 </root>

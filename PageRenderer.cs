@@ -15,7 +15,7 @@ namespace grid_image_viewer
         public int CurrentFrame { get; set; } = -1;
         public int PriorFrame { get; set; } = -1;
         public string? CurrentFilePath { get; set; }
-        public bool UniformToFill { get; set; } = false;
+        public int StretchMode { get; set; } = 2; // 0: None, 2: Uniform, 3: UniformToFill
         public int FrameCount { get; internal set; } = 0;
         public int CurrentFrameDuration { get; internal set; } = 100;
 
@@ -131,20 +131,22 @@ namespace grid_image_viewer
                 if (bmpToDraw != null)
                 {
                     float scale;
-                    if (UniformToFill)
+                    if (StretchMode == 3) // UniformToFill
                         scale = Math.Max((float)info.Width / bmpToDraw.Width, (float)info.Height / bmpToDraw.Height);
-                    else
+                    else if (StretchMode == 2) // Uniform
                         scale = Math.Min((float)info.Width / bmpToDraw.Width, (float)info.Height / bmpToDraw.Height);
+                    else // None (Original)
+                        scale = 1.0f;
 
                     float x = (info.Width - bmpToDraw.Width * scale) / 2;
-                    if (!UniformToFill)
+                    if (StretchMode != 3) // Not Cover
                     {
                         if (horizontalAlignment == 0) x = 0;
                         else if (horizontalAlignment == 2) x = info.Width - bmpToDraw.Width * scale;
                     }
 
                     float y = (info.Height - bmpToDraw.Height * scale) / 2;
-                    if (!UniformToFill)
+                    if (StretchMode != 3) // Not Cover
                     {
                         if (verticalAlignment == 0) y = 0;
                         else if (verticalAlignment == 2) y = info.Height - bmpToDraw.Height * scale;

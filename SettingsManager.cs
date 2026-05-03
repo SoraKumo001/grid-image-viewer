@@ -63,6 +63,7 @@ namespace grid_image_viewer
         public double SlideshowInterval { get; set; } = 2.0;
         public bool SlideshowCrossfade { get; set; } = true;
         public double SlideshowCrossfadeDuration { get; set; } = 0.4;
+        public int ImageStretchMode { get; set; } = 2; // 0: None, 2: Uniform (Contain), 3: UniformToFill (Cover)
 
         public int JpegQuality { get; set; } = 90;
 
@@ -102,6 +103,7 @@ namespace grid_image_viewer
         public double SlideshowInterval { get => _data.SlideshowInterval; set => _data.SlideshowInterval = value; }
         public bool SlideshowCrossfade { get => _data.SlideshowCrossfade; set => _data.SlideshowCrossfade = value; }
         public double SlideshowCrossfadeDuration { get => _data.SlideshowCrossfadeDuration; set => _data.SlideshowCrossfadeDuration = value; }
+        public int ImageStretchMode { get => _data.ImageStretchMode; set => _data.ImageStretchMode = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 

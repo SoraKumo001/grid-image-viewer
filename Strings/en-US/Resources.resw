@@ -262,11 +262,14 @@
   <data name="Notification_NotAnImage" xml:space="preserve">
     <value>Not an image file</value>
   </data>
+  <data name="MenuGlobalSettings.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="MenuSettings.Text" xml:space="preserve">
-    <value>Settings...</value>
+    <value>Save Settings...</value>
   </data>
   <data name="Settings_Title.Text" xml:space="preserve">
-    <value>Settings</value>
+    <value>Save Settings</value>
   </data>
   <data name="Settings_JpegQuality.Text" xml:space="preserve">
     <value>JPEG/WebP Save Quality</value>
@@ -300,5 +303,14 @@
   </data>
   <data name="SlideshowCrossfadeDurationUnit.Text" xml:space="preserve">
     <value>sec</value>
+  </data>
+  <data name="MenuStretchContain.Text" xml:space="preserve">
+    <value>Contain (Uniform)</value>
+  </data>
+  <data name="MenuStretchCover.Text" xml:space="preserve">
+    <value>Cover (UniformToFill)</value>
+  </data>
+  <data name="MenuStretchOriginal.Text" xml:space="preserve">
+    <value>Original Size</value>
   </data>
 </root>

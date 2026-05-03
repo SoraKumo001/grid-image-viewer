@@ -574,15 +574,15 @@ namespace grid_image_viewer
         {
             var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill)
                 ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill
-                : Microsoft.UI.Xaml.Media.Stretch.Uniform;
+                : (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
 
-            bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
+            int stretchMode = (int)stretch;
 
             for (int i = 0; i < 4; i++)
             {
                 _pageImages[i].Stretch = stretch;
                 _prevImages[i].Stretch = stretch;
-                _pages[i].UniformToFill = uniformToFill;
+                _pages[i].StretchMode = stretchMode;
                 _pageCanvases[i].Invalidate();
             }
         }
