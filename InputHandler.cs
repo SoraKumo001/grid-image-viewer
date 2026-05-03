@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.IO;
+using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.System;
@@ -307,12 +308,13 @@ namespace grid_image_viewer
                     var item = items[0];
                     if (item is StorageFolder folder)
                     {
-                        _window.LoadDirectory(folder.Path);
+                        _window.LoadDirectory(folder.Path, string.Empty);
                     }
                     else if (item is StorageFile file)
                     {
                         string ext = Path.GetExtension(file.Path).ToLowerInvariant();
-                        if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".bmp" || ext == ".gif" || ext == ".avif")
+                        string[] extensions = { ".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".avif", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg" };
+                        if (extensions.Contains(ext))
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
                             _window.LoadDirectory(dir, file.Path);
