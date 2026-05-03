@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Printing;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.Graphics.Printing;
 using WinRT.Interop;
@@ -49,10 +50,26 @@ namespace grid_image_viewer
             try
             {
                 _printImage = new BitmapImage();
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(imagePath);
-                using (var stream = await file.OpenReadAsync())
+
+                if (ArchiveManager.IsArchivePath(imagePath))
                 {
-                    await _printImage.SetSourceAsync(stream);
+                    var (arc, ent) = ArchiveManager.SplitArchivePath(imagePath);
+                    byte[]? bytes = ArchiveManager.GetEntryBytes(arc, ent);
+                    if (bytes != null)
+                    {
+                        using (var ms = new System.IO.MemoryStream(bytes))
+                        {
+                            await _printImage.SetSourceAsync(ms.AsRandomAccessStream());
+                        }
+                    }
+                }
+                else
+                {
+                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(imagePath);
+                    using (var stream = await file.OpenReadAsync())
+                    {
+                        await _printImage.SetSourceAsync(stream);
+                    }
                 }
 
                 var hwnd = WindowNative.GetWindowHandle(_window);

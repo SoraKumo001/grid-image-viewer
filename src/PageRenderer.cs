@@ -32,7 +32,18 @@ namespace grid_image_viewer
             {
                 if (token.IsCancellationRequested) return;
 
-                var data = SKData.Create(filePath);
+                SKData? data = null;
+                if (ArchiveManager.IsArchivePath(filePath))
+                {
+                    var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                    byte[]? bytes = ArchiveManager.GetEntryBytes(arc, entry);
+                    if (bytes != null) data = SKData.CreateCopy(bytes);
+                }
+                else
+                {
+                    data = SKData.Create(filePath);
+                }
+
                 if (data == null)
                 {
                     var bmpBytes = ImageProcessor.DecodeToBmpBytes(filePath);

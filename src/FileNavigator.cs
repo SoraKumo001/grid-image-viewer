@@ -21,7 +21,7 @@ namespace grid_image_viewer
     public static class FileNavigator
     {
         private static readonly HashSet<string> ImageExtensions = new HashSet<string>(
-            new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico" },
+            new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico", ".zip", ".cbz", ".rar", ".cbr", ".7z" },
             StringComparer.OrdinalIgnoreCase);
 
         public static string? FindNextImageFolder(string currentPath, int offset)
@@ -36,6 +36,8 @@ namespace grid_image_viewer
 
                 try
                 {
+                    if (ArchiveManager.IsArchive(node)) return node;
+
                     bool hasImages = Directory.EnumerateFiles(node)
                                               .Any(f => ImageExtensions.Contains(Path.GetExtension(f)));
                     if (hasImages)
@@ -53,8 +55,11 @@ namespace grid_image_viewer
         {
             try
             {
-                var dirs = Directory.GetDirectories(current).OrderBy(d => d, new NaturalStringComparer()).ToArray();
-                if (dirs.Length > 0) return dirs[0];
+                if (Directory.Exists(current))
+                {
+                    var dirs = Directory.GetDirectories(current).OrderBy(d => d, new NaturalStringComparer()).ToArray();
+                    if (dirs.Length > 0) return dirs[0];
+                }
             }
             catch { }
 
@@ -66,7 +71,12 @@ namespace grid_image_viewer
 
                 try
                 {
-                    var siblings = parent.GetDirectories().Select(d => d.FullName).OrderBy(d => d, new NaturalStringComparer()).ToList();
+                    // Include both directories and archives in siblings
+                    var siblings = Directory.EnumerateFileSystemEntries(parent.FullName)
+                        .Where(e => Directory.Exists(e) || ArchiveManager.IsArchive(e))
+                        .OrderBy(e => e, new NaturalStringComparer())
+                        .ToList();
+
                     int idx = siblings.FindIndex(d => string.Equals(d, node, StringComparison.OrdinalIgnoreCase));
                     if (idx != -1 && idx + 1 < siblings.Count)
                     {
@@ -86,7 +96,11 @@ namespace grid_image_viewer
 
             try
             {
-                var siblings = parent.GetDirectories().Select(d => d.FullName).OrderBy(d => d, new NaturalStringComparer()).ToList();
+                var siblings = Directory.EnumerateFileSystemEntries(parent.FullName)
+                    .Where(e => Directory.Exists(e) || ArchiveManager.IsArchive(e))
+                    .OrderBy(e => e, new NaturalStringComparer())
+                    .ToList();
+
                 int idx = siblings.FindIndex(d => string.Equals(d, current, StringComparison.OrdinalIgnoreCase));
                 if (idx > 0)
                 {
@@ -95,6 +109,8 @@ namespace grid_image_viewer
                     {
                         try
                         {
+                            if (!Directory.Exists(node)) return node; // It's an archive file
+
                             var children = Directory.GetDirectories(node).OrderBy(d => d, new NaturalStringComparer()).ToArray();
                             if (children.Length == 0) return node;
                             node = children[children.Length - 1];

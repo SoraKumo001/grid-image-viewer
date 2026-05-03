@@ -230,11 +230,11 @@ namespace grid_image_viewer
                 _settings.ImageStretchMode = next;
                 _settings.SaveSettings();
                 _window.ViewerManager.UpdateStretch();
-                
+
                 string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
                 string modeName = _resourceLoader.GetString(modeKey);
                 _window.ViewerManager.ShowNotification(modeName);
-                
+
                 e.Handled = true;
                 return;
             }
@@ -245,11 +245,11 @@ namespace grid_image_viewer
                 _settings.MangaSplitCount = count;
                 _settings.SaveMangaMode();
                 _ = _window.UpdateDisplayAsync();
-                
+
                 string modeKey = count == 1 ? "MenuViewMode_Single/Text" : (count == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
                 string modeName = _resourceLoader.GetString(modeKey);
                 _window.ViewerManager.ShowNotification(modeName);
-                
+
                 e.Handled = true;
                 return;
             }
@@ -477,6 +477,10 @@ namespace grid_image_viewer
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
                             _window.LoadDirectory(dir, file.Path);
+                        }
+                        else if (ArchiveManager.IsArchive(file.Path))
+                        {
+                            _window.LoadDirectory(file.Path);
                         }
                         else
                         {

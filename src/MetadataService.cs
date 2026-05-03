@@ -3,6 +3,7 @@ using MetadataExtractor.Formats.Exif;
 using MetadataExtractor.Formats.Jpeg;
 using MetadataExtractor.Formats.Png;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -33,13 +34,30 @@ namespace grid_image_viewer
             var info = new ImageMetadata { FilePath = filePath };
             try
             {
-                if (!File.Exists(filePath)) return info;
+                IReadOnlyList<MetadataExtractor.Directory> directories;
 
-                var fileInfo = new FileInfo(filePath);
-                info.FileName = fileInfo.Name;
-                info.FileSize = FormatBytes(fileInfo.Length);
+                if (ArchiveManager.IsArchivePath(filePath))
+                {
+                    var (arc, ent) = ArchiveManager.SplitArchivePath(filePath);
+                    byte[]? bytes = ArchiveManager.GetEntryBytes(arc, ent);
+                    if (bytes == null) return info;
 
-                var directories = ImageMetadataReader.ReadMetadata(filePath);
+                    info.FileName = Path.GetFileName(ent);
+                    info.FileSize = FormatBytes(bytes.Length);
+                    using (var ms = new MemoryStream(bytes))
+                    {
+                        directories = ImageMetadataReader.ReadMetadata(ms);
+                    }
+                }
+                else
+                {
+                    if (!File.Exists(filePath)) return info;
+
+                    var fileInfo = new FileInfo(filePath);
+                    info.FileName = fileInfo.Name;
+                    info.FileSize = FormatBytes(fileInfo.Length);
+                    directories = ImageMetadataReader.ReadMetadata(filePath);
+                }
 
                 // 1. 基本的な解像度の取得 (ディレクトリによってタグが異なるため優先順位をつけて取得)
                 int width = 0, height = 0;

@@ -105,21 +105,29 @@ namespace grid_image_viewer
                 if (mightBeAnimated)
                 {
                     byte[]? bytes = null;
-                    for (int i = 0; i < 3; i++)
+                    if (ArchiveManager.IsArchivePath(item.FilePath))
                     {
-                        try
+                        var (arc, ent) = ArchiveManager.SplitArchivePath(item.FilePath);
+                        bytes = ArchiveManager.GetEntryBytes(arc, ent);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 3; i++)
                         {
-                            using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (var ms = new MemoryStream((int)fs.Length))
+                            try
                             {
-                                await fs.CopyToAsync(ms, token);
-                                bytes = ms.ToArray();
+                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                using (var ms = new MemoryStream((int)fs.Length))
+                                {
+                                    await fs.CopyToAsync(ms, token);
+                                    bytes = ms.ToArray();
+                                }
+                                break;
                             }
-                            break;
-                        }
-                        catch (IOException)
-                        {
-                            await Task.Delay(100, token);
+                            catch (IOException)
+                            {
+                                await Task.Delay(100, token);
+                            }
                         }
                     }
 
@@ -160,25 +168,43 @@ namespace grid_image_viewer
                 else
                 {
                     SKBitmap? decoded = null;
-                    for (int i = 0; i < 3; i++)
+                    if (ArchiveManager.IsArchivePath(item.FilePath))
                     {
-                        try
+                        var (arc, ent) = ArchiveManager.SplitArchivePath(item.FilePath);
+                        byte[]? bytes = ArchiveManager.GetEntryBytes(arc, ent);
+                        if (bytes != null)
                         {
-                            using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using var skData = SKData.CreateCopy(bytes);
+                            using var codec = SKCodec.Create(skData);
+                            if (codec != null)
                             {
-                                using var codec = SKCodec.Create(fs);
-                                if (codec != null)
-                                {
-                                    item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                                }
-                                fs.Position = 0;
-                                decoded = SKBitmap.Decode(fs);
+                                item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
                             }
-                            break;
+                            decoded = SKBitmap.Decode(skData);
                         }
-                        catch (IOException)
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 3; i++)
                         {
-                            await Task.Delay(100, token);
+                            try
+                            {
+                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                {
+                                    using var codec = SKCodec.Create(fs);
+                                    if (codec != null)
+                                    {
+                                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
+                                    }
+                                    fs.Position = 0;
+                                    decoded = SKBitmap.Decode(fs);
+                                }
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                await Task.Delay(100, token);
+                            }
                         }
                     }
 

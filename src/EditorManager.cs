@@ -105,14 +105,15 @@ namespace grid_image_viewer
 
             _window.MenuUndo.IsEnabled = canUndo;
             _window.MenuRedo.IsEnabled = canRedo;
+            bool isArchiveEntry = ArchiveManager.IsArchivePath(path);
             _window.MenuSaveAs.IsEnabled = hasPath;
-            _window.MenuOverwrite.IsEnabled = hasPath;
-            _window.MenuCrop.IsEnabled = hasPath;
-            _window.MenuResize.IsEnabled = hasPath;
-            _window.MenuRotate.IsEnabled = hasPath;
-            _window.MenuFlip.IsEnabled = hasPath;
-            _window.MenuTone.IsEnabled = hasPath;
-            _window.MenuFilter.IsEnabled = hasPath;
+            _window.MenuOverwrite.IsEnabled = hasPath && !isArchiveEntry;
+            _window.MenuCrop.IsEnabled = hasPath && !isArchiveEntry;
+            _window.MenuResize.IsEnabled = hasPath && !isArchiveEntry;
+            _window.MenuRotate.IsEnabled = hasPath && !isArchiveEntry;
+            _window.MenuFlip.IsEnabled = hasPath && !isArchiveEntry;
+            _window.MenuTone.IsEnabled = hasPath && !isArchiveEntry;
+            _window.MenuFilter.IsEnabled = hasPath && !isArchiveEntry;
             _window.MenuPrint.IsEnabled = hasPath;
 
             // Update View Mode checked states
@@ -423,12 +424,20 @@ namespace grid_image_viewer
         public async void MenuOpenExplorer_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _window.CurrentImagePath;
-            if (string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath)) return;
+            if (string.IsNullOrEmpty(sourcePath)) return;
+
+            string targetPath = sourcePath;
+            if (ArchiveManager.IsArchivePath(sourcePath))
+            {
+                targetPath = ArchiveManager.SplitArchivePath(sourcePath).archivePath;
+            }
+
+            if (!File.Exists(targetPath)) return;
 
             try
             {
-                var folder = await StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(sourcePath));
-                var file = await StorageFile.GetFileFromPathAsync(sourcePath);
+                var folder = await StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(targetPath));
+                var file = await StorageFile.GetFileFromPathAsync(targetPath);
                 var options = new Windows.System.FolderLauncherOptions();
                 options.ItemsToSelect.Add(file);
                 await Launcher.LaunchFolderAsync(folder, options);

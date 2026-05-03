@@ -19,11 +19,35 @@ namespace grid_image_viewer
             };
         }
 
+        private static byte[]? ReadAllBytes(string path)
+        {
+            try
+            {
+                if (ArchiveManager.IsArchivePath(path))
+                {
+                    var (arc, ent) = ArchiveManager.SplitArchivePath(path);
+                    return ArchiveManager.GetEntryBytes(arc, ent);
+                }
+                return File.ReadAllBytes(path);
+            }
+            catch { return null; }
+        }
+
+        private static SKBitmap? LoadBitmap(string path)
+        {
+            byte[]? bytes = ReadAllBytes(path);
+            if (bytes == null) return null;
+            return SKBitmap.Decode(bytes);
+        }
+
         public static byte[]? DecodeToBmpBytes(string filePath)
         {
             try
             {
-                using var image = new MagickImage(filePath);
+                byte[]? bytes = ReadAllBytes(filePath);
+                if (bytes == null) return null;
+
+                using var image = new MagickImage(bytes);
                 image.Format = MagickFormat.Bmp;
                 return image.ToByteArray();
             }
@@ -39,7 +63,19 @@ namespace grid_image_viewer
         /// </summary>
         public static void SaveImage(string sourcePath, string destPath, string targetExtension, int quality = 100)
         {
-            byte[] fileBytes = File.ReadAllBytes(sourcePath);
+            byte[]? fileBytes = null;
+            if (ArchiveManager.IsArchivePath(sourcePath))
+            {
+                var (arc, ent) = ArchiveManager.SplitArchivePath(sourcePath);
+                fileBytes = ArchiveManager.GetEntryBytes(arc, ent);
+            }
+            else
+            {
+                fileBytes = File.ReadAllBytes(sourcePath);
+            }
+
+            if (fileBytes == null) return;
+
             using var data = SKData.CreateCopy(fileBytes);
             using var codec = SKCodec.Create(data);
             using var bitmap = SKBitmap.Decode(codec);
@@ -62,10 +98,7 @@ namespace grid_image_viewer
 
             if (bitmap == null)
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                bitmap = SKBitmap.Decode(codec);
+                bitmap = LoadBitmap(sourcePath);
                 disposeBitmap = true;
             }
 
@@ -85,10 +118,7 @@ namespace grid_image_viewer
 
             if (bitmap == null)
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                bitmap = SKBitmap.Decode(codec);
+                bitmap = LoadBitmap(sourcePath);
                 disposeBitmap = true;
             }
 
@@ -118,7 +148,7 @@ namespace grid_image_viewer
 
                 if (source == null)
                 {
-                    source = SKBitmap.Decode(path);
+                    source = LoadBitmap(path);
                     disposeSource = true;
                 }
 
@@ -179,7 +209,7 @@ namespace grid_image_viewer
 
                 if (source == null)
                 {
-                    source = SKBitmap.Decode(path);
+                    source = LoadBitmap(path);
                     disposeSource = true;
                 }
 
@@ -244,10 +274,7 @@ namespace grid_image_viewer
 
             if (bitmap == null)
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                bitmap = SKBitmap.Decode(codec);
+                bitmap = LoadBitmap(sourcePath);
                 disposeBitmap = true;
             }
 
@@ -273,10 +300,7 @@ namespace grid_image_viewer
 
             if (bitmap == null)
             {
-                byte[] fileBytes = File.ReadAllBytes(sourcePath);
-                using var data = SKData.CreateCopy(fileBytes);
-                using var codec = SKCodec.Create(data);
-                bitmap = SKBitmap.Decode(codec);
+                bitmap = LoadBitmap(sourcePath);
                 disposeBitmap = true;
             }
 
@@ -312,6 +336,16 @@ namespace grid_image_viewer
         {
             try
             {
+                if (ArchiveManager.IsArchivePath(sourcePath))
+                {
+                    var (arc, ent) = ArchiveManager.SplitArchivePath(sourcePath);
+                    byte[]? bytes = ArchiveManager.GetEntryBytes(arc, ent);
+                    if (bytes == null) return (0, 0);
+                    using var data = SKData.CreateCopy(bytes);
+                    using var arcCodec = SKCodec.Create(data);
+                    return arcCodec != null ? (arcCodec.Info.Width, arcCodec.Info.Height) : (0, 0);
+                }
+
                 using var stream = File.OpenRead(sourcePath);
                 using var codec = SKCodec.Create(stream);
                 if (codec != null)

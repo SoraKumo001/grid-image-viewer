@@ -13,6 +13,8 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 ### 🖼️ Image Viewing
 
 - **Supported Formats**: JPG, JPEG, PNG, BMP, GIF, WebP (animation supported), AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX, etc.
+- **Direct Archive Support**: View images directly inside ZIP, CBZ, RAR, CBR, and 7z archives without extraction.
+- **High-Quality Scaling**: Smooth and high-quality image scaling powered by SkiaSharp 3.x (can be enabled in settings).
 - **High-Quality Rendering**: Fast image drawing using SkiaSharp
 - **Zoom**: Zoom in/out using Ctrl + Mouse Wheel
 - **Drag & Drop**: Open images and folders by dropping them into the window
@@ -73,10 +75,13 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 ### 🎨 UI/UX
 
 - **Mica Backdrop**: Modern translucent design of Windows 11
+- **Background Customization**: Choose between System (Mica), Black, or White background colors.
 - **Custom Title Bar**: Title bar design that blends seamlessly into the app
 - **Full Screen**: Toggle full screen display with a double click or `F` key
 - **Area Selection**: Drag to select an area and right-click to copy
-- **State Preservation**: Restore window size, position (including maximized state), and the currently viewed image on the next startup
+- **State Preservation**: Restore window size, position, and the currently viewed image on the next startup.
+- **Settings Portability**: Supports exporting and importing settings as JSON.
+- **On-Screen Notifications**: Overlay notifications for mode changes and stretch settings.
 - **Pointer-Aware Operations**: When multiple images are displayed, operations like rotation, deletion, and copying target the image directly under the mouse cursor.
 
 ### ⌨️ Keybindings
@@ -101,6 +106,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 | **Bookmark Folder** | `D` |
 | **Copy File Path** | `Ctrl + C` |
 | **Delete File** | `Delete` |
+| **Toggle Stretch Mode** | `S` |
 | Exit App | `Escape` |
 
 - Mouse Wheel: Move to previous/next image (Press Shift to turn 1 page in manga mode)
@@ -138,5 +144,6 @@ dotnet build -c Release -a x64
 
 - **UI Framework**: WinUI 3 (Windows App SDK 2.0)
 - **Image Rendering**: SkiaSharp 3.x
+- **Archive Support**: SharpCompress
 - **Language**: C# (.NET 8.0)
 - **Settings Management**: Persistence via JSON format (LocalApplicationData)

@@ -63,7 +63,11 @@ namespace grid_image_viewer
             ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
         };
 
-        public static bool IsSupportedExtension(string extension) => SupportedExtensions.Contains(extension.ToLowerInvariant());
+        public static bool IsSupportedExtension(string extension)
+        {
+            string ext = extension.ToLowerInvariant();
+            return SupportedExtensions.Contains(ext) || ArchiveManager.ArchiveExtensions.Contains(ext);
+        }
         private SettingsManager _settings;
         private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
         private bool _isGridMode = false;
@@ -196,59 +200,67 @@ namespace grid_image_viewer
             try
             {
                 List<string> fileList = new List<string>();
-                List<string> targetDirs = new List<string>();
-                targetDirs.Add(path); // Ensure the current directory is always included
 
-                if (includeSiblings)
+                if (ArchiveManager.IsArchive(path))
                 {
-                    string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    string? parent = Path.GetDirectoryName(cleanPath);
-                    if (!string.IsNullOrEmpty(parent))
+                    fileList = ArchiveManager.GetArchiveImages(path);
+                }
+                else
+                {
+                    List<string> targetDirs = new List<string>();
+                    targetDirs.Add(path); // Ensure the current directory is always included
+
+                    if (includeSiblings)
                     {
-                        if (includeSubfolders)
+                        string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                        string? parent = Path.GetDirectoryName(cleanPath);
+                        if (!string.IsNullOrEmpty(parent))
                         {
-                            // If both are true, we just need to search from the parent recursively once.
-                            targetDirs.Add(parent);
+                            if (includeSubfolders)
+                            {
+                                // If both are true, we just need to search from the parent recursively once.
+                                targetDirs.Add(parent);
+                            }
+                            else
+                            {
+                                // Include parent and all immediate siblings
+                                targetDirs.Add(parent);
+                                try
+                                {
+                                    foreach (var d in Directory.EnumerateDirectories(parent))
+                                    {
+                                        targetDirs.Add(d);
+                                    }
+                                }
+                                catch { }
+                            }
                         }
                         else
                         {
-                            // Include parent and all immediate siblings
-                            targetDirs.Add(parent);
-                            try
-                            {
-                                foreach (var d in Directory.EnumerateDirectories(parent))
-                                {
-                                    targetDirs.Add(d);
-                                }
-                            }
-                            catch { }
+                            targetDirs.Add(path);
                         }
                     }
                     else
                     {
                         targetDirs.Add(path);
                     }
-                }
-                else
-                {
-                    targetDirs.Add(path);
-                }
 
-                // Gather files from all target directories robustly
-                foreach (var dir in targetDirs)
-                {
-                    try
+                    // Gather files from all target directories robustly
+                    foreach (var dir in targetDirs)
                     {
-                        var files = includeSubfolders ? Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories) : Directory.EnumerateFiles(dir);
-                        foreach (var f in files)
+                        try
                         {
-                            if (IsSupportedExtension(Path.GetExtension(f)))
+                            var files = includeSubfolders ? Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories) : Directory.EnumerateFiles(dir);
+                            foreach (var f in files)
                             {
-                                fileList.Add(f);
+                                if (IsSupportedExtension(Path.GetExtension(f)))
+                                {
+                                    fileList.Add(f);
+                                }
                             }
                         }
+                        catch { }
                     }
-                    catch { }
                 }
 
                 _playlist = fileList.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();

@@ -2,7 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.1.0 (Current) - 2026-05-03
+## v1.2.0 (Current) - 2026-05-03
+- **Archive Support**: Added direct viewing support for **ZIP, CBZ, RAR, CBR, and 7z** archives using `SharpCompress`.
+- **Window Persistence**: Implemented window size and position preservation across sessions (Restored/Normal state only).
+- **High-Quality Scaling**: Added a "High Quality Scaling" option (Lanczos-like interpolation) for improved image quality when zoomed.
+- **Background Customization**: Added support for System (Mica), Black, and White background modes.
+- **Settings Portability**: Implemented JSON-based Export and Import functionality for application settings.
+- **UI/UX Improvements**:
+  - Added on-screen overlay notifications for mode changes (View Mode, Stretch Mode, Slideshow).
+  - Added a dedicated keybinding (`S`) to cycle through Stretch Modes (Contain, Cover, Original).
+  - Improved Right-click menu accessibility by moving Settings to the root level.
+- **Technical Improvements**:
+  - Replaced deprecated SkiaSharp `FilterQuality` with `SKSamplingOptions` to align with SkiaSharp 3.x standards.
+  - Implemented pointer-aware keybindings: rotation, deletion, and path copying now target the image directly under the mouse cursor in multi-view modes.
+- **Bug Fixes**:
+  - Prevented window state corruption when exiting in maximized or fullscreen modes.
+  - Fixed a bug where double-clicking on dialogs would trigger fullscreen mode.
+  - Improved file lock management by navigating to the next image before deleting a file.
+
+## v1.1.0 - 2026-05-03
 - **App Renaming**: Renamed the application from "Grid Image Viewer" to "**Quick Image Viewer**".
 - **Printing Support**: Implemented image printing functionality with automatic size adjustment to fit paper margins.
 - **Support Menu**: Added a "Support" item to the context menu that opens the GitHub repository.
