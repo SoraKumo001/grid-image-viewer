@@ -27,6 +27,10 @@ namespace grid_image_viewer
         private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
         private Border[] _focusBorders;
         private CancellationTokenSource? _displayCts;
+        private CancellationTokenSource? _folderPreloadCts;
+        private string? _cachedNextFolder;
+        private string? _cachedPrevFolder;
+        private string? _lastPreloadedDirectory;
         private int _cachedQuadLayout = 1;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
@@ -155,6 +159,7 @@ namespace grid_image_viewer
                 }
 
                 _ = PreloadAroundAsync();
+                _ = PreloadFoldersAsync();
             }
             finally
             {
@@ -371,6 +376,29 @@ namespace grid_image_viewer
                     catch { }
                 });
             }
+        }
+
+        private async Task PreloadFoldersAsync()
+        {
+            string currentDir = _window.CurrentDirectory;
+            if (string.IsNullOrEmpty(currentDir) || currentDir == _lastPreloadedDirectory) return;
+
+            _folderPreloadCts?.Cancel();
+            _folderPreloadCts?.Dispose();
+            _folderPreloadCts = new CancellationTokenSource();
+            var token = _folderPreloadCts.Token;
+
+            _lastPreloadedDirectory = currentDir;
+            _cachedNextFolder = null;
+            _cachedPrevFolder = null;
+
+            try
+            {
+                _cachedNextFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, 1, token), token);
+                if (token.IsCancellationRequested) return;
+                _cachedPrevFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, -1, token), token);
+            }
+            catch (OperationCanceledException) { }
         }
 
         private async Task LoadPageAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, int pageIndex, CancellationToken token)
@@ -656,6 +684,14 @@ namespace grid_image_viewer
         {
             if (string.IsNullOrEmpty(_window.CurrentDirectory) || _window.IsSearchingFolder) return;
 
+            string? cached = offset > 0 ? _cachedNextFolder : _cachedPrevFolder;
+            if (!string.IsNullOrEmpty(cached))
+            {
+                bool includeSiblings = _window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowIncludeSiblings;
+                _window.LoadDirectory(cached, includeSiblings: includeSiblings);
+                return;
+            }
+
             _window.IsSearchingFolder = true;
             _window.FolderSearchingOverlay.Visibility = Visibility.Visible;
 
@@ -737,6 +773,8 @@ namespace grid_image_viewer
             StopAnimation();
             _displayCts?.Cancel();
             _displayCts?.Dispose();
+            _folderPreloadCts?.Cancel();
+            _folderPreloadCts?.Dispose();
         }
     }
 }
