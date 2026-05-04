@@ -265,6 +265,12 @@
   <data name="Notification_NotAnImage" xml:space="preserve">
     <value>Not an image file</value>
   </data>
+  <data name="Notification_FirstFolder" xml:space="preserve">
+    <value>Reached the first folder</value>
+  </data>
+  <data name="Notification_LastFolder" xml:space="preserve">
+    <value>Reached the last folder</value>
+  </data>
   <data name="MenuGlobalSettings.Text" xml:space="preserve">
     <value>Settings</value>
   </data>

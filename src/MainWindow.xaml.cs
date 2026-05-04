@@ -203,62 +203,68 @@ namespace grid_image_viewer
             var token = _loadCts.Token;
 
             _currentDirectory = path;
+            FolderSearchingOverlay.Visibility = Visibility.Visible;
+            IsSearchingFolder = true;
 
-            try
+            _ = Task.Run(() =>
             {
-                // 1. Initial Quick Load (Current directory or archive)
-                List<string> initialFiles = new List<string>();
-                if (ArchiveManager.IsArchive(path))
+                try
                 {
-                    initialFiles = ArchiveManager.GetArchiveImages(path);
-                }
-                else
-                {
-                    initialFiles = GetFilesFromDirectory(path, false);
-                }
-
-                // If initial files are many, sort in background to keep UI responsive
-                if (initialFiles.Count > 100)
-                {
-                    _ = Task.Run(() =>
+                    List<string> initialFiles;
+                    if (ArchiveManager.IsArchive(path))
                     {
-                        var sorted = initialFiles.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
-                        DispatcherQueue.TryEnqueue(() =>
-                        {
-                            if (token.IsCancellationRequested) return;
-                            UpdatePlaylist(sorted, initialFile, true);
-                            OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
-                        });
+                        initialFiles = ArchiveManager.GetArchiveImages(path);
+                    }
+                    else
+                    {
+                        initialFiles = GetFilesFromDirectory(path, false);
+                    }
+
+                    var sorted = initialFiles.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+                        UpdatePlaylist(sorted, initialFile, true);
+                        OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
                     });
                 }
-                else
+                catch
                 {
-                    UpdatePlaylist(initialFiles, initialFile, false);
-                    OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                        IsSearchingFolder = false;
+                    });
                 }
-            }
-            catch { }
+            });
         }
 
         private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
         {
             if (_playlist.Count > 0)
             {
-                UpdateGridItems(false); // Quick update
+                UpdateGridItems(false);
                 _ = UpdateDisplayAsync();
 
-                // If we need more files, start background task
                 if (!ArchiveManager.IsArchive(path) && (includeSiblings || includeSubfolders))
                 {
                     _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
                 }
+                else
+                {
+                    FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                    IsSearchingFolder = false;
+                }
             }
             else if (includeSiblings || includeSubfolders)
             {
-                // No files in current dir, but searching more. Show overlay.
-                FolderSearchingOverlay.Visibility = Visibility.Visible;
-                IsSearchingFolder = true;
                 _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
+            }
+            else
+            {
+                FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                IsSearchingFolder = false;
             }
         }
 

@@ -705,11 +705,32 @@ namespace grid_image_viewer
                     bool includeSiblings = _window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowIncludeSiblings;
                     _window.LoadDirectory(nextImageFolder, includeSiblings: includeSiblings);
                 }
+                else
+                {
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        _window.IsSearchingFolder = false;
+                        _window.FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+
+                        string key = offset > 0 ? "Notification_LastFolder" : "Notification_FirstFolder";
+                        string? msg = null;
+                        try { msg = _resourceLoader.GetString(key); } catch { }
+
+                        if (string.IsNullOrEmpty(msg))
+                        {
+                            msg = offset > 0 ? "Reached the last folder" : "Reached the first folder";
+                        }
+                        ShowNotification(msg);
+                    });
+                }
             }
-            finally
+            catch
             {
-                _window.IsSearchingFolder = false;
-                _window.FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    _window.IsSearchingFolder = false;
+                    _window.FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                });
             }
         }
 

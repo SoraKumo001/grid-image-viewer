@@ -271,6 +271,12 @@
   <data name="Notification_NotAnImage" xml:space="preserve">
     <value>画像ファイルではありません</value>
   </data>
+  <data name="Notification_FirstFolder" xml:space="preserve">
+    <value>最初のフォルダです</value>
+  </data>
+  <data name="Notification_LastFolder" xml:space="preserve">
+    <value>最後のフォルダです</value>
+  </data>
   <data name="MenuGlobalSettings.Text" xml:space="preserve">
     <value>設定</value>
   </data>

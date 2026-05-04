@@ -54,9 +54,20 @@ namespace grid_image_viewer
             {
                 var settings = new SettingsManager();
                 string lastImagePath = settings.LastImagePath;
-                if (!string.IsNullOrEmpty(lastImagePath) && System.IO.File.Exists(lastImagePath))
+                if (!string.IsNullOrEmpty(lastImagePath))
                 {
-                    ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
+                    if (ArchiveManager.IsArchivePath(lastImagePath))
+                    {
+                        var (archivePath, _) = ArchiveManager.SplitArchivePath(lastImagePath);
+                        if (System.IO.File.Exists(archivePath))
+                        {
+                            ((MainWindow)_window).LoadDirectory(archivePath, lastImagePath);
+                        }
+                    }
+                    else if (System.IO.File.Exists(lastImagePath))
+                    {
+                        ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
+                    }
                 }
             }
         }

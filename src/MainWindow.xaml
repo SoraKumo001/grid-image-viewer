@@ -321,7 +321,7 @@
             </Border>
 
             <!-- Notification Overlay -->
-            <Border x:Name="NotificationOverlay" x:FieldModifier="internal" Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,80" Padding="40,24" Background="#CC000000" CornerRadius="16" Visibility="Collapsed" IsHitTestVisible="False">
+            <Border x:Name="NotificationOverlay" x:FieldModifier="internal" Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,80" Padding="40,24" Background="#CC000000" CornerRadius="16" Visibility="Collapsed" IsHitTestVisible="False" Canvas.ZIndex="1000">
                 <TextBlock x:Name="NotificationText" x:FieldModifier="internal" Foreground="White" FontSize="36" FontWeight="Bold" />
             </Border>
 
