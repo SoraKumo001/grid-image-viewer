@@ -33,9 +33,6 @@ namespace grid_image_viewer
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private const int MAX_CACHE_SIZE = 20;
 
-
-
-
         public ViewerManager(MainWindow window, SettingsManager settings)
         {
             _window = window;
@@ -60,6 +57,7 @@ namespace grid_image_viewer
 
             if (_window.IsGridMode)
             {
+                _window.UpdateGridItems(true);
                 _window.ImageScrollViewer.Visibility = Visibility.Collapsed;
                 _window.ImageGridView.Visibility = Visibility.Visible;
                 _window.AnimationService.StopAnimation();
@@ -106,8 +104,6 @@ namespace grid_image_viewer
                 int remaining = _window.Playlist.Count - _window.CurrentIndex;
                 int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
 
-                // Layout Configuration
-                // Layout Configuration
                 _cachedQuadLayout = await Task.Run(() => GetEffectiveQuadLayout());
                 UpdateLayoutGrid(splitCount, effectiveSplitCount, _cachedQuadLayout);
 
@@ -381,12 +377,10 @@ namespace grid_image_viewer
         {
             if (ArchiveManager.IsArchive(filePath) && !ArchiveManager.IsArchivePath(filePath))
             {
-                // If it's an archive file itself, enter it
                 _window.DispatcherQueue.TryEnqueue(() => _window.LoadDirectory(filePath));
                 return;
             }
 
-            // Skip if same file is already displayed and no edit changes
             if (_pages[pageIndex].CurrentFilePath == filePath && (imageCtrl.Source != null || canvasCtrl.Visibility == Visibility.Visible))
             {
                 var session = _window.ImageEditService.GetSession(filePath);
@@ -394,7 +388,6 @@ namespace grid_image_viewer
                 if (session != null && _pages[pageIndex].EditedBitmap == session.Current) return;
             }
 
-            // Prepare previous image for crossfade or to prevent blackout
             if (imageCtrl.Visibility == Visibility.Visible && imageCtrl.Source != null)
             {
                 _prevImages[pageIndex].Source = imageCtrl.Source;
@@ -424,16 +417,11 @@ namespace grid_image_viewer
                 }
                 catch
                 {
-                    // Bitmap may have been disposed by an edit operation - safe to skip crossfade
                     _prevImages[pageIndex].Source = null;
                 }
             }
 
-            // Show previous image in the background container
             _prevContainers[pageIndex].Opacity = 1;
-
-            // NOTE: We don't hide CurrentContainer here to prevent blackout.
-            // It will be hidden/faded only when the new content is ready.
 
             _pages[pageIndex].CurrentFilePath = filePath;
             loadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
@@ -471,7 +459,6 @@ namespace grid_image_viewer
 
                 if (useSkia)
                 {
-                    // Load Skia content in background
                     await Task.Run(() =>
                     {
                         var tempRenderer = new PageRenderer();
@@ -540,7 +527,6 @@ namespace grid_image_viewer
 
                 if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
                 {
-                    // For crossfade, we need to start from Opacity 0
                     _currentContainers[pageIndex].Opacity = 0;
                     _window.AnimationService.StartCrossfade(pageIndex, _currentContainers, _prevContainers);
                 }
@@ -581,7 +567,6 @@ namespace grid_image_viewer
                 _pageCanvases[i].Invalidate();
             }
         }
-
 
         private int GetEffectiveQuadLayout()
         {
@@ -643,20 +628,20 @@ namespace grid_image_viewer
 
             if (effectiveSplitCount == 2)
             {
-                hAlign = index == 0 ? 0 : 2; // Index 0 (Right) -> Left-aligned, Index 1 (Left) -> Right-aligned
+                hAlign = index == 0 ? 0 : 2;
             }
             else if (effectiveSplitCount == 3)
             {
-                if (_cachedQuadLayout == 2) // Grid mode (1 top, 2 bottom)
+                if (_cachedQuadLayout == 2)
                 {
-                    if (index == 0) { hAlign = 1; vAlign = 2; } // Top center (Bottom-aligned)
-                    else if (index == 1) { hAlign = 2; vAlign = 0; } // Bottom right (Right/Top-aligned)
-                    else if (index == 2) { hAlign = 0; vAlign = 0; } // Bottom left (Left/Top-aligned)
+                    if (index == 0) { hAlign = 1; vAlign = 2; }
+                    else if (index == 1) { hAlign = 2; vAlign = 0; }
+                    else if (index == 2) { hAlign = 0; vAlign = 0; }
                 }
             }
             else if (effectiveSplitCount == 4)
             {
-                if (_cachedQuadLayout == 2) // Grid 2x2
+                if (_cachedQuadLayout == 2)
                 {
                     hAlign = (index == 0 || index == 2) ? 0 : 2;
                     vAlign = (index == 0 || index == 1) ? 2 : 0;
@@ -746,9 +731,6 @@ namespace grid_image_viewer
             }
             return null;
         }
-
-
-
 
         public void Dispose()
         {

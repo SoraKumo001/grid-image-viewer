@@ -125,7 +125,8 @@ namespace grid_image_viewer
 
             _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
 
-            if (_settings.SlideshowIncludeSiblings || _settings.SlideshowCurrentFolderOnly)
+            bool isExpanding = _settings.SlideshowIncludeSiblings || _settings.SlideshowCurrentFolderOnly;
+            if (isExpanding)
             {
                 _wasExpanded = true;
                 string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
@@ -135,6 +136,45 @@ namespace grid_image_viewer
             _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
             _slideshowTimer.Start();
             IsSlideshowRunning = true;
+
+            // Immediately show the first image or jump if random
+            if (_settings.SlideshowRandom && _mainWindow.Playlist.Count > 1)
+            {
+                SlideshowTimer_Tick(null, EventArgs.Empty);
+            }
+            else if (_mainWindow.Playlist.Count > 0)
+            {
+                _ = _mainWindow.UpdateDisplayAsync();
+            }
+
+            // If we are searching and have no files yet, wait for initial population then trigger start
+            if (isExpanding && _mainWindow.Playlist.Count == 0)
+            {
+                _ = InitialStartAsync();
+            }
+        }
+
+        private async System.Threading.Tasks.Task InitialStartAsync()
+        {
+            int timeout = 0;
+            while (_mainWindow.Playlist.Count == 0 && timeout < 100)
+            {
+                if (!IsSlideshowRunning) return;
+                await System.Threading.Tasks.Task.Delay(100);
+                timeout++;
+            }
+
+            if (IsSlideshowRunning && _mainWindow.Playlist.Count > 0)
+            {
+                if (_settings.SlideshowRandom && _mainWindow.Playlist.Count > 1)
+                {
+                    SlideshowTimer_Tick(null, EventArgs.Empty);
+                }
+                else
+                {
+                    _ = _mainWindow.UpdateDisplayAsync();
+                }
+            }
         }
 
         public void StopSlideshow()
@@ -203,8 +243,6 @@ namespace grid_image_viewer
             }
             else
             {
-                if (_mainWindow.IsSearchingFolder) return;
-
                 int increment = _settings.MangaSplitCount;
                 if (currentIndex + increment >= playlist.Count)
                 {
@@ -216,7 +254,6 @@ namespace grid_image_viewer
 
                         // NavigateFolder will call LoadDirectory which updates display.
                         // We need to restart the timer once the new folder is loaded.
-                        // But NavigateFolder is async void, so we'll poll or use a Task.
                         _ = RestartTimerAfterFolderLoad();
                     }
                     else if (_settings.SlideshowLoop)
@@ -238,23 +275,23 @@ namespace grid_image_viewer
 
         private async System.Threading.Tasks.Task RestartTimerAfterFolderLoad()
         {
-            // Wait for searching to start
+            // Wait until we have at least one image in the playlist
             int timeout = 0;
-            while (!_mainWindow.IsSearchingFolder && timeout < 20) { await System.Threading.Tasks.Task.Delay(50); timeout++; }
-
-            // Wait for searching to finish
-            while (_mainWindow.IsSearchingFolder) { await System.Threading.Tasks.Task.Delay(100); }
+            while (_mainWindow.Playlist.Count == 0 && timeout < 100)
+            {
+                if (!IsSlideshowRunning) return;
+                await System.Threading.Tasks.Task.Delay(100);
+                timeout++;
+            }
 
             if (IsSlideshowRunning)
             {
-                // If we successfully loaded a new playlist, start the timer again
                 if (_mainWindow.Playlist.Count > 0)
                 {
                     _slideshowTimer.Start();
                 }
                 else
                 {
-                    // If no images found in the next folder, try searching again or stop
                     if (_settings.SlideshowLoop)
                     {
                         _mainWindow.NavigateFolder(1);

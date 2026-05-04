@@ -194,68 +194,164 @@ namespace grid_image_viewer
 
         private void RootGrid_DragOver(object sender, DragEventArgs e) => InputHandler.HandleDragOver(sender, e);
         private void RootGrid_Drop(object sender, DragEventArgs e) => InputHandler.HandleDrop(sender, e);
+        private System.Threading.CancellationTokenSource? _loadCts;
+
         public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false)
         {
+            _loadCts?.Cancel();
+            _loadCts = new System.Threading.CancellationTokenSource();
+            var token = _loadCts.Token;
+
             _currentDirectory = path;
+
             try
             {
-                List<string> fileList = new List<string>();
-
+                // 1. Initial Quick Load (Current directory or archive)
+                List<string> initialFiles = new List<string>();
                 if (ArchiveManager.IsArchive(path))
                 {
-                    fileList = ArchiveManager.GetArchiveImages(path);
+                    initialFiles = ArchiveManager.GetArchiveImages(path);
                 }
                 else
                 {
-                    List<string> targetDirs = new List<string>();
-                    targetDirs.Add(path); // Ensure the current directory is always included
+                    initialFiles = GetFilesFromDirectory(path, false);
+                }
 
-                    if (includeSiblings)
+                // If initial files are many, sort in background to keep UI responsive
+                if (initialFiles.Count > 100)
+                {
+                    _ = Task.Run(() =>
                     {
-                        string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                        string? parent = Path.GetDirectoryName(cleanPath);
-                        if (!string.IsNullOrEmpty(parent))
+                        var sorted = initialFiles.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+                        DispatcherQueue.TryEnqueue(() =>
                         {
-                            if (includeSubfolders)
-                            {
-                                // If both are true, we just need to search from the parent recursively once.
-                                targetDirs.Add(parent);
-                            }
-                            else
-                            {
-                                // Include parent and all immediate siblings
-                                targetDirs.Add(parent);
-                                try
-                                {
-                                    foreach (var d in Directory.EnumerateDirectories(parent))
-                                    {
-                                        targetDirs.Add(d);
-                                    }
-                                }
-                                catch { }
-                            }
-                        }
-                        else
-                        {
-                            targetDirs.Add(path);
-                        }
-                    }
-                    else
-                    {
-                        targetDirs.Add(path);
-                    }
+                            if (token.IsCancellationRequested) return;
+                            UpdatePlaylist(sorted, initialFile, true);
+                            OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
+                        });
+                    });
+                }
+                else
+                {
+                    UpdatePlaylist(initialFiles, initialFile, false);
+                    OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
+                }
+            }
+            catch { }
+        }
 
-                    // Gather files from all target directories robustly
-                    foreach (var dir in targetDirs)
+        private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
+        {
+            if (_playlist.Count > 0)
+            {
+                UpdateGridItems(false); // Quick update
+                _ = UpdateDisplayAsync();
+
+                // If we need more files, start background task
+                if (!ArchiveManager.IsArchive(path) && (includeSiblings || includeSubfolders))
+                {
+                    _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
+                }
+            }
+            else if (includeSiblings || includeSubfolders)
+            {
+                // No files in current dir, but searching more. Show overlay.
+                FolderSearchingOverlay.Visibility = Visibility.Visible;
+                IsSearchingFolder = true;
+                _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
+            }
+        }
+
+        internal void UpdateGridItems(bool forceFullUpdate)
+        {
+            // If we are in viewer mode and NOT switching to grid mode, 
+            // we can defer populating thousands of grid items to avoid UI lag.
+            if (!IsGridMode && !forceFullUpdate && _playlist.Count > 500)
+            {
+                _gridItems.Clear();
+                // Add at least current image so grid isn't totally empty if user peeks
+                if (_currentIndex >= 0 && _currentIndex < _playlist.Count)
+                {
+                    _gridItems.Add(new ImageItem { FilePath = _playlist[_currentIndex], IsLoading = true });
+                }
+                return;
+            }
+
+            // Efficiently update grid items
+            if (_gridItems.Count == _playlist.Count) return;
+
+            // Replacing the collection or clearing/adding many items can be slow.
+            // Using a new collection and setting ItemsSource is often faster in WinUI for large lists.
+            var newList = new ObservableCollection<ImageItem>();
+            foreach (var f in _playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
+
+            _gridItems = newList;
+            ImageGridView.ItemsSource = _gridItems;
+            GridManager.RefreshThumbnails();
+        }
+
+        private List<string> GetFilesFromDirectory(string dir, bool recursive)
+        {
+            List<string> files = new List<string>();
+            try
+            {
+                var options = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                foreach (var f in Directory.EnumerateFiles(dir, "*", options))
+                {
+                    if (IsSupportedExtension(Path.GetExtension(f)))
+                    {
+                        files.Add(f);
+                    }
+                }
+            }
+            catch { }
+            return files;
+        }
+
+        private void UpdatePlaylist(List<string> files, string targetPath, bool alreadySorted)
+        {
+            string currentPath = !string.IsNullOrEmpty(targetPath) ? targetPath : CurrentImagePath;
+            if (alreadySorted)
+            {
+                _playlist = files;
+            }
+            else
+            {
+                _playlist = files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+            }
+
+            if (_playlist.Count > 0)
+            {
+                int idx = _playlist.IndexOf(currentPath);
+                _currentIndex = idx >= 0 ? idx : 0;
+            }
+            else
+            {
+                _currentIndex = -1;
+            }
+        }
+
+        private async Task LoadAdditionalFilesAsync(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
+        {
+            try
+            {
+                List<string> accumulatedFiles = new List<string>(_playlist);
+                List<string> targetDirs = new List<string>();
+
+                if (includeSiblings)
+                {
+                    string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    string? parent = Path.GetDirectoryName(cleanPath);
+                    if (!string.IsNullOrEmpty(parent))
                     {
                         try
                         {
-                            var files = includeSubfolders ? Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories) : Directory.EnumerateFiles(dir);
-                            foreach (var f in files)
+                            foreach (var d in Directory.EnumerateDirectories(parent))
                             {
-                                if (IsSupportedExtension(Path.GetExtension(f)))
+                                if (token.IsCancellationRequested) return;
+                                if (d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
                                 {
-                                    fileList.Add(f);
+                                    targetDirs.Add(d);
                                 }
                             }
                         }
@@ -263,25 +359,43 @@ namespace grid_image_viewer
                     }
                 }
 
-                _playlist = fileList.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+                var comparer = new NaturalStringComparer();
 
-                if (_playlist.Count > 0)
+                foreach (var dir in targetDirs)
                 {
-                    _currentIndex = string.IsNullOrEmpty(initialFile) ? 0 : _playlist.IndexOf(initialFile);
-                    if (_currentIndex == -1) _currentIndex = 0;
+                    if (token.IsCancellationRequested) return;
 
-                    _gridItems.Clear();
-                    foreach (var f in _playlist)
+                    var folderFiles = await Task.Run(() => GetFilesFromDirectory(dir, includeSubfolders));
+                    if (folderFiles.Count > 0)
                     {
-                        _gridItems.Add(new ImageItem { FilePath = f, IsLoading = true });
+                        accumulatedFiles.AddRange(folderFiles);
+                        var sortedBatch = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
+                        accumulatedFiles = sortedBatch;
+
+                        DispatcherQueue.TryEnqueue(() =>
+                        {
+                            if (token.IsCancellationRequested) return;
+                            string currentPath = CurrentImagePath;
+                            UpdatePlaylist(sortedBatch, currentPath, true);
+                            UpdateGridItems(false);
+                            UpdatePageIndicator();
+                        });
                     }
-                    GridManager.RefreshThumbnails();
-                    _ = UpdateDisplayAsync();
                 }
+
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                    IsSearchingFolder = false;
+                });
             }
-            catch (Exception)
+            catch
             {
-                // Ignore access errors
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    FolderSearchingOverlay.Visibility = Visibility.Collapsed;
+                    IsSearchingFolder = false;
+                });
             }
         }
 
