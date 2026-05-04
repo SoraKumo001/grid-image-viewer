@@ -144,8 +144,17 @@ namespace grid_image_viewer
         public bool IsGridMode
         {
             get => _isGridMode;
-            set => SetProperty(ref _isGridMode, value);
+            set
+            {
+                if (SetProperty(ref _isGridMode, value))
+                {
+                    OnPropertyChanged(nameof(IsViewerMode));
+                    UpdatePageIndicator();
+                }
+            }
         }
+
+        public bool IsViewerMode => !IsGridMode;
 
         private bool _isDialogOpen;
         public bool IsDialogOpen

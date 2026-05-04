@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using AppControls = grid_image_viewer.Controls;
 
 namespace grid_image_viewer
 {
@@ -27,6 +28,61 @@ namespace grid_image_viewer
         internal AnimationService AnimationService { get; private set; }
         internal DialogService DialogService { get; private set; }
 
+        internal AppControls.ViewerPanel ViewerControl => ViewerControlInternal;
+        internal AppControls.GridImagePanel GridControl => GridControlInternal;
+
+        // Backward compatibility properties
+        internal ScrollViewer ImageScrollViewer => ViewerControlInternal.ScrollViewer;
+        internal Grid PagesGrid => ViewerControlInternal.RootPagesGrid;
+        internal GridView ImageGridView => GridControlInternal.GridView;
+
+        internal Grid PageGrid1 => ViewerControlInternal.PageGrids[0];
+        internal Grid PageGrid2 => ViewerControlInternal.PageGrids[1];
+        internal Grid PageGrid3 => ViewerControlInternal.PageGrids[2];
+        internal Grid PageGrid4 => ViewerControlInternal.PageGrids[3];
+
+        internal Grid PrevContainer1 => ViewerControlInternal.PrevContainers[0];
+        internal Grid PrevContainer2 => ViewerControlInternal.PrevContainers[1];
+        internal Grid PrevContainer3 => ViewerControlInternal.PrevContainers[2];
+        internal Grid PrevContainer4 => ViewerControlInternal.PrevContainers[3];
+
+        internal Grid CurrentContainer1 => ViewerControlInternal.CurrentContainers[0];
+        internal Grid CurrentContainer2 => ViewerControlInternal.CurrentContainers[1];
+        internal Grid CurrentContainer3 => ViewerControlInternal.CurrentContainers[2];
+        internal Grid CurrentContainer4 => ViewerControlInternal.CurrentContainers[3];
+
+        internal Image Image1_Prev => ViewerControlInternal.PrevImages[0];
+        internal Image Image2_Prev => ViewerControlInternal.PrevImages[1];
+        internal Image Image3_Prev => ViewerControlInternal.PrevImages[2];
+        internal Image Image4_Prev => ViewerControlInternal.PrevImages[3];
+
+        internal Image Image1 => ViewerControlInternal.PageImages[0];
+        internal Image Image2 => ViewerControlInternal.PageImages[1];
+        internal Image Image3 => ViewerControlInternal.PageImages[2];
+        internal Image Image4 => ViewerControlInternal.PageImages[3];
+
+        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas1 => ViewerControlInternal.PageCanvases[0];
+        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas2 => ViewerControlInternal.PageCanvases[1];
+        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas3 => ViewerControlInternal.PageCanvases[2];
+        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas4 => ViewerControlInternal.PageCanvases[3];
+
+        internal ProgressRing LoadingRing1 => ViewerControlInternal.PageLoadingRings[0];
+        internal ProgressRing LoadingRing2 => ViewerControlInternal.PageLoadingRings[1];
+        internal ProgressRing LoadingRing3 => ViewerControlInternal.PageLoadingRings[2];
+        internal ProgressRing LoadingRing4 => ViewerControlInternal.PageLoadingRings[3];
+
+        internal Border FocusBorder1 => ViewerControlInternal.FocusBorders[0];
+        internal Border FocusBorder2 => ViewerControlInternal.FocusBorders[1];
+        internal Border FocusBorder3 => ViewerControlInternal.FocusBorders[2];
+        internal Border FocusBorder4 => ViewerControlInternal.FocusBorders[3];
+
+        internal ColumnDefinition Col0 => ViewerControlInternal.Cols[0];
+        internal ColumnDefinition Col1 => ViewerControlInternal.Cols[1];
+        internal ColumnDefinition Col2 => ViewerControlInternal.Cols[2];
+        internal ColumnDefinition Col3 => ViewerControlInternal.Cols[3];
+
+        internal RowDefinition Row0 => ViewerControlInternal.Rows[0];
+        internal RowDefinition Row1 => ViewerControlInternal.Rows[1];
 
         internal bool IsGridMode { get => ViewModel.IsGridMode; set => ViewModel.IsGridMode = value; }
         internal ObservableCollection<ImageItem> GridItems => _gridItems;
@@ -74,14 +130,19 @@ namespace grid_image_viewer
             // Initialize Managers
             PlaylistManager = new PlaylistManager(this, _settings);
             ViewerManager = new ViewerManager(this, _settings);
-
-            // Sync ViewModel with Settings
-            ViewModel.MangaSplitCount = _settings.MangaSplitCount;
-            ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
             GridManager = new GridManager(this, _settings);
             EditorManager = new EditorManager(this, _settings);
             SlideshowManager = new SlideshowManager(this, _settings);
             InputHandler = new InputHandler(this, _settings);
+
+            // Setup Controls
+            ViewerControlInternal.PaintSurfaceRequested += (s, e) => ViewerManager.PaintCanvas(e.index, e.args);
+            GridControlInternal.GridView.ItemClick += ImageGridView_ItemClick;
+            GridControlInternal.GridView.SizeChanged += ImageGridView_SizeChanged;
+
+            // Sync ViewModel with Settings
+            ViewModel.MangaSplitCount = _settings.MangaSplitCount;
+            ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
 
             _gridItems = new ObservableCollection<ImageItem>();
             ImageGridView.ItemsSource = _gridItems;
