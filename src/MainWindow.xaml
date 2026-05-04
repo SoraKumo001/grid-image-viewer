@@ -14,6 +14,7 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
+
     <Grid
         x:Name="RootGrid" x:FieldModifier="internal"
         AllowDrop="True"
@@ -313,7 +314,9 @@
         </GridView>
         
         <!-- Folder Searching Overlay -->
-            <Border x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Background="#88000000" Visibility="Collapsed" IsHitTestVisible="True">
+            <Border x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Background="#88000000" 
+                    Visibility="{x:Bind BoolToVis(ViewModel.IsSearchingFolder), Mode=OneWay}" 
+                    IsHitTestVisible="True">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                     <ProgressRing IsActive="True" Width="64" Height="64" Foreground="#00A2ED" />
                     <TextBlock x:Uid="SearchingText" Text="Searching for images..." Foreground="White" FontSize="18" FontWeight="SemiBold" />
@@ -331,9 +334,11 @@
                        HorizontalAlignment="Left" VerticalAlignment="Bottom"
                        Margin="12" Padding="8,4"
                        Background="#66000000" CornerRadius="4"
+                       Visibility="{x:Bind BoolToVis(ViewModel.IsPageIndicatorVisible), Mode=OneWay}"
                        IsHitTestVisible="False"
                        Canvas.ZIndex="100">
                 <TextBlock x:Name="PageIndicator" x:FieldModifier="internal"
+                           Text="{x:Bind ViewModel.PageIndicatorText, Mode=OneWay}"
                            Foreground="White" FontSize="11" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
             </Border>
@@ -346,14 +351,14 @@
                        PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick"
                        Opened="SlideshowDialog_Opened">
             <StackPanel Spacing="12">
-                <CheckBox x:Name="SlideshowFullscreen" x:FieldModifier="internal" x:Uid="SlideshowFullscreen" Content="全画面表示(_F)" AccessKey="F"/>
-                <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" x:Uid="SlideshowRandom" Content="ランダムな並び順(_R)" AccessKey="R"/>
-                <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" x:Uid="SlideshowLoop" Content="ループする(_L)" AccessKey="L"/>
-                <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" x:Uid="SlideshowNextFolder" Content="次のフォルダも表示(_N)" AccessKey="N"/>
-                <CheckBox x:Name="SlideshowIncludeSiblings" x:FieldModifier="internal" x:Uid="SlideshowIncludeSiblings" Content="兄弟フォルダも含める(_S)" AccessKey="S"/>
-                <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="下位フォルダも含める(_B)" AccessKey="B"/>
-                <CheckBox x:Name="SlideshowUniformToFill" x:FieldModifier="internal" x:Uid="SlideshowUniformToFill" Content="拡大して全体を埋める(_C)" AccessKey="C"/>
-                <CheckBox x:Name="SlideshowCrossfade" x:FieldModifier="internal" x:Uid="SlideshowCrossfade" Content="クロスフェードを有効にする"/>
+                <CheckBox x:Name="SlideshowFullscreen" x:FieldModifier="internal" x:Uid="SlideshowFullscreen" Content="全画面表示(_F)" AccessKey="F" IsChecked="{x:Bind ViewModel.SlideshowFullscreen, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" x:Uid="SlideshowRandom" Content="ランダムな並び順(_R)" AccessKey="R" IsChecked="{x:Bind ViewModel.SlideshowRandom, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" x:Uid="SlideshowLoop" Content="ループする(_L)" AccessKey="L" IsChecked="{x:Bind ViewModel.SlideshowLoop, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" x:Uid="SlideshowNextFolder" Content="次のフォルダも表示(_N)" AccessKey="N" IsChecked="{x:Bind ViewModel.SlideshowNextFolder, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowIncludeSiblings" x:FieldModifier="internal" x:Uid="SlideshowIncludeSiblings" Content="兄弟フォルダも含める(_S)" AccessKey="S" IsChecked="{x:Bind ViewModel.SlideshowIncludeSiblings, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="下位フォルダも含める(_B)" AccessKey="B" IsChecked="{x:Bind ViewModel.SlideshowCurrentFolderOnly, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowUniformToFill" x:FieldModifier="internal" x:Uid="SlideshowUniformToFill" Content="拡大して全体を埋める(_C)" AccessKey="C" IsChecked="{x:Bind ViewModel.SlideshowUniformToFill, Mode=TwoWay}"/>
+                <CheckBox x:Name="SlideshowCrossfade" x:FieldModifier="internal" x:Uid="SlideshowCrossfade" Content="クロスフェードを有効にする" IsChecked="{x:Bind ViewModel.SlideshowCrossfade, Mode=TwoWay}"/>
                 <StackPanel Spacing="8" Margin="0,8,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -362,7 +367,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Uid="SlideshowIntervalLabel" Text="時間(_T)：" VerticalAlignment="Center"/>
-                        <NumberBox Grid.Column="1" x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Margin="4,0" HorizontalAlignment="Left" Width="120" AccessKey="T"/>
+                        <NumberBox Grid.Column="1" x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Margin="4,0" HorizontalAlignment="Left" Width="120" AccessKey="T" Value="{x:Bind ViewModel.SlideshowInterval, Mode=TwoWay}"/>
                         <TextBlock Grid.Column="2" x:Uid="SlideshowIntervalUnit" Text="秒毎" VerticalAlignment="Center" Width="40"/>
                     </Grid>
                     <Grid>
@@ -372,7 +377,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Uid="SlideshowCrossfadeDurationLabel" Text="フェード時間：" VerticalAlignment="Center"/>
-                        <NumberBox Grid.Column="1" x:Name="SlideshowCrossfadeDuration" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.05" LargeChange="0.1" Minimum="0" Maximum="5" Margin="4,0" HorizontalAlignment="Left" Width="120"/>
+                        <NumberBox Grid.Column="1" x:Name="SlideshowCrossfadeDuration" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.05" LargeChange="0.1" Minimum="0" Maximum="5" Margin="4,0" HorizontalAlignment="Left" Width="120" Value="{x:Bind ViewModel.SlideshowCrossfadeDuration, Mode=TwoWay}"/>
                         <TextBlock Grid.Column="2" x:Uid="SlideshowCrossfadeDurationUnit" Text="秒" VerticalAlignment="Center" Width="40"/>
                     </Grid>
                 </StackPanel>

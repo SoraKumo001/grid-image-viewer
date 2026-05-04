@@ -48,7 +48,7 @@ namespace grid_image_viewer
                 {
                     foreach (var entry in archive.Entries)
                     {
-                        if (entry != null && !entry.IsDirectory && MainWindow.IsSupportedExtension(Path.GetExtension(entry.Key) ?? ""))
+                        if (entry != null && !entry.IsDirectory && FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(entry.Key) ?? ""))
                         {
                             images.Add($"{archivePath}|{entry.Key}");
                         }

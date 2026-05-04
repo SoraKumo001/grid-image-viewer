@@ -473,7 +473,7 @@ namespace grid_image_viewer
                     }
                     else if (item is StorageFile file)
                     {
-                        if (MainWindow.IsSupportedExtension(Path.GetExtension(file.Path)))
+                        if (FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(file.Path)))
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
                             _window.LoadDirectory(dir, file.Path);

@@ -6,16 +6,17 @@ using System.Linq;
 
 namespace grid_image_viewer
 {
-    public class SlideshowManager
+    public class SlideshowManager : IDisposable
     {
         private MainWindow _mainWindow;
         private SettingsManager _settings;
         private DispatcherTimer _slideshowTimer;
-        public bool IsSlideshowRunning { get; private set; } = false;
+        public bool IsSlideshowRunning { get => ViewModel.IsSlideshowRunning; private set => ViewModel.IsSlideshowRunning = value; }
         public int[] SlideshowRandomIndices { get; private set; } = new int[4] { -1, -1, -1, -1 };
         private Random _random = new Random();
         private ResourceLoader _resourceLoader = new ResourceLoader();
         private bool _wasExpanded = false;
+        private MainViewModel ViewModel => _mainWindow.ViewModel;
 
         public SlideshowManager(MainWindow mainWindow, SettingsManager settings)
         {
@@ -40,22 +41,23 @@ namespace grid_image_viewer
 
         public async void OpenSlideshowDialogAsync()
         {
-            if (IsSlideshowRunning)
+            if (ViewModel.IsSlideshowRunning)
             {
                 StopSlideshow();
                 return;
             }
 
-            _mainWindow.SlideshowFullscreen.IsChecked = _settings.SlideshowFullscreen;
-            _mainWindow.SlideshowRandom.IsChecked = _settings.SlideshowRandom;
-            _mainWindow.SlideshowLoop.IsChecked = _settings.SlideshowLoop;
-            _mainWindow.SlideshowNextFolder.IsChecked = _settings.SlideshowNextFolder;
-            _mainWindow.SlideshowIncludeSiblings.IsChecked = _settings.SlideshowIncludeSiblings;
-            _mainWindow.SlideshowCurrentFolderOnly.IsChecked = _settings.SlideshowCurrentFolderOnly;
-            _mainWindow.SlideshowUniformToFill.IsChecked = _settings.SlideshowUniformToFill;
-            _mainWindow.SlideshowInterval.Value = _settings.SlideshowInterval;
-            _mainWindow.SlideshowCrossfade.IsChecked = _settings.SlideshowCrossfade;
-            _mainWindow.SlideshowCrossfadeDuration.Value = _settings.SlideshowCrossfadeDuration;
+            // Load settings into ViewModel
+            ViewModel.SlideshowFullscreen = _settings.SlideshowFullscreen;
+            ViewModel.SlideshowRandom = _settings.SlideshowRandom;
+            ViewModel.SlideshowLoop = _settings.SlideshowLoop;
+            ViewModel.SlideshowNextFolder = _settings.SlideshowNextFolder;
+            ViewModel.SlideshowIncludeSiblings = _settings.SlideshowIncludeSiblings;
+            ViewModel.SlideshowCurrentFolderOnly = _settings.SlideshowCurrentFolderOnly;
+            ViewModel.SlideshowUniformToFill = _settings.SlideshowUniformToFill;
+            ViewModel.SlideshowInterval = _settings.SlideshowInterval;
+            ViewModel.SlideshowCrossfade = _settings.SlideshowCrossfade;
+            ViewModel.SlideshowCrossfadeDuration = _settings.SlideshowCrossfadeDuration;
 
             SetSlideshowControlsEnabled(false);
 
@@ -64,9 +66,9 @@ namespace grid_image_viewer
             _mainWindow.SlideshowDialog.Opened -= SlideshowDialog_Opened;
             _mainWindow.SlideshowDialog.Opened += SlideshowDialog_Opened;
 
-            _mainWindow.IsDialogOpen = true;
+            ViewModel.IsDialogOpen = true;
             await _mainWindow.SlideshowDialog.ShowAsync();
-            _mainWindow.IsDialogOpen = false;
+            ViewModel.IsDialogOpen = false;
         }
 
         public void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args)
@@ -97,16 +99,17 @@ namespace grid_image_viewer
 
         public void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
-            _settings.SlideshowFullscreen = _mainWindow.SlideshowFullscreen.IsChecked ?? false;
-            _settings.SlideshowRandom = _mainWindow.SlideshowRandom.IsChecked ?? false;
-            _settings.SlideshowLoop = _mainWindow.SlideshowLoop.IsChecked ?? false;
-            _settings.SlideshowNextFolder = _mainWindow.SlideshowNextFolder.IsChecked ?? false;
-            _settings.SlideshowIncludeSiblings = _mainWindow.SlideshowIncludeSiblings.IsChecked ?? false;
-            _settings.SlideshowCurrentFolderOnly = _mainWindow.SlideshowCurrentFolderOnly.IsChecked ?? false;
-            _settings.SlideshowUniformToFill = _mainWindow.SlideshowUniformToFill.IsChecked ?? false;
-            _settings.SlideshowInterval = _mainWindow.SlideshowInterval.Value;
-            _settings.SlideshowCrossfade = _mainWindow.SlideshowCrossfade.IsChecked ?? false;
-            _settings.SlideshowCrossfadeDuration = _mainWindow.SlideshowCrossfadeDuration.Value;
+            // Sync ViewModel to Settings
+            _settings.SlideshowFullscreen = ViewModel.SlideshowFullscreen;
+            _settings.SlideshowRandom = ViewModel.SlideshowRandom;
+            _settings.SlideshowLoop = ViewModel.SlideshowLoop;
+            _settings.SlideshowNextFolder = ViewModel.SlideshowNextFolder;
+            _settings.SlideshowIncludeSiblings = ViewModel.SlideshowIncludeSiblings;
+            _settings.SlideshowCurrentFolderOnly = ViewModel.SlideshowCurrentFolderOnly;
+            _settings.SlideshowUniformToFill = ViewModel.SlideshowUniformToFill;
+            _settings.SlideshowInterval = ViewModel.SlideshowInterval;
+            _settings.SlideshowCrossfade = ViewModel.SlideshowCrossfade;
+            _settings.SlideshowCrossfadeDuration = ViewModel.SlideshowCrossfadeDuration;
             _settings.SaveSlideshowSettings();
 
             StartSlideshow();
@@ -303,6 +306,10 @@ namespace grid_image_viewer
                     }
                 }
             }
+        }
+        public void Dispose()
+        {
+            _slideshowTimer?.Stop();
         }
     }
 }

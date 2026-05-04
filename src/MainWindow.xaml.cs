@@ -5,7 +5,6 @@ using SkiaSharp.Views.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,7 +12,7 @@ namespace grid_image_viewer
 {
     public sealed partial class MainWindow : Window
     {
-        private List<string> _playlist = new List<string>();
+        public MainViewModel ViewModel { get; } = new MainViewModel();
 
         // === Components and Services ===
         internal SlideshowManager SlideshowManager { get; private set; }
@@ -28,13 +27,14 @@ namespace grid_image_viewer
         internal AnimationService AnimationService { get; private set; }
         internal DialogService DialogService { get; private set; }
 
-        internal bool IsGridMode { get => _isGridMode; set => _isGridMode = value; }
+
+        internal bool IsGridMode { get => ViewModel.IsGridMode; set => ViewModel.IsGridMode = value; }
         internal ObservableCollection<ImageItem> GridItems => _gridItems;
-        internal bool IsDialogOpen { get => _isDialogOpen; set => _isDialogOpen = value; }
-        internal List<string> Playlist => _playlist;
-        internal int CurrentIndex { get => _currentIndex; set => _currentIndex = value; }
-        internal string CurrentDirectory { get => _currentDirectory; set => _currentDirectory = value; }
-        internal bool IsSearchingFolder { get => _isSearchingFolder; set => _isSearchingFolder = value; }
+        internal bool IsDialogOpen { get => ViewModel.IsDialogOpen; set => ViewModel.IsDialogOpen = value; }
+        internal IList<string> Playlist => ViewModel.Playlist;
+        internal int CurrentIndex { get => ViewModel.CurrentIndex; set => ViewModel.CurrentIndex = value; }
+        internal string CurrentDirectory { get => ViewModel.CurrentDirectory; set => ViewModel.CurrentDirectory = value; }
+        internal bool IsSearchingFolder { get => ViewModel.IsSearchingFolder; set => ViewModel.IsSearchingFolder = value; }
 
         internal bool IsFullscreen
         {
@@ -54,26 +54,9 @@ namespace grid_image_viewer
             }
         }
 
-        private int _currentIndex = -1;
-        private string _currentDirectory = string.Empty;
-
-        public static readonly string[] SupportedExtensions =
-        {
-            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
-            ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
-        };
-
-        public static bool IsSupportedExtension(string extension)
-        {
-            string ext = extension.ToLowerInvariant();
-            return SupportedExtensions.Contains(ext) || ArchiveManager.ArchiveExtensions.Contains(ext);
-        }
         private SettingsManager _settings;
         private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
-        private bool _isGridMode = false;
-        private bool _isDialogOpen = false;
         private Random _random = new Random();
-        private bool _isSearchingFolder = false;
 
         public MainWindow()
         {
@@ -163,6 +146,7 @@ namespace grid_image_viewer
             PrintService.UnregisterForPrinting();
             ViewerManager.Dispose();
             GridManager.Dispose();
+            SlideshowManager.Dispose();
             foreach (var item in _gridItems) item.DisposeCodec();
 
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -202,8 +186,7 @@ namespace grid_image_viewer
             _loadCts = new System.Threading.CancellationTokenSource();
             var token = _loadCts.Token;
 
-            _currentDirectory = path;
-            FolderSearchingOverlay.Visibility = Visibility.Visible;
+            CurrentDirectory = path;
             IsSearchingFolder = true;
 
             _ = Task.Run(() =>
@@ -217,7 +200,7 @@ namespace grid_image_viewer
                     }
                     else
                     {
-                        initialFiles = GetFilesFromDirectory(path, false);
+                        initialFiles = FolderDiscoveryService.GetFilesFromDirectory(path, false);
                     }
 
                     var sorted = initialFiles.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
@@ -233,7 +216,6 @@ namespace grid_image_viewer
                 {
                     DispatcherQueue.TryEnqueue(() =>
                     {
-                        FolderSearchingOverlay.Visibility = Visibility.Collapsed;
                         IsSearchingFolder = false;
                     });
                 }
@@ -242,28 +224,26 @@ namespace grid_image_viewer
 
         private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
         {
-            if (_playlist.Count > 0)
+            if (ViewModel.Playlist.Count > 0)
             {
                 UpdateGridItems(false);
                 _ = UpdateDisplayAsync();
 
                 if (!ArchiveManager.IsArchive(path) && (includeSiblings || includeSubfolders))
                 {
-                    _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
+                    _ = Task.Run(() => DiscoverAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
                 }
                 else
                 {
-                    FolderSearchingOverlay.Visibility = Visibility.Collapsed;
                     IsSearchingFolder = false;
                 }
             }
             else if (includeSiblings || includeSubfolders)
             {
-                _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
+                _ = Task.Run(() => DiscoverAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
             }
             else
             {
-                FolderSearchingOverlay.Visibility = Visibility.Collapsed;
                 IsSearchingFolder = false;
             }
         }
@@ -272,152 +252,98 @@ namespace grid_image_viewer
         {
             // If we are in viewer mode and NOT switching to grid mode, 
             // we can defer populating thousands of grid items to avoid UI lag.
-            if (!IsGridMode && !forceFullUpdate && _playlist.Count > 500)
+            if (!IsGridMode && !forceFullUpdate && ViewModel.Playlist.Count > 500)
             {
                 _gridItems.Clear();
                 // Add at least current image so grid isn't totally empty if user peeks
-                if (_currentIndex >= 0 && _currentIndex < _playlist.Count)
+                if (ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count)
                 {
-                    _gridItems.Add(new ImageItem { FilePath = _playlist[_currentIndex], IsLoading = true });
+                    _gridItems.Add(new ImageItem { FilePath = ViewModel.Playlist[ViewModel.CurrentIndex], IsLoading = true });
                 }
                 return;
             }
 
             // Efficiently update grid items
-            if (_gridItems.Count == _playlist.Count) return;
+            if (_gridItems.Count == ViewModel.Playlist.Count) return;
 
             // Replacing the collection or clearing/adding many items can be slow.
             // Using a new collection and setting ItemsSource is often faster in WinUI for large lists.
             var newList = new ObservableCollection<ImageItem>();
-            foreach (var f in _playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
+            foreach (var f in ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
 
             _gridItems = newList;
             ImageGridView.ItemsSource = _gridItems;
             GridManager.RefreshThumbnails();
         }
 
-        private List<string> GetFilesFromDirectory(string dir, bool recursive)
-        {
-            List<string> files = new List<string>();
-            try
-            {
-                var options = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                foreach (var f in Directory.EnumerateFiles(dir, "*", options))
-                {
-                    if (IsSupportedExtension(Path.GetExtension(f)))
-                    {
-                        files.Add(f);
-                    }
-                }
-            }
-            catch { }
-            return files;
-        }
 
         private void UpdatePlaylist(List<string> files, string targetPath, bool alreadySorted)
         {
             string currentPath = !string.IsNullOrEmpty(targetPath) ? targetPath : CurrentImagePath;
+            List<string> sortedFiles;
             if (alreadySorted)
             {
-                _playlist = files;
+                sortedFiles = files;
             }
             else
             {
-                _playlist = files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+                sortedFiles = files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
             }
 
-            if (_playlist.Count > 0)
+            ViewModel.Playlist = new ObservableCollection<string>(sortedFiles);
+
+            if (ViewModel.Playlist.Count > 0)
             {
-                int idx = _playlist.IndexOf(currentPath);
-                _currentIndex = idx >= 0 ? idx : 0;
+                int idx = ViewModel.Playlist.IndexOf(currentPath);
+                ViewModel.CurrentIndex = idx >= 0 ? idx : 0;
             }
             else
             {
-                _currentIndex = -1;
+                ViewModel.CurrentIndex = -1;
             }
         }
 
-        private async Task LoadAdditionalFilesAsync(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
+        private async Task DiscoverAdditionalFilesAsync(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
         {
-            try
+            List<string> accumulatedFiles = new List<string>(ViewModel.Playlist);
+            var comparer = new NaturalStringComparer();
+
+            await FolderDiscoveryService.DiscoverFilesAsync(path, includeSiblings, includeSubfolders, (newFiles) =>
             {
-                List<string> accumulatedFiles = new List<string>(_playlist);
-                List<string> targetDirs = new List<string>();
-
-                if (includeSiblings)
-                {
-                    string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    string? parent = Path.GetDirectoryName(cleanPath);
-                    if (!string.IsNullOrEmpty(parent))
-                    {
-                        try
-                        {
-                            foreach (var d in Directory.EnumerateDirectories(parent))
-                            {
-                                if (token.IsCancellationRequested) return;
-                                if (d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
-                                {
-                                    targetDirs.Add(d);
-                                }
-                            }
-                        }
-                        catch { }
-                    }
-                }
-
-                var comparer = new NaturalStringComparer();
-
-                foreach (var dir in targetDirs)
+                DispatcherQueue.TryEnqueue(() =>
                 {
                     if (token.IsCancellationRequested) return;
 
-                    var folderFiles = await Task.Run(() => GetFilesFromDirectory(dir, includeSubfolders));
-                    if (folderFiles.Count > 0)
-                    {
-                        accumulatedFiles.AddRange(folderFiles);
-                        var sortedBatch = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
-                        accumulatedFiles = sortedBatch;
+                    accumulatedFiles.AddRange(newFiles);
+                    var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
+                    accumulatedFiles = sorted;
 
-                        DispatcherQueue.TryEnqueue(() =>
-                        {
-                            if (token.IsCancellationRequested) return;
-                            string currentPath = CurrentImagePath;
-                            UpdatePlaylist(sortedBatch, currentPath, true);
-                            UpdateGridItems(false);
-                            UpdatePageIndicator();
-                        });
-                    }
-                }
-
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    FolderSearchingOverlay.Visibility = Visibility.Collapsed;
-                    IsSearchingFolder = false;
+                    string currentPath = CurrentImagePath;
+                    UpdatePlaylist(sorted, currentPath, true);
+                    UpdateGridItems(false);
+                    UpdatePageIndicator();
                 });
-            }
-            catch
+            }, token);
+
+            DispatcherQueue.TryEnqueue(() =>
             {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    FolderSearchingOverlay.Visibility = Visibility.Collapsed;
-                    IsSearchingFolder = false;
-                });
-            }
+                IsSearchingFolder = false;
+            });
         }
 
 
         internal Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
         internal void UpdatePageIndicator()
         {
-            if (_settings.ShowPageIndicator && _playlist.Count > 0 && _currentIndex >= 0)
+            if (_settings.ShowPageIndicator && ViewModel.Playlist.Count > 0 && ViewModel.CurrentIndex >= 0)
             {
-                int displayIndex = IsGridMode ? (_currentIndex + 1) : Math.Min(_currentIndex + _settings.MangaSplitCount, _playlist.Count);
-                PageIndicator.Text = $"{displayIndex} / {_playlist.Count}";
-                PageIndicatorContainer.Visibility = Visibility.Visible;
+                int displayIndex = IsGridMode ? (ViewModel.CurrentIndex + 1) : Math.Min(ViewModel.CurrentIndex + _settings.MangaSplitCount, ViewModel.Playlist.Count);
+                ViewModel.PageIndicatorText = $"{displayIndex} / {ViewModel.Playlist.Count}";
+                ViewModel.IsPageIndicatorVisible = true;
             }
             else
             {
-                PageIndicatorContainer.Visibility = Visibility.Collapsed;
+                ViewModel.IsPageIndicatorVisible = false;
             }
         }
         internal List<Grid> GetPageGrids() => new List<Grid> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
@@ -426,7 +352,9 @@ namespace grid_image_viewer
         private void Canvas3_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(2, e);
         private void Canvas4_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(3, e);
 
-        internal string CurrentImagePath => _playlist != null && _currentIndex >= 0 && _currentIndex < _playlist.Count ? _playlist[_currentIndex] : string.Empty;
+        public Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+
+        internal string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;
         internal void ShowNotification(string message) => ViewerManager.ShowNotification(message);
         internal void Navigate(int offset, bool forceSingleStep = false) => ViewerManager.Navigate(offset, forceSingleStep);
         internal void NavigateFolder(int offset) => ViewerManager.NavigateFolder(offset);
