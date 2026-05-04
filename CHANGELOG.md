@@ -4,11 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## v1.2.2 (Current) - 2026-05-04
 
-- **Navigation Optimization**:
-  - Implemented background preloading of image playlists for the next and previous folders. This ensures near-instant folder transitions by having the file list ready before the user navigates.
-  - Centralized folder discovery logic into a dedicated service for better performance and consistency.
+- **WACK Compliance & Optimization**:
+  - [修正] Windows App Certification Kit (WACK) のリソース判定に基づき、スプラッシュ画面 (scale-200) とロック画面ロゴの解像度を規定サイズに修正
+  - [高速化] 次・前のフォルダの画像リスト（プレイリスト）をバックグラウンドで先読みする機能を実装。移動時の待ち時間を解消
+  - [修正] フォルダ移動時の再スキャンを廃止し、先読みデータを活用して瞬時のフォルダ遷移を実現
 - **Branding & Visuals**:
-  - Refined the application icon using a flood-fill transparency algorithm, preserving white fur/details inside the Shiba Inu's face while removing the background.
+  - [改善] アイコンの背景透過アルゴリズムを Flood Fill 方式に刷新。顔のディテールを維持したまま背景を完全透過
+  - [更新] アセット全般の余白を最適化し、アイコンの表示サイズを最大化
   - Optimized icon margins for a larger, more prominent visual presence across all application assets (SplashScreen, Logo, etc.).
 
 ## v1.2.1 - 2026-05-04
