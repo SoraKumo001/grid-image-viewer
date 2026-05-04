@@ -13,6 +13,7 @@
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>en-US;ja-JP</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
