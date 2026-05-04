@@ -54,6 +54,8 @@ namespace grid_image_viewer
             {
                 var settings = new SettingsManager();
                 string lastImagePath = settings.LastImagePath;
+                string lastDirectoryPath = settings.LastDirectoryPath;
+
                 if (!string.IsNullOrEmpty(lastImagePath))
                 {
                     if (ArchiveManager.IsArchivePath(lastImagePath))
@@ -62,11 +64,28 @@ namespace grid_image_viewer
                         if (System.IO.File.Exists(archivePath))
                         {
                             ((MainWindow)_window).LoadDirectory(archivePath, lastImagePath);
+                            fileLoaded = true;
                         }
                     }
                     else if (System.IO.File.Exists(lastImagePath))
                     {
                         ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
+                        fileLoaded = true;
+                    }
+                }
+
+                if (!fileLoaded && !string.IsNullOrEmpty(lastDirectoryPath))
+                {
+                    if (ArchiveManager.IsArchive(lastDirectoryPath))
+                    {
+                        if (System.IO.File.Exists(lastDirectoryPath))
+                        {
+                            ((MainWindow)_window).LoadDirectory(lastDirectoryPath);
+                        }
+                    }
+                    else if (System.IO.Directory.Exists(lastDirectoryPath))
+                    {
+                        ((MainWindow)_window).LoadDirectory(lastDirectoryPath);
                     }
                 }
             }

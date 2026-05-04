@@ -41,7 +41,14 @@ namespace grid_image_viewer
 
                 try
                 {
-                    if (ArchiveManager.IsArchive(node)) return node;
+                    if (ArchiveManager.IsArchive(node))
+                    {
+                        if (ArchiveManager.GetArchiveImages(node).Any())
+                        {
+                            return node;
+                        }
+                        continue;
+                    }
 
                     bool hasImages = Directory.EnumerateFiles(node)
                                               .Any(f => ImageExtensions.Contains(Path.GetExtension(f)));

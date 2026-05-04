@@ -152,7 +152,7 @@ namespace grid_image_viewer
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-            _settings.SaveWindowState(appWindow, CurrentImagePath);
+            _settings.SaveWindowState(appWindow, CurrentImagePath, CurrentDirectory);
         }
 
         public void ApplyBackgroundSettings()
@@ -184,10 +184,11 @@ namespace grid_image_viewer
         {
             _loadCts?.Cancel();
             _loadCts = new System.Threading.CancellationTokenSource();
-            var token = _loadCts.Token;
-
             CurrentDirectory = path;
             IsSearchingFolder = true;
+            FolderSearchingOverlay.Visibility = Visibility.Visible;
+            Playlist.Clear();
+            var token = _loadCts.Token;
 
             _ = Task.Run(() =>
             {

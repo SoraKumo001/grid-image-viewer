@@ -97,6 +97,7 @@ namespace grid_image_viewer
         public bool IsMaximized { get; set; } = false;
 
         public string LastImagePath { get; set; } = string.Empty;
+        public string LastDirectoryPath { get; set; } = string.Empty;
         public System.Collections.Generic.List<BookmarkItem> Bookmarks { get; set; } = new System.Collections.Generic.List<BookmarkItem>();
     }
 
@@ -149,6 +150,7 @@ namespace grid_image_viewer
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 
         public string LastImagePath { get => _data.LastImagePath; }
+        public string LastDirectoryPath { get => _data.LastDirectoryPath; }
         public System.Collections.Generic.List<BookmarkItem> Bookmarks { get => _data.Bookmarks; }
 
         public SettingsManager()
@@ -263,7 +265,7 @@ namespace grid_image_viewer
             }
         }
 
-        public void SaveWindowState(AppWindow appWindow, string currentImagePath)
+        public void SaveWindowState(AppWindow appWindow, string currentImagePath, string currentDirectory)
         {
             if (appWindow.Presenter is OverlappedPresenter overlapped)
             {
@@ -284,6 +286,10 @@ namespace grid_image_viewer
             if (!string.IsNullOrEmpty(currentImagePath))
             {
                 _data.LastImagePath = currentImagePath;
+            }
+            if (!string.IsNullOrEmpty(currentDirectory))
+            {
+                _data.LastDirectoryPath = currentDirectory;
             }
 
             Save();
