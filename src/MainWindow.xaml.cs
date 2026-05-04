@@ -180,7 +180,7 @@ namespace grid_image_viewer
         private void RootGrid_Drop(object sender, DragEventArgs e) => InputHandler.HandleDrop(sender, e);
         private System.Threading.CancellationTokenSource? _loadCts;
 
-        public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false)
+        public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false, List<string>? preloadedPlaylist = null)
         {
             _loadCts?.Cancel();
             _loadCts = new System.Threading.CancellationTokenSource();
@@ -194,22 +194,12 @@ namespace grid_image_viewer
             {
                 try
                 {
-                    List<string> initialFiles;
-                    if (ArchiveManager.IsArchive(path))
-                    {
-                        initialFiles = ArchiveManager.GetArchiveImages(path);
-                    }
-                    else
-                    {
-                        initialFiles = FolderDiscoveryService.GetFilesFromDirectory(path, false);
-                    }
-
-                    var sorted = initialFiles.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+                    List<string> initialFiles = preloadedPlaylist ?? FolderDiscoveryService.GetInitialPlaylist(path);
 
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
-                        UpdatePlaylist(sorted, initialFile, true);
+                        UpdatePlaylist(initialFiles, initialFile, true);
                         OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
                     });
                 }

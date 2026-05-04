@@ -136,5 +136,19 @@ namespace grid_image_viewer
             catch { }
             return files;
         }
+
+        public static List<string> GetInitialPlaylist(string path)
+        {
+            List<string> files;
+            if (ArchiveManager.IsArchive(path))
+            {
+                files = ArchiveManager.GetArchiveImages(path);
+            }
+            else
+            {
+                files = GetFilesFromDirectory(path, false);
+            }
+            return files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
+        }
     }
 }

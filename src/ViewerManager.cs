@@ -30,6 +30,8 @@ namespace grid_image_viewer
         private CancellationTokenSource? _folderPreloadCts;
         private string? _cachedNextFolder;
         private string? _cachedPrevFolder;
+        private List<string>? _cachedNextPlaylist;
+        private List<string>? _cachedPrevPlaylist;
         private string? _lastPreloadedDirectory;
         private int _cachedQuadLayout = 1;
         private ResourceLoader _resourceLoader = new ResourceLoader();
@@ -391,12 +393,26 @@ namespace grid_image_viewer
             _lastPreloadedDirectory = currentDir;
             _cachedNextFolder = null;
             _cachedPrevFolder = null;
+            _cachedNextPlaylist = null;
+            _cachedPrevPlaylist = null;
 
             try
             {
                 _cachedNextFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, 1, token), token);
                 if (token.IsCancellationRequested) return;
+                if (!string.IsNullOrEmpty(_cachedNextFolder))
+                {
+                    _cachedNextPlaylist = await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(_cachedNextFolder), token);
+                }
+
+                if (token.IsCancellationRequested) return;
+
                 _cachedPrevFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, -1, token), token);
+                if (token.IsCancellationRequested) return;
+                if (!string.IsNullOrEmpty(_cachedPrevFolder))
+                {
+                    _cachedPrevPlaylist = await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(_cachedPrevFolder), token);
+                }
             }
             catch (OperationCanceledException) { }
         }
@@ -685,10 +701,12 @@ namespace grid_image_viewer
             if (string.IsNullOrEmpty(_window.CurrentDirectory) || _window.IsSearchingFolder) return;
 
             string? cached = offset > 0 ? _cachedNextFolder : _cachedPrevFolder;
+            List<string>? cachedPlaylist = offset > 0 ? _cachedNextPlaylist : _cachedPrevPlaylist;
+
             if (!string.IsNullOrEmpty(cached))
             {
                 bool includeSiblings = _window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowIncludeSiblings;
-                _window.LoadDirectory(cached, includeSiblings: includeSiblings);
+                _window.LoadDirectory(cached, includeSiblings: includeSiblings, preloadedPlaylist: cachedPlaylist);
                 return;
             }
 
