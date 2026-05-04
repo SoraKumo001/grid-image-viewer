@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
 
 namespace grid_image_viewer
 {
@@ -58,54 +59,65 @@ namespace grid_image_viewer
 
         public void UpdateMetadataPanel()
         {
-            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0)
+            try
             {
+                if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0)
+                {
+                    UpdateFocusBorders();
+                    return;
+                }
+
+                int index = _window.CurrentIndex + _focusedPageIndex;
+                if (index >= _window.Playlist.Count) index = _window.CurrentIndex;
+
                 UpdateFocusBorders();
-                return;
+
+                int total = 0;
+                int splitCount = _settings.MangaSplitCount;
+                for (int i = 0; i < splitCount; i++)
+                {
+                    if (_window.CurrentIndex + i < _window.Playlist.Count) total++;
+                }
+
+                string title = "IMAGE INFO";
+                if (total > 1)
+                {
+                    _window.TxtMetaTitle.Text = $"{title} ({_focusedPageIndex + 1}/{total})";
+                }
+                else
+                {
+                    _window.TxtMetaTitle.Text = title;
+                }
+
+                string filePath = _window.Playlist[index];
+                var meta = MetadataService.GetMetadata(filePath);
+
+                _window.TxtMetaFileName.Text = meta.FileName;
+                _window.TxtMetaDimensions.Text = meta.Dimensions;
+                _window.TxtMetaFileSize.Text = meta.FileSize;
+
+                if (meta.HasExif)
+                {
+                    _window.ExifDivider.Visibility = Visibility.Visible;
+                    _window.ExifGrid.Visibility = Visibility.Visible;
+                    _window.TxtMetaCamera.Text = $"{meta.Make} {meta.Model}".Trim();
+                    _window.TxtMetaLens.Text = meta.LensModel ?? "-";
+                    _window.TxtMetaSettings.Text = $"{meta.FNumber}  {meta.ExposureTime}  ISO {meta.Iso}  {meta.FocalLength}".Trim();
+                    _window.TxtMetaDate.Text = meta.DateTaken ?? "-";
+                }
+                else
+                {
+                    _window.ExifDivider.Visibility = Visibility.Collapsed;
+                    _window.ExifGrid.Visibility = Visibility.Collapsed;
+                }
             }
-
-            int index = _window.CurrentIndex + _focusedPageIndex;
-            if (index >= _window.Playlist.Count) index = _window.CurrentIndex;
-
-            UpdateFocusBorders();
-
-            int total = 0;
-            int splitCount = _settings.MangaSplitCount;
-            for (int i = 0; i < splitCount; i++)
+            catch (System.Runtime.InteropServices.COMException ex)
             {
-                if (_window.CurrentIndex + i < _window.Playlist.Count) total++;
+                System.Diagnostics.Trace.WriteLine($"[MetadataDisplayService] COMException in UpdateMetadataPanel: 0x{ex.HResult:X} - {ex.Message}");
             }
-
-            string title = "IMAGE INFO";
-            if (total > 1)
+            catch (Exception ex)
             {
-                _window.TxtMetaTitle.Text = $"{title} ({_focusedPageIndex + 1}/{total})";
-            }
-            else
-            {
-                _window.TxtMetaTitle.Text = title;
-            }
-
-            string filePath = _window.Playlist[index];
-            var meta = MetadataService.GetMetadata(filePath);
-
-            _window.TxtMetaFileName.Text = meta.FileName;
-            _window.TxtMetaDimensions.Text = meta.Dimensions;
-            _window.TxtMetaFileSize.Text = meta.FileSize;
-
-            if (meta.HasExif)
-            {
-                _window.ExifDivider.Visibility = Visibility.Visible;
-                _window.ExifGrid.Visibility = Visibility.Visible;
-                _window.TxtMetaCamera.Text = $"{meta.Make} {meta.Model}".Trim();
-                _window.TxtMetaLens.Text = meta.LensModel ?? "-";
-                _window.TxtMetaSettings.Text = $"{meta.FNumber}  {meta.ExposureTime}  ISO {meta.Iso}  {meta.FocalLength}".Trim();
-                _window.TxtMetaDate.Text = meta.DateTaken ?? "-";
-            }
-            else
-            {
-                _window.ExifDivider.Visibility = Visibility.Collapsed;
-                _window.ExifGrid.Visibility = Visibility.Collapsed;
+                System.Diagnostics.Trace.WriteLine($"[MetadataDisplayService] Exception in UpdateMetadataPanel: {ex.Message}");
             }
         }
 

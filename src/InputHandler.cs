@@ -278,7 +278,7 @@ namespace grid_image_viewer
 
             if (_window.IsGridMode)
             {
-                // グリッドモード中にカーソルキーが押されたら処理
+                // Handle cursor keys during grid mode
                 if (e.Key == Windows.System.VirtualKey.Left || e.Key == Windows.System.VirtualKey.Right ||
                     e.Key == Windows.System.VirtualKey.Up || e.Key == Windows.System.VirtualKey.Down)
                 {
@@ -405,7 +405,7 @@ namespace grid_image_viewer
 
                 if (_gridScrollViewer != null)
                 {
-                    if (props.MouseWheelDelta < 0) // 下へスクロール
+                    if (props.MouseWheelDelta < 0) // Scroll down
                     {
                         if (_gridScrollViewer.VerticalOffset >= _gridScrollViewer.ScrollableHeight - 0.5)
                         {
@@ -413,7 +413,7 @@ namespace grid_image_viewer
                             e.Handled = true;
                         }
                     }
-                    else // 上へスクロール
+                    else // Scroll up
                     {
                         if (_gridScrollViewer.VerticalOffset <= 0.5)
                         {
@@ -425,7 +425,7 @@ namespace grid_image_viewer
                 return;
             }
 
-            // Navigate images (単一画像表示モード)
+            // Navigate images (Single image display mode)
             if (props.MouseWheelDelta < 0)
             {
                 _window.Navigate(1, isShift); // Next

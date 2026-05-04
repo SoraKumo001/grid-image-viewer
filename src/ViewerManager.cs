@@ -82,6 +82,12 @@ namespace grid_image_viewer
 
         public async Task UpdateDisplayAsync()
         {
+            if (!_window.DispatcherQueue.HasThreadAccess)
+            {
+                _window.DispatcherQueue.TryEnqueue(async () => await UpdateDisplayAsync());
+                return;
+            }
+
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count) return;
 
             if (_window.IsGridMode)
@@ -120,7 +126,7 @@ namespace grid_image_viewer
                 _window.RootGrid.Focus(FocusState.Programmatic);
             }
 
-            _window.AnimationService.StopAnimation();
+            try { _window.AnimationService.StopAnimation(); } catch { }
             UpdateStretch();
             _displayCts?.Cancel();
             _displayCts?.Dispose();
@@ -133,7 +139,11 @@ namespace grid_image_viewer
                 int remaining = _window.Playlist.Count - _window.CurrentIndex;
                 int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
 
-                _cachedQuadLayout = await Task.Run(() => GetEffectiveQuadLayout());
+                int currentIndex = _window.CurrentIndex;
+                var playlistSnapshot = _window.Playlist.ToList();
+
+                _cachedQuadLayout = await Task.Run(() => GetEffectiveQuadLayout(currentIndex, playlistSnapshot));
+
                 UpdateLayoutGrid(splitCount, effectiveSplitCount, _cachedQuadLayout);
 
                 var currentFiles = new List<string>();
@@ -159,8 +169,14 @@ namespace grid_image_viewer
 
                     if (indexToLoad != -1)
                     {
-                        currentFiles.Add(_window.Playlist[indexToLoad]);
-                        loadTasks.Add(LoadPageAsync(_window.Playlist[indexToLoad], _pageImages[i], _pageCanvases[i], _pageLoadingRings[i], i, token));
+                        try
+                        {
+                            currentFiles.Add(_window.Playlist[indexToLoad]);
+                            loadTasks.Add(LoadPageAsync(_window.Playlist[indexToLoad], _pageImages[i], _pageCanvases[i], _pageLoadingRings[i], i, token));
+                        }
+                        catch (Exception)
+                        {
+                        }
                     }
                 }
 
@@ -177,10 +193,16 @@ namespace grid_image_viewer
 
                 for (int i = effectiveSplitCount; i < 4; i++)
                 {
-                    _pageImages[i].Source = null;
-                    _pages[i].Reset();
-                    _pageCanvases[i].Invalidate();
-                    _pageLoadingRings[i].IsActive = false;
+                    try
+                    {
+                        _pageImages[i].Source = null;
+                        _pages[i].Reset();
+                        _pageCanvases[i].Invalidate();
+                        _pageLoadingRings[i].IsActive = false;
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
 
                 _ = PreloadAroundAsync();
@@ -196,141 +218,55 @@ namespace grid_image_viewer
 
         private void UpdateLayoutGrid(int splitCount, int effectiveSplitCount, int currentQuadLayout)
         {
-            bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
-
-            // Reset alignments
-            for (int i = 0; i < 4; i++)
+            try
             {
-                _pageImages[i].HorizontalAlignment = HorizontalAlignment.Center;
-                _pageImages[i].VerticalAlignment = VerticalAlignment.Center;
-                _prevImages[i].HorizontalAlignment = HorizontalAlignment.Center;
-                _prevImages[i].VerticalAlignment = VerticalAlignment.Center;
-            }
+                bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
 
-            if (effectiveSplitCount == 1)
-            {
-                _window.Col0.Width = new GridLength(1, GridUnitType.Star);
-                _window.Col1.Width = new GridLength(0); _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
-                _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
-
-                Grid.SetColumn(_window.PageGrid1, 0); Grid.SetRow(_window.PageGrid1, 0);
-                Grid.SetColumnSpan(_window.PageGrid1, 4); Grid.SetRowSpan(_window.PageGrid1, 2);
-                _window.PageGrid1.Visibility = Visibility.Visible;
-                _window.PageGrid2.Visibility = Visibility.Collapsed;
-                _window.PageGrid3.Visibility = Visibility.Collapsed;
-                _window.PageGrid4.Visibility = Visibility.Collapsed;
-                _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
-                _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Center;
-            }
-            else if (effectiveSplitCount == 2)
-            {
-                _window.Col0.Width = new GridLength(1, GridUnitType.Star);
-                _window.Col1.Width = new GridLength(1, GridUnitType.Star);
-                _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
-                _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
-
-                Grid.SetColumn(_window.PageGrid1, 1); Grid.SetRow(_window.PageGrid1, 0);
-                Grid.SetColumnSpan(_window.PageGrid1, 1); Grid.SetRowSpan(_window.PageGrid1, 2);
-                Grid.SetColumn(_window.PageGrid2, 0); Grid.SetRow(_window.PageGrid2, 0);
-                Grid.SetColumnSpan(_window.PageGrid2, 1); Grid.SetRowSpan(_window.PageGrid2, 2);
-
-                _window.PageGrid1.Visibility = Visibility.Visible;
-                _window.PageGrid2.Visibility = Visibility.Visible;
-                _window.PageGrid3.Visibility = Visibility.Collapsed;
-                _window.PageGrid4.Visibility = Visibility.Collapsed;
-
-                if (!uniformToFill)
+                for (int i = 0; i < 4; i++)
                 {
-                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
-                    _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Left;
-                    _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
-                    _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Right;
-                }
-            }
-            else if (effectiveSplitCount == 3)
-            {
-                _window.PageGrid1.Visibility = Visibility.Visible;
-                _window.PageGrid2.Visibility = Visibility.Visible;
-                _window.PageGrid3.Visibility = Visibility.Visible;
-                _window.PageGrid4.Visibility = Visibility.Collapsed;
-
-                if (currentQuadLayout == 2) // Grid mode (1 top, 2 bottom)
-                {
-                    _window.Col0.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col1.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
-                    _window.Row0.Height = new GridLength(1, GridUnitType.Star);
-                    _window.Row1.Height = new GridLength(1, GridUnitType.Star);
-
-                    Grid.SetColumn(_window.PageGrid1, 0); Grid.SetRow(_window.PageGrid1, 0);
-                    Grid.SetColumnSpan(_window.PageGrid1, 2); Grid.SetRowSpan(_window.PageGrid1, 1);
-                    Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 1);
-                    Grid.SetColumnSpan(_window.PageGrid2, 1); Grid.SetRowSpan(_window.PageGrid2, 1);
-                    Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 1);
-                    Grid.SetColumnSpan(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1);
-
-                    if (!uniformToFill)
+                    try
                     {
-                        _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image1_Prev.VerticalAlignment = VerticalAlignment.Bottom;
-
-                        _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;
-                        _window.Image2.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Left;
-                        _window.Image2_Prev.VerticalAlignment = VerticalAlignment.Top;
-
-                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;
-                        _window.Image3.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image3_Prev.HorizontalAlignment = HorizontalAlignment.Right;
-                        _window.Image3_Prev.VerticalAlignment = VerticalAlignment.Top;
+                        _pageImages[i].HorizontalAlignment = HorizontalAlignment.Center;
+                        _pageImages[i].VerticalAlignment = VerticalAlignment.Center;
+                        _prevImages[i].HorizontalAlignment = HorizontalAlignment.Center;
+                        _prevImages[i].VerticalAlignment = VerticalAlignment.Center;
+                    }
+                    catch (Exception)
+                    {
                     }
                 }
-                else // Horizontal 1x3
+
+                if (effectiveSplitCount == 1)
                 {
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col1.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col2.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col3.Width = new GridLength(0);
+                    _window.Col1.Width = new GridLength(0); _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
                     _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
 
-                    Grid.SetColumn(_window.PageGrid1, 2); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 2); Grid.SetColumnSpan(_window.PageGrid1, 1);
-                    Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 2); Grid.SetColumnSpan(_window.PageGrid2, 1);
-                    Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 0); Grid.SetRowSpan(_window.PageGrid3, 2); Grid.SetColumnSpan(_window.PageGrid3, 1);
+                    Grid.SetColumn(_window.PageGrid1, 0); Grid.SetRow(_window.PageGrid1, 0);
+                    Grid.SetColumnSpan(_window.PageGrid1, 4); Grid.SetRowSpan(_window.PageGrid1, 2);
+                    _window.PageGrid1.Visibility = Visibility.Visible;
+                    _window.PageGrid2.Visibility = Visibility.Collapsed;
+                    _window.PageGrid3.Visibility = Visibility.Collapsed;
+                    _window.PageGrid4.Visibility = Visibility.Collapsed;
+                    _window.Image1.HorizontalAlignment = HorizontalAlignment.Center;
+                    _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Center;
                 }
-            }
-            else // 4
-            {
-                _window.PageGrid1.Visibility = Visibility.Visible;
-                _window.PageGrid2.Visibility = Visibility.Visible;
-                _window.PageGrid3.Visibility = Visibility.Visible;
-                _window.PageGrid4.Visibility = Visibility.Visible;
-
-                if (currentQuadLayout == 1 || currentQuadLayout == 0) // Horizontal 1x4
-                {
-
-                    _window.Col0.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col1.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col2.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Col3.Width = new GridLength(1, GridUnitType.Star);
-                    _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
-
-                    Grid.SetColumn(_window.PageGrid1, 3); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 2); Grid.SetColumnSpan(_window.PageGrid1, 1);
-                    Grid.SetColumn(_window.PageGrid2, 2); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 2); Grid.SetColumnSpan(_window.PageGrid2, 1);
-                    Grid.SetColumn(_window.PageGrid3, 1); Grid.SetRow(_window.PageGrid3, 0); Grid.SetRowSpan(_window.PageGrid3, 2); Grid.SetColumnSpan(_window.PageGrid3, 1);
-                    Grid.SetColumn(_window.PageGrid4, 0); Grid.SetRow(_window.PageGrid4, 0); Grid.SetRowSpan(_window.PageGrid4, 2); Grid.SetColumnSpan(_window.PageGrid4, 1);
-                }
-                else // Grid 2x2
+                else if (effectiveSplitCount == 2)
                 {
                     _window.Col0.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col1.Width = new GridLength(1, GridUnitType.Star);
                     _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
-                    _window.Row0.Height = new GridLength(1, GridUnitType.Star);
-                    _window.Row1.Height = new GridLength(1, GridUnitType.Star);
+                    _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
 
-                    Grid.SetColumn(_window.PageGrid1, 1); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 1); Grid.SetColumnSpan(_window.PageGrid1, 1);
-                    Grid.SetColumn(_window.PageGrid2, 0); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 1); Grid.SetColumnSpan(_window.PageGrid2, 1);
-                    Grid.SetColumn(_window.PageGrid3, 1); Grid.SetRow(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1); Grid.SetColumnSpan(_window.PageGrid3, 1);
-                    Grid.SetColumn(_window.PageGrid4, 0); Grid.SetRow(_window.PageGrid4, 1); Grid.SetRowSpan(_window.PageGrid4, 1); Grid.SetColumnSpan(_window.PageGrid4, 1);
+                    Grid.SetColumn(_window.PageGrid1, 1); Grid.SetRow(_window.PageGrid1, 0);
+                    Grid.SetColumnSpan(_window.PageGrid1, 1); Grid.SetRowSpan(_window.PageGrid1, 2);
+                    Grid.SetColumn(_window.PageGrid2, 0); Grid.SetRow(_window.PageGrid2, 0);
+                    Grid.SetColumnSpan(_window.PageGrid2, 1); Grid.SetRowSpan(_window.PageGrid2, 2);
+
+                    _window.PageGrid1.Visibility = Visibility.Visible;
+                    _window.PageGrid2.Visibility = Visibility.Visible;
+                    _window.PageGrid3.Visibility = Visibility.Collapsed;
+                    _window.PageGrid4.Visibility = Visibility.Collapsed;
 
                     if (!uniformToFill)
                     {
@@ -338,21 +274,118 @@ namespace grid_image_viewer
                         _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Left;
                         _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
                         _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Right;
-                        _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
-                        _window.Image3_Prev.HorizontalAlignment = HorizontalAlignment.Left;
-                        _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
-                        _window.Image4_Prev.HorizontalAlignment = HorizontalAlignment.Right;
-
-                        _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image1_Prev.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image2_Prev.VerticalAlignment = VerticalAlignment.Bottom;
-                        _window.Image3.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image3_Prev.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image4.VerticalAlignment = VerticalAlignment.Top;
-                        _window.Image4_Prev.VerticalAlignment = VerticalAlignment.Top;
                     }
                 }
+                else if (effectiveSplitCount == 3)
+                {
+                    _window.PageGrid1.Visibility = Visibility.Visible;
+                    _window.PageGrid2.Visibility = Visibility.Visible;
+                    _window.PageGrid3.Visibility = Visibility.Visible;
+                    _window.PageGrid4.Visibility = Visibility.Collapsed;
+
+                    if (currentQuadLayout == 2)
+                    {
+                        _window.Col0.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col1.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
+                        _window.Row0.Height = new GridLength(1, GridUnitType.Star);
+                        _window.Row1.Height = new GridLength(1, GridUnitType.Star);
+
+                        Grid.SetColumn(_window.PageGrid1, 0); Grid.SetRow(_window.PageGrid1, 0);
+                        Grid.SetColumnSpan(_window.PageGrid1, 2); Grid.SetRowSpan(_window.PageGrid1, 1);
+                        Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 1);
+                        Grid.SetColumnSpan(_window.PageGrid2, 1); Grid.SetRowSpan(_window.PageGrid2, 1);
+                        Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 1);
+                        Grid.SetColumnSpan(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1);
+
+                        if (!uniformToFill)
+                        {
+                            _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                            _window.Image1_Prev.VerticalAlignment = VerticalAlignment.Bottom;
+
+                            _window.Image2.HorizontalAlignment = HorizontalAlignment.Left;
+                            _window.Image2.VerticalAlignment = VerticalAlignment.Top;
+                            _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Left;
+                            _window.Image2_Prev.VerticalAlignment = VerticalAlignment.Top;
+
+                            _window.Image3.HorizontalAlignment = HorizontalAlignment.Right;
+                            _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                            _window.Image3_Prev.HorizontalAlignment = HorizontalAlignment.Right;
+                            _window.Image3_Prev.VerticalAlignment = VerticalAlignment.Top;
+                        }
+                    }
+                    else
+                    {
+                        _window.Col0.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col1.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col2.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col3.Width = new GridLength(0);
+                        _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
+
+                        Grid.SetColumn(_window.PageGrid1, 2); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 2); Grid.SetColumnSpan(_window.PageGrid1, 1);
+                        Grid.SetColumn(_window.PageGrid2, 1); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 2); Grid.SetColumnSpan(_window.PageGrid2, 1);
+                        Grid.SetColumn(_window.PageGrid3, 0); Grid.SetRow(_window.PageGrid3, 0); Grid.SetRowSpan(_window.PageGrid3, 2); Grid.SetColumnSpan(_window.PageGrid3, 1);
+                    }
+                }
+                else
+                {
+                    _window.PageGrid1.Visibility = Visibility.Visible;
+                    _window.PageGrid2.Visibility = Visibility.Visible;
+                    _window.PageGrid3.Visibility = Visibility.Visible;
+                    _window.PageGrid4.Visibility = Visibility.Visible;
+
+                    if (currentQuadLayout == 1 || currentQuadLayout == 0)
+                    {
+
+                        _window.Col0.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col1.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col2.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col3.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Row0.Height = new GridLength(1, GridUnitType.Star); _window.Row1.Height = new GridLength(0);
+
+                        Grid.SetColumn(_window.PageGrid1, 3); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 2); Grid.SetColumnSpan(_window.PageGrid1, 1);
+                        Grid.SetColumn(_window.PageGrid2, 2); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 2); Grid.SetColumnSpan(_window.PageGrid2, 1);
+                        Grid.SetColumn(_window.PageGrid3, 1); Grid.SetRow(_window.PageGrid3, 0); Grid.SetRowSpan(_window.PageGrid3, 2); Grid.SetColumnSpan(_window.PageGrid3, 1);
+                        Grid.SetColumn(_window.PageGrid4, 0); Grid.SetRow(_window.PageGrid4, 0); Grid.SetRowSpan(_window.PageGrid4, 2); Grid.SetColumnSpan(_window.PageGrid4, 1);
+                    }
+                    else
+                    {
+                        _window.Col0.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col1.Width = new GridLength(1, GridUnitType.Star);
+                        _window.Col2.Width = new GridLength(0); _window.Col3.Width = new GridLength(0);
+                        _window.Row0.Height = new GridLength(1, GridUnitType.Star);
+                        _window.Row1.Height = new GridLength(1, GridUnitType.Star);
+
+                        Grid.SetColumn(_window.PageGrid1, 1); Grid.SetRow(_window.PageGrid1, 0); Grid.SetRowSpan(_window.PageGrid1, 1); Grid.SetColumnSpan(_window.PageGrid1, 1);
+                        Grid.SetColumn(_window.PageGrid2, 0); Grid.SetRow(_window.PageGrid2, 0); Grid.SetRowSpan(_window.PageGrid2, 1); Grid.SetColumnSpan(_window.PageGrid2, 1);
+                        Grid.SetColumn(_window.PageGrid3, 1); Grid.SetRow(_window.PageGrid3, 1); Grid.SetRowSpan(_window.PageGrid3, 1); Grid.SetColumnSpan(_window.PageGrid3, 1);
+                        Grid.SetColumn(_window.PageGrid4, 0); Grid.SetRow(_window.PageGrid4, 1); Grid.SetRowSpan(_window.PageGrid4, 1); Grid.SetColumnSpan(_window.PageGrid4, 1);
+
+                        if (!uniformToFill)
+                        {
+                            _window.Image1.HorizontalAlignment = HorizontalAlignment.Left;
+                            _window.Image1_Prev.HorizontalAlignment = HorizontalAlignment.Left;
+                            _window.Image2.HorizontalAlignment = HorizontalAlignment.Right;
+                            _window.Image2_Prev.HorizontalAlignment = HorizontalAlignment.Right;
+                            _window.Image3.HorizontalAlignment = HorizontalAlignment.Left;
+                            _window.Image3_Prev.HorizontalAlignment = HorizontalAlignment.Left;
+                            _window.Image4.HorizontalAlignment = HorizontalAlignment.Right;
+                            _window.Image4_Prev.HorizontalAlignment = HorizontalAlignment.Right;
+
+                            _window.Image1.VerticalAlignment = VerticalAlignment.Bottom;
+                            _window.Image1_Prev.VerticalAlignment = VerticalAlignment.Bottom;
+                            _window.Image2.VerticalAlignment = VerticalAlignment.Bottom;
+                            _window.Image2_Prev.VerticalAlignment = VerticalAlignment.Bottom;
+                            _window.Image3.VerticalAlignment = VerticalAlignment.Top;
+                            _window.Image3_Prev.VerticalAlignment = VerticalAlignment.Top;
+                            _window.Image4.VerticalAlignment = VerticalAlignment.Top;
+                            _window.Image4_Prev.VerticalAlignment = VerticalAlignment.Top;
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -457,41 +490,80 @@ namespace grid_image_viewer
 
             if (imageCtrl.Visibility == Visibility.Visible && imageCtrl.Source != null)
             {
-                _prevImages[pageIndex].Source = imageCtrl.Source;
+                try
+                {
+                    // Transfer the current source to the prev image for crossfade.
+                    // In WinUI 3, sharing ImageSource directly can be unstable, so we nullify the original first.
+                    var currentSource = imageCtrl.Source;
+                    imageCtrl.Source = null;
+                    _prevImages[pageIndex].Source = currentSource;
+                }
+                catch (Exception)
+                {
+                    _prevImages[pageIndex].Source = null;
+                }
             }
             else if (canvasCtrl.Visibility == Visibility.Visible)
             {
                 try
                 {
-                    var bitmap = _pages[pageIndex].EditedBitmap ?? _pages[pageIndex].Bitmap;
-                    if (bitmap != null)
+                    byte[]? pixels = null;
+                    int width = 0, height = 0;
+
+                    lock (_pages[pageIndex])
                     {
-                        using var snapshot = SKImage.FromBitmap(bitmap);
-                        if (snapshot != null)
+                        var bitmap = _pages[pageIndex].EditedBitmap ?? _pages[pageIndex].Bitmap;
+                        if (bitmap != null && bitmap.Width > 0 && bitmap.Height > 0)
                         {
-                            var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                            using var ms = new System.IO.MemoryStream();
-                            await Task.Run(() =>
+                            // Convert to Bgra8888 if necessary for WriteableBitmap compatibility
+                            if (bitmap.ColorType != SKColorType.Bgra8888)
                             {
-                                using var data = snapshot.Encode(SKEncodedImageFormat.Bmp, 100);
-                                if (data != null) data.SaveTo(ms);
-                            });
-                            ms.Position = 0;
-                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                            _prevImages[pageIndex].Source = bitmapImage;
+                                using var temp = new SKBitmap(new SKImageInfo(bitmap.Width, bitmap.Height, SKColorType.Bgra8888));
+                                bitmap.CopyTo(temp);
+                                pixels = temp.Bytes;
+                            }
+                            else
+                            {
+                                pixels = bitmap.Bytes;
+                            }
+                            width = bitmap.Width;
+                            height = bitmap.Height;
                         }
                     }
+
+                    if (pixels != null)
+                    {
+                        var tcs = new TaskCompletionSource<bool>();
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            try
+                            {
+                                var wb = new Microsoft.UI.Xaml.Media.Imaging.WriteableBitmap(width, height);
+                                using (var stream = System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.AsStream(wb.PixelBuffer))
+                                {
+                                    stream.Write(pixels, 0, pixels.Length);
+                                }
+                                _prevImages[pageIndex].Source = wb;
+                                tcs.SetResult(true);
+                            }
+                            catch (Exception)
+                            {
+                                tcs.SetResult(false);
+                            }
+                        });
+                        await tcs.Task;
+                    }
                 }
-                catch
+                catch (Exception)
                 {
                     _prevImages[pageIndex].Source = null;
                 }
             }
 
-            _prevContainers[pageIndex].Opacity = 1;
+            _window.DispatcherQueue.TryEnqueue(() => { _prevContainers[pageIndex].Opacity = 1; });
 
             _pages[pageIndex].CurrentFilePath = filePath;
-            loadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
+            _window.DispatcherQueue.TryEnqueue(() => { loadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning; });
 
             try
             {
@@ -571,7 +643,7 @@ namespace grid_image_viewer
                             bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
                             await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
                         }
-                        catch
+                        catch (Exception)
                         {
                             var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
                             if (bmpBytes != null)
@@ -589,7 +661,14 @@ namespace grid_image_viewer
                     _pages[pageIndex].CurrentFilePath = filePath;
                     canvasCtrl.Visibility = Visibility.Collapsed;
                     imageCtrl.Visibility = Visibility.Visible;
-                    imageCtrl.Source = bitmapImage;
+
+                    try
+                    {
+                        imageCtrl.Source = bitmapImage;
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
 
                 if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
@@ -604,7 +683,9 @@ namespace grid_image_viewer
                     if (pageIndex == 0) UpdateMetadataPanel();
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+            }
             finally
             {
                 loadingRing.IsActive = false;
@@ -620,22 +701,36 @@ namespace grid_image_viewer
 
         public void UpdateStretch()
         {
-            var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill)
-                ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill
-                : (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
-
-            int stretchMode = (int)stretch;
-
-            for (int i = 0; i < 4; i++)
+            try
             {
-                _pageImages[i].Stretch = stretch;
-                _prevImages[i].Stretch = stretch;
-                _pages[i].StretchMode = stretchMode;
-                _pageCanvases[i].Invalidate();
+                var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill)
+                    ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill
+                    : (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
+
+                int stretchMode = (int)stretch;
+
+                for (int i = 0; i < 4; i++)
+                {
+                    try
+                    {
+                        _pageImages[i].Stretch = stretch;
+                        _prevImages[i].Stretch = stretch;
+                        _pages[i].StretchMode = stretchMode;
+                        _pageCanvases[i].Invalidate();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine($"[ViewerManager] Exception in UpdateStretch loop [Index={i}]: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"[ViewerManager] Global Exception in UpdateStretch: {ex.Message}");
             }
         }
 
-        private int GetEffectiveQuadLayout()
+        private int GetEffectiveQuadLayout(int currentIndex, List<string> playlist)
         {
             int layout = _settings.QuadLayoutMode;
             if (_settings.MangaSplitCount != 4 || layout != 0) return layout;
@@ -645,28 +740,29 @@ namespace grid_image_viewer
             for (int i = 0; i < 4; i++)
             {
                 int indexToLoad = -1;
-                if (i == 0) indexToLoad = _window.CurrentIndex;
+                if (i == 0) indexToLoad = currentIndex;
                 else
                 {
                     if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
                     {
                         if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1)
                             indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
-                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
-                            indexToLoad = _window.CurrentIndex + i;
+                        else if (currentIndex + i < playlist.Count)
+                            indexToLoad = currentIndex + i;
                     }
-                    else if (_window.CurrentIndex + i < _window.Playlist.Count)
+                    else if (currentIndex + i < playlist.Count)
                     {
-                        indexToLoad = _window.CurrentIndex + i;
+                        indexToLoad = currentIndex + i;
                     }
                 }
 
-                if (indexToLoad != -1 && indexToLoad < _window.Playlist.Count)
+                if (indexToLoad != -1 && indexToLoad < playlist.Count)
                 {
                     try
                     {
-                        var path = _window.Playlist[indexToLoad];
-                        var (w, h) = _window.ImageEditService.GetImageSize(path);
+                        var path = playlist[indexToLoad];
+                        // Use ImageProcessor directly (instead of ImageEditService) for thread safety
+                        var (w, h) = ImageProcessor.GetImageSize(path);
 
                         if (w > 0 && h > 0)
                         {

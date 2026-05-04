@@ -5,7 +5,7 @@ using System.Threading;
 namespace grid_image_viewer
 {
     /// <summary>
-    /// 1ページ分のSkiaSharp画像・アニメーション状態を管理するクラス。
+    /// Manages SkiaSharp image data and animation state for a single page.
     /// </summary>
     public class PageRenderer : IDisposable
     {
@@ -23,8 +23,8 @@ namespace grid_image_viewer
         public bool IsAnimated => Codec != null && FrameCount > 1;
 
         /// <summary>
-        /// SkiaSharp用のファイルを読み込み、コーデックとビットマップを初期化する。
-        /// バックグラウンドスレッドから呼ぶこと。
+        /// Loads a file for SkiaSharp and initializes codec and bitmap.
+        /// Should be called from a background thread.
         /// </summary>
         public void LoadSkia(string filePath, CancellationToken token)
         {
@@ -84,7 +84,7 @@ namespace grid_image_viewer
                 }
                 else
                 {
-                    // アニメーションの場合、最初のフレームをデコードしておく
+                    // For animated images, decode the first frame.
                     var imageInfo = new SKImageInfo(codec.Info.Width, codec.Info.Height, codec.Info.ColorType, codec.Info.AlphaType);
                     var options = new SKCodecOptions { FrameIndex = 0 };
                     codec.GetPixels(imageInfo, bitmap.GetPixels(), options);
@@ -97,8 +97,8 @@ namespace grid_image_viewer
         }
 
         /// <summary>
-        /// アニメーションフレームを1つ進め、次のフレームのタイマー間隔(ms)を返す。
-        /// 実際のデコード処理もここで行うことでPaintの負荷を下げ、アニメーションを滑らかにする。
+        /// Advances the animation by one frame and returns the next frame's duration (ms).
+        /// Decoding is done here to reduce Paint load and smooth out animations.
         /// </summary>
         public int AdvanceFrame()
         {
@@ -111,7 +111,7 @@ namespace grid_image_viewer
 
                 var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
 
-                // フレーム0または前のフレーム情報がない場合はバッファをクリア
+                // Clear buffer for frame 0 or if there is no prior frame info.
                 if (PriorFrame == -1 || CurrentFrame == 0)
                 {
                     Bitmap.Erase(SKColors.Transparent);
@@ -133,7 +133,7 @@ namespace grid_image_viewer
         }
 
         /// <summary>
-        /// キャンバスにビットマップを描画する。
+        /// Paints the bitmap onto the canvas.
         /// </summary>
         public void Paint(SKCanvas canvas, SKImageInfo info, int horizontalAlignment, int verticalAlignment = 1)
         {
@@ -185,9 +185,6 @@ namespace grid_image_viewer
             }
         }
 
-        /// <summary>
-        /// リソースを解放する。
-        /// </summary>
         public SKBitmap? EditedBitmap { get; set; }
 
         public void Reset()

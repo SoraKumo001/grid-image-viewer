@@ -53,10 +53,22 @@ namespace grid_image_viewer
                 prevContainers[pageIndex].Opacity = 0;
             };
 
-            sb.Begin();
+            try
+            {
+                sb.Begin();
+            }
+            catch (Exception)
+            {
+            }
 
-            // 画像が切り替わったのでメタデータも更新（パネルが開いている場合のみ）
-            if (pageIndex == 0) _window.MetadataDisplayService.UpdateMetadataPanel();
+            // Update metadata after image transition (only if panel is open)
+            try
+            {
+                if (pageIndex == 0) _window.MetadataDisplayService.UpdateMetadataPanel();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public void StopAnimation()
@@ -99,7 +111,7 @@ namespace grid_image_viewer
                     int interval = viewerManager.Pages[i].AdvanceFrame();
                     if (interval < minInterval) minInterval = interval;
                     anyAnimated = true;
-                    // _pageCanvases[i].Invalidate(); は MainWindow 経由で取得するか、ViewerManager にメソッドを作る
+                    // Invalidate the specific page through ViewerManager
                     viewerManager.InvalidatePage(i);
                 }
             }

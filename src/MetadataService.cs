@@ -59,7 +59,7 @@ namespace grid_image_viewer
                     directories = ImageMetadataReader.ReadMetadata(filePath);
                 }
 
-                // 1. 基本的な解像度の取得 (ディレクトリによってタグが異なるため優先順位をつけて取得)
+                // 1. Get basic resolution (Prioritized across directories since tags vary)
                 int width = 0, height = 0;
 
                 // JPEG / EXIF
@@ -88,7 +88,7 @@ namespace grid_image_viewer
                     if (height == 0 && int.TryParse(ifd0.GetString(ExifDirectoryBase.TagImageHeight), out var h)) height = h;
                 }
 
-                // PNG, BMP, etc (解像度がまだ取れていない場合)
+                // PNG, BMP, etc. (Fallback if resolution was not retrieved yet)
                 if (width == 0)
                 {
                     var jpegDir = directories.OfType<JpegDirectory>().FirstOrDefault();
@@ -117,7 +117,7 @@ namespace grid_image_viewer
             }
             catch (Exception)
             {
-                // 解析エラー時は基本情報のみで返す
+                // Return only basic info on parsing error
             }
             return info;
         }

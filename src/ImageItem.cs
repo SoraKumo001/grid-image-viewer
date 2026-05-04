@@ -14,10 +14,10 @@ namespace grid_image_viewer
         public string FilePath { get; set; } = string.Empty;
         public string FileName => System.IO.Path.GetFileName(FilePath);
 
-        // 画像のアスペクト比 (幅 / 高さ)。1.0 = 正方形、>1 = 横長、<1 = 縦長
+        // Image aspect ratio (Width / Height). 1.0 = Square, >1 = Landscape, <1 = Portrait
         public double AspectRatio { get; set; } = 1.0;
 
-        // アニメーション用
+        // For animation
         public SKCodec? Codec { get; set; }
         public SKData? CodecData { get; set; }
         public int FrameCount { get; set; } = 0;
@@ -68,7 +68,7 @@ namespace grid_image_viewer
         private bool _isDecodingFrame = false;
 
         /// <summary>
-        /// 現在のフレームを非同期で WriteableBitmap に描画して Thumbnail を更新する
+        /// Asynchronously draws the current frame to a WriteableBitmap and updates the Thumbnail.
         /// </summary>
         public async void AdvanceFrame(int decodeWidth, Microsoft.UI.Dispatching.DispatcherQueue dispatcher)
         {
@@ -79,7 +79,7 @@ namespace grid_image_viewer
             int previousFrame = _priorFrameIndex;
             CurrentFrame = (CurrentFrame + 1) % FrameCount;
 
-            // ループして先頭に戻る場合は、ベースフレームなしで描画し直す
+            // If looping back to the start, redraw without a base frame.
             if (CurrentFrame == 0) previousFrame = -1;
 
             try
@@ -111,9 +111,9 @@ namespace grid_image_viewer
                         Codec.GetPixels(_animationBuffer.Info, _animationBuffer.GetPixels(), options);
                         _priorFrameIndex = CurrentFrame;
 
-                        // デコードサイズを制限してリサイズ
+                        // Resize with limited decode size
                         float scale = Math.Min((float)decodeWidth / info.Width, (float)decodeWidth / info.Height);
-                        scale = Math.Min(scale, 1.0f); // 元サイズより大きくしない
+                        scale = Math.Min(scale, 1.0f); // Do not exceed original size
                         int targetW = Math.Max(1, (int)(info.Width * scale));
                         int targetH = Math.Max(1, (int)(info.Height * scale));
 

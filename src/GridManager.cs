@@ -32,15 +32,15 @@ namespace grid_image_viewer
             StopGridAnimation();
             foreach (var old in _window.GridItems) old.DisposeCodec();
 
-            // グリッドセルサイズに基づいてデコード解像度を決定（DPIスケーリング考慮）
+            // Determine decode resolution based on grid cell size (considering DPI scaling)
             int decodeSize = 300;
             if (_window.ImageGridView.ItemsPanelRoot is ItemsWrapGrid wg && wg.ItemWidth > 0)
             {
-                decodeSize = (int)Math.Max(wg.ItemWidth, wg.ItemHeight) * 2; // Retina対応
+                decodeSize = (int)Math.Max(wg.ItemWidth, wg.ItemHeight) * 2; // Support Retina/High DPI
             }
             else
             {
-                // まだレイアウトされていない場合はウィンドウサイズから推定
+                // Estimate from window size if layout is not yet determined
                 double maxDim = Math.Max(_window.ImageGridView.ActualWidth, _window.ImageGridView.ActualHeight);
                 if (maxDim > 0)
                 {
@@ -81,7 +81,7 @@ namespace grid_image_viewer
                     return;
                 }
 
-                // 全読み込み後にレイアウト再計算 & アニメーション開始
+                // Recalculate layout and start animation after all items are loaded
                 _window.DispatcherQueue.TryEnqueue(() =>
                 {
                     UpdateGridLayout();
@@ -292,7 +292,7 @@ namespace grid_image_viewer
         public void StartGridAnimation()
         {
             if (_gridAnimationTimer != null) return;
-            // アニメーション画像が1つもなければタイマー不要
+            // No timer needed if there are no animated images
             if (!_window.GridItems.Any(i => i.IsAnimated)) return;
 
             _gridAnimationTimer = new DispatcherTimer();
@@ -318,7 +318,7 @@ namespace grid_image_viewer
             {
                 if (item.IsAnimated)
                 {
-                    // 表示範囲内（またはバッファ内）でコンテナが実体化されている場合のみアニメーションを進める
+                    // Only advance animation if the container is materialized within the viewport (or buffer)
                     var container = _window.ImageGridView.ContainerFromItem(item);
                     if (container != null)
                     {
@@ -328,7 +328,7 @@ namespace grid_image_viewer
                         }
                         else if (item.Thumbnail == null && !item.IsLoading && item.RetryCount < 5)
                         {
-                            // 読み込み失敗＆現在見えている要素の場合、リトライを実行
+                            // Retry if loading failed and the element is currently visible
                             item.RetryCount++;
                             item.IsLoading = true;
                             _ = Task.Run(() => LoadSingleThumbnailAsync(item, _gridDecodeSize, _gridCts?.Token ?? CancellationToken.None));
@@ -368,12 +368,12 @@ namespace grid_image_viewer
             double H = _window.ImageGridView.ActualHeight - _window.ImageGridView.Padding.Top - _window.ImageGridView.Padding.Bottom - 8;
             if (W <= 0 || H <= 0) return;
 
-            // 最頻値のアスペクト比を算出（最も多い比率を基準にする）
+            // Calculate the mode of aspect ratios (using the most frequent ratio as the base)
             var ratios = _window.GridItems.Select(x => x.AspectRatio).Where(r => r > 0).ToList();
             double modeAspect = 1.0;
             if (ratios.Count > 0)
             {
-                // 小数2桁で丸めてグループ化し、最も多い比率を採用
+                // Group by rounding to 2 decimal places and adopt the most frequent ratio
                 modeAspect = ratios
                     .GroupBy(r => Math.Round(r, 2))
                     .OrderByDescending(g => g.Count())
@@ -381,7 +381,7 @@ namespace grid_image_viewer
                     .Average();
             }
 
-            // 最適な列数を探索: セル内に収まる画像面積が最大になる組み合わせを選ぶ
+            // Search for optimal column count: choose the combination that maximizes the image area within the cells
             double bestArea = 0;
             int bestCols = 1;
 
@@ -391,17 +391,17 @@ namespace grid_image_viewer
                 double cellW = W / cols;
                 double cellH = H / rows;
 
-                // セル内でアスペクト比を保持して収まる画像サイズを計算
+                // Calculate image size that fits in the cell while maintaining aspect ratio
                 double imgW, imgH;
                 if (modeAspect >= cellW / cellH)
                 {
-                    // 幅に合わせる
+                    // Fit to width
                     imgW = cellW;
                     imgH = cellW / modeAspect;
                 }
                 else
                 {
-                    // 高さに合わせる
+                    // Fit to height
                     imgH = cellH;
                     imgW = cellH * modeAspect;
                 }
@@ -414,7 +414,7 @@ namespace grid_image_viewer
                 }
             }
 
-            // フォールバック: セルが小さすぎる場合は従来のスクロールモード
+            // Fallback: use traditional scroll mode if cells are too small
             int bestRows = (int)Math.Ceiling((double)totalItems / bestCols);
             double finalCellW = Math.Floor(W / bestCols);
             double finalCellH = Math.Floor(H / bestRows);
@@ -422,7 +422,7 @@ namespace grid_image_viewer
 
             if (minDim < 120)
             {
-                // スクロールモード: 幅ベースで列数を決め、高さはアスペクト比に従う
+                // Scroll mode: determine column count based on width, height follows aspect ratio
                 int cols = Math.Max(1, (int)(W / 150));
                 double scrollW = Math.Floor(W / cols);
                 double scrollH = Math.Floor(scrollW / modeAspect);

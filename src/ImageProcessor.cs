@@ -59,7 +59,7 @@ namespace grid_image_viewer
 
 
         /// <summary>
-        /// 画像を指定フォーマットで保存する。
+        /// Saves an image in the specified format.
         /// </summary>
         public static void SaveImage(string sourcePath, string destPath, string targetExtension, int quality = 100)
         {
@@ -89,7 +89,7 @@ namespace grid_image_viewer
         }
 
         /// <summary>
-        /// 画像をリサイズして上書き保存する。
+        /// Resizes and saves an image, overwriting the destination.
         /// </summary>
         public static SKBitmap? GetResizedBitmap(string sourcePath, int newWidth, int newHeight, SKBitmap? currentBmp)
         {
@@ -326,11 +326,7 @@ namespace grid_image_viewer
         }
 
         /// <summary>
-        /// 画像の元のサイズを取得する。
-        /// </summary>
-
-        /// <summary>
-        /// 画像の元のサイズを取得する。
+        /// Retrieves the original size of the image.
         /// </summary>
         public static (int width, int height) GetImageSize(string sourcePath)
         {
