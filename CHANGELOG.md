@@ -5,13 +5,12 @@ All notable changes to this project will be documented in this file.
 ## v1.2.2 (Current) - 2026-05-04
 
 - **WACK Compliance & Optimization**:
-  - [修正] Windows App Certification Kit (WACK) のリソース判定に基づき、スプラッシュ画面 (scale-200) とロック画面ロゴの解像度を規定サイズに修正
-  - [高速化] 次・前のフォルダの画像リスト（プレイリスト）をバックグラウンドで先読みする機能を実装。移動時の待ち時間を解消
-  - [修正] フォルダ移動時の再スキャンを廃止し、先読みデータを活用して瞬時のフォルダ遷移を実現
+  - [Fix] Corrected splash screen (scale-200) and lock screen logo dimensions to meet Windows App Certification Kit (WACK) requirements.
+  - [Feature] Implemented background preloading for the next and previous folder's image playlists, eliminating wait times during navigation.
+  - [Optimization] Removed redundant directory re-scanning during navigation by utilizing preloaded playlist data for instant transitions.
 - **Branding & Visuals**:
-  - [改善] アイコンの背景透過アルゴリズムを Flood Fill 方式に刷新。顔のディテールを維持したまま背景を完全透過
-  - [更新] アセット全般の余白を最適化し、アイコンの表示サイズを最大化
-  - Optimized icon margins for a larger, more prominent visual presence across all application assets (SplashScreen, Logo, etc.).
+  - [Improvement] Overhauled the application icon transparency using a flood-fill algorithm, preserving facial details while ensuring a clean background.
+  - [Visual] Optimized margins across all assets to maximize the visual size and prominence of the application icon.
 
 ## v1.2.1 - 2026-05-04
 
