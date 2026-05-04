@@ -265,7 +265,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Uid="SlideshowIntervalLabel" Text="時間(_T)：" VerticalAlignment="Center"/>
-                        <NumberBox Grid.Column="1" x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Margin="4,0" HorizontalAlignment="Left" Width="120" AccessKey="T" Value="{x:Bind ViewModel.SlideshowInterval, Mode=TwoWay}"/>
+                        <NumberBox Grid.Column="1" x:Name="SlideshowInterval" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.5" LargeChange="1.0" Minimum="0.1" Margin="4,0" HorizontalAlignment="Left" Width="240" AccessKey="T" Value="{x:Bind ViewModel.SlideshowInterval, Mode=TwoWay}"/>
                         <TextBlock Grid.Column="2" x:Uid="SlideshowIntervalUnit" Text="秒毎" VerticalAlignment="Center" Width="40"/>
                     </Grid>
                     <Grid>
@@ -275,7 +275,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Uid="SlideshowCrossfadeDurationLabel" Text="フェード時間：" VerticalAlignment="Center"/>
-                        <NumberBox Grid.Column="1" x:Name="SlideshowCrossfadeDuration" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.05" LargeChange="0.1" Minimum="0" Maximum="5" Margin="4,0" HorizontalAlignment="Left" Width="120" Value="{x:Bind ViewModel.SlideshowCrossfadeDuration, Mode=TwoWay}"/>
+                        <NumberBox Grid.Column="1" x:Name="SlideshowCrossfadeDuration" x:FieldModifier="internal" SpinButtonPlacementMode="Inline" SmallChange="0.05" LargeChange="0.1" Minimum="0" Maximum="5" Margin="4,0" HorizontalAlignment="Left" Width="240" Value="{x:Bind ViewModel.SlideshowCrossfadeDuration, Mode=TwoWay}"/>
                         <TextBlock Grid.Column="2" x:Uid="SlideshowCrossfadeDurationUnit" Text="秒" VerticalAlignment="Center" Width="40"/>
                     </Grid>
                 </StackPanel>
