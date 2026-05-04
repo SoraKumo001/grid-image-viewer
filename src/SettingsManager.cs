@@ -86,6 +86,7 @@ namespace grid_image_viewer
         public int ImageStretchMode { get; set; } = 2; // 0: None, 2: Uniform (Contain), 3: UniformToFill (Cover)
         public int BackgroundColorMode { get; set; } = 0; // 0: System (Mica), 1: Black, 2: White
         public bool UseHighQualityScaling { get; set; } = true;
+        public bool ShowPageIndicator { get; set; } = true;
 
         public int JpegQuality { get; set; } = 90;
 
@@ -143,6 +144,7 @@ namespace grid_image_viewer
         public int ImageStretchMode { get => _data.ImageStretchMode; set => _data.ImageStretchMode = value; }
         public int BackgroundColorMode { get => _data.BackgroundColorMode; set => _data.BackgroundColorMode = value; }
         public bool UseHighQualityScaling { get => _data.UseHighQualityScaling; set => _data.UseHighQualityScaling = value; }
+        public bool ShowPageIndicator { get => _data.ShowPageIndicator; set => _data.ShowPageIndicator = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 

@@ -67,6 +67,7 @@ namespace grid_image_viewer
 
                 _window.ImageGridView.SelectedIndex = _window.CurrentIndex;
                 _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
+                _window.UpdatePageIndicator();
                 _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
                 {
                     if (_window.ImageGridView.SelectedItem != null)
@@ -164,6 +165,7 @@ namespace grid_image_viewer
             }
 
             _window.AnimationService.StartAnimation();
+            _window.UpdatePageIndicator();
         }
 
         private void UpdateLayoutGrid(int splitCount, int effectiveSplitCount, int currentQuadLayout)

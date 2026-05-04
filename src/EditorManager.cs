@@ -136,6 +136,7 @@ namespace grid_image_viewer
 
             // Update Metadata checked state
             _window.MenuMetadata.IsChecked = (_window.MetadataPanel.Visibility == Visibility.Visible);
+            _window.MenuPageIndicatorToggle.IsChecked = _settings.ShowPageIndicator;
 
             // Update Bookmark state
             string? dir = !string.IsNullOrEmpty(path) ? Path.GetDirectoryName(path) : _window.CurrentDirectory;
@@ -351,6 +352,13 @@ namespace grid_image_viewer
         public void MenuMetadata_Click(object sender, RoutedEventArgs e)
         {
             _window.ViewerManager.ToggleMetadataPanel(cycle: false);
+        }
+        public void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.ShowPageIndicator = !_settings.ShowPageIndicator;
+            _settings.SaveSettings();
+            _window.UpdatePageIndicator();
+            UpdateMenuStates();
         }
 
         public void MenuResize_Click(object sender, RoutedEventArgs e)

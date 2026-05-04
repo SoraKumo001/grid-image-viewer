@@ -18,6 +18,7 @@ namespace grid_image_viewer.Controls
             SliderQuality.Value = _settings.JpegQuality;
             ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
             CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
+            CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
 
             BtnClose.Focus(FocusState.Programmatic);
         }
@@ -37,6 +38,7 @@ namespace grid_image_viewer.Controls
                 SliderQuality.Value = _settings.JpegQuality;
                 ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
+                CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
                 _window.ApplyBackgroundSettings();
             }
         }
@@ -60,9 +62,11 @@ namespace grid_image_viewer.Controls
             _settings.JpegQuality = (int)SliderQuality.Value;
             _settings.BackgroundColorMode = ComboBackground.SelectedIndex;
             _settings.UseHighQualityScaling = CheckHighQuality.IsChecked ?? true;
+            _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
             _settings.SaveSettings();
 
             _window.ApplyBackgroundSettings();
+            _window.UpdatePageIndicator();
 
             var parent = this.Parent as Panel;
             parent?.Children.Remove(this);

@@ -287,6 +287,19 @@ namespace grid_image_viewer
 
 
         internal Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
+        internal void UpdatePageIndicator()
+        {
+            if (_settings.ShowPageIndicator && _playlist.Count > 0 && _currentIndex >= 0)
+            {
+                int displayIndex = IsGridMode ? (_currentIndex + 1) : Math.Min(_currentIndex + _settings.MangaSplitCount, _playlist.Count);
+                PageIndicator.Text = $"{displayIndex} / {_playlist.Count}";
+                PageIndicatorContainer.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PageIndicatorContainer.Visibility = Visibility.Collapsed;
+            }
+        }
         internal List<Grid> GetPageGrids() => new List<Grid> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
         private void Canvas1_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(0, e);
         private void Canvas2_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(1, e);
@@ -325,6 +338,7 @@ namespace grid_image_viewer
         private void MenuUndo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuUndo_Click(sender, e);
         private void MenuRedo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuRedo_Click(sender, e);
         private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
+        private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPageIndicatorToggle_Click(sender, e);
         private void MenuSlideshow_Click(object sender, RoutedEventArgs e) => SlideshowManager.OpenSlideshowDialogAsync();
         private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuBookmarksToggle_Click(sender, e);
         private void MenuBookmark_Click(object sender, RoutedEventArgs e) => EditorManager.MenuBookmark_Click(sender, e);

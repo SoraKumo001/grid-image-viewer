@@ -205,6 +205,7 @@
                         <MenuFlyoutSeparator />
                         <MenuFlyoutSubItem x:Name="MenuViewMode" x:FieldModifier="internal" x:Uid="MenuViewMode" Text="View Mode">
                             <ToggleMenuFlyoutItem x:Name="MenuMetadata" x:FieldModifier="internal" x:Uid="MenuMetadata" Text="Show Image Information" Click="MenuMetadata_Click" />
+                            <ToggleMenuFlyoutItem x:Name="MenuPageIndicatorToggle" x:FieldModifier="internal" x:Uid="MenuPageIndicatorToggle" Text="Show Page Count" Click="MenuPageIndicatorToggle_Click" />
                             <MenuFlyoutSeparator />
                             <ToggleMenuFlyoutItem x:Name="MenuViewSingle" x:FieldModifier="internal" x:Uid="MenuViewMode_Single" Text="Single" Click="MenuViewMode_Click" Tag="1" />
                             <ToggleMenuFlyoutItem x:Name="MenuViewDouble" x:FieldModifier="internal" x:Uid="MenuViewMode_Double" Text="Manga (2-split)" Click="MenuViewMode_Click" Tag="2" />
@@ -322,6 +323,19 @@
             <!-- Notification Overlay -->
             <Border x:Name="NotificationOverlay" x:FieldModifier="internal" Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,80" Padding="40,24" Background="#CC000000" CornerRadius="16" Visibility="Collapsed" IsHitTestVisible="False">
                 <TextBlock x:Name="NotificationText" x:FieldModifier="internal" Foreground="White" FontSize="36" FontWeight="Bold" />
+            </Border>
+
+            <!-- Page Indicator -->
+            <Border x:Name="PageIndicatorContainer" x:FieldModifier="internal"
+                       Grid.Row="1"
+                       HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                       Margin="12" Padding="8,4"
+                       Background="#66000000" CornerRadius="4"
+                       IsHitTestVisible="False"
+                       Canvas.ZIndex="100">
+                <TextBlock x:Name="PageIndicator" x:FieldModifier="internal"
+                           Foreground="White" FontSize="11" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
             </Border>
         
         <ContentDialog x:Name="SlideshowDialog" x:FieldModifier="internal" x:Uid="SlideshowDialog"
