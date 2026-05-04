@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.2.1 (Current) - 2026-05-04
+## v1.2.2 (Current) - 2026-05-04
+
+- **Navigation Optimization**:
+  - Implemented background preloading of image playlists for the next and previous folders. This ensures near-instant folder transitions by having the file list ready before the user navigates.
+  - Centralized folder discovery logic into a dedicated service for better performance and consistency.
+- **Branding & Visuals**:
+  - Refined the application icon using a flood-fill transparency algorithm, preserving white fur/details inside the Shiba Inu's face while removing the background.
+  - Optimized icon margins for a larger, more prominent visual presence across all application assets (SplashScreen, Logo, etc.).
+
+## v1.2.1 - 2026-05-04
 
 - **Navigation Improvements**:
   - Enhanced folder navigation to verify image content within archives before switching, preventing dead-end navigation to empty or non-image ZIP files.
