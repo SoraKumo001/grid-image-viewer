@@ -2,7 +2,7 @@
 
 A fast and lightweight image viewer application for Windows. It allows you to quickly browse images in a folder using a grid view and supports a spread view (manga mode).
 
-* [日本語のドキュメントはこちら](README_ja.md)
+- [日本語のドキュメントはこちら](README_ja.md)
 
 ## Download
 
@@ -79,35 +79,35 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 - **Custom Title Bar**: Title bar design that blends seamlessly into the app
 - **Full Screen**: Toggle full screen display with a double click or `F` key
 - **Area Selection**: Drag to select an area and right-click to copy
-- **State Preservation**: Restore window size, position, and the currently viewed image on the next startup.
+- **State Preservation**: Restore window size, position, currently viewed image, and the last visited directory on the next startup.
 - **Settings Portability**: Supports exporting and importing settings as JSON.
 - **On-Screen Notifications**: Overlay notifications for mode changes and stretch settings.
 - **Pointer-Aware Operations**: When multiple images are displayed, operations like rotation, deletion, and copying target the image directly under the mouse cursor.
 
 ### ⌨️ Keybindings
 
-| Action | Default Key |
-| --- | --- |
-| Next Image | `Space` |
-| Previous Image | `BackSpace` |
-| Next Folder | `↓` |
-| Previous Folder | `↑` |
-| Toggle Manga Mode | `Ctrl+G` |
-| Toggle Grid Mode | `Enter` |
-| Autoplay (Slideshow) | `A` |
-| Toggle Bookmark Panel | `B` |
-| Toggle Metadata Display | `I` |
-| **Toggle Fullscreen** | `F` |
-| **Zoom In / Out** | `Ctrl + +` / `Ctrl + -` |
-| **Reset Zoom (Fit)** | `Ctrl + 0` |
-| **Actual Size (100%)** | `Ctrl + 1` |
-| **Rotate Right / Left** | `R` / `L` |
-| **Flip Horizontal** | `H` |
-| **Bookmark Folder** | `D` |
-| **Copy File Path** | `Ctrl + C` |
-| **Delete File** | `Delete` |
-| **Toggle Stretch Mode** | `S` |
-| Exit App | `Escape` |
+| Action                  | Default Key             |
+| ----------------------- | ----------------------- |
+| Next Image              | `Space`                 |
+| Previous Image          | `BackSpace`             |
+| Next Folder             | `↓`                     |
+| Previous Folder         | `↑`                     |
+| Toggle Manga Mode       | `Ctrl+G`                |
+| Toggle Grid Mode        | `Enter`                 |
+| Autoplay (Slideshow)    | `A`                     |
+| Toggle Bookmark Panel   | `B`                     |
+| Toggle Metadata Display | `I`                     |
+| **Toggle Fullscreen**   | `F`                     |
+| **Zoom In / Out**       | `Ctrl + +` / `Ctrl + -` |
+| **Reset Zoom (Fit)**    | `Ctrl + 0`              |
+| **Actual Size (100%)**  | `Ctrl + 1`              |
+| **Rotate Right / Left** | `R` / `L`               |
+| **Flip Horizontal**     | `H`                     |
+| **Bookmark Folder**     | `D`                     |
+| **Copy File Path**      | `Ctrl + C`              |
+| **Delete File**         | `Delete`                |
+| **Toggle Stretch Mode** | `S`                     |
+| Exit App                | `Escape`                |
 
 - Mouse Wheel: Move to previous/next image (Press Shift to turn 1 page in manga mode)
 - Left/Right Cursor Keys: Move to previous/next image (Direction is reversed in manga mode, Press Shift to turn 1 page)

@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.2.0 (Current) - 2026-05-03
+## v1.2.1 (Current) - 2026-05-04
+
+- **Navigation Improvements**:
+  - Enhanced folder navigation to verify image content within archives before switching, preventing dead-end navigation to empty or non-image ZIP files.
+  - Resolved a race condition where the "Reached first/last folder" notification was occasionally suppressed.
+- **Enhanced Persistence**:
+  - Implemented `LastDirectoryPath` persistence to ensure the current folder is remembered even if the session ends without an active image (e.g., empty playlist).
+  - Improved application startup to restore the previous folder as a fallback if the last viewed image file is no longer available.
+
+## v1.2.0 - 2026-05-03
+
 - **Archive Support**: Added direct viewing support for **ZIP, CBZ, RAR, CBR, and 7z** archives using `SharpCompress`.
 - **Window Persistence**: Implemented window size and position preservation across sessions (Restored/Normal state only).
 - **High-Quality Scaling**: Added a "High Quality Scaling" option (Lanczos-like interpolation) for improved image quality when zoomed.
@@ -21,15 +31,17 @@ All notable changes to this project will be documented in this file.
   - Improved file lock management by navigating to the next image before deleting a file.
 
 ## v1.1.0 - 2026-05-03
+
 - **App Renaming**: Renamed the application from "Grid Image Viewer" to "**Quick Image Viewer**".
 - **Printing Support**: Implemented image printing functionality with automatic size adjustment to fit paper margins.
 - **Support Menu**: Added a "Support" item to the context menu that opens the GitHub repository.
-- **Bug Fixes**: 
+- **Bug Fixes**:
   - Fixed an issue where the print preview appeared blank.
   - Resolved a hang issue during print preview generation.
 - **Documentation**: Updated README.md to reflect new features and the new application name.
 
 ## v1.0.3 - 2026-05-03
+
 - **Slideshow Enhancements**: Improved the slideshow settings dialog and added full localization support for UI labels.
 - **Image Editing Improvements**: Introduced the `CropOverlay` control for a better area selection experience and refactored `ImageEditService` session management.
 - **Key Bindings UI**: Implemented a configuration UI to allow users to customize key bindings.
@@ -37,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - **Localization**: Synchronized Japanese and English resource files across all UI components.
 
 ## v1.0.2 - 2026-05-02
+
 - **New View Modes**: Added Quad-split (4-up) view mode with multiple layout options (Auto, 1x4, 2x2).
 - **Metadata Overlay**: Implemented an image information panel to display EXIF data (Camera, Lens, Settings, Date).
 - **Advanced Slideshow**: Added support for crossfade transitions and options to include subfolders or sibling directories.
@@ -44,10 +57,12 @@ All notable changes to this project will be documented in this file.
 - **Modern UI**: Applied Windows 11 Mica backdrop and custom title bar design.
 
 ## v1.0.1 - 2026-05-02
+
 - **Stability**: Added thread safety to image rendering operations to prevent crashes during rapid navigation.
 - **Assets**: Included official application icons and splash screen assets.
 
 ## v1.0.0 - 2026-05-02
+
 - **Initial Release**: Basic image viewing features with Grid Mode and Manga Mode support.
 - **Format Support**: Wide range of image formats including AVIF, WebP, and JPEG XL.
 - **CI/CD**: Established GitHub Actions workflow for automated builds and releases.
