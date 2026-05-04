@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using grid_image_viewer.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +14,7 @@ using Windows.System;
 
 namespace grid_image_viewer
 {
-    public class EditorManager
+    public class EditorManager : IRecipient<EditMessage>
     {
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
@@ -32,6 +33,21 @@ namespace grid_image_viewer
             _resourceManager = new Microsoft.Windows.ApplicationModel.Resources.ResourceManager();
             _resourceContext = _resourceManager.CreateResourceContext();
             PreloadStrings();
+
+            WeakReferenceMessenger.Default.Register<EditMessage>(this);
+        }
+
+        public void Receive(EditMessage message)
+        {
+            if (message.Type == "Rotate")
+            {
+                if (message.Value is int degrees)
+                {
+                    _contextTargetPath = _window.CurrentImagePath;
+                    MenuRotate_Click(new MenuFlyoutItem { Tag = degrees.ToString() }, new RoutedEventArgs());
+                }
+            }
+            // Add other edit types as needed
         }
 
         private void PreloadStrings()
@@ -357,7 +373,7 @@ namespace grid_image_viewer
         {
             _settings.ShowPageIndicator = !_settings.ShowPageIndicator;
             _settings.SaveSettings();
-            _window.UpdatePageIndicator();
+            _window.ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
             UpdateMenuStates();
         }
 
@@ -462,6 +478,7 @@ namespace grid_image_viewer
             {
                 _settings.MangaSplitCount = count;
                 _settings.SaveMangaMode();
+                _window.ViewModel.MangaSplitCount = count;
 
                 // Ensure radio behavior
                 _window.MenuViewSingle.IsChecked = (count == 1);

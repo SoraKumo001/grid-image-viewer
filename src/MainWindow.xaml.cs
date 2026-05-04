@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -5,12 +6,11 @@ using SkiaSharp.Views.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
-    public sealed partial class MainWindow : Window
+    public sealed partial class MainWindow : Window, IRecipient<FullscreenMessage>, IRecipient<PlaylistUpdatedMessage>
     {
         public MainViewModel ViewModel { get; } = new MainViewModel();
 
@@ -72,7 +72,12 @@ namespace grid_image_viewer
             PrintService = new PrintService(this);
 
             // Initialize Managers
+            PlaylistManager = new PlaylistManager(this, _settings);
             ViewerManager = new ViewerManager(this, _settings);
+
+            // Sync ViewModel with Settings
+            ViewModel.MangaSplitCount = _settings.MangaSplitCount;
+            ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
             GridManager = new GridManager(this, _settings);
             EditorManager = new EditorManager(this, _settings);
             SlideshowManager = new SlideshowManager(this, _settings);
@@ -139,6 +144,17 @@ namespace grid_image_viewer
             }
 
             ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
+
+            WeakReferenceMessenger.Default.Register<FullscreenMessage>(this);
+            WeakReferenceMessenger.Default.Register<PlaylistUpdatedMessage>(this);
+        }
+
+        public void Receive(FullscreenMessage message) => IsFullscreen = !IsFullscreen;
+
+        public void Receive(PlaylistUpdatedMessage message)
+        {
+            UpdateGridItems(message.ForceFullGridUpdate);
+            _ = UpdateDisplayAsync();
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -178,75 +194,18 @@ namespace grid_image_viewer
 
         private void RootGrid_DragOver(object sender, DragEventArgs e) => InputHandler.HandleDragOver(sender, e);
         private void RootGrid_Drop(object sender, DragEventArgs e) => InputHandler.HandleDrop(sender, e);
-        private System.Threading.CancellationTokenSource? _loadCts;
+        internal PlaylistManager PlaylistManager { get; private set; }
 
         public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false, List<string>? preloadedPlaylist = null)
         {
-            _loadCts?.Cancel();
-            _loadCts = new System.Threading.CancellationTokenSource();
-            CurrentDirectory = path;
-            IsSearchingFolder = true;
-            FolderSearchingOverlay.Visibility = Visibility.Visible;
-            Playlist.Clear();
-            var token = _loadCts.Token;
-
-            _ = Task.Run(() =>
-            {
-                try
-                {
-                    List<string> initialFiles = preloadedPlaylist ?? FolderDiscoveryService.GetInitialPlaylist(path);
-
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        if (token.IsCancellationRequested) return;
-                        UpdatePlaylist(initialFiles, initialFile, true);
-                        OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
-                    });
-                }
-                catch
-                {
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        IsSearchingFolder = false;
-                    });
-                }
-            });
-        }
-
-        private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
-        {
-            if (ViewModel.Playlist.Count > 0)
-            {
-                UpdateGridItems(false);
-                _ = UpdateDisplayAsync();
-
-                if (!ArchiveManager.IsArchive(path) && (includeSiblings || includeSubfolders))
-                {
-                    _ = Task.Run(() => DiscoverAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
-                }
-                else
-                {
-                    IsSearchingFolder = false;
-                }
-            }
-            else if (includeSiblings || includeSubfolders)
-            {
-                _ = Task.Run(() => DiscoverAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
-            }
-            else
-            {
-                IsSearchingFolder = false;
-            }
+            PlaylistManager.LoadDirectory(path, initialFile, includeSiblings, includeSubfolders, preloadedPlaylist);
         }
 
         internal void UpdateGridItems(bool forceFullUpdate)
         {
-            // If we are in viewer mode and NOT switching to grid mode, 
-            // we can defer populating thousands of grid items to avoid UI lag.
             if (!IsGridMode && !forceFullUpdate && ViewModel.Playlist.Count > 500)
             {
                 _gridItems.Clear();
-                // Add at least current image so grid isn't totally empty if user peeks
                 if (ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count)
                 {
                     _gridItems.Add(new ImageItem { FilePath = ViewModel.Playlist[ViewModel.CurrentIndex], IsLoading = true });
@@ -254,11 +213,8 @@ namespace grid_image_viewer
                 return;
             }
 
-            // Efficiently update grid items
             if (_gridItems.Count == ViewModel.Playlist.Count) return;
 
-            // Replacing the collection or clearing/adding many items can be slow.
-            // Using a new collection and setting ItemsSource is often faster in WinUI for large lists.
             var newList = new ObservableCollection<ImageItem>();
             foreach (var f in ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
 
@@ -267,76 +223,10 @@ namespace grid_image_viewer
             GridManager.RefreshThumbnails();
         }
 
-
-        private void UpdatePlaylist(List<string> files, string targetPath, bool alreadySorted)
-        {
-            string currentPath = !string.IsNullOrEmpty(targetPath) ? targetPath : CurrentImagePath;
-            List<string> sortedFiles;
-            if (alreadySorted)
-            {
-                sortedFiles = files;
-            }
-            else
-            {
-                sortedFiles = files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
-            }
-
-            ViewModel.Playlist = new ObservableCollection<string>(sortedFiles);
-
-            if (ViewModel.Playlist.Count > 0)
-            {
-                int idx = ViewModel.Playlist.IndexOf(currentPath);
-                ViewModel.CurrentIndex = idx >= 0 ? idx : 0;
-            }
-            else
-            {
-                ViewModel.CurrentIndex = -1;
-            }
-        }
-
-        private async Task DiscoverAdditionalFilesAsync(string path, string initialFile, bool includeSiblings, bool includeSubfolders, System.Threading.CancellationToken token)
-        {
-            List<string> accumulatedFiles = new List<string>(ViewModel.Playlist);
-            var comparer = new NaturalStringComparer();
-
-            await FolderDiscoveryService.DiscoverFilesAsync(path, includeSiblings, includeSubfolders, (newFiles) =>
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (token.IsCancellationRequested) return;
-
-                    accumulatedFiles.AddRange(newFiles);
-                    var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
-                    accumulatedFiles = sorted;
-
-                    string currentPath = CurrentImagePath;
-                    UpdatePlaylist(sorted, currentPath, true);
-                    UpdateGridItems(false);
-                    UpdatePageIndicator();
-                });
-            }, token);
-
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                IsSearchingFolder = false;
-            });
-        }
-
-
         internal Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
-        internal void UpdatePageIndicator()
-        {
-            if (_settings.ShowPageIndicator && ViewModel.Playlist.Count > 0 && ViewModel.CurrentIndex >= 0)
-            {
-                int displayIndex = IsGridMode ? (ViewModel.CurrentIndex + 1) : Math.Min(ViewModel.CurrentIndex + _settings.MangaSplitCount, ViewModel.Playlist.Count);
-                ViewModel.PageIndicatorText = $"{displayIndex} / {ViewModel.Playlist.Count}";
-                ViewModel.IsPageIndicatorVisible = true;
-            }
-            else
-            {
-                ViewModel.IsPageIndicatorVisible = false;
-            }
-        }
+
+        internal void UpdatePageIndicator() => ViewModel.UpdatePageIndicator();
+
         internal List<Grid> GetPageGrids() => new List<Grid> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
         private void Canvas1_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(0, e);
         private void Canvas2_PaintSurface(object sender, SKPaintSurfaceEventArgs e) => ViewerManager.PaintCanvas(1, e);
@@ -347,8 +237,8 @@ namespace grid_image_viewer
 
         internal string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;
         internal void ShowNotification(string message) => ViewerManager.ShowNotification(message);
-        internal void Navigate(int offset, bool forceSingleStep = false) => ViewerManager.Navigate(offset, forceSingleStep);
-        internal void NavigateFolder(int offset) => ViewerManager.NavigateFolder(offset);
+        internal void Navigate(int offset, bool forceSingleStep = false) => WeakReferenceMessenger.Default.Send(new NavigationMessage(offset, forceSingleStep));
+        internal void NavigateFolder(int offset) => WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
 
         private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
         private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);

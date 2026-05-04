@@ -1,22 +1,52 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace grid_image_viewer
 {
     public partial class MainViewModel : ObservableObject
     {
+        // Commands
+        public ICommand NavigateNextCommand { get; }
+        public ICommand NavigatePrevCommand { get; }
+        public ICommand NavigateNextFolderCommand { get; }
+        public ICommand NavigatePrevFolderCommand { get; }
+        public ICommand ToggleGridModeCommand { get; }
+        public ICommand ToggleFullscreenCommand { get; }
+        public ICommand ZoomInCommand { get; }
+        public ICommand ZoomOutCommand { get; }
+        public ICommand ZoomResetCommand { get; }
+        public ICommand RotateRightCommand { get; }
+        public ICommand RotateLeftCommand { get; }
+        public ICommand ToggleMetadataCommand { get; }
+        public ICommand OpenSlideshowCommand { get; }
+
         private ObservableCollection<string> _playlist;
         public ObservableCollection<string> Playlist
         {
             get => _playlist;
-            set => SetProperty(ref _playlist, value);
+            set
+            {
+                if (SetProperty(ref _playlist, value))
+                {
+                    UpdatePageIndicator();
+                }
+            }
         }
 
         private int _currentIndex;
         public int CurrentIndex
         {
             get => _currentIndex;
-            set => SetProperty(ref _currentIndex, value);
+            set
+            {
+                if (SetProperty(ref _currentIndex, value))
+                {
+                    UpdatePageIndicator();
+                }
+            }
         }
 
         private string _currentDirectory;
@@ -138,6 +168,32 @@ namespace grid_image_viewer
             set => SetProperty(ref _pageIndicatorText, value);
         }
 
+        private int _mangaSplitCount = 1;
+        public int MangaSplitCount
+        {
+            get => _mangaSplitCount;
+            set
+            {
+                if (SetProperty(ref _mangaSplitCount, value))
+                {
+                    UpdatePageIndicator();
+                }
+            }
+        }
+
+        private bool _showPageIndicator = true;
+        public bool ShowPageIndicator
+        {
+            get => _showPageIndicator;
+            set
+            {
+                if (SetProperty(ref _showPageIndicator, value))
+                {
+                    UpdatePageIndicator();
+                }
+            }
+        }
+
         public MainViewModel()
         {
             _playlist = new ObservableCollection<string>();
@@ -159,18 +215,53 @@ namespace grid_image_viewer
             _isDialogOpen = false;
             _isPageIndicatorVisible = false;
             _pageIndicatorText = string.Empty;
+
+            NavigateNextCommand = new RelayCommand(() => Navigate(1));
+            NavigatePrevCommand = new RelayCommand(() => Navigate(-1));
+            NavigateNextFolderCommand = new RelayCommand(() => NavigateFolder(1));
+            NavigatePrevFolderCommand = new RelayCommand(() => NavigateFolder(-1));
+            ToggleGridModeCommand = new RelayCommand(() => IsGridMode = !IsGridMode);
+            ToggleFullscreenCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<FullscreenMessage>());
+            ZoomInCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(1.2f)));
+            ZoomOutCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(1.0f / 1.2f)));
+            ZoomResetCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(0)));
+            RotateRightCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new EditMessage("Rotate", 90)));
+            RotateLeftCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new EditMessage("Rotate", -90)));
+            ToggleMetadataCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleMetadataMessage>());
+            OpenSlideshowCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<OpenSlideshowMessage>());
+        }
+
+        private void Navigate(int offset)
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(offset));
+        }
+
+        private void NavigateFolder(int offset)
+        {
+            WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
         }
 
         public void UpdatePageIndicator()
         {
-            if (Playlist.Count == 0)
+            if (ShowPageIndicator && Playlist.Count > 0 && CurrentIndex >= 0)
             {
-                PageIndicatorText = "0 / 0";
+                int displayIndex = IsGridMode ? (CurrentIndex + 1) : System.Math.Min(CurrentIndex + MangaSplitCount, Playlist.Count);
+                PageIndicatorText = $"{displayIndex} / {Playlist.Count}";
+                IsPageIndicatorVisible = true;
             }
             else
             {
-                PageIndicatorText = $"{CurrentIndex + 1} / {Playlist.Count}";
+                IsPageIndicatorVisible = false;
             }
         }
     }
+
+    public record PlaylistUpdatedMessage(bool ForceFullGridUpdate = false);
+    public record NavigationMessage(int Offset, bool ForceSingleStep = false);
+    public record FolderNavigationMessage(int Offset);
+    public record FullscreenMessage();
+    public record ZoomMessage(float Factor); // Factor 0 means reset
+    public record EditMessage(string Type, object Value);
+    public record ToggleMetadataMessage();
+    public record OpenSlideshowMessage();
 }

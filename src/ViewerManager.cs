@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.ApplicationModel.Resources;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
-    internal class ViewerManager
+    internal class ViewerManager : IRecipient<NavigationMessage>, IRecipient<FolderNavigationMessage>, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
     {
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
@@ -52,7 +53,29 @@ namespace grid_image_viewer
             _pageCanvases = new SkiaSharp.Views.Windows.SKXamlCanvas[] { _window.Canvas1, _window.Canvas2, _window.Canvas3, _window.Canvas4 };
             _pageLoadingRings = new Microsoft.UI.Xaml.Controls.ProgressRing[] { _window.LoadingRing1, _window.LoadingRing2, _window.LoadingRing3, _window.LoadingRing4 };
             _focusBorders = new Border[] { _window.FocusBorder1, _window.FocusBorder2, _window.FocusBorder3, _window.FocusBorder4 };
+
+            WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
+            WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
+            WeakReferenceMessenger.Default.Register<ZoomMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleMetadataMessage>(this);
         }
+
+        public void Receive(NavigationMessage message) => Navigate(message.Offset, message.ForceSingleStep);
+        public void Receive(FolderNavigationMessage message) => NavigateFolder(message.Offset);
+
+        public void Receive(ZoomMessage message)
+        {
+            if (message.Factor == 0)
+            {
+                _window.ImageScrollViewer.ChangeView(null, null, 1.0f);
+            }
+            else
+            {
+                _window.ImageScrollViewer.ChangeView(null, null, _window.ImageScrollViewer.ZoomFactor * message.Factor);
+            }
+        }
+
+        public void Receive(ToggleMetadataMessage message) => ToggleMetadataPanel();
 
         public PageRenderer[] Pages => _pages;
         public Microsoft.UI.Xaml.Controls.Image[] PageImages => _pageImages;

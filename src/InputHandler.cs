@@ -110,19 +110,19 @@ namespace grid_image_viewer
 
             if (IsMatch(_settings.KeyZoomIn, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ImageScrollViewer.ChangeView(null, null, _window.ImageScrollViewer.ZoomFactor * 1.2f);
+                _window.ViewModel.ZoomInCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyZoomOut, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ImageScrollViewer.ChangeView(null, null, _window.ImageScrollViewer.ZoomFactor / 1.2f);
+                _window.ViewModel.ZoomOutCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyZoomReset, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ImageScrollViewer.ChangeView(null, null, 1.0f);
+                _window.ViewModel.ZoomResetCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -144,15 +144,13 @@ namespace grid_image_viewer
 
             if (IsMatch(_settings.KeyRotateRight, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.EditorManager.ContextTargetPath = GetPathAtPointer();
-                _window.EditorManager.MenuRotate_Click(new MenuFlyoutItem { Tag = "90" }, new RoutedEventArgs());
+                _window.ViewModel.RotateRightCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyRotateLeft, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.EditorManager.ContextTargetPath = GetPathAtPointer();
-                _window.EditorManager.MenuRotate_Click(new MenuFlyoutItem { Tag = "-90" }, new RoutedEventArgs());
+                _window.ViewModel.RotateLeftCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -195,14 +193,14 @@ namespace grid_image_viewer
 
             if (IsMatch(_settings.KeySlideshow, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.SlideshowManager.OpenSlideshowDialogAsync();
+                _window.ViewModel.OpenSlideshowCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyMetadata, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewerManager.ToggleMetadataPanel();
+                _window.ViewModel.ToggleMetadataCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -216,7 +214,7 @@ namespace grid_image_viewer
 
             if (IsMatch(_settings.KeyToggleFullscreen, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.IsFullscreen = !_window.IsFullscreen;
+                _window.ViewModel.ToggleFullscreenCommand.Execute(null);
                 string state = _window.IsFullscreen ? "ON" : "OFF";
                 _window.ViewerManager.ShowNotification($"Fullscreen: {state}");
                 e.Handled = true;

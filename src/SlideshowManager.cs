@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.ApplicationModel.Resources;
@@ -6,7 +7,7 @@ using System.Linq;
 
 namespace grid_image_viewer
 {
-    public class SlideshowManager : IDisposable
+    public class SlideshowManager : IDisposable, IRecipient<OpenSlideshowMessage>
     {
         private MainWindow _mainWindow;
         private SettingsManager _settings;
@@ -37,7 +38,11 @@ namespace grid_image_viewer
 
             _mainWindow.SlideshowCrossfadeDuration.NumberFormatter = formatter;
             _mainWindow.SlideshowInterval.NumberFormatter = formatter;
+
+            WeakReferenceMessenger.Default.Register<OpenSlideshowMessage>(this);
         }
+
+        public void Receive(OpenSlideshowMessage message) => OpenSlideshowDialogAsync();
 
         public async void OpenSlideshowDialogAsync()
         {
