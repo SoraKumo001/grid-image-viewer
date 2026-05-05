@@ -337,7 +337,7 @@ namespace grid_image_viewer
             // Run on background thread to avoid UI lag for metadata fetching (though sizes are usually cached)
             _ = Task.Run(() =>
             {
-                int newLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist.ToList(), width, height);
+                int newLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist, width, height);
                 if (newLayout != _cachedQuadLayout)
                 {
                     _cachedQuadLayout = newLayout;

@@ -84,13 +84,28 @@ namespace grid_image_viewer
         }
 
         private SettingsManager _settings;
-
+        private DispatcherTimer _resizeTimer;
         private Random _random = new Random();
 
         public MainWindow()
         {
             this.InitializeComponent();
             _settings = new SettingsManager();
+
+            _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _resizeTimer.Tick += (s, e) =>
+            {
+                _resizeTimer.Stop();
+                if (ViewerManager != null && RootGrid != null)
+                {
+                    ViewerManager.HandleWindowSizeChanged(RootGrid.ActualWidth, RootGrid.ActualHeight);
+                }
+                
+                if (AppWindow != null && _settings != null && AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.Default)
+                {
+                    _settings.UpdateNormalWindowState(AppWindow);
+                }
+            };
 
             // Initialize Services
             ImageEditService = new ImageEditService(this);
@@ -183,7 +198,12 @@ namespace grid_image_viewer
         internal void NavigateFolder(int offset) => WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
 
         private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
-        private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e) => ViewerManager.HandleWindowSizeChanged(e.NewSize.Width, e.NewSize.Height);
+        private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Debounce resize handling to improve performance
+            _resizeTimer.Stop();
+            _resizeTimer.Start();
+        }
         private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
         private void OverlayGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerMoved(sender, e);
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);

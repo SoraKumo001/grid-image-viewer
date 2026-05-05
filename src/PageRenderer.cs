@@ -125,6 +125,8 @@ namespace grid_image_viewer
                 };
 
                 Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
+                _cachedImage?.Dispose();
+                _cachedImage = null;
                 PriorFrame = CurrentFrame;
                 CurrentFrameDuration = frameInfo.Duration > 0 ? frameInfo.Duration : 100;
 
@@ -172,10 +174,13 @@ namespace grid_image_viewer
                             ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
                             : new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
 
-                        using (var image = SKImage.FromBitmap(bmpToDraw))
+                        if (_cachedImage == null || _lastImageBitmap != bmpToDraw)
                         {
-                            canvas.DrawImage(image, destRect, sampling, null);
+                            _cachedImage?.Dispose();
+                            _cachedImage = SKImage.FromBitmap(bmpToDraw);
+                            _lastImageBitmap = bmpToDraw;
                         }
+                        canvas.DrawImage(_cachedImage, destRect, sampling, null);
                     }
                     else
                     {
@@ -186,6 +191,8 @@ namespace grid_image_viewer
         }
 
         public SKBitmap? EditedBitmap { get; set; }
+        private SKImage? _cachedImage;
+        private SKBitmap? _lastImageBitmap;
 
         public void Reset()
         {
@@ -194,6 +201,8 @@ namespace grid_image_viewer
                 Codec?.Dispose(); Codec = null;
                 Data?.Dispose(); Data = null;
                 Bitmap?.Dispose(); Bitmap = null;
+                _cachedImage?.Dispose(); _cachedImage = null;
+                _lastImageBitmap = null;
                 EditedBitmap = null;
                 CurrentFilePath = null;
                 FrameCount = 0;

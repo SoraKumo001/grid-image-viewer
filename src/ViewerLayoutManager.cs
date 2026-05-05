@@ -153,7 +153,7 @@ namespace grid_image_viewer
             }
         }
 
-        public int GetEffectiveQuadLayout(int currentIndex, List<string> playlist, double windowWidth, double windowHeight)
+        public int GetEffectiveQuadLayout(int currentIndex, System.Collections.Generic.IList<string> playlist, double windowWidth, double windowHeight)
         {
             int layout = _settings.QuadLayoutMode;
             if (_settings.MangaSplitCount != 4 || layout != 0) return layout;

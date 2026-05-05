@@ -23,13 +23,6 @@ namespace grid_image_viewer
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
 
             _settings.LoadWindowState(appWindow);
-            appWindow.Changed += (s, e) =>
-            {
-                if (e.DidPositionChange || e.DidSizeChange)
-                {
-                    _settings.UpdateNormalWindowState(appWindow);
-                }
-            };
             try
             {
                 var iconPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "AppIcon.ico");

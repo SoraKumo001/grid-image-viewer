@@ -19,6 +19,7 @@ namespace grid_image_viewer
         private readonly SettingsManager _settings;
 
         private DispatcherTimer? _gridAnimationTimer;
+        private DispatcherTimer? _resizeDebounceTimer;
         private int _gridDecodeSize = 300;
         private CancellationTokenSource? _gridCts;
 
@@ -26,6 +27,16 @@ namespace grid_image_viewer
         {
             _window = window;
             _settings = settings;
+
+            _resizeDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _resizeDebounceTimer.Tick += (s, e) =>
+            {
+                _resizeDebounceTimer.Stop();
+                if (_window != null)
+                {
+                    UpdateGridLayout();
+                }
+            };
         }
 
         public async Task LoadThumbnailsAsync(CancellationToken token)
@@ -324,7 +335,8 @@ namespace grid_image_viewer
 
         public void ImageGridView_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            UpdateGridLayout();
+            _resizeDebounceTimer?.Stop();
+            _resizeDebounceTimer?.Start();
         }
 
         public void UpdateGridLayout()
@@ -355,23 +367,24 @@ namespace grid_image_viewer
             double bestArea = 0;
             int bestCols = 1;
 
-            for (int cols = 1; cols <= totalItems; cols++)
+            // Optimization: Limit the number of column possibilities to check.
+            // For large collections, we won't be fitting them all on one screen anyway.
+            int maxColsToTest = Math.Min(totalItems, 100); 
+            
+            for (int cols = 1; cols <= maxColsToTest; cols++)
             {
                 int rows = (int)Math.Ceiling((double)totalItems / cols);
                 double cellW = W / cols;
                 double cellH = H / rows;
 
-                // Calculate image size that fits in the cell while maintaining aspect ratio
                 double imgW, imgH;
                 if (modeAspect >= cellW / cellH)
                 {
-                    // Fit to width
                     imgW = cellW;
                     imgH = cellW / modeAspect;
                 }
                 else
                 {
-                    // Fit to height
                     imgH = cellH;
                     imgW = cellH * modeAspect;
                 }

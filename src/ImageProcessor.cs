@@ -7,6 +7,8 @@ namespace grid_image_viewer
 {
     public static class ImageProcessor
     {
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int width, int height)> _sizeCache = new();
+
         public static SKEncodedImageFormat GetSKEncodedImageFormat(string ext)
         {
             return ext.ToLowerInvariant() switch
@@ -369,24 +371,34 @@ namespace grid_image_viewer
         /// </summary>
         public static (int width, int height) GetImageSize(string sourcePath)
         {
+            if (_sizeCache.TryGetValue(sourcePath, out var size)) return size;
+
             try
             {
+                (int width, int height) result = (0, 0);
                 if (ArchiveManager.IsArchivePath(sourcePath))
                 {
                     var (arc, ent) = ArchiveManager.SplitArchivePath(sourcePath);
                     byte[]? bytes = ArchiveManager.GetEntryBytes(arc, ent);
-                    if (bytes == null) return (0, 0);
-                    using var data = SKData.CreateCopy(bytes);
-                    using var arcCodec = SKCodec.Create(data);
-                    return arcCodec != null ? (arcCodec.Info.Width, arcCodec.Info.Height) : (0, 0);
+                    if (bytes != null)
+                    {
+                        using var data = SKData.CreateCopy(bytes);
+                        using var arcCodec = SKCodec.Create(data);
+                        if (arcCodec != null) result = (arcCodec.Info.Width, arcCodec.Info.Height);
+                    }
+                }
+                else
+                {
+                    using var stream = File.OpenRead(sourcePath);
+                    using var codec = SKCodec.Create(stream);
+                    if (codec != null) result = (codec.Info.Width, codec.Info.Height);
                 }
 
-                using var stream = File.OpenRead(sourcePath);
-                using var codec = SKCodec.Create(stream);
-                if (codec != null)
+                if (result.width > 0)
                 {
-                    return (codec.Info.Width, codec.Info.Height);
+                    _sizeCache.TryAdd(sourcePath, result);
                 }
+                return result;
             }
             catch { }
             return (0, 0);
