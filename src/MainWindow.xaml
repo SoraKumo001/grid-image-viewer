@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window
-    x:Class="grid_image_viewer.MainWindow"
+    x:Class="quick_image_viewer.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:grid_image_viewer"
-    xmlns:controls="using:grid_image_viewer.Controls"
+    xmlns:local="using:quick_image_viewer"
+    xmlns:managers="using:quick_image_viewer.Managers"
+    xmlns:models="using:quick_image_viewer.Models"
+    xmlns:viewmodels="using:quick_image_viewer.ViewModels"
+    xmlns:controls="using:quick_image_viewer.Views.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:skia="using:SkiaSharp.Views.Windows"
@@ -188,7 +191,7 @@
                           SelectionMode="None" IsItemClickEnabled="True" ItemClick="BookmarkListView_ItemClick"
                           CanReorderItems="True" CanDragItems="True" AllowDrop="True" DragItemsCompleted="BookmarkListView_DragItemsCompleted">
                     <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="local:BookmarkItem">
+                        <DataTemplate x:DataType="managers:BookmarkItem">
                             <Grid Padding="16,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>

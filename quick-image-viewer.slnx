@@ -2,7 +2,7 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="src/grid-image-viewer.csproj">
+  <Project Path="src/quick-image-viewer.csproj">
     <Platform Project="x64" />
     <Deploy />
   </Project>

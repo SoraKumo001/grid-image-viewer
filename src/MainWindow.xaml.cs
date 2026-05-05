@@ -1,14 +1,18 @@
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using quick_image_viewer.Interfaces;
+using quick_image_viewer.Models;
+using quick_image_viewer.Services;
+using quick_image_viewer.ViewModels;
+using quick_image_viewer.Views.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace grid_image_viewer
+namespace quick_image_viewer
 {
     public sealed partial class MainWindow : Window, IMainView, IRecipient<FullscreenMessage>, IRecipient<PlaylistUpdatedMessage>, IRecipient<SlideshowNextRequestedMessage>
     {
@@ -162,7 +166,7 @@ namespace grid_image_viewer
         string IMainView.CurrentImagePath => CurrentImagePath;
 
         // === UI Helpers ===
-        public Controls.ViewerPanel ViewerControl => ViewerControlInternal;
+        public ViewerPanel ViewerControl => ViewerControlInternal;
         public Grid PagesGrid => ViewerControlInternal.CurrentBuffer;
         public IList<ImageItem> GridItems => (IList<ImageItem>?)GridManager?.GridItems ?? Array.Empty<ImageItem>();
         public GridView ImageGridView => GridControlInternal.GridView;

@@ -1,11 +1,15 @@
-using Microsoft.UI.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using quick_image_viewer.Helpers;
+using quick_image_viewer.Interfaces;
+using quick_image_viewer.Managers;
+using quick_image_viewer.Services;
+using quick_image_viewer.ViewModels;
 using System;
-
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
-namespace grid_image_viewer
+namespace quick_image_viewer
 {
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
@@ -46,11 +50,11 @@ namespace grid_image_viewer
             services.AddSingleton<IEditorManager, EditorManager>();
             services.AddSingleton<IBookmarkManager, BookmarkManager>();
             services.AddSingleton<IPlaylistManager, PlaylistManager>();
-            services.AddSingleton<IPrintService, grid_image_viewer.PrintService>();
-            services.AddSingleton<IAnimationService, grid_image_viewer.AnimationService>();
-            services.AddSingleton<IDialogService, grid_image_viewer.DialogService>();
-            services.AddSingleton<INotificationService, grid_image_viewer.NotificationService>();
-            services.AddSingleton<IMetadataDisplayService, grid_image_viewer.MetadataDisplayService>();
+            services.AddSingleton<IPrintService, PrintService>();
+            services.AddSingleton<IAnimationService, AnimationService>();
+            services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<INotificationService, NotificationService>();
+            services.AddSingleton<IMetadataDisplayService, MetadataDisplayService>();
             services.AddSingleton<IImageEditService, ImageEditService>();
             services.AddSingleton<IInputHandler, InputHandler>();
 
