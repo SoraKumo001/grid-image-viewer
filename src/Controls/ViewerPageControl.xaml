@@ -11,7 +11,7 @@
     <Grid x:Name="InternalRootGrid">
         <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
         <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" />
-        <ProgressRing x:Name="InternalLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+        <ProgressRing x:Name="InternalLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100" IsActive="False" />
         <Border x:Name="InternalFocusBorder" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
     </Grid>
 </UserControl>

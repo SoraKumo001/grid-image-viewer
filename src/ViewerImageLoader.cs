@@ -79,32 +79,36 @@ namespace grid_image_viewer
                 }
                 else
                 {
-                    byte[]? cachedBytes = cacheManager.GetCachedBytes(filePath);
-                    Microsoft.UI.Xaml.Media.Imaging.BitmapImage? bitmapImage = null;
+                    Microsoft.UI.Xaml.Media.Imaging.BitmapImage? bitmapImage = cacheManager.GetCachedBitmap(filePath);
 
-                    if (cachedBytes != null)
+                    if (bitmapImage == null)
                     {
-                        using var ms = new MemoryStream(cachedBytes);
-                        bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                    }
-                    else
-                    {
-                        try
+                        byte[]? cachedBytes = cacheManager.GetCachedBytes(filePath);
+
+                        if (cachedBytes != null)
                         {
-                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                            using var stream = await file.OpenReadAsync();
+                            using var ms = new MemoryStream(cachedBytes);
                             bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                            await bitmapImage.SetSourceAsync(stream);
+                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
                         }
-                        catch (Exception)
+                        else
                         {
-                            var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
-                            if (bmpBytes != null)
+                            try
                             {
+                                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                                using var stream = await file.OpenReadAsync();
                                 bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                                using var ms = new MemoryStream(bmpBytes);
-                                await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                                await bitmapImage.SetSourceAsync(stream);
+                            }
+                            catch (Exception)
+                            {
+                                var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
+                                if (bmpBytes != null)
+                                {
+                                    bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                                    using var ms = new MemoryStream(bmpBytes);
+                                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                                }
                             }
                         }
                     }

@@ -31,7 +31,7 @@
                     <Border VerticalAlignment="Bottom" Background="#88000000" Padding="4">
                         <TextBlock Text="{x:Bind FileName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FileName}" />
                     </Border>
-                    <ProgressRing IsActive="{x:Bind IsLoading, Mode=OneWay}" Width="32" Height="32" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <ProgressRing IsActive="{x:Bind IsLoading, Mode=OneWay}" Width="32" Height="32" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,60" />
                 </Grid>
             </DataTemplate>
         </GridView.ItemTemplate>
