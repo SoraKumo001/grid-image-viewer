@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
@@ -348,13 +349,19 @@ namespace quick_image_viewer.Managers
         private void GridAnimationTimer_Tick(object? sender, object e)
         {
             if (!_window.IsGridMode) return;
-            foreach (var item in GridItems)
+
+            // Optimization: Only iterate over materialized (visible) containers in the GridView.
+            // This avoids looping through thousands of items in large folders.
+            if (_window.ImageGridView.ItemsPanelRoot is not ItemsWrapGrid wrapGrid) return;
+
+            int count = VisualTreeHelper.GetChildrenCount(wrapGrid);
+            for (int i = 0; i < count; i++)
             {
-                if (item.IsAnimated)
+                var container = VisualTreeHelper.GetChild(wrapGrid, i) as Microsoft.UI.Xaml.Controls.Primitives.SelectorItem;
+                if (container != null)
                 {
-                    // Only advance animation if the container is materialized within the viewport (or buffer)
-                    var container = _window.ImageGridView.ContainerFromItem(item);
-                    if (container != null)
+                    var item = _window.ImageGridView.ItemFromContainer(container) as ImageItem;
+                    if (item != null)
                     {
                         if (item.IsAnimated)
                         {

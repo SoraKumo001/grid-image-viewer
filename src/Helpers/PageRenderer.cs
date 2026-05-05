@@ -2,6 +2,7 @@ using quick_image_viewer.Managers;
 using SkiaSharp;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 namespace quick_image_viewer.Helpers
 {
     /// <summary>
@@ -100,38 +101,63 @@ namespace quick_image_viewer.Helpers
         /// Advances the animation by one frame and returns the next frame's duration (ms).
         /// Decoding is done here to reduce Paint load and smooth out animations.
         /// </summary>
+        private bool _isDecodingFrame = false;
+
+        /// <summary>
+        /// Advances the animation by one frame and returns the next frame's duration (ms).
+        /// Decoding is done on a background thread to keep UI responsive.
+        /// </summary>
         public int AdvanceFrame()
         {
-            lock (this)
+            if (Codec == null || FrameCount <= 1 || Bitmap == null || _isDecodingFrame)
+                return CurrentFrameDuration > 0 ? CurrentFrameDuration : 100;
+
+            _isDecodingFrame = true;
+            int nextFrame = (CurrentFrame + 1) % FrameCount;
+
+            // We calculate the duration immediately to allow the timer to schedule the next tick.
+            var frameInfo = Codec.FrameInfo[nextFrame];
+            int duration = frameInfo.Duration > 0 ? frameInfo.Duration : 100;
+            CurrentFrameDuration = duration;
+
+            Task.Run(() =>
             {
-                if (Codec == null || FrameCount <= 1 || Bitmap == null) return 100;
-
-                CurrentFrame = (CurrentFrame + 1) % FrameCount;
-                var frameInfo = Codec.FrameInfo[CurrentFrame];
-
-                var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
-
-                // Clear buffer for frame 0 or if there is no prior frame info.
-                if (PriorFrame == -1 || CurrentFrame == 0)
+                try
                 {
-                    Bitmap.Erase(SKColors.Transparent);
-                    PriorFrame = -1;
+                    lock (this)
+                    {
+                        if (Codec == null || Bitmap == null) return;
+
+                        CurrentFrame = nextFrame;
+                        var imageInfo = new SKImageInfo(Codec.Info.Width, Codec.Info.Height, Codec.Info.ColorType, Codec.Info.AlphaType);
+
+                        if (PriorFrame == -1 || CurrentFrame == 0)
+                        {
+                            Bitmap.Erase(SKColors.Transparent);
+                            PriorFrame = -1;
+                        }
+
+                        var options = new SKCodecOptions
+                        {
+                            FrameIndex = CurrentFrame,
+                            PriorFrame = PriorFrame
+                        };
+
+                        Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
+
+                        _cachedImage?.Dispose();
+                        _cachedImage = null;
+                        PriorFrame = CurrentFrame;
+                    }
                 }
-
-                var options = new SKCodecOptions
+                catch { }
+                finally
                 {
-                    FrameIndex = CurrentFrame,
-                    PriorFrame = PriorFrame
-                };
+                    _isDecodingFrame = false;
+                }
+            });
 
-                Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
-                _cachedImage?.Dispose();
-                _cachedImage = null;
-                PriorFrame = CurrentFrame;
-                CurrentFrameDuration = frameInfo.Duration > 0 ? frameInfo.Duration : 100;
-
-                return CurrentFrameDuration;
-            }
+            return duration;
         }
 
         /// <summary>

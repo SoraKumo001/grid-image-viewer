@@ -63,6 +63,7 @@ namespace quick_image_viewer.Models
         }
         private SKBitmap? _animationBuffer;
         private int _priorFrameIndex = -1;
+        private WriteableBitmap? _cachedWb;
 
         private bool _isDecodingFrame = false;
 
@@ -129,13 +130,17 @@ namespace quick_image_viewer.Models
                 {
                     try
                     {
-                        var wb = new WriteableBitmap(w, h);
-                        using (var stream = wb.PixelBuffer.AsStream())
+                        if (_cachedWb == null || _cachedWb.PixelWidth != w || _cachedWb.PixelHeight != h)
+                        {
+                            _cachedWb = new WriteableBitmap(w, h);
+                        }
+
+                        using (var stream = _cachedWb.PixelBuffer.AsStream())
                         {
                             stream.Write(pixelBytes, 0, pixelBytes.Length);
                         }
-                        wb.Invalidate();
-                        Thumbnail = wb;
+                        _cachedWb.Invalidate();
+                        Thumbnail = _cachedWb;
                     }
                     catch { }
                 });
@@ -157,6 +162,7 @@ namespace quick_image_viewer.Models
                 CodecData = null;
                 _animationBuffer?.Dispose();
                 _animationBuffer = null;
+                _cachedWb = null;
                 _priorFrameIndex = -1;
             }
         }

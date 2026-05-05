@@ -11,9 +11,9 @@ namespace quick_image_viewer.Services
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
         private readonly DispatcherTimer _animationTimer;
-        private Storyboard? _currentCrossfadeStoryboard;
         private Grid? _currentCrossfadeGrid;
         private Grid? _prevCrossfadeGrid;
+        private Storyboard? _gridStoryboard;
 
         public AnimationService(IMainView window, ISettingsManager settings)
         {
@@ -34,75 +34,70 @@ namespace quick_image_viewer.Services
         public void StartGridCrossfade(Grid currentGrid, Grid prevGrid)
         {
             StopCrossfade();
-            var sb = new Storyboard();
-            _currentCrossfadeStoryboard = sb;
+
             _currentCrossfadeGrid = currentGrid;
             _prevCrossfadeGrid = prevGrid;
 
-            var animIn = new DoubleAnimation
-            {
-                From = 0,
-                To = 1,
-                Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-            };
-            Storyboard.SetTarget(animIn, currentGrid);
-            Storyboard.SetTargetProperty(animIn, "Opacity");
-            sb.Children.Add(animIn);
+            float duration = (float)_settings.SlideshowCrossfadeDuration;
+            if (duration <= 0) duration = 0.5f;
 
-            var animOut = new DoubleAnimation
-            {
-                From = 1,
-                To = 0,
-                Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-            };
-            Storyboard.SetTarget(animOut, prevGrid);
-            Storyboard.SetTargetProperty(animOut, "Opacity");
-            sb.Children.Add(animOut);
-
-            sb.Completed += (s, e) =>
-            {
-                prevGrid.Opacity = 0;
-                prevGrid.Visibility = Visibility.Collapsed;
-                currentGrid.Opacity = 1;
-                currentGrid.Translation = new System.Numerics.Vector3(0, 0, 0); // Reset translation if needed
-
-                if (_currentCrossfadeStoryboard == sb)
-                {
-                    _currentCrossfadeStoryboard = null;
-                    _currentCrossfadeGrid = null;
-                    _prevCrossfadeGrid = null;
-                }
-            };
-
-            // Ensure smooth transition: 
-            // 1. Current grid (new image) should be on top
-            // 2. Previous grid should remain fully visible until transition starts
+            // Ensure the NEW grid is rendered on top of the OLD one
             Canvas.SetZIndex(currentGrid, 10);
             Canvas.SetZIndex(prevGrid, 0);
 
+            // Initial states for XAML animation
             currentGrid.Opacity = 0;
             currentGrid.Visibility = Visibility.Visible;
             prevGrid.Opacity = 1;
             prevGrid.Visibility = Visibility.Visible;
 
-            try
-            {
-                sb.Begin();
-            }
-            catch (Exception)
-            {
-            }
+            _gridStoryboard = new Storyboard();
+            var ease = new ExponentialEase { Exponent = 6, EasingMode = EasingMode.EaseInOut };
 
-            // Update metadata after transition
-            try
+            // Fade in NEW
+            var animIn = new DoubleAnimation
             {
-                _window.MetadataDisplayService.UpdateMetadataPanel();
-            }
-            catch (Exception)
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromSeconds(duration),
+                EasingFunction = ease
+            };
+            Storyboard.SetTarget(animIn, currentGrid);
+            Storyboard.SetTargetProperty(animIn, "Opacity");
+
+            // Fade out OLD
+            var animOut = new DoubleAnimation
             {
-            }
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromSeconds(duration),
+                EasingFunction = ease
+            };
+            Storyboard.SetTarget(animOut, prevGrid);
+            Storyboard.SetTargetProperty(animOut, "Opacity");
+
+            _gridStoryboard.Children.Add(animIn);
+            _gridStoryboard.Children.Add(animOut);
+
+            _gridStoryboard.Completed += (s, e) =>
+            {
+                _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    prevGrid.Opacity = 0;
+                    prevGrid.Visibility = Visibility.Collapsed;
+                    currentGrid.Opacity = 1;
+
+                    if (_currentCrossfadeGrid == currentGrid)
+                    {
+                        _currentCrossfadeGrid = null;
+                        _prevCrossfadeGrid = null;
+                    }
+                    _gridStoryboard = null;
+                    try { _window.MetadataDisplayService.UpdateMetadataPanel(); } catch { }
+                });
+            };
+
+            _gridStoryboard.Begin();
         }
 
         public void StopAnimation()
@@ -112,14 +107,10 @@ namespace quick_image_viewer.Services
 
         public void StopCrossfade()
         {
-            if (_currentCrossfadeStoryboard != null)
+            if (_gridStoryboard != null)
             {
-                try
-                {
-                    _currentCrossfadeStoryboard.Stop();
-                }
-                catch { }
-                _currentCrossfadeStoryboard = null;
+                _gridStoryboard.Stop();
+                _gridStoryboard = null;
             }
 
             if (_currentCrossfadeGrid != null)
