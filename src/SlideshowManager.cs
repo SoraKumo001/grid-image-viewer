@@ -204,6 +204,10 @@ namespace grid_image_viewer
                 string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
                 _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, false, false);
             }
+            else
+            {
+                _ = _mainWindow.UpdateDisplayAsync();
+            }
 
             SetSlideshowControlsEnabled(true);
         }

@@ -40,6 +40,7 @@ namespace grid_image_viewer
         private List<string>? _cachedPrevPlaylist;
         private string? _lastPreloadedDirectory;
         private int _cachedQuadLayout = 1;
+        private bool _lastIsSlideshowRunning = false;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
         private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
@@ -181,10 +182,19 @@ namespace grid_image_viewer
                     nextPaths.Add(_window.Playlist[indexToLoad]);
             }
 
-            if (currentPaths.SequenceEqual(nextPaths))
+            bool isSlideshowRunning = _window.SlideshowManager.IsSlideshowRunning;
+            bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
+            _lastIsSlideshowRunning = isSlideshowRunning;
+
+            if (!stateChanged && currentPaths.SequenceEqual(nextPaths))
             {
+                // バッファ自体は表示されていることを保証
+                _window.ViewerControl.CurrentBuffer.Opacity = 1;
+                _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
+
                 _window.UpdatePageIndicator();
                 _window.MetadataDisplayService.UpdateMetadataPanel();
+                _window.AnimationService.StartAnimation();
                 return;
             }
 
