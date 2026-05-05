@@ -461,4 +461,22 @@
   <data name="Settings_BoundaryAction_Loop.Content" xml:space="preserve">
     <value>Loop within Current Folder</value>
   </data>
+  <data name="KeyBinding_Category_Navigation" xml:space="preserve">
+    <value>Navigation</value>
+  </data>
+  <data name="KeyBinding_Category_View" xml:space="preserve">
+    <value>View / Modes</value>
+  </data>
+  <data name="KeyBinding_Category_Zoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="KeyBinding_Category_Action" xml:space="preserve">
+    <value>File / Edit Actions</value>
+  </data>
+  <data name="KeyBinding_Category_App" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="KeyBinding_Category_Bookmarks" xml:space="preserve">
+    <value>Bookmarks</value>
+  </data>
 </root>

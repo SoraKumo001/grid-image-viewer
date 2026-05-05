@@ -461,4 +461,22 @@
   <data name="Settings_BoundaryAction_Loop.Content" xml:space="preserve">
     <value>現在のフォルダでループする</value>
   </data>
+  <data name="KeyBinding_Category_Navigation" xml:space="preserve">
+    <value>ナビゲーション</value>
+  </data>
+  <data name="KeyBinding_Category_View" xml:space="preserve">
+    <value>表示・モード切替</value>
+  </data>
+  <data name="KeyBinding_Category_Zoom" xml:space="preserve">
+    <value>ズーム</value>
+  </data>
+  <data name="KeyBinding_Category_Action" xml:space="preserve">
+    <value>ファイル操作・編集</value>
+  </data>
+  <data name="KeyBinding_Category_App" xml:space="preserve">
+    <value>アプリケーション</value>
+  </data>
+  <data name="KeyBinding_Category_Bookmarks" xml:space="preserve">
+    <value>ブックマーク</value>
+  </data>
 </root>

@@ -18,6 +18,7 @@ namespace grid_image_viewer
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
 
+        private ScrollViewer? _gridScrollViewer;
         private DispatcherTimer? _gridAnimationTimer;
         private DispatcherTimer? _resizeDebounceTimer;
         private int _gridDecodeSize = 300;
@@ -28,6 +29,8 @@ namespace grid_image_viewer
             _window = window;
             _settings = settings;
 
+            _window.ImageGridView.Loaded += (s, e) => SetupScrollListener();
+
             _resizeDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _resizeDebounceTimer.Tick += (s, e) =>
             {
@@ -37,6 +40,54 @@ namespace grid_image_viewer
                     UpdateGridLayout();
                 }
             };
+        }
+
+        private void SetupScrollListener()
+        {
+            if (_gridScrollViewer != null) return;
+            _gridScrollViewer = FindScrollViewer(_window.ImageGridView);
+            if (_gridScrollViewer != null)
+            {
+                _gridScrollViewer.ViewChanged += (sender, args) => UpdatePageIndicatorFromScroll();
+            }
+        }
+
+        private void UpdatePageIndicatorFromScroll()
+        {
+            if (!_window.IsGridMode || _gridScrollViewer == null) return;
+
+            var wrapGrid = _window.ImageGridView.ItemsPanelRoot as ItemsWrapGrid;
+            if (wrapGrid == null || wrapGrid.ItemWidth <= 0 || wrapGrid.ItemHeight <= 0) return;
+
+            double viewportWidth = _gridScrollViewer.ViewportWidth;
+            double viewportHeight = _gridScrollViewer.ViewportHeight;
+            double verticalOffset = _gridScrollViewer.VerticalOffset;
+
+            int columns = (int)Math.Floor(viewportWidth / wrapGrid.ItemWidth);
+            if (columns <= 0) columns = 1;
+
+            int firstVisibleRow = (int)Math.Floor(verticalOffset / wrapGrid.ItemHeight);
+            int visibleRows = (int)Math.Ceiling(viewportHeight / wrapGrid.ItemHeight);
+            int lastVisibleRow = firstVisibleRow + visibleRows;
+
+            int lastVisibleIndex = (lastVisibleRow * columns);
+            if (lastVisibleIndex > _window.Playlist.Count) lastVisibleIndex = _window.Playlist.Count;
+            if (lastVisibleIndex < 1) lastVisibleIndex = 1;
+
+            _window.ViewModel.OverrideDisplayIndex = lastVisibleIndex;
+        }
+
+        private ScrollViewer? FindScrollViewer(DependencyObject parent)
+        {
+            if (parent is ScrollViewer sv) return sv;
+            int count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+                var result = FindScrollViewer(child);
+                if (result != null) return result;
+            }
+            return null;
         }
 
         public async Task LoadThumbnailsAsync(CancellationToken token)
@@ -442,6 +493,7 @@ namespace grid_image_viewer
             GridItems = newList;
             _window.ImageGridView.ItemsSource = GridItems;
             RefreshThumbnails();
+            _window.DispatcherQueue.TryEnqueue(() => UpdatePageIndicatorFromScroll());
         }
 
         public void RefreshThumbnails()

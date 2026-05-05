@@ -174,6 +174,7 @@ namespace grid_image_viewer
                 .ToList();
 
             var nextPaths = new List<string>();
+            int maxIndexInView = _window.CurrentIndex;
             for (int i = 0; i < effectiveSplitCount; i++)
             {
                 int indexToLoad = -1;
@@ -193,8 +194,12 @@ namespace grid_image_viewer
                     }
                 }
                 if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
+                {
                     nextPaths.Add(_window.Playlist[indexToLoad]);
+                    maxIndexInView = Math.Max(maxIndexInView, indexToLoad);
+                }
             }
+            _window.ViewModel.OverrideDisplayIndex = maxIndexInView + 1;
 
             bool isSlideshowRunning = _window.SlideshowManager.IsSlideshowRunning;
             bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;

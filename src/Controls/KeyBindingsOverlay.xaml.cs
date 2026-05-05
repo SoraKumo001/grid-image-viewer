@@ -20,6 +20,7 @@ namespace grid_image_viewer.Controls
         private KeyBindingData _tempToggleGrid;
         private KeyBindingData _tempSlideshow;
         private KeyBindingData _tempMetadata;
+        private KeyBindingData _tempToggleBookmarks;
         private KeyBindingData _tempToggleFullscreen;
         private KeyBindingData _tempToggleStretchMode;
         private KeyBindingData _tempAddBookmark;
@@ -49,6 +50,7 @@ namespace grid_image_viewer.Controls
             _tempToggleGrid = _settings.KeyToggleGrid.Clone();
             _tempSlideshow = _settings.KeySlideshow.Clone();
             _tempMetadata = _settings.KeyMetadata.Clone();
+            _tempToggleBookmarks = _settings.KeyToggleBookmarks.Clone();
             _tempToggleFullscreen = _settings.KeyToggleFullscreen.Clone();
             _tempToggleStretchMode = _settings.KeyToggleStretchMode.Clone();
             _tempAddBookmark = _settings.KeyAddBookmark.Clone();
@@ -68,27 +70,58 @@ namespace grid_image_viewer.Controls
         private void InitializeList()
         {
             BindingsStack.Children.Clear();
+
+            // Navigation
+            BindingsStack.Children.Add(CreateHeader(GetString("KeyBinding_Category_Navigation")));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_NextImage"), _tempNextImage));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_PrevImage"), _tempPrevImage));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_NextFolder"), _tempNextFolder));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_PrevFolder"), _tempPrevFolder));
+
+            // View Modes
+            BindingsStack.Children.Add(CreateHeader(GetString("KeyBinding_Category_View")));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleManga"), _tempToggleManga));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleGrid"), _tempToggleGrid));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleSlideshow"), _tempSlideshow));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Metadata"), _tempMetadata));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleFullscreen"), _tempToggleFullscreen));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleStretchMode"), _tempToggleStretchMode));
+
+            // Bookmarks
+            BindingsStack.Children.Add(CreateHeader(GetString("KeyBinding_Category_Bookmarks")));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ToggleBookmarks"), _tempToggleBookmarks));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_AddBookmark"), _tempAddBookmark));
-            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateRight"), _tempRotateRight));
-            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateLeft"), _tempRotateLeft));
-            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_FlipHorizontal"), _tempFlipHorizontal));
+
+            // Zoom
+            BindingsStack.Children.Add(CreateHeader(GetString("KeyBinding_Category_Zoom")));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ZoomIn"), _tempZoomIn));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ZoomOut"), _tempZoomOut));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_ZoomReset"), _tempZoomReset));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Zoom100"), _tempZoom100));
+
+            // Actions
+            BindingsStack.Children.Add(CreateHeader(GetString("KeyBinding_Category_Action")));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateRight"), _tempRotateRight));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_RotateLeft"), _tempRotateLeft));
+            BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_FlipHorizontal"), _tempFlipHorizontal));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_CopyPath"), _tempCopyPath));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_DeleteFile"), _tempDeleteFile));
+
+            // Application
+            BindingsStack.Children.Add(CreateHeader(GetString("KeyBinding_Category_App")));
             BindingsStack.Children.Add(CreateRow(GetString("KeyBinding_Exit"), _tempExit));
+        }
+
+        private UIElement CreateHeader(string text)
+        {
+            return new TextBlock
+            {
+                Text = text,
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+                Foreground = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"],
+                Margin = new Thickness(4, 16, 0, 4)
+            };
         }
 
         private UIElement CreateRow(string label, KeyBindingData binding)
@@ -174,6 +207,7 @@ namespace grid_image_viewer.Controls
             CopyBinding(defaults.KeyToggleGrid, _tempToggleGrid);
             CopyBinding(defaults.KeySlideshow, _tempSlideshow);
             CopyBinding(defaults.KeyMetadata, _tempMetadata);
+            CopyBinding(defaults.KeyToggleBookmarks, _tempToggleBookmarks);
             CopyBinding(defaults.KeyToggleFullscreen, _tempToggleFullscreen);
             CopyBinding(defaults.KeyToggleStretchMode, _tempToggleStretchMode);
             CopyBinding(defaults.KeyAddBookmark, _tempAddBookmark);
@@ -208,6 +242,7 @@ namespace grid_image_viewer.Controls
             _settings.KeyToggleGrid = _tempToggleGrid;
             _settings.KeySlideshow = _tempSlideshow;
             _settings.KeyMetadata = _tempMetadata;
+            _settings.KeyToggleBookmarks = _tempToggleBookmarks;
             _settings.KeyToggleFullscreen = _tempToggleFullscreen;
             _settings.KeyToggleStretchMode = _tempToggleStretchMode;
             _settings.KeyAddBookmark = _tempAddBookmark;

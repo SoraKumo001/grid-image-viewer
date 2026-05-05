@@ -44,6 +44,20 @@ namespace grid_image_viewer
             {
                 if (SetProperty(ref _currentIndex, value))
                 {
+                    _overrideDisplayIndex = null;
+                    UpdatePageIndicator();
+                }
+            }
+        }
+
+        private int? _overrideDisplayIndex;
+        public int? OverrideDisplayIndex
+        {
+            get => _overrideDisplayIndex;
+            set
+            {
+                if (SetProperty(ref _overrideDisplayIndex, value))
+                {
                     UpdatePageIndicator();
                 }
             }
@@ -149,6 +163,7 @@ namespace grid_image_viewer
                 if (SetProperty(ref _isGridMode, value))
                 {
                     OnPropertyChanged(nameof(IsViewerMode));
+                    _overrideDisplayIndex = null;
                     UpdatePageIndicator();
                 }
             }
@@ -259,9 +274,9 @@ namespace grid_image_viewer
 
         public void UpdatePageIndicator()
         {
-            if (ShowPageIndicator && Playlist.Count > 0 && CurrentIndex >= 0)
+            if (ShowPageIndicator && Playlist != null && Playlist.Count > 0 && CurrentIndex >= 0)
             {
-                int displayIndex = IsGridMode ? (CurrentIndex + 1) : System.Math.Min(CurrentIndex + MangaSplitCount, Playlist.Count);
+                int displayIndex = OverrideDisplayIndex ?? (IsGridMode ? (CurrentIndex + 1) : System.Math.Min(CurrentIndex + MangaSplitCount, Playlist.Count));
                 PageIndicatorText = $"{displayIndex} / {Playlist.Count}";
                 IsPageIndicatorVisible = true;
             }
