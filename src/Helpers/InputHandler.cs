@@ -388,6 +388,8 @@ namespace quick_image_viewer.Helpers
 
         public void HandlePointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
+            if (e.Handled && sender is not GridView) return;
+
             var props = e.GetCurrentPoint(_window.RootGrid).Properties;
             bool isCtrl = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control);
             bool isShift = e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Shift);

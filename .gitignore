@@ -27,3 +27,4 @@ $RECYCLE.BIN/
 .vscode
 publish_output
 publish_output_test
+.tmp

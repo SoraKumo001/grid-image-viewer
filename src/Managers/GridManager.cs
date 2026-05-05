@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using quick_image_viewer.Helpers;
@@ -43,6 +44,33 @@ namespace quick_image_viewer.Managers
                     UpdateGridLayout();
                 }
             };
+
+            _window.ImageGridView.ContainerContentChanging += GridView_ContainerContentChanging;
+        }
+
+        private void GridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue) return;
+
+            var container = args.ItemContainer;
+            if (container != null)
+            {
+                var visual = ElementCompositionPreview.GetElementVisual(container);
+                if (visual.ImplicitAnimations == null)
+                {
+                    var compositor = visual.Compositor;
+                    var animationGroup = compositor.CreateImplicitAnimationCollection();
+
+                    // Smooth repositioning when grid layout changes
+                    var offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
+                    offsetAnimation.Target = "Offset";
+                    offsetAnimation.InsertExpressionKeyFrame(1.0f, "this.FinalValue");
+                    offsetAnimation.Duration = TimeSpan.FromMilliseconds(400);
+
+                    animationGroup["Offset"] = offsetAnimation;
+                    visual.ImplicitAnimations = animationGroup;
+                }
+            }
         }
 
         private void SetupScrollListener()
