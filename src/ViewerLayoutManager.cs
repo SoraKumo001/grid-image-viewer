@@ -13,16 +13,16 @@ namespace grid_image_viewer
         }
 
         public void UpdateLayoutGrid(
-            MainWindow window,
+            ColumnDefinition[] cols,
+            RowDefinition[] rows,
+            Controls.ViewerPageControl[] pageGrids,
             int splitCount,
             int effectiveSplitCount,
             int currentQuadLayout,
-            int bufferIdx)
+            bool isSlideshowRunning)
         {
-            var cols = window.ViewerControl.ColsBuffer[bufferIdx];
-            var rows = window.ViewerControl.RowsBuffer[bufferIdx];
-            var pageGrids = window.ViewerControl.PageControlsBuffer[bufferIdx];
-            bool uniformToFill = (window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
+            bool uniformToFill = (isSlideshowRunning && _settings.SlideshowUniformToFill);
+
 
             for (int i = 0; i < 4; i++)
             {

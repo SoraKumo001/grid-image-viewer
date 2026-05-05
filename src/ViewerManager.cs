@@ -44,7 +44,7 @@ namespace grid_image_viewer
             _settings = settings;
             _layoutManager = new ViewerLayoutManager(settings);
             _imageLoader = new ViewerImageLoader(window, settings);
-            _cacheManager = new ViewerCacheManager(window, settings);
+            _cacheManager = new ViewerCacheManager(window.State, settings);
 
             // Initialize buffer references
             int idx = _window.ViewerControl.CurrentBufferIndex;
@@ -242,7 +242,14 @@ namespace grid_image_viewer
                 {
                     // --- SLIDESHOW MODE: Double-Buffered with Crossfade ---
                     int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
-                    _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
+                    _layoutManager.UpdateLayoutGrid(
+                        _window.ViewerControl.ColsBuffer[targetBufferIdx],
+                        _window.ViewerControl.RowsBuffer[targetBufferIdx],
+                        _window.ViewerControl.PageControlsBuffer[targetBufferIdx],
+                        splitCount,
+                        effectiveSplitCount,
+                        _cachedQuadLayout,
+                        _window.State.IsSlideshowRunning);
 
                     var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
                     var targetPages = _pagesBuffer[targetBufferIdx];
@@ -307,7 +314,14 @@ namespace grid_image_viewer
                 {
                     // --- NORMAL MODE: Direct Update for individual items ---
                     int targetBufferIdx = _window.ViewerControl.CurrentBufferIndex;
-                    _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
+                    _layoutManager.UpdateLayoutGrid(
+                        _window.ViewerControl.ColsBuffer[targetBufferIdx],
+                        _window.ViewerControl.RowsBuffer[targetBufferIdx],
+                        _window.ViewerControl.PageControlsBuffer[targetBufferIdx],
+                        splitCount,
+                        effectiveSplitCount,
+                        _cachedQuadLayout,
+                        _window.State.IsSlideshowRunning);
 
                     var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
                     var targetPages = _pagesBuffer[targetBufferIdx];
@@ -428,7 +442,14 @@ namespace grid_image_viewer
                         int remaining = _window.Playlist.Count - _window.CurrentIndex;
                         int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
 
-                        _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, currentBufferIdx);
+                        _layoutManager.UpdateLayoutGrid(
+                            _window.ViewerControl.ColsBuffer[currentBufferIdx],
+                            _window.ViewerControl.RowsBuffer[currentBufferIdx],
+                            _window.ViewerControl.PageControlsBuffer[currentBufferIdx],
+                            splitCount,
+                            effectiveSplitCount,
+                            _cachedQuadLayout,
+                            _window.State.IsSlideshowRunning);
                         for (int i = 0; i < 4; i++) InvalidatePage(i);
                     });
                 }

@@ -4,126 +4,114 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using AppControls = grid_image_viewer.Controls;
 
 namespace grid_image_viewer
 {
-    public sealed partial class MainWindow : Window, IRecipient<FullscreenMessage>, IRecipient<PlaylistUpdatedMessage>
+    public sealed partial class MainWindow : Window, IRecipient<FullscreenMessage>, IRecipient<PlaylistUpdatedMessage>, IRecipient<SlideshowNextRequestedMessage>
     {
-        public MainViewModel ViewModel { get; } = new MainViewModel();
+
+        public IViewerStateService State { get; } = new ViewerStateService();
+        public MainViewModel ViewModel { get; }
+
+        // === Proxy Properties for State ===
+        public ObservableCollection<string> Playlist { get => State.Playlist; set => State.Playlist = value; }
+        public int CurrentIndex { get => State.CurrentIndex; set => State.CurrentIndex = value; }
+        public string CurrentDirectory { get => State.CurrentDirectory; set => State.CurrentDirectory = value; }
+        public bool IsGridMode { get => State.IsGridMode; set => State.IsGridMode = value; }
 
         // === Components and Services ===
+        internal SettingsManager _settings;
+        internal ISlideshowService SlideshowService { get; private set; }
         internal SlideshowManager SlideshowManager { get; private set; }
-        internal InputHandler InputHandler { get; private set; }
-        internal GridManager GridManager { get; private set; }
+        internal ViewerCacheManager ViewerCacheManager { get; private set; }
         internal ViewerManager ViewerManager { get; private set; }
+        internal GridManager GridManager { get; private set; }
+        internal AppWindowManager AppWindowManager { get; private set; }
         internal EditorManager EditorManager { get; private set; }
-        internal ImageEditService ImageEditService { get; private set; }
-        internal MetadataDisplayService MetadataDisplayService { get; private set; }
+        internal BookmarkManager BookmarkManager { get; private set; }
+        internal PlaylistManager PlaylistManager { get; private set; }
         internal PrintService PrintService { get; private set; }
-        internal NotificationService NotificationService { get; private set; }
+        internal InputHandler InputHandler { get; private set; }
         internal AnimationService AnimationService { get; private set; }
         internal DialogService DialogService { get; private set; }
-        internal AppWindowManager AppWindowManager { get; private set; }
-        internal BookmarkManager BookmarkManager { get; private set; }
+        internal NotificationService NotificationService { get; private set; }
+        internal MetadataDisplayService MetadataDisplayService { get; private set; }
+        internal ImageEditService ImageEditService { get; private set; }
 
-        internal AppControls.ViewerPanel ViewerControl => ViewerControlInternal;
-        internal AppControls.GridImagePanel GridControl => GridControlInternal;
+        // === UI Helpers ===
+        public Controls.ViewerPanel ViewerControl => ViewerControlInternal;
+        public Grid PagesGrid => ViewerControlInternal.CurrentBuffer;
+        public IList<ImageItem> GridItems => (IList<ImageItem>)GridManager?.GridItems ?? new List<ImageItem>();
+        public GridView ImageGridView => GridControlInternal.GridView;
+        public ScrollViewer ImageScrollViewer => ViewerControlInternal.ScrollViewer;
 
-        // Backward compatibility properties - Pointing to active buffer
-        internal ScrollViewer ImageScrollViewer => ViewerControlInternal.ScrollViewer;
-        internal Grid PagesGrid => ViewerControlInternal.CurrentBuffer;
-        internal GridView ImageGridView => GridControlInternal.GridView;
+        public FrameworkElement PageGrid1 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
+        public FrameworkElement PageGrid2 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
+        public FrameworkElement PageGrid3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
+        public FrameworkElement PageGrid4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
-        internal FrameworkElement PageGrid1 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal FrameworkElement PageGrid2 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal FrameworkElement PageGrid3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal FrameworkElement PageGrid4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
+        private DispatcherTimer _resizeTimer;
+        private bool _isDialogOpen;
+        public bool IsDialogOpen { get => _isDialogOpen; set { _isDialogOpen = value; ViewModel.IsDialogOpen = value; } }
+        public bool IsSearchingFolder { get => ViewModel.IsSearchingFolder; set => ViewModel.IsSearchingFolder = value; }
 
-        internal FrameworkElement CurrentContainer1 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal FrameworkElement CurrentContainer2 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal FrameworkElement CurrentContainer3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal FrameworkElement CurrentContainer4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
-
-
-
-        // Layout definitions - These should be handled per buffer in ViewerManager
-        internal ColumnDefinition Col0 => ViewerControlInternal.ColsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal ColumnDefinition Col1 => ViewerControlInternal.ColsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal ColumnDefinition Col2 => ViewerControlInternal.ColsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal ColumnDefinition Col3 => ViewerControlInternal.ColsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
-
-        internal RowDefinition Row0 => ViewerControlInternal.RowsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal RowDefinition Row1 => ViewerControlInternal.RowsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-
-        internal bool IsGridMode { get => ViewModel.IsGridMode; set => ViewModel.IsGridMode = value; }
-        internal System.Collections.ObjectModel.ObservableCollection<ImageItem> GridItems => GridManager.GridItems;
-        internal bool IsDialogOpen { get => ViewModel.IsDialogOpen; set => ViewModel.IsDialogOpen = value; }
-        internal IList<string> Playlist => ViewModel.Playlist;
-        internal int CurrentIndex { get => ViewModel.CurrentIndex; set => ViewModel.CurrentIndex = value; }
-        internal string CurrentDirectory { get => ViewModel.CurrentDirectory; set => ViewModel.CurrentDirectory = value; }
-        internal bool IsSearchingFolder { get => ViewModel.IsSearchingFolder; set => ViewModel.IsSearchingFolder = value; }
-
-        internal bool IsFullscreen
+        private bool _isFullscreen;
+        public bool IsFullscreen
         {
-            get => AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen;
+            get => _isFullscreen;
             set
             {
-                if (value)
+                if (_isFullscreen != value)
                 {
-                    AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
-                    AppTitleBar.Visibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                    AppTitleBar.Visibility = Visibility.Visible;
+                    _isFullscreen = value;
+                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                    var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                    if (_isFullscreen)
+                    {
+                        appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
+                        AppTitleBar.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
+                        AppTitleBar.Visibility = Visibility.Visible;
+                    }
                 }
             }
         }
 
-        private SettingsManager _settings;
-        private DispatcherTimer _resizeTimer;
-        private Random _random = new Random();
-
         public MainWindow()
         {
             this.InitializeComponent();
+            ViewModel = new MainViewModel(State);
+            RootGrid.DataContext = ViewModel;
+
             _settings = new SettingsManager();
+            SlideshowService = new SlideshowService(State, _settings);
+            SlideshowManager = new SlideshowManager(this, _settings, SlideshowService, State);
 
-            _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-            _resizeTimer.Tick += (s, e) =>
-            {
-                _resizeTimer.Stop();
-                if (ViewerManager != null && RootGrid != null)
-                {
-                    ViewerManager.HandleWindowSizeChanged(RootGrid.ActualWidth, RootGrid.ActualHeight);
-                }
-
-                if (AppWindow != null && _settings != null && AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.Default)
-                {
-                    _settings.UpdateNormalWindowState(AppWindow);
-                }
-            };
-
-            // Initialize Services
-            ImageEditService = new ImageEditService(this);
-            MetadataDisplayService = new MetadataDisplayService(this, _settings);
-            NotificationService = new NotificationService(this);
-            AnimationService = new AnimationService(this, _settings);
-            DialogService = new DialogService(this);
-            PrintService = new PrintService(this);
-
-            // Initialize Managers
-            AppWindowManager = new AppWindowManager(this, _settings);
-            BookmarkManager = new BookmarkManager(this, _settings);
-            PlaylistManager = new PlaylistManager(this, _settings);
+            ViewerCacheManager = new ViewerCacheManager(State, _settings);
             ViewerManager = new ViewerManager(this, _settings);
             GridManager = new GridManager(this, _settings);
+            AppWindowManager = new AppWindowManager(this, _settings);
             EditorManager = new EditorManager(this, _settings);
-            SlideshowManager = new SlideshowManager(this, _settings);
+            BookmarkManager = new BookmarkManager(this, _settings);
+            PlaylistManager = new PlaylistManager(this, _settings);
+            PrintService = new PrintService(this);
+
+            AnimationService = new AnimationService(this, _settings);
+            DialogService = new DialogService(this);
+            NotificationService = new NotificationService(this);
+            MetadataDisplayService = new MetadataDisplayService(this, _settings);
+            ImageEditService = new ImageEditService(this);
+
             InputHandler = new InputHandler(this, _settings);
+
+            _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+            _resizeTimer.Tick += (s, e) => { _resizeTimer.Stop(); _ = UpdateDisplayAsync(); };
 
             // Setup Controls
             ViewerControlInternal.PaintSurfaceRequested += (s, e) => ViewerManager.PaintCanvas(e.bufferIndex, e.pageIndex, e.args);
@@ -135,17 +123,15 @@ namespace grid_image_viewer
             ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
             ViewModel.BoundaryAction = _settings.BoundaryAction;
 
-
-
             this.Closed += MainWindow_Closed;
-
             AppWindowManager.InitializeWindow();
-
-            ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
+            GridControlInternal.GridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
 
             WeakReferenceMessenger.Default.Register<FullscreenMessage>(this);
             WeakReferenceMessenger.Default.Register<PlaylistUpdatedMessage>(this);
+            WeakReferenceMessenger.Default.Register<SlideshowNextRequestedMessage>(this);
         }
+
 
         public void Receive(FullscreenMessage message) => IsFullscreen = !IsFullscreen;
 
@@ -153,6 +139,37 @@ namespace grid_image_viewer
         {
             UpdateGridItems(message.ForceFullGridUpdate);
             _ = UpdateDisplayAsync();
+        }
+
+        public void Receive(SlideshowNextRequestedMessage message)
+        {
+            if (ViewModel.IsSlideshowRunning)
+            {
+                if (_settings.SlideshowRandom)
+                {
+                    _ = UpdateDisplayAsync();
+                }
+                else
+                {
+                    int increment = _settings.MangaSplitCount;
+                    if (CurrentIndex + increment >= Playlist.Count)
+                    {
+                        if (_settings.SlideshowNextFolder)
+                        {
+                            NavigateFolder(1);
+                        }
+                        else if (_settings.SlideshowLoop)
+                        {
+                            CurrentIndex = 0;
+                            _ = UpdateDisplayAsync();
+                        }
+                    }
+                    else
+                    {
+                        _ = UpdateDisplayAsync();
+                    }
+                }
+            }
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -174,7 +191,6 @@ namespace grid_image_viewer
 
         private void RootGrid_DragOver(object sender, DragEventArgs e) => InputHandler.HandleDragOver(sender, e);
         private void RootGrid_Drop(object sender, DragEventArgs e) => InputHandler.HandleDrop(sender, e);
-        internal PlaylistManager PlaylistManager { get; private set; }
 
         public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false, List<string>? preloadedPlaylist = null)
         {

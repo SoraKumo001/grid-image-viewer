@@ -10,7 +10,7 @@ namespace grid_image_viewer
 {
     internal class ViewerCacheManager
     {
-        private readonly MainWindow _window;
+        private readonly IViewerStateService _state;
         private readonly SettingsManager _settings;
         private readonly Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private readonly Dictionary<string, SoftwareBitmap> _softwareBitmapCache = new Dictionary<string, SoftwareBitmap>();
@@ -25,11 +25,12 @@ namespace grid_image_viewer
         private string? _lastPreloadedDirectory;
         private CancellationTokenSource? _preloadCts;
 
-        public ViewerCacheManager(MainWindow window, SettingsManager settings)
+        public ViewerCacheManager(IViewerStateService state, SettingsManager settings)
         {
-            _window = window;
+            _state = state;
             _settings = settings;
         }
+
 
         public byte[]? GetCachedBytes(string filePath)
         {

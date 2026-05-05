@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace grid_image_viewer
@@ -12,23 +11,22 @@ namespace grid_image_viewer
     {
         private MainWindow _mainWindow;
         private SettingsManager _settings;
-        private DispatcherTimer _slideshowTimer;
-        public bool IsSlideshowRunning { get => ViewModel.IsSlideshowRunning; private set => ViewModel.IsSlideshowRunning = value; }
-        public int[] SlideshowRandomIndices { get; private set; } = new int[4] { -1, -1, -1, -1 };
-        private Random _random = new Random();
-        private List<int> _remainingIndices = new List<int>();
-        private int _lastPlaylistCount = 0;
+        private ISlideshowService _slideshowService;
+        private IViewerStateService _state;
+
+        public bool IsSlideshowRunning { get => _state.IsSlideshowRunning; }
+        public int[] SlideshowRandomIndices { get => _slideshowService.CurrentRandomIndices; }
+
         private ResourceLoader _resourceLoader = new ResourceLoader();
         private bool _wasExpanded = false;
         private MainViewModel ViewModel => _mainWindow.ViewModel;
 
-        public SlideshowManager(MainWindow mainWindow, SettingsManager settings)
+        public SlideshowManager(MainWindow mainWindow, SettingsManager settings, ISlideshowService slideshowService, IViewerStateService state)
         {
             _mainWindow = mainWindow;
             _settings = settings;
-
-            _slideshowTimer = new DispatcherTimer();
-            _slideshowTimer.Tick += SlideshowTimer_Tick;
+            _slideshowService = slideshowService;
+            _state = state;
 
             var formatter = new Windows.Globalization.NumberFormatting.DecimalFormatter();
             formatter.IntegerDigits = 1;
@@ -44,6 +42,7 @@ namespace grid_image_viewer
 
             WeakReferenceMessenger.Default.Register<OpenSlideshowMessage>(this);
         }
+
 
         public void Receive(OpenSlideshowMessage message) => OpenSlideshowDialogAsync();
 
@@ -140,37 +139,25 @@ namespace grid_image_viewer
             if (isExpanding)
             {
                 _wasExpanded = true;
-                string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
-                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly);
+                string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
+                _mainWindow.LoadDirectory(_state.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly);
             }
 
-            _slideshowTimer.Interval = TimeSpan.FromSeconds(_settings.SlideshowInterval);
-            _slideshowTimer.Start();
-            IsSlideshowRunning = true;
-
-            // Initialize random indices
-            _remainingIndices.Clear();
-            _lastPlaylistCount = _mainWindow.Playlist.Count;
-            if (_lastPlaylistCount > 0)
-            {
-                _remainingIndices.AddRange(Enumerable.Range(0, _lastPlaylistCount));
-                // Remove current index so we don't immediately show it again if we shuffle
-                _remainingIndices.Remove(_mainWindow.CurrentIndex);
-                ShuffleRemainingIndices();
-            }
+            _slideshowService.Start();
 
             // Immediately show the first image or jump if random
-            if (_settings.SlideshowRandom && _mainWindow.Playlist.Count > 1)
+            if (_settings.SlideshowRandom && _state.Playlist.Count > 1)
             {
-                SlideshowTimer_Tick(null, EventArgs.Empty);
+                // Trigger first next immediately through message
+                WeakReferenceMessenger.Default.Send(new SlideshowNextRequestedMessage());
             }
-            else if (_mainWindow.Playlist.Count > 0)
+            else if (_state.Playlist.Count > 0)
             {
                 _ = _mainWindow.UpdateDisplayAsync();
             }
 
             // If we are searching and have no files yet, wait for initial population then trigger start
-            if (isExpanding && _mainWindow.Playlist.Count == 0)
+            if (isExpanding && _state.Playlist.Count == 0)
             {
                 _ = InitialStartAsync();
             }
@@ -179,23 +166,16 @@ namespace grid_image_viewer
         private async System.Threading.Tasks.Task InitialStartAsync()
         {
             int timeout = 0;
-            while (_mainWindow.Playlist.Count == 0 && timeout < 100)
+            while (_state.Playlist.Count == 0 && timeout < 100)
             {
                 if (!IsSlideshowRunning) return;
                 await System.Threading.Tasks.Task.Delay(100);
                 timeout++;
             }
 
-            if (IsSlideshowRunning && _mainWindow.Playlist.Count > 0)
+            if (IsSlideshowRunning && _state.Playlist.Count > 0)
             {
-                if (_settings.SlideshowRandom && _mainWindow.Playlist.Count > 1)
-                {
-                    SlideshowTimer_Tick(null, EventArgs.Empty);
-                }
-                else
-                {
-                    _ = _mainWindow.UpdateDisplayAsync();
-                }
+                _ = _mainWindow.UpdateDisplayAsync();
             }
         }
 
@@ -203,9 +183,7 @@ namespace grid_image_viewer
         {
             if (!IsSlideshowRunning) return;
 
-            _slideshowTimer.Stop();
-            IsSlideshowRunning = false;
-            for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
+            _slideshowService.Stop();
             _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
 
             if (_settings.SlideshowFullscreen)
@@ -216,8 +194,8 @@ namespace grid_image_viewer
             if (_wasExpanded)
             {
                 _wasExpanded = false;
-                string currentPath = _mainWindow.Playlist.ElementAtOrDefault(_mainWindow.CurrentIndex) ?? "";
-                _mainWindow.LoadDirectory(_mainWindow.CurrentDirectory, currentPath, false, false);
+                string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
+                _mainWindow.LoadDirectory(_state.CurrentDirectory, currentPath, false, false);
             }
             else
             {
@@ -227,146 +205,10 @@ namespace grid_image_viewer
             SetSlideshowControlsEnabled(true);
         }
 
-        private void SlideshowTimer_Tick(object? sender, object e)
-        {
-            var playlist = _mainWindow.Playlist;
-            int currentIndex = _mainWindow.CurrentIndex;
-
-            if (playlist == null || playlist.Count == 0) return;
-
-            if (_settings.SlideshowRandom)
-            {
-                // リストが更新（増加）されたかチェック
-                if (playlist.Count > _lastPlaylistCount)
-                {
-                    // 追加された分を未再生リストに加える
-                    for (int i = _lastPlaylistCount; i < playlist.Count; i++)
-                    {
-                        _remainingIndices.Add(i);
-                    }
-                    _lastPlaylistCount = playlist.Count;
-                    // 新しく追加されたものも含めて再シャッフル（オプション）
-                    ShuffleRemainingIndices();
-                }
-
-                if (_remainingIndices.Count == 0)
-                {
-                    // 全て表示し終わったらリセット
-                    if (_settings.SlideshowLoop || _lastPlaylistCount <= 1)
-                    {
-                        _remainingIndices.AddRange(Enumerable.Range(0, playlist.Count));
-                        _remainingIndices.Remove(currentIndex); // 今の画像は除外
-                        ShuffleRemainingIndices();
-                    }
-                    else
-                    {
-                        StopSlideshow();
-                        return;
-                    }
-                }
-
-                int nextIdx = _remainingIndices[0];
-                _remainingIndices.RemoveAt(0);
-
-                int splits = _settings.MangaSplitCount;
-                SlideshowRandomIndices[0] = nextIdx;
-
-                if (splits > 1 && _remainingIndices.Count >= splits - 1)
-                {
-                    // 分割表示の場合、残りのキューから必要な分だけ取る
-                    for (int i = 1; i < splits; i++)
-                    {
-                        SlideshowRandomIndices[i] = _remainingIndices[0];
-                        _remainingIndices.RemoveAt(0);
-                    }
-                }
-                else
-                {
-                    for (int i = 1; i < 4; i++) SlideshowRandomIndices[i] = -1;
-                }
-
-                _mainWindow.CurrentIndex = nextIdx;
-                _ = _mainWindow.UpdateDisplayAsync();
-            }
-            else
-            {
-                int increment = _settings.MangaSplitCount;
-                if (currentIndex + increment >= playlist.Count)
-                {
-                    if (_settings.SlideshowNextFolder)
-                    {
-                        // Stop timer during search to prevent multiple triggers
-                        _slideshowTimer.Stop();
-                        _mainWindow.NavigateFolder(1);
-
-                        // NavigateFolder will call LoadDirectory which updates display.
-                        // We need to restart the timer once the new folder is loaded.
-                        _ = RestartTimerAfterFolderLoad();
-                    }
-                    else if (_settings.SlideshowLoop)
-                    {
-                        _mainWindow.CurrentIndex = 0;
-                        _ = _mainWindow.UpdateDisplayAsync();
-                    }
-                    else
-                    {
-                        StopSlideshow();
-                    }
-                }
-                else
-                {
-                    _mainWindow.Navigate(1);
-                }
-            }
-        }
-
-        private async System.Threading.Tasks.Task RestartTimerAfterFolderLoad()
-        {
-            // Wait until we have at least one image in the playlist
-            int timeout = 0;
-            while (_mainWindow.Playlist.Count == 0 && timeout < 100)
-            {
-                if (!IsSlideshowRunning) return;
-                await System.Threading.Tasks.Task.Delay(100);
-                timeout++;
-            }
-
-            if (IsSlideshowRunning)
-            {
-                if (_mainWindow.Playlist.Count > 0)
-                {
-                    _slideshowTimer.Start();
-                }
-                else
-                {
-                    if (_settings.SlideshowLoop)
-                    {
-                        _mainWindow.NavigateFolder(1);
-                        _ = RestartTimerAfterFolderLoad();
-                    }
-                    else
-                    {
-                        StopSlideshow();
-                    }
-                }
-            }
-        }
-        private void ShuffleRemainingIndices()
-        {
-            int n = _remainingIndices.Count;
-            while (n > 1)
-            {
-                n--;
-                int k = _random.Next(n + 1);
-                int value = _remainingIndices[k];
-                _remainingIndices[k] = _remainingIndices[n];
-                _remainingIndices[n] = value;
-            }
-        }
-
         public void Dispose()
         {
-            _slideshowTimer?.Stop();
+            // SlideshowService takes care of its timer
         }
+
     }
 }
