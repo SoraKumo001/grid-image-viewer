@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.2.2 (Current) - 2026-05-04
+## v1.3.0 (Current) - 2026-05-05
+
+- **Architecture Overhaul**:
+  - [Refactor] Restructured the entire codebase into a modular directory hierarchy (`Interfaces`, `Services`, `Managers`, `Models`, `ViewModels`, `Helpers`, `Views`), significantly improving project maintainability and alignment with MVVM patterns.
+  - [Branding] Migrated the internal namespace and project naming from `grid_image_viewer` to `quick_image_viewer` to fully reflect the application's identity.
+  - [Cleanup] Streamlined the project by consolidating UI components and removing redundant legacy control files.
+- **Platform & Build**:
+  - Updated project configuration for .NET 10 and Windows App SDK 2.0 stability.
+  - Optimized build process and assembly naming consistency.
+
+## v1.2.2 - 2026-05-04
 
 - **WACK Compliance & Optimization**:
   - [Fix] Corrected splash screen (scale-200) and lock screen logo dimensions to meet Windows App Certification Kit (WACK) requirements.
