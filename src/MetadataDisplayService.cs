@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System;
 
 namespace grid_image_viewer
@@ -9,13 +8,11 @@ namespace grid_image_viewer
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
         private int _focusedPageIndex = 0;
-        private readonly Border[] _focusBorders;
 
         public MetadataDisplayService(MainWindow window, SettingsManager settings)
         {
             _window = window;
             _settings = settings;
-            _focusBorders = new Border[] { _window.FocusBorder1, _window.FocusBorder2, _window.FocusBorder3, _window.FocusBorder4 };
         }
 
         public void ToggleMetadataPanel(bool cycle = true)
@@ -124,18 +121,30 @@ namespace grid_image_viewer
         public void UpdateFocusBorders()
         {
             bool panelVisible = _window.MetadataPanel.Visibility == Visibility.Visible;
+            var focusBorders = _window.ViewerControl.FocusBordersBuffer[_window.ViewerControl.CurrentBufferIndex];
+
             for (int i = 0; i < 4; i++)
             {
-                _focusBorders[i].Visibility = (panelVisible && i == _focusedPageIndex) ? Visibility.Visible : Visibility.Collapsed;
+                focusBorders[i].Visibility = (panelVisible && i == _focusedPageIndex) ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            // Also hide borders in the inactive buffer
+            var inactiveBorders = _window.ViewerControl.FocusBordersBuffer[_window.ViewerControl.InactiveBufferIndex];
+            for (int i = 0; i < 4; i++)
+            {
+                inactiveBorders[i].Visibility = Visibility.Collapsed;
             }
         }
 
-        public void HandlePointerMoved(Grid[] pageGrids, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
             if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
 
-            var point = e.GetCurrentPoint(_window.PagesGrid).Position;
+            var pagesGrid = _window.PagesGrid; // Active buffer grid
+            var point = e.GetCurrentPoint(pagesGrid).Position;
             int splitCount = _settings.MangaSplitCount;
+
+            var pageGrids = _window.ViewerControl.PageGridsBuffer[_window.ViewerControl.CurrentBufferIndex];
 
             int hoveredIndex = -1;
             for (int i = 0; i < splitCount; i++)
@@ -147,7 +156,7 @@ namespace grid_image_viewer
                 {
                     try
                     {
-                        var ttv = _window.PagesGrid.TransformToVisual(grid);
+                        var ttv = pagesGrid.TransformToVisual(grid);
                         var p = ttv.TransformPoint(point);
                         if (p.X >= 0 && p.X <= grid.ActualWidth && p.Y >= 0 && p.Y <= grid.ActualHeight)
                         {

@@ -20,6 +20,54 @@ namespace grid_image_viewer
             _settings = settings;
         }
 
+        public void Navigate(int offset, bool forceSingleStep)
+        {
+            if (_window.Playlist.Count == 0) return;
+
+            int step = forceSingleStep ? 1 : _settings.MangaSplitCount;
+            int actualOffset = offset * step;
+
+            int newIndex = _window.CurrentIndex + actualOffset;
+
+            if (newIndex < 0)
+            {
+                // Navigate to previous folder if at start
+                NavigateFolder(-1);
+                return;
+            }
+            if (newIndex >= _window.Playlist.Count)
+            {
+                // Navigate to next folder if at end
+                NavigateFolder(1);
+                return;
+            }
+
+            _window.CurrentIndex = newIndex;
+            _ = _window.UpdateDisplayAsync();
+        }
+
+        public void NavigateFolder(int offset)
+        {
+            string currentDir = _window.CurrentDirectory;
+            if (string.IsNullOrEmpty(currentDir)) return;
+
+            _ = Task.Run(() =>
+            {
+                string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset);
+                _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!string.IsNullOrEmpty(targetDir))
+                    {
+                        _window.LoadDirectory(targetDir, string.Empty);
+                    }
+                    else
+                    {
+                        _window.ViewerManager.ShowNotification(offset > 0 ? "No more folders (End)" : "No more folders (Start)");
+                    }
+                });
+            });
+        }
+
         public void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false, List<string>? preloadedPlaylist = null)
         {
             _loadCts?.Cancel();

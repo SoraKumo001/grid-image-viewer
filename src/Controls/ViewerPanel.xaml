@@ -15,70 +15,90 @@
         ZoomMode="Enabled"
         MinZoomFactor="0.1"
         MaxZoomFactor="10.0">
-        <Grid x:Name="PagesGrid"
+        <Grid x:Name="RootContainer"
               Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
               Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
               Background="Transparent">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" x:Name="Col0" />
-                <ColumnDefinition Width="*" x:Name="Col1" />
-                <ColumnDefinition Width="*" x:Name="Col2" />
-                <ColumnDefinition Width="*" x:Name="Col3" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" x:Name="Row0" />
-                <RowDefinition Height="*" x:Name="Row1" />
-            </Grid.RowDefinitions>
 
-            <Grid x:Name="PageGrid4" Visibility="Collapsed">
-                <Grid x:Name="PrevContainer4" IsHitTestVisible="False">
-                    <Image x:Name="Image4_Prev" Stretch="Uniform" />
+            <!-- Buffer 1 -->
+            <Grid x:Name="PagesGrid1" Opacity="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" x:Name="B1_Col0" />
+                    <ColumnDefinition Width="*" x:Name="B1_Col1" />
+                    <ColumnDefinition Width="*" x:Name="B1_Col2" />
+                    <ColumnDefinition Width="*" x:Name="B1_Col3" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" x:Name="B1_Row0" />
+                    <RowDefinition Height="*" x:Name="B1_Row1" />
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="B1_PageGrid1" Visibility="Collapsed">
+                    <Image x:Name="B1_Image1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B1_Canvas1" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B1_LoadingRing1" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B1_FocusBorder1" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
-                <Grid x:Name="CurrentContainer4">
-                    <Image x:Name="Image4" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas4" Visibility="Collapsed" />
+                <Grid x:Name="B1_PageGrid2" Visibility="Collapsed">
+                    <Image x:Name="B1_Image2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B1_Canvas2" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B1_LoadingRing2" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B1_FocusBorder2" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
-                <ProgressRing x:Name="LoadingRing4" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
-                <Border x:Name="FocusBorder4" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+                <Grid x:Name="B1_PageGrid3" Visibility="Collapsed">
+                    <Image x:Name="B1_Image3" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B1_Canvas3" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B1_LoadingRing3" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B1_FocusBorder3" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+                </Grid>
+                <Grid x:Name="B1_PageGrid4" Visibility="Collapsed">
+                    <Image x:Name="B1_Image4" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B1_Canvas4" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B1_LoadingRing4" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B1_FocusBorder4" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+                </Grid>
             </Grid>
 
-            <Grid x:Name="PageGrid3" Visibility="Collapsed">
-                <Grid x:Name="PrevContainer3" IsHitTestVisible="False">
-                    <Image x:Name="Image3_Prev" Stretch="Uniform" />
+            <!-- Buffer 2 -->
+            <Grid x:Name="PagesGrid2" Opacity="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" x:Name="B2_Col0" />
+                    <ColumnDefinition Width="*" x:Name="B2_Col1" />
+                    <ColumnDefinition Width="*" x:Name="B2_Col2" />
+                    <ColumnDefinition Width="*" x:Name="B2_Col3" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" x:Name="B2_Row0" />
+                    <RowDefinition Height="*" x:Name="B2_Row1" />
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="B2_PageGrid1" Visibility="Collapsed">
+                    <Image x:Name="B2_Image1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B2_Canvas1" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B2_LoadingRing1" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B2_FocusBorder1" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
-                <Grid x:Name="CurrentContainer3">
-                    <Image x:Name="Image3" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas3" Visibility="Collapsed" />
+                <Grid x:Name="B2_PageGrid2" Visibility="Collapsed">
+                    <Image x:Name="B2_Image2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B2_Canvas2" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B2_LoadingRing2" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B2_FocusBorder2" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
                 </Grid>
-                <ProgressRing x:Name="LoadingRing3" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
-                <Border x:Name="FocusBorder3" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+                <Grid x:Name="B2_PageGrid3" Visibility="Collapsed">
+                    <Image x:Name="B2_Image3" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B2_Canvas3" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B2_LoadingRing3" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B2_FocusBorder3" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+                </Grid>
+                <Grid x:Name="B2_PageGrid4" Visibility="Collapsed">
+                    <Image x:Name="B2_Image4" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <skia:SKXamlCanvas x:Name="B2_Canvas4" Visibility="Collapsed" />
+                    <ProgressRing x:Name="B2_LoadingRing4" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
+                    <Border x:Name="B2_FocusBorder4" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+                </Grid>
             </Grid>
 
-            <Grid x:Name="PageGrid2" Visibility="Collapsed">
-                <Grid x:Name="PrevContainer2" IsHitTestVisible="False">
-                    <Image x:Name="Image2_Prev" Stretch="Uniform" />
-                </Grid>
-                <Grid x:Name="CurrentContainer2">
-                    <Image x:Name="Image2" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas2" Visibility="Collapsed" />
-                </Grid>
-                <ProgressRing x:Name="LoadingRing2" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
-                <Border x:Name="FocusBorder2" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
-            </Grid>
-
-            <Grid x:Name="PageGrid1" Visibility="Collapsed">
-                <Grid x:Name="PrevContainer1" IsHitTestVisible="False">
-                    <Image x:Name="Image1_Prev" Stretch="Uniform" />
-                </Grid>
-                <Grid x:Name="CurrentContainer1">
-                    <Image x:Name="Image1" Stretch="Uniform" />
-                    <skia:SKXamlCanvas x:Name="Canvas1" Visibility="Collapsed" />
-                </Grid>
-                <ProgressRing x:Name="LoadingRing1" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Center" HorizontalAlignment="Center" IsActive="False" />
-                <Border x:Name="FocusBorder1" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
-            </Grid>
-            
-            <Grid Grid.ColumnSpan="4" Grid.RowSpan="2" x:Name="OverlayGrid" Background="Transparent" IsHitTestVisible="True" />
+            <Grid x:Name="OverlayGrid" Background="Transparent" IsHitTestVisible="True" />
         </Grid>
     </ScrollViewer>
 </UserControl>

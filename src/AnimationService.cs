@@ -24,6 +24,12 @@ namespace grid_image_viewer
 
         public void StartCrossfade(int pageIndex, Grid[] currentContainers, Grid[] prevContainers)
         {
+            // This method is now legacy for individual items. 
+            // We'll focus on StartGridCrossfade for the entire grid.
+        }
+
+        public void StartGridCrossfade(Grid currentGrid, Grid prevGrid)
+        {
             var sb = new Storyboard();
 
             var animIn = new DoubleAnimation
@@ -33,7 +39,7 @@ namespace grid_image_viewer
                 Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
-            Storyboard.SetTarget(animIn, currentContainers[pageIndex]);
+            Storyboard.SetTarget(animIn, currentGrid);
             Storyboard.SetTargetProperty(animIn, "Opacity");
             sb.Children.Add(animIn);
 
@@ -44,14 +50,18 @@ namespace grid_image_viewer
                 Duration = TimeSpan.FromSeconds(_settings.SlideshowCrossfadeDuration),
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
-            Storyboard.SetTarget(animOut, prevContainers[pageIndex]);
+            Storyboard.SetTarget(animOut, prevGrid);
             Storyboard.SetTargetProperty(animOut, "Opacity");
             sb.Children.Add(animOut);
 
             sb.Completed += (s, e) =>
             {
-                prevContainers[pageIndex].Opacity = 0;
+                prevGrid.Opacity = 0;
+                prevGrid.Visibility = Visibility.Collapsed;
             };
+
+            currentGrid.Visibility = Visibility.Visible;
+            currentGrid.Opacity = 0;
 
             try
             {
@@ -61,10 +71,10 @@ namespace grid_image_viewer
             {
             }
 
-            // Update metadata after image transition (only if panel is open)
+            // Update metadata after transition
             try
             {
-                if (pageIndex == 0) _window.MetadataDisplayService.UpdateMetadataPanel();
+                _window.MetadataDisplayService.UpdateMetadataPanel();
             }
             catch (Exception)
             {
