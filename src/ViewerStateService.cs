@@ -15,18 +15,18 @@ namespace grid_image_viewer
     public partial class ViewerStateService : ObservableObject, IViewerStateService
     {
         [ObservableProperty]
-        private ObservableCollection<string> _playlist = new ObservableCollection<string>();
+        public partial ObservableCollection<string> Playlist { get; set; } = new ObservableCollection<string>();
 
         [ObservableProperty]
-        private int _currentIndex = -1;
+        public partial int CurrentIndex { get; set; } = -1;
 
         [ObservableProperty]
-        private string _currentDirectory = string.Empty;
+        public partial string CurrentDirectory { get; set; } = string.Empty;
 
         [ObservableProperty]
-        private bool _isGridMode = false;
+        public partial bool IsGridMode { get; set; } = false;
 
         [ObservableProperty]
-        private bool _isSlideshowRunning = false;
+        public partial bool IsSlideshowRunning { get; set; } = false;
     }
 }

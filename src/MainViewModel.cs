@@ -64,37 +64,37 @@ namespace grid_image_viewer
         }
 
         [ObservableProperty]
-        private bool _slideshowFullscreen;
+        public partial bool SlideshowFullscreen { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowRandom;
+        public partial bool SlideshowRandom { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowLoop;
+        public partial bool SlideshowLoop { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowNextFolder;
+        public partial bool SlideshowNextFolder { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowIncludeSiblings;
+        public partial bool SlideshowIncludeSiblings { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowCurrentFolderOnly;
+        public partial bool SlideshowCurrentFolderOnly { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowUniformToFill;
+        public partial bool SlideshowUniformToFill { get; set; }
 
         [ObservableProperty]
-        private bool _slideshowCrossfade;
+        public partial bool SlideshowCrossfade { get; set; }
 
         [ObservableProperty]
-        private double _slideshowInterval;
+        public partial double SlideshowInterval { get; set; }
 
         [ObservableProperty]
-        private double _slideshowCrossfadeDuration;
+        public partial double SlideshowCrossfadeDuration { get; set; }
 
         [ObservableProperty]
-        private bool _isSearchingFolder;
+        public partial bool IsSearchingFolder { get; set; }
 
         public bool IsGridMode
         {
@@ -105,13 +105,13 @@ namespace grid_image_viewer
         public bool IsViewerMode => !IsGridMode;
 
         [ObservableProperty]
-        private bool _isDialogOpen;
+        public partial bool IsDialogOpen { get; set; }
 
         [ObservableProperty]
-        private bool _isPageIndicatorVisible;
+        public partial bool IsPageIndicatorVisible { get; set; }
 
         [ObservableProperty]
-        private string _pageIndicatorText = string.Empty;
+        public partial string PageIndicatorText { get; set; } = string.Empty;
 
         private int _mangaSplitCount = 1;
         public int MangaSplitCount
@@ -127,10 +127,10 @@ namespace grid_image_viewer
         }
 
         [ObservableProperty]
-        private bool _showPageIndicator = true;
+        public partial bool ShowPageIndicator { get; set; } = true;
 
         [ObservableProperty]
-        private int _boundaryAction = 1;
+        public partial int BoundaryAction { get; set; } = 1;
 
         public MainViewModel(IViewerStateService stateService)
         {
@@ -168,8 +168,8 @@ namespace grid_image_viewer
             OpenSlideshowCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<OpenSlideshowMessage>());
 
             // Default values
-            _slideshowInterval = 5.0;
-            _slideshowCrossfadeDuration = 0.5;
+            SlideshowInterval = 5.0;
+            SlideshowCrossfadeDuration = 0.5;
         }
 
         private void Navigate(int offset)

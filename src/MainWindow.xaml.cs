@@ -43,7 +43,7 @@ namespace grid_image_viewer
         // === UI Helpers ===
         public Controls.ViewerPanel ViewerControl => ViewerControlInternal;
         public Grid PagesGrid => ViewerControlInternal.CurrentBuffer;
-        public IList<ImageItem> GridItems => (IList<ImageItem>)GridManager?.GridItems ?? new List<ImageItem>();
+        public IList<ImageItem> GridItems => (IList<ImageItem>?)GridManager?.GridItems ?? Array.Empty<ImageItem>();
         public GridView ImageGridView => GridControlInternal.GridView;
         public ScrollViewer ImageScrollViewer => ViewerControlInternal.ScrollViewer;
 
