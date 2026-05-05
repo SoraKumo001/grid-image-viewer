@@ -154,13 +154,13 @@ namespace quick_image_viewer.Managers
             UpdateStretch();
 
             int splitCount = _settings.MangaSplitCount;
-            int remaining = _window.Playlist.Count - _window.CurrentIndex;
-            int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+            int gridStartIndex = (splitCount > 1) ? (_window.CurrentIndex / splitCount) * splitCount : _window.CurrentIndex;
+            int effectiveSplitCount = Math.Min(splitCount, _window.Playlist.Count - gridStartIndex);
 
             // Recalculate layout for quad mode if needed
             if (splitCount == 4 && _settings.QuadLayoutMode == 0)
             {
-                _cachedQuadLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist, _window.RootGrid.ActualWidth, _window.RootGrid.ActualHeight);
+                _cachedQuadLayout = _layoutManager.GetEffectiveQuadLayout(gridStartIndex, _window.Playlist, _window.RootGrid.ActualWidth, _window.RootGrid.ActualHeight);
             }
             else if (splitCount == 4)
             {
@@ -178,29 +178,14 @@ namespace quick_image_viewer.Managers
                 .ToList();
 
             var nextPaths = new List<string>();
-            int maxIndexInView = _window.CurrentIndex;
+            int maxIndexInView = gridStartIndex;
             for (int i = 0; i < effectiveSplitCount; i++)
             {
-                int indexToLoad = -1;
-                if (i == 0) indexToLoad = _window.CurrentIndex;
-                else
+                int targetIndex = gridStartIndex + i;
+                if (targetIndex < _window.Playlist.Count)
                 {
-                    if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
-                    {
-                        if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1)
-                            indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
-                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
-                            indexToLoad = _window.CurrentIndex + i;
-                    }
-                    else if (_window.CurrentIndex + i < _window.Playlist.Count)
-                    {
-                        indexToLoad = _window.CurrentIndex + i;
-                    }
-                }
-                if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
-                {
-                    nextPaths.Add(_window.Playlist[indexToLoad]);
-                    maxIndexInView = Math.Max(maxIndexInView, indexToLoad);
+                    nextPaths.Add(_window.Playlist[targetIndex]);
+                    maxIndexInView = targetIndex;
                 }
             }
             _window.ViewModel.OverrideDisplayIndex = maxIndexInView + 1;
@@ -263,16 +248,16 @@ namespace quick_image_viewer.Managers
                     for (int i = 0; i < effectiveSplitCount; i++)
                     {
                         int indexToLoad = -1;
-                        if (i == 0) indexToLoad = _window.CurrentIndex;
+                        if (_settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                        {
+                            indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
+                        }
                         else
                         {
-                            if (_settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
-                                indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
-                            else if (_window.CurrentIndex + i < _window.Playlist.Count)
-                                indexToLoad = _window.CurrentIndex + i;
+                            indexToLoad = gridStartIndex + i;
                         }
 
-                        if (indexToLoad != -1)
+                        if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
                         {
                             currentFiles.Add(_window.Playlist[indexToLoad]);
                             loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetControls[i], targetPages[i], i, token, _cacheManager));
@@ -340,12 +325,9 @@ namespace quick_image_viewer.Managers
                     var loadTasks = new List<Task>();
                     for (int i = 0; i < effectiveSplitCount; i++)
                     {
-                        int indexToLoad = -1;
-                        if (i == 0) indexToLoad = _window.CurrentIndex;
-                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
-                            indexToLoad = _window.CurrentIndex + i;
+                        int indexToLoad = gridStartIndex + i;
 
-                        if (indexToLoad != -1)
+                        if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
                         {
                             string path = _window.Playlist[indexToLoad];
                             currentFiles.Add(path);
