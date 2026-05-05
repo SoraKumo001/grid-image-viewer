@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
 
 namespace grid_image_viewer
 {
@@ -12,7 +13,7 @@ namespace grid_image_viewer
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
         private readonly Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
-        private readonly Dictionary<string, Microsoft.UI.Xaml.Media.Imaging.BitmapImage> _bitmapCache = new Dictionary<string, Microsoft.UI.Xaml.Media.Imaging.BitmapImage>();
+        private readonly Dictionary<string, SoftwareBitmap> _softwareBitmapCache = new Dictionary<string, SoftwareBitmap>();
         private const int MAX_CACHE_SIZE = 20;
         private const int MAX_BITMAP_CACHE_SIZE = 5;
 
@@ -39,11 +40,11 @@ namespace grid_image_viewer
             }
         }
 
-        public Microsoft.UI.Xaml.Media.Imaging.BitmapImage? GetCachedBitmap(string filePath)
+        public SoftwareBitmap? GetCachedSoftwareBitmap(string filePath)
         {
-            lock (_bitmapCache)
+            lock (_softwareBitmapCache)
             {
-                _bitmapCache.TryGetValue(filePath, out var bitmap);
+                _softwareBitmapCache.TryGetValue(filePath, out var bitmap);
                 return bitmap;
             }
         }
@@ -102,11 +103,12 @@ namespace grid_image_viewer
                 if (isVeryNear)
                 {
                     bool needsBitmap = false;
-                    lock (_bitmapCache) { if (!_bitmapCache.ContainsKey(path)) needsBitmap = true; }
+                    lock (_softwareBitmapCache) { if (!_softwareBitmapCache.ContainsKey(path)) needsBitmap = true; }
 
                     if (needsBitmap)
                     {
-                        _window.DispatcherQueue.TryEnqueue(async () =>
+                        // UIスレッドを介さず、バックグラウンドでデコードを行う
+                        _ = Task.Run(async () =>
                         {
                             if (token.IsCancellationRequested) return;
                             try
@@ -115,17 +117,25 @@ namespace grid_image_viewer
                                 if (bytes == null) return;
 
                                 using var ms = new MemoryStream(bytes);
-                                var bitmap = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                                await bitmap.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
+                                using var stream = ms.AsRandomAccessStream();
+                                var decoder = await BitmapDecoder.CreateAsync(stream);
+                                var softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+                                    BitmapPixelFormat.Bgra8,
+                                    BitmapAlphaMode.Premultiplied);
 
-                                lock (_bitmapCache)
+                                lock (_softwareBitmapCache)
                                 {
-                                    if (_bitmapCache.Count >= MAX_BITMAP_CACHE_SIZE) _bitmapCache.Remove(_bitmapCache.Keys.First());
-                                    _bitmapCache[path] = bitmap;
+                                    if (_softwareBitmapCache.Count >= MAX_BITMAP_CACHE_SIZE)
+                                    {
+                                        var firstKey = _softwareBitmapCache.Keys.First();
+                                        _softwareBitmapCache[firstKey].Dispose();
+                                        _softwareBitmapCache.Remove(firstKey);
+                                    }
+                                    _softwareBitmapCache[path] = softwareBitmap;
                                 }
                             }
                             catch { }
-                        });
+                        }, token);
                     }
                 }
             }
@@ -164,9 +174,10 @@ namespace grid_image_viewer
             {
                 _imageCache.Clear();
             }
-            lock (_bitmapCache)
+            lock (_softwareBitmapCache)
             {
-                _bitmapCache.Clear();
+                foreach (var sb in _softwareBitmapCache.Values) sb.Dispose();
+                _softwareBitmapCache.Clear();
             }
         }
     }

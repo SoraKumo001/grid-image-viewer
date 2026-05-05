@@ -1,8 +1,10 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
 
 namespace grid_image_viewer
 {
@@ -79,17 +81,31 @@ namespace grid_image_viewer
                 }
                 else
                 {
-                    Microsoft.UI.Xaml.Media.Imaging.BitmapImage? bitmapImage = cacheManager.GetCachedBitmap(filePath);
+                    SoftwareBitmap? cachedSoftwareBitmap = cacheManager.GetCachedSoftwareBitmap(filePath);
 
-                    if (bitmapImage == null)
+                    if (cachedSoftwareBitmap != null)
                     {
+                        var softwareSource = new SoftwareBitmapSource();
+                        await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
+
+                        if (token.IsCancellationRequested) return;
+
+                        renderer.Reset();
+                        renderer.CurrentFilePath = filePath;
+                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                        pageControl.PageImage.Visibility = Visibility.Visible;
+                        pageControl.PageImage.Source = softwareSource;
+                    }
+                    else
+                    {
+                        BitmapImage? bitmapImage = null;
                         byte[]? cachedBytes = cacheManager.GetCachedBytes(filePath);
 
                         if (cachedBytes != null)
                         {
                             using var ms = new MemoryStream(cachedBytes);
-                            bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                            bitmapImage = new BitmapImage();
+                            await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
                         }
                         else
                         {
@@ -97,29 +113,29 @@ namespace grid_image_viewer
                             {
                                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
                                 using var stream = await file.OpenReadAsync();
-                                bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                                await bitmapImage.SetSourceAsync(stream);
+                                bitmapImage = new BitmapImage();
+                                await bitmapImage.SetSourceAsync(stream).AsTask();
                             }
                             catch (Exception)
                             {
                                 var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
                                 if (bmpBytes != null)
                                 {
-                                    bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
+                                    bitmapImage = new BitmapImage();
                                     using var ms = new MemoryStream(bmpBytes);
-                                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
                                 }
                             }
                         }
+
+                        if (token.IsCancellationRequested) return;
+
+                        renderer.Reset();
+                        renderer.CurrentFilePath = filePath;
+                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                        pageControl.PageImage.Visibility = Visibility.Visible;
+                        pageControl.PageImage.Source = bitmapImage;
                     }
-
-                    if (token.IsCancellationRequested) return;
-
-                    renderer.Reset();
-                    renderer.CurrentFilePath = filePath;
-                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
-                    pageControl.PageImage.Visibility = Visibility.Visible;
-                    pageControl.PageImage.Source = bitmapImage;
                 }
             }
             catch { }
