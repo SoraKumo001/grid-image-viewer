@@ -77,7 +77,8 @@ namespace quick_image_viewer.Services
             }
             catch (Exception ex)
             {
-                _window.ShowNotification($"Print error: {ex.Message}");
+                var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+                _window.ShowNotification(string.Format(loader.GetString("Notification_PrintError"), ex.Message));
             }
         }
 

@@ -479,4 +479,43 @@
   <data name="KeyBinding_Category_Bookmarks" xml:space="preserve">
     <value>Bookmarks</value>
   </data>
+  <data name="Notification_PrintError" xml:space="preserve">
+    <value>Print error: {0}</value>
+  </data>
+  <data name="Notification_NoMoreFoldersEnd" xml:space="preserve">
+    <value>No more folders (End)</value>
+  </data>
+  <data name="Notification_NoMoreFoldersStart" xml:space="preserve">
+    <value>No more folders (Start)</value>
+  </data>
+  <data name="Notification_CropError" xml:space="preserve">
+    <value>Crop error: {0}</value>
+  </data>
+  <data name="Notification_AddedToBookmarks" xml:space="preserve">
+    <value>Added to bookmarks</value>
+  </data>
+  <data name="Notification_RemovedFromBookmarks" xml:space="preserve">
+    <value>Removed from bookmarks</value>
+  </data>
+  <data name="Notification_PathCopied" xml:space="preserve">
+    <value>Path copied to clipboard</value>
+  </data>
+  <data name="Notification_FullscreenOn" xml:space="preserve">
+    <value>Fullscreen: ON</value>
+  </data>
+  <data name="Notification_FullscreenOff" xml:space="preserve">
+    <value>Fullscreen: OFF</value>
+  </data>
+  <data name="Notification_GridModeOn" xml:space="preserve">
+    <value>Grid Mode: ON</value>
+  </data>
+  <data name="Notification_GridModeOff" xml:space="preserve">
+    <value>Grid Mode: OFF</value>
+  </data>
+  <data name="Notification_FileDeleted" xml:space="preserve">
+    <value>File deleted</value>
+  </data>
+  <data name="Notification_DeleteFailed" xml:space="preserve">
+    <value>Delete failed: {0}</value>
+  </data>
 </root>

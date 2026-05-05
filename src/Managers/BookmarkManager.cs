@@ -46,7 +46,8 @@ namespace quick_image_viewer.Managers
             bool added = _settings.ToggleBookmark(dir, true);
             _window.EditorManager.UpdateMenuStates();
             UpdateBookmarkList();
-            _window.ShowNotification(added ? "Added to bookmarks" : "Removed from bookmarks");
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            _window.ShowNotification(loader.GetString(added ? "Notification_AddedToBookmarks" : "Notification_RemovedFromBookmarks"));
         }
 
         public void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e)

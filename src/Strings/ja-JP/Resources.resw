@@ -479,4 +479,43 @@
   <data name="KeyBinding_Category_Bookmarks" xml:space="preserve">
     <value>ブックマーク</value>
   </data>
+  <data name="Notification_PrintError" xml:space="preserve">
+    <value>印刷エラー: {0}</value>
+  </data>
+  <data name="Notification_NoMoreFoldersEnd" xml:space="preserve">
+    <value>これ以上フォルダはありません (最後)</value>
+  </data>
+  <data name="Notification_NoMoreFoldersStart" xml:space="preserve">
+    <value>これ以上フォルダはありません (最初)</value>
+  </data>
+  <data name="Notification_CropError" xml:space="preserve">
+    <value>切り抜きエラー: {0}</value>
+  </data>
+  <data name="Notification_AddedToBookmarks" xml:space="preserve">
+    <value>ブックマークに追加しました</value>
+  </data>
+  <data name="Notification_RemovedFromBookmarks" xml:space="preserve">
+    <value>ブックマークから削除しました</value>
+  </data>
+  <data name="Notification_PathCopied" xml:space="preserve">
+    <value>パスをクリップボードにコピーしました</value>
+  </data>
+  <data name="Notification_FullscreenOn" xml:space="preserve">
+    <value>フルスクリーン: ON</value>
+  </data>
+  <data name="Notification_FullscreenOff" xml:space="preserve">
+    <value>フルスクリーン: OFF</value>
+  </data>
+  <data name="Notification_GridModeOn" xml:space="preserve">
+    <value>グリッドモード: ON</value>
+  </data>
+  <data name="Notification_GridModeOff" xml:space="preserve">
+    <value>グリッドモード: OFF</value>
+  </data>
+  <data name="Notification_FileDeleted" xml:space="preserve">
+    <value>ファイルを削除しました</value>
+  </data>
+  <data name="Notification_DeleteFailed" xml:space="preserve">
+    <value>削除に失敗しました: {0}</value>
+  </data>
 </root>

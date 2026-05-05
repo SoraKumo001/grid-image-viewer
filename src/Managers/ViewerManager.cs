@@ -171,7 +171,7 @@ namespace quick_image_viewer.Managers
                 _cachedQuadLayout = 1; // Default to horizontal for others
             }
 
-            // 表示内容が変わっていないかチェック（ちらつき防止）
+            // Check if the content has changed (to prevent flickering)
             var currentPaths = _pagesBuffer[_window.ViewerControl.CurrentBufferIndex]
                 .Take(effectiveSplitCount)
                 .Select(p => p.CurrentFilePath)

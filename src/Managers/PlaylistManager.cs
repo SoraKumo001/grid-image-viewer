@@ -85,7 +85,8 @@ namespace quick_image_viewer.Managers
                     }
                     else
                     {
-                        _window.ShowNotification(offset > 0 ? "No more folders (End)" : "No more folders (Start)");
+                        var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+                        _window.ShowNotification(loader.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
                     }
                 });
             });

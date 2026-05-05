@@ -333,7 +333,8 @@ namespace quick_image_viewer.Managers
             }
             catch (Exception ex)
             {
-                _window.ViewerManager.ShowNotification($"Crop error: {ex.Message}");
+                var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+                _window.ViewerManager.ShowNotification(string.Format(loader.GetString("Notification_CropError"), ex.Message));
             }
         }
 

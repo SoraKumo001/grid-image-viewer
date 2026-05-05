@@ -104,7 +104,7 @@ namespace quick_image_viewer.Helpers
                     var dataPackage = new DataPackage();
                     dataPackage.SetText(path);
                     Clipboard.SetContent(dataPackage);
-                    _window.ShowNotification("Path copied to clipboard");
+                    _window.ShowNotification(_resourceLoader.GetString("Notification_PathCopied"));
                 }
                 e.Handled = true;
                 return;
@@ -218,7 +218,7 @@ namespace quick_image_viewer.Helpers
             {
                 _window.ViewModel.ToggleFullscreenCommand.Execute(null);
                 string state = _window.IsFullscreen ? "ON" : "OFF";
-                _window.ShowNotification($"Fullscreen: {state}");
+                _window.ShowNotification(_resourceLoader.GetString(_window.IsFullscreen ? "Notification_FullscreenOn" : "Notification_FullscreenOff"));
                 e.Handled = true;
                 return;
             }
@@ -258,7 +258,7 @@ namespace quick_image_viewer.Helpers
             {
                 _window.IsGridMode = !_window.IsGridMode;
                 string state = _window.IsGridMode ? "ON" : "OFF";
-                _window.ShowNotification($"Grid Mode: {state}");
+                _window.ShowNotification(_resourceLoader.GetString(_window.IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
                 _ = _window.UpdateDisplayAsync();
                 e.Handled = true;
                 return;
@@ -542,12 +542,12 @@ namespace quick_image_viewer.Helpers
                         if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;
                     }
 
-                    _window.ShowNotification("File deleted");
+                    _window.ShowNotification(_resourceLoader.GetString("Notification_FileDeleted"));
                     _ = _window.UpdateDisplayAsync();
                 }
                 catch (Exception ex)
                 {
-                    _window.ShowNotification("Delete failed: " + ex.Message);
+                    _window.ShowNotification(string.Format(_resourceLoader.GetString("Notification_DeleteFailed"), ex.Message));
                 }
             }
         }
