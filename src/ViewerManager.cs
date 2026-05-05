@@ -100,7 +100,17 @@ namespace grid_image_viewer
                 return;
             }
 
-            if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count) return;
+            if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count)
+            {
+                // Clear display if playlist is empty
+                for (int b = 0; b < 2; b++)
+                {
+                    _window.ViewerControl.PagesGrids[b].Opacity = 0;
+                    _window.ViewerControl.PagesGrids[b].Visibility = Visibility.Collapsed;
+                }
+                _window.UpdatePageIndicator();
+                return;
+            }
 
             if (_window.IsGridMode)
             {
@@ -133,6 +143,7 @@ namespace grid_image_viewer
             }
 
             try { _window.AnimationService.StopAnimation(); } catch { }
+            try { _window.AnimationService.StopCrossfade(); } catch { }
             UpdateStretch();
 
             int splitCount = _settings.MangaSplitCount;
@@ -174,9 +185,12 @@ namespace grid_image_viewer
 
             if (!stateChanged && currentPaths.SequenceEqual(nextPaths))
             {
-                // バッファ自体は表示されていることを保証
+                // Ensure current buffer is visible and inactive is hidden
+                // This handles the case where a slideshow stops during a crossfade
                 _window.ViewerControl.CurrentBuffer.Opacity = 1;
                 _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
+                _window.ViewerControl.InactiveBuffer.Opacity = 0;
+                _window.ViewerControl.InactiveBuffer.Visibility = Visibility.Collapsed;
 
                 _window.UpdatePageIndicator();
                 _window.MetadataDisplayService.UpdateMetadataPanel();

@@ -191,6 +191,7 @@ namespace grid_image_viewer
 
             _slideshowTimer.Stop();
             IsSlideshowRunning = false;
+            for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
             _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
 
             if (_settings.SlideshowFullscreen)

@@ -11,6 +11,9 @@ namespace grid_image_viewer
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
         private readonly DispatcherTimer _animationTimer;
+        private Storyboard? _currentCrossfadeStoryboard;
+        private Grid? _currentCrossfadeGrid;
+        private Grid? _prevCrossfadeGrid;
 
         public AnimationService(MainWindow window, SettingsManager settings)
         {
@@ -30,7 +33,11 @@ namespace grid_image_viewer
 
         public void StartGridCrossfade(Grid currentGrid, Grid prevGrid)
         {
+            StopCrossfade();
             var sb = new Storyboard();
+            _currentCrossfadeStoryboard = sb;
+            _currentCrossfadeGrid = currentGrid;
+            _prevCrossfadeGrid = prevGrid;
 
             var animIn = new DoubleAnimation
             {
@@ -58,10 +65,27 @@ namespace grid_image_viewer
             {
                 prevGrid.Opacity = 0;
                 prevGrid.Visibility = Visibility.Collapsed;
+                currentGrid.Opacity = 1;
+                currentGrid.Translation = new System.Numerics.Vector3(0, 0, 0); // Reset translation if needed
+
+                if (_currentCrossfadeStoryboard == sb)
+                {
+                    _currentCrossfadeStoryboard = null;
+                    _currentCrossfadeGrid = null;
+                    _prevCrossfadeGrid = null;
+                }
             };
 
-            currentGrid.Visibility = Visibility.Visible;
+            // Ensure smooth transition: 
+            // 1. Current grid (new image) should be on top
+            // 2. Previous grid should remain fully visible until transition starts
+            Canvas.SetZIndex(currentGrid, 10);
+            Canvas.SetZIndex(prevGrid, 0);
+
             currentGrid.Opacity = 0;
+            currentGrid.Visibility = Visibility.Visible;
+            prevGrid.Opacity = 1;
+            prevGrid.Visibility = Visibility.Visible;
 
             try
             {
@@ -84,6 +108,33 @@ namespace grid_image_viewer
         public void StopAnimation()
         {
             _animationTimer.Stop();
+        }
+
+        public void StopCrossfade()
+        {
+            if (_currentCrossfadeStoryboard != null)
+            {
+                try
+                {
+                    _currentCrossfadeStoryboard.Stop();
+                }
+                catch { }
+                _currentCrossfadeStoryboard = null;
+            }
+
+            if (_currentCrossfadeGrid != null)
+            {
+                _currentCrossfadeGrid.Opacity = 1;
+                _currentCrossfadeGrid.Visibility = Visibility.Visible;
+                _currentCrossfadeGrid = null;
+            }
+
+            if (_prevCrossfadeGrid != null)
+            {
+                _prevCrossfadeGrid.Opacity = 0;
+                _prevCrossfadeGrid.Visibility = Visibility.Collapsed;
+                _prevCrossfadeGrid = null;
+            }
         }
 
         public void StartAnimation()
