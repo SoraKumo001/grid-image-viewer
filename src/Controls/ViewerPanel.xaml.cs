@@ -10,10 +10,7 @@ namespace grid_image_viewer.Controls
 
         // Data per buffer
         public ViewerPageControl[][] PageControlsBuffer { get; private set; }
-        public Image[][] PageImagesBuffer { get; private set; }
-        public SKXamlCanvas[][] PageCanvasesBuffer { get; private set; }
-        public ProgressRing[][] PageLoadingRingsBuffer { get; private set; }
-        public Border[][] FocusBordersBuffer { get; private set; }
+
         public ColumnDefinition[][] ColsBuffer { get; private set; }
         public RowDefinition[][] RowsBuffer { get; private set; }
 
@@ -39,29 +36,7 @@ namespace grid_image_viewer.Controls
                 new ViewerPageControl[] { B2_Page1, B2_Page2, B2_Page3, B2_Page4 }
             };
 
-            PageImagesBuffer = new Image[][]
-            {
-                new Image[] { B1_Page1.PageImage, B1_Page2.PageImage, B1_Page3.PageImage, B1_Page4.PageImage },
-                new Image[] { B2_Page1.PageImage, B2_Page2.PageImage, B2_Page3.PageImage, B2_Page4.PageImage }
-            };
 
-            PageCanvasesBuffer = new SKXamlCanvas[][]
-            {
-                new SKXamlCanvas[] { B1_Page1.PageCanvas, B1_Page2.PageCanvas, B1_Page3.PageCanvas, B1_Page4.PageCanvas },
-                new SKXamlCanvas[] { B2_Page1.PageCanvas, B2_Page2.PageCanvas, B2_Page3.PageCanvas, B2_Page4.PageCanvas }
-            };
-
-            PageLoadingRingsBuffer = new ProgressRing[][]
-            {
-                new ProgressRing[] { B1_Page1.LoadingRing, B1_Page2.LoadingRing, B1_Page3.LoadingRing, B1_Page4.LoadingRing },
-                new ProgressRing[] { B2_Page1.LoadingRing, B2_Page2.LoadingRing, B2_Page3.LoadingRing, B2_Page4.LoadingRing }
-            };
-
-            FocusBordersBuffer = new Border[][]
-            {
-                new Border[] { B1_Page1.FocusBorder, B1_Page2.FocusBorder, B1_Page3.FocusBorder, B1_Page4.FocusBorder },
-                new Border[] { B2_Page1.FocusBorder, B2_Page2.FocusBorder, B2_Page3.FocusBorder, B2_Page4.FocusBorder }
-            };
 
             ColsBuffer = new ColumnDefinition[][]
             {
@@ -82,7 +57,7 @@ namespace grid_image_viewer.Controls
                 for (int p = 0; p < 4; p++)
                 {
                     int pageIndex = p;
-                    PageCanvasesBuffer[b][p].PaintSurface += (s, e) => OnPaintSurface(bufferIndex, pageIndex, e);
+                    PageControlsBuffer[b][p].PageCanvas.PaintSurface += (s, e) => OnPaintSurface(bufferIndex, pageIndex, e);
                 }
             }
         }

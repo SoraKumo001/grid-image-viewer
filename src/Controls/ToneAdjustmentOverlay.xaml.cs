@@ -50,7 +50,7 @@ namespace grid_image_viewer.Controls
 
                             if (_window.ViewerManager != null)
                             {
-                                foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+                                foreach (var ctrl in _window.ViewerManager.PageControls) ctrl.PageImage.Source = null;
                                 for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
                                 {
                                     if (_window.ViewerManager.Pages[pi].CurrentFilePath == _sourcePath)

@@ -228,7 +228,7 @@ namespace grid_image_viewer
                 if (overwrite)
                 {
                     _window.ViewerManager.StopAnimation();
-                    foreach (var img in _window.ViewerManager.PageImages) img.Source = null;
+                    foreach (var ctrl in _window.ViewerManager.PageControls) ctrl.PageImage.Source = null;
                 }
 
                 await Task.Run(() =>
@@ -286,10 +286,10 @@ namespace grid_image_viewer
                 var (imgW, imgH) = _window.ImageEditService.GetImageSize(sourcePath);
                 if (imgW == 0 || imgH == 0) return;
 
-                FrameworkElement targetElement = _window.ViewerManager.PageImages[targetIdx];
+                FrameworkElement targetElement = _window.ViewerManager.PageControls[targetIdx].PageImage;
                 if (targetElement.Visibility != Visibility.Visible)
                 {
-                    targetElement = targetIdx == 0 ? _window.Canvas1 : (targetIdx == 1 ? _window.Canvas2 : (targetIdx == 2 ? _window.Canvas3 : _window.Canvas4));
+                    targetElement = _window.ViewerManager.PageControls[targetIdx].PageCanvas;
                 }
 
                 double renderRatio = targetElement.ActualWidth / targetElement.ActualHeight;

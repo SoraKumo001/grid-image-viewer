@@ -121,18 +121,18 @@ namespace grid_image_viewer
         public void UpdateFocusBorders()
         {
             bool panelVisible = _window.MetadataPanel.Visibility == Visibility.Visible;
-            var focusBorders = _window.ViewerControl.FocusBordersBuffer[_window.ViewerControl.CurrentBufferIndex];
+            var focusControls = _window.ViewerControl.PageControlsBuffer[_window.ViewerControl.CurrentBufferIndex];
 
             for (int i = 0; i < 4; i++)
             {
-                focusBorders[i].Visibility = (panelVisible && i == _focusedPageIndex) ? Visibility.Visible : Visibility.Collapsed;
+                focusControls[i].FocusBorder.Visibility = (panelVisible && i == _focusedPageIndex) ? Visibility.Visible : Visibility.Collapsed;
             }
 
             // Also hide borders in the inactive buffer
-            var inactiveBorders = _window.ViewerControl.FocusBordersBuffer[_window.ViewerControl.InactiveBufferIndex];
+            var inactiveControls = _window.ViewerControl.PageControlsBuffer[_window.ViewerControl.InactiveBufferIndex];
             for (int i = 0; i < 4; i++)
             {
-                inactiveBorders[i].Visibility = Visibility.Collapsed;
+                inactiveControls[i].FocusBorder.Visibility = Visibility.Collapsed;
             }
         }
 

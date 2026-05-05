@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System;
 using System.IO;
 using System.Threading;
@@ -20,9 +19,7 @@ namespace grid_image_viewer
 
         public async Task LoadPageIntoBufferAsync(
             string filePath,
-            Image imageCtrl,
-            SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl,
-            ProgressRing loadingRing,
+            Controls.ViewerPageControl pageControl,
             PageRenderer renderer,
             int pageIndex,
             CancellationToken token,
@@ -35,7 +32,7 @@ namespace grid_image_viewer
             }
 
             renderer.CurrentFilePath = filePath;
-            _window.DispatcherQueue.TryEnqueue(() => { loadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning; });
+            _window.DispatcherQueue.TryEnqueue(() => { pageControl.LoadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning; });
 
             try
             {
@@ -47,9 +44,9 @@ namespace grid_image_viewer
                     renderer.EditedBitmap = session.Current;
                     renderer.FrameCount = 1;
 
-                    imageCtrl.Visibility = Visibility.Collapsed;
-                    canvasCtrl.Visibility = Visibility.Visible;
-                    canvasCtrl.Invalidate();
+                    pageControl.PageImage.Visibility = Visibility.Collapsed;
+                    pageControl.PageCanvas.Visibility = Visibility.Visible;
+                    pageControl.PageCanvas.Invalidate();
                     return;
                 }
 
@@ -76,9 +73,9 @@ namespace grid_image_viewer
                         }
                     });
                     if (token.IsCancellationRequested) return;
-                    imageCtrl.Visibility = Visibility.Collapsed;
-                    canvasCtrl.Visibility = Visibility.Visible;
-                    canvasCtrl.Invalidate();
+                    pageControl.PageImage.Visibility = Visibility.Collapsed;
+                    pageControl.PageCanvas.Visibility = Visibility.Visible;
+                    pageControl.PageCanvas.Invalidate();
                 }
                 else
                 {
@@ -115,13 +112,13 @@ namespace grid_image_viewer
 
                     renderer.Reset();
                     renderer.CurrentFilePath = filePath;
-                    canvasCtrl.Visibility = Visibility.Collapsed;
-                    imageCtrl.Visibility = Visibility.Visible;
-                    imageCtrl.Source = bitmapImage;
+                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                    pageControl.PageImage.Visibility = Visibility.Visible;
+                    pageControl.PageImage.Source = bitmapImage;
                 }
             }
             catch { }
-            finally { loadingRing.IsActive = false; }
+            finally { pageControl.LoadingRing.IsActive = false; }
         }
     }
 }

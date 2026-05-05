@@ -45,25 +45,7 @@ namespace grid_image_viewer
         internal FrameworkElement CurrentContainer3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
         internal FrameworkElement CurrentContainer4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
-        internal Image Image1 => ViewerControlInternal.PageImagesBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal Image Image2 => ViewerControlInternal.PageImagesBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal Image Image3 => ViewerControlInternal.PageImagesBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal Image Image4 => ViewerControlInternal.PageImagesBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
-        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas1 => ViewerControlInternal.PageCanvasesBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas2 => ViewerControlInternal.PageCanvasesBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas3 => ViewerControlInternal.PageCanvasesBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal SkiaSharp.Views.Windows.SKXamlCanvas Canvas4 => ViewerControlInternal.PageCanvasesBuffer[ViewerControlInternal.CurrentBufferIndex][3];
-
-        internal ProgressRing LoadingRing1 => ViewerControlInternal.PageLoadingRingsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal ProgressRing LoadingRing2 => ViewerControlInternal.PageLoadingRingsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal ProgressRing LoadingRing3 => ViewerControlInternal.PageLoadingRingsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal ProgressRing LoadingRing4 => ViewerControlInternal.PageLoadingRingsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
-
-        internal Border FocusBorder1 => ViewerControlInternal.FocusBordersBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal Border FocusBorder2 => ViewerControlInternal.FocusBordersBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal Border FocusBorder3 => ViewerControlInternal.FocusBordersBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal Border FocusBorder4 => ViewerControlInternal.FocusBordersBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
         // Layout definitions - These should be handled per buffer in ViewerManager
         internal ColumnDefinition Col0 => ViewerControlInternal.ColsBuffer[ViewerControlInternal.CurrentBufferIndex][0];

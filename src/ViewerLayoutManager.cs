@@ -23,14 +23,12 @@ namespace grid_image_viewer
             var cols = window.ViewerControl.ColsBuffer[bufferIdx];
             var rows = window.ViewerControl.RowsBuffer[bufferIdx];
             var pageGrids = window.ViewerControl.PageControlsBuffer[bufferIdx];
-            var images = window.ViewerControl.PageImagesBuffer[bufferIdx];
-
             bool uniformToFill = (window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
 
             for (int i = 0; i < 4; i++)
             {
-                images[i].HorizontalAlignment = HorizontalAlignment.Center;
-                images[i].VerticalAlignment = VerticalAlignment.Center;
+                pageGrids[i].PageImage.HorizontalAlignment = HorizontalAlignment.Center;
+                pageGrids[i].PageImage.VerticalAlignment = VerticalAlignment.Center;
             }
 
             if (effectiveSplitCount == 1)
@@ -65,8 +63,8 @@ namespace grid_image_viewer
 
                 if (!uniformToFill)
                 {
-                    images[0].HorizontalAlignment = HorizontalAlignment.Left;
-                    images[1].HorizontalAlignment = HorizontalAlignment.Right;
+                    pageGrids[0].PageImage.HorizontalAlignment = HorizontalAlignment.Left;
+                    pageGrids[1].PageImage.HorizontalAlignment = HorizontalAlignment.Right;
                 }
             }
             else if (effectiveSplitCount == 3)
@@ -93,9 +91,9 @@ namespace grid_image_viewer
 
                     if (!uniformToFill)
                     {
-                        images[0].VerticalAlignment = VerticalAlignment.Bottom;
-                        images[1].HorizontalAlignment = HorizontalAlignment.Left; images[1].VerticalAlignment = VerticalAlignment.Top;
-                        images[2].HorizontalAlignment = HorizontalAlignment.Right; images[2].VerticalAlignment = VerticalAlignment.Top;
+                        pageGrids[0].PageImage.VerticalAlignment = VerticalAlignment.Bottom;
+                        pageGrids[1].PageImage.HorizontalAlignment = HorizontalAlignment.Left; pageGrids[1].PageImage.VerticalAlignment = VerticalAlignment.Top;
+                        pageGrids[2].PageImage.HorizontalAlignment = HorizontalAlignment.Right; pageGrids[2].PageImage.VerticalAlignment = VerticalAlignment.Top;
                     }
                 }
                 else
@@ -146,10 +144,10 @@ namespace grid_image_viewer
 
                     if (!uniformToFill)
                     {
-                        images[0].HorizontalAlignment = HorizontalAlignment.Left; images[0].VerticalAlignment = VerticalAlignment.Bottom;
-                        images[1].HorizontalAlignment = HorizontalAlignment.Right; images[1].VerticalAlignment = VerticalAlignment.Bottom;
-                        images[2].HorizontalAlignment = HorizontalAlignment.Left; images[2].VerticalAlignment = VerticalAlignment.Top;
-                        images[3].HorizontalAlignment = HorizontalAlignment.Right; images[3].VerticalAlignment = VerticalAlignment.Top;
+                        pageGrids[0].PageImage.HorizontalAlignment = HorizontalAlignment.Left; pageGrids[0].PageImage.VerticalAlignment = VerticalAlignment.Bottom;
+                        pageGrids[1].PageImage.HorizontalAlignment = HorizontalAlignment.Right; pageGrids[1].PageImage.VerticalAlignment = VerticalAlignment.Bottom;
+                        pageGrids[2].PageImage.HorizontalAlignment = HorizontalAlignment.Left; pageGrids[2].PageImage.VerticalAlignment = VerticalAlignment.Top;
+                        pageGrids[3].PageImage.HorizontalAlignment = HorizontalAlignment.Right; pageGrids[3].PageImage.VerticalAlignment = VerticalAlignment.Top;
                     }
                 }
             }

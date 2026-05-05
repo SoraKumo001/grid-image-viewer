@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Windows.ApplicationModel.Resources;
 using SkiaSharp.Views.Windows;
@@ -29,10 +28,7 @@ namespace grid_image_viewer
 
         // These arrays will point to the CURRENT buffer's elements for general logic
         private Microsoft.UI.Xaml.FrameworkElement[] _pageGrids;
-        private Microsoft.UI.Xaml.Controls.Image[] _pageImages;
-        private SkiaSharp.Views.Windows.SKXamlCanvas[] _pageCanvases;
-        private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
-        private Border[] _focusBorders;
+        private Controls.ViewerPageControl[] _pageControls;
 
         private CancellationTokenSource? _displayCts;
         private int _cachedQuadLayout = 1;
@@ -50,10 +46,7 @@ namespace grid_image_viewer
             // Initialize buffer references
             int idx = _window.ViewerControl.CurrentBufferIndex;
             _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
-            _pageImages = _window.ViewerControl.PageImagesBuffer[idx];
-            _pageCanvases = _window.ViewerControl.PageCanvasesBuffer[idx];
-            _pageLoadingRings = _window.ViewerControl.PageLoadingRingsBuffer[idx];
-            _focusBorders = _window.ViewerControl.FocusBordersBuffer[idx];
+            _pageControls = _window.ViewerControl.PageControlsBuffer[idx];
 
             WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
             WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
@@ -65,10 +58,7 @@ namespace grid_image_viewer
         {
             int idx = _window.ViewerControl.CurrentBufferIndex;
             _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
-            _pageImages = _window.ViewerControl.PageImagesBuffer[idx];
-            _pageCanvases = _window.ViewerControl.PageCanvasesBuffer[idx];
-            _pageLoadingRings = _window.ViewerControl.PageLoadingRingsBuffer[idx];
-            _focusBorders = _window.ViewerControl.FocusBordersBuffer[idx];
+            _pageControls = _window.ViewerControl.PageControlsBuffer[idx];
         }
 
         public void Receive(NavigationMessage message) => Navigate(message.Offset, message.ForceSingleStep);
@@ -89,7 +79,7 @@ namespace grid_image_viewer
         public void Receive(ToggleMetadataMessage message) => ToggleMetadataPanel();
 
         public PageRenderer[] Pages => _pagesBuffer[_window.ViewerControl.CurrentBufferIndex];
-        public Microsoft.UI.Xaml.Controls.Image[] PageImages => _pageImages;
+        public Controls.ViewerPageControl[] PageControls => _pageControls;
 
         public string? GetPathForPage(int index)
         {
@@ -210,9 +200,7 @@ namespace grid_image_viewer
                 int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
                 _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
 
-                var targetImages = _window.ViewerControl.PageImagesBuffer[targetBufferIdx];
-                var targetCanvases = _window.ViewerControl.PageCanvasesBuffer[targetBufferIdx];
-                var targetLoadingRings = _window.ViewerControl.PageLoadingRingsBuffer[targetBufferIdx];
+                var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
                 var targetPages = _pagesBuffer[targetBufferIdx];
 
                 var currentFiles = new List<string>();
@@ -239,7 +227,7 @@ namespace grid_image_viewer
                     if (indexToLoad != -1)
                     {
                         currentFiles.Add(_window.Playlist[indexToLoad]);
-                        loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetImages[i], targetCanvases[i], targetLoadingRings[i], targetPages[i], i, token, _cacheManager));
+                        loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetControls[i], targetPages[i], i, token, _cacheManager));
                     }
                 }
 
@@ -250,9 +238,9 @@ namespace grid_image_viewer
 
                 for (int i = effectiveSplitCount; i < 4; i++)
                 {
-                    targetImages[i].Source = null;
-                    targetCanvases[i].Visibility = Visibility.Collapsed;
-                    targetLoadingRings[i].IsActive = false;
+                    targetControls[i].PageImage.Source = null;
+                    targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                    targetControls[i].LoadingRing.IsActive = false;
                     targetPages[i].Reset();
                 }
 
@@ -296,7 +284,7 @@ namespace grid_image_viewer
 
         public void StopAnimation() => _window.AnimationService.StopAnimation();
 
-        internal void InvalidatePage(int index) => _pageCanvases[index].Invalidate();
+        internal void InvalidatePage(int index) => _pageControls[index].PageCanvas.Invalidate();
 
         public void UpdateStretch()
         {
@@ -310,12 +298,11 @@ namespace grid_image_viewer
 
                 for (int b = 0; b < 2; b++)
                 {
-                    var images = _window.ViewerControl.PageImagesBuffer[b];
-                    var canvases = _window.ViewerControl.PageCanvasesBuffer[b];
+                    var controls = _window.ViewerControl.PageControlsBuffer[b];
                     for (int i = 0; i < 4; i++)
                     {
-                        images[i].Stretch = stretch;
-                        canvases[i].Invalidate();
+                        controls[i].PageImage.Stretch = stretch;
+                        controls[i].PageCanvas.Invalidate();
                     }
                 }
                 for (int b = 0; b < 2; b++)

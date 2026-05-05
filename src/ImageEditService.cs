@@ -145,7 +145,7 @@ namespace grid_image_viewer
                 {
                     if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
                     {
-                        _window.ViewerManager.PageImages[i].Source = null;
+                        _window.ViewerManager.PageControls[i].PageImage.Source = null;
                     }
                 }
             }
