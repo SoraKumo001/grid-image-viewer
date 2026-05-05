@@ -10,12 +10,12 @@ namespace grid_image_viewer.Controls
 {
     public sealed partial class ToneAdjustmentOverlay : UserControl
     {
-        private readonly MainWindow _window;
+        private readonly IMainView _window;
         private readonly string _sourcePath;
         private readonly SKBitmap? _baseBmp;
         private readonly DispatcherTimer _updateTimer;
 
-        public ToneAdjustmentOverlay(MainWindow window, string sourcePath, SKBitmap? baseBmp)
+        public ToneAdjustmentOverlay(IMainView window, string sourcePath, SKBitmap? baseBmp)
         {
             this.InitializeComponent();
             _window = window;
@@ -46,17 +46,9 @@ namespace grid_image_viewer.Controls
                         _window.DispatcherQueue.TryEnqueue(() =>
                         {
                             _window.ImageEditService.AddPendingEdit(_sourcePath, newBmp);
-                            _window.ViewerManager?.StopAnimation();
+                            _window.StopAnimation();
 
-                            if (_window.ViewerManager != null)
-                            {
-                                foreach (var ctrl in _window.ViewerManager.PageControls) ctrl.PageImage.Source = null;
-                                for (int pi = 0; pi < _window.ViewerManager.Pages.Length; pi++)
-                                {
-                                    if (_window.ViewerManager.Pages[pi].CurrentFilePath == _sourcePath)
-                                        _window.ViewerManager.Pages[pi].EditedBitmap = null;
-                                }
-                            }
+                            _window.ClearCachedBitmap(_sourcePath);
                             _ = _window.UpdateDisplayAsync();
                         });
                     }

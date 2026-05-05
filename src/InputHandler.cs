@@ -10,15 +10,15 @@ using Windows.System;
 
 namespace grid_image_viewer
 {
-    public class InputHandler
+    public class InputHandler : IInputHandler
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
         private ScrollViewer? _gridScrollViewer;
         private ResourceLoader _resourceLoader = new ResourceLoader();
         private Windows.Foundation.Point _lastPointerPoint;
 
-        public InputHandler(MainWindow window, SettingsManager settings)
+        public InputHandler(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -102,7 +102,7 @@ namespace grid_image_viewer
                     var dataPackage = new DataPackage();
                     dataPackage.SetText(path);
                     Clipboard.SetContent(dataPackage);
-                    _window.ViewerManager.ShowNotification("Path copied to clipboard");
+                    _window.ShowNotification("Path copied to clipboard");
                 }
                 e.Handled = true;
                 return;
@@ -216,7 +216,7 @@ namespace grid_image_viewer
             {
                 _window.ViewModel.ToggleFullscreenCommand.Execute(null);
                 string state = _window.IsFullscreen ? "ON" : "OFF";
-                _window.ViewerManager.ShowNotification($"Fullscreen: {state}");
+                _window.ShowNotification($"Fullscreen: {state}");
                 e.Handled = true;
                 return;
             }
@@ -231,7 +231,7 @@ namespace grid_image_viewer
 
                 string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
                 string modeName = _resourceLoader.GetString(modeKey);
-                _window.ViewerManager.ShowNotification(modeName);
+                _window.ShowNotification(modeName);
 
                 e.Handled = true;
                 return;
@@ -246,7 +246,7 @@ namespace grid_image_viewer
 
                 string modeKey = count == 1 ? "MenuViewMode_Single/Text" : (count == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
                 string modeName = _resourceLoader.GetString(modeKey);
-                _window.ViewerManager.ShowNotification(modeName);
+                _window.ShowNotification(modeName);
 
                 e.Handled = true;
                 return;
@@ -256,7 +256,7 @@ namespace grid_image_viewer
             {
                 _window.IsGridMode = !_window.IsGridMode;
                 string state = _window.IsGridMode ? "ON" : "OFF";
-                _window.ViewerManager.ShowNotification($"Grid Mode: {state}");
+                _window.ShowNotification($"Grid Mode: {state}");
                 _ = _window.UpdateDisplayAsync();
                 e.Handled = true;
                 return;
@@ -538,12 +538,12 @@ namespace grid_image_viewer
                         if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;
                     }
 
-                    _window.ViewerManager.ShowNotification("File deleted");
+                    _window.ShowNotification("File deleted");
                     _ = _window.UpdateDisplayAsync();
                 }
                 catch (Exception ex)
                 {
-                    _window.ViewerManager.ShowNotification("Delete failed: " + ex.Message);
+                    _window.ShowNotification("Delete failed: " + ex.Message);
                 }
             }
         }

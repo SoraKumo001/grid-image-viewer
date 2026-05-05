@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace grid_image_viewer
 {
-    internal class DialogService
+    internal class DialogService : IDialogService
     {
-        private readonly MainWindow _window;
+        private readonly IMainView _window;
 
-        public DialogService(MainWindow window)
+        public DialogService(IMainView window)
         {
             _window = window;
         }

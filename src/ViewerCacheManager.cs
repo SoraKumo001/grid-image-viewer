@@ -8,10 +8,10 @@ using Windows.Graphics.Imaging;
 
 namespace grid_image_viewer
 {
-    internal class ViewerCacheManager
+    internal class ViewerCacheManager : IViewerCacheManager
     {
         private readonly IViewerStateService _state;
-        private readonly SettingsManager _settings;
+        private readonly ISettingsManager _settings;
         private readonly Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private readonly Dictionary<string, SoftwareBitmap> _softwareBitmapCache = new Dictionary<string, SoftwareBitmap>();
         private const int MAX_CACHE_SIZE = 20;
@@ -25,7 +25,7 @@ namespace grid_image_viewer
         private string? _lastPreloadedDirectory;
         private CancellationTokenSource? _preloadCts;
 
-        public ViewerCacheManager(IViewerStateService state, SettingsManager settings)
+        public ViewerCacheManager(IViewerStateService state, ISettingsManager settings)
         {
             _state = state;
             _settings = settings;

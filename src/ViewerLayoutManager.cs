@@ -3,11 +3,11 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace grid_image_viewer
 {
-    internal class ViewerLayoutManager
+    internal class ViewerLayoutManager : IViewerLayoutManager
     {
-        private readonly SettingsManager _settings;
+        private readonly ISettingsManager _settings;
 
-        public ViewerLayoutManager(SettingsManager settings)
+        public ViewerLayoutManager(ISettingsManager settings)
         {
             _settings = settings;
         }

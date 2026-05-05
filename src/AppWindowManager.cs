@@ -1,11 +1,11 @@
 namespace grid_image_viewer
 {
-    internal class AppWindowManager
+    internal class AppWindowManager : IAppWindowManager
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
 
-        public AppWindowManager(MainWindow window, SettingsManager settings)
+        public AppWindowManager(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -18,7 +18,7 @@ namespace grid_image_viewer
 
             ApplyBackgroundSettings();
 
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var hwnd = _window.WindowHandle;
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
 
@@ -66,7 +66,7 @@ namespace grid_image_viewer
 
         public void SaveWindowState()
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var hwnd = _window.WindowHandle;
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
             _settings.SaveWindowState(appWindow, _window.CurrentImagePath, _window.CurrentDirectory);

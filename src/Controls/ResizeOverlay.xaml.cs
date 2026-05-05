@@ -6,10 +6,10 @@ namespace grid_image_viewer.Controls
 {
     public sealed partial class ResizeOverlay : UserControl
     {
-        private readonly MainWindow _window;
+        private readonly IMainView _window;
         private readonly string _sourcePath;
 
-        public ResizeOverlay(MainWindow window, string sourcePath, int initialWidth, int initialHeight)
+        public ResizeOverlay(IMainView window, string sourcePath, int initialWidth, int initialHeight)
         {
             this.InitializeComponent();
             _window = window;

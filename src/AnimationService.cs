@@ -6,16 +6,16 @@ using System.Linq;
 
 namespace grid_image_viewer
 {
-    internal class AnimationService
+    internal class AnimationService : IAnimationService
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
         private readonly DispatcherTimer _animationTimer;
         private Storyboard? _currentCrossfadeStoryboard;
         private Grid? _currentCrossfadeGrid;
         private Grid? _prevCrossfadeGrid;
 
-        public AnimationService(MainWindow window, SettingsManager settings)
+        public AnimationService(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

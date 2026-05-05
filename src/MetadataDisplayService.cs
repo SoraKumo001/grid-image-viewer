@@ -3,13 +3,13 @@ using System;
 
 namespace grid_image_viewer
 {
-    internal class MetadataDisplayService
+    internal class MetadataDisplayService : IMetadataDisplayService
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
         private int _focusedPageIndex = 0;
 
-        public MetadataDisplayService(MainWindow window, SettingsManager settings)
+        public MetadataDisplayService(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

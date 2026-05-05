@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
-    internal class ImageEditService
+    internal class ImageEditService : IImageEditService
     {
-        private readonly MainWindow _window;
+        private readonly IMainView _window;
         private readonly Dictionary<string, EditSession> _pendingEdits = new Dictionary<string, EditSession>();
 
-        public ImageEditService(MainWindow window)
+        public ImageEditService(IMainView window)
         {
             _window = window;
         }
@@ -178,7 +178,7 @@ namespace grid_image_viewer
         }
     }
 
-    internal class EditSession : IDisposable
+    public class EditSession : IDisposable
     {
         private readonly List<SKBitmap> _history = new List<SKBitmap>();
         private int _currentIndex = -1;

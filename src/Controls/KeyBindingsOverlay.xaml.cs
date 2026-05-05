@@ -8,8 +8,8 @@ namespace grid_image_viewer.Controls
 {
     public sealed partial class KeyBindingsOverlay : UserControl
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
 
         private KeyBindingData _tempNextImage;
         private KeyBindingData _tempPrevImage;
@@ -34,7 +34,7 @@ namespace grid_image_viewer.Controls
         private KeyBindingData _tempZoomReset;
         private KeyBindingData _tempZoom100;
 
-        public KeyBindingsOverlay(MainWindow window, SettingsManager settings)
+        public KeyBindingsOverlay(IMainView window, ISettingsManager settings)
         {
             this.InitializeComponent();
             _window = window;

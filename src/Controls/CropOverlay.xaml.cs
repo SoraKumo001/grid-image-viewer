@@ -9,12 +9,12 @@ namespace grid_image_viewer.Controls
 {
     public sealed partial class CropOverlay : UserControl
     {
-        private readonly MainWindow _window;
+        private readonly IMainView _window;
         private Point _startPoint;
         private bool _isSelecting = false;
         private Rect _selectionRect;
 
-        public CropOverlay(MainWindow window)
+        public CropOverlay(IMainView window)
         {
             this.InitializeComponent();
             _window = window;

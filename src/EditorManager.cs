@@ -14,10 +14,10 @@ using Windows.System;
 
 namespace grid_image_viewer
 {
-    public class EditorManager : IRecipient<EditMessage>
+    public class EditorManager : IEditorManager, IRecipient<EditMessage>
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
         private Microsoft.Windows.ApplicationModel.Resources.ResourceManager _resourceManager;
         private Microsoft.Windows.ApplicationModel.Resources.ResourceContext _resourceContext;
         private readonly Dictionary<string, string> _stringCache = new Dictionary<string, string>();
@@ -26,7 +26,7 @@ namespace grid_image_viewer
 
         public string ContextTargetPath { get => _contextTargetPath; set => _contextTargetPath = value; }
 
-        public EditorManager(MainWindow window, SettingsManager settings)
+        public EditorManager(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -54,6 +54,7 @@ namespace grid_image_viewer
         {
             // Currently no dynamic strings need preloading as we moved to sub-menus and x:Uid
         }
+
 
         public void PagesGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
@@ -533,7 +534,7 @@ namespace grid_image_viewer
 
 
 
-        internal string GetString(string key)
+        public string GetString(string key)
         {
             if (_stringCache.TryGetValue(key, out var cached)) return cached;
             try

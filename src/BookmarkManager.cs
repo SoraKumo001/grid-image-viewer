@@ -3,12 +3,12 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace grid_image_viewer
 {
-    internal class BookmarkManager
+    internal class BookmarkManager : IBookmarkManager
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
 
-        public BookmarkManager(MainWindow window, SettingsManager settings)
+        public BookmarkManager(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -45,7 +45,7 @@ namespace grid_image_viewer
             bool added = _settings.ToggleBookmark(dir, true);
             _window.EditorManager.UpdateMenuStates();
             UpdateBookmarkList();
-            _window.ViewerManager.ShowNotification(added ? "Added to bookmarks" : "Removed from bookmarks");
+            _window.ShowNotification(added ? "Added to bookmarks" : "Removed from bookmarks");
         }
 
         public void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e)

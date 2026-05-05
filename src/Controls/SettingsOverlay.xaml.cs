@@ -6,10 +6,10 @@ namespace grid_image_viewer.Controls
 {
     public sealed partial class SettingsOverlay : UserControl
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
 
-        public SettingsOverlay(MainWindow window, SettingsManager settings)
+        public SettingsOverlay(IMainView window, ISettingsManager settings)
         {
             this.InitializeComponent();
             _window = window;
@@ -26,13 +26,13 @@ namespace grid_image_viewer.Controls
 
         private async void BtnExport_Click(object sender, RoutedEventArgs e)
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var hwnd = _window.WindowHandle;
             await _settings.ExportSettingsAsync(hwnd);
         }
 
         private async void BtnImport_Click(object sender, RoutedEventArgs e)
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var hwnd = _window.WindowHandle;
             if (await _settings.ImportSettingsAsync(hwnd))
             {
                 // Refresh UI after import

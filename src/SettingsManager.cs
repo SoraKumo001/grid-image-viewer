@@ -102,7 +102,7 @@ namespace grid_image_viewer
         public System.Collections.Generic.List<BookmarkItem> Bookmarks { get; set; } = new System.Collections.Generic.List<BookmarkItem>();
     }
 
-    public class SettingsManager
+    public class SettingsManager : ISettingsManager
     {
         private readonly string _settingsFilePath;
         private SettingsData _data;
@@ -150,6 +150,7 @@ namespace grid_image_viewer
         public int BoundaryAction { get => _data.BoundaryAction; set => _data.BoundaryAction = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
+
 
         public string LastImagePath { get => _data.LastImagePath; }
         public string LastDirectoryPath { get => _data.LastDirectoryPath; }

@@ -7,10 +7,10 @@ using System.Linq;
 
 namespace grid_image_viewer
 {
-    public class SlideshowManager : IDisposable, IRecipient<OpenSlideshowMessage>
+    public class SlideshowManager : ISlideshowManager, IRecipient<OpenSlideshowMessage>
     {
-        private MainWindow _mainWindow;
-        private SettingsManager _settings;
+        private IMainView _mainWindow;
+        private ISettingsManager _settings;
         private ISlideshowService _slideshowService;
         private IViewerStateService _state;
 
@@ -21,7 +21,7 @@ namespace grid_image_viewer
         private bool _wasExpanded = false;
         private MainViewModel ViewModel => _mainWindow.ViewModel;
 
-        public SlideshowManager(MainWindow mainWindow, SettingsManager settings, ISlideshowService slideshowService, IViewerStateService state)
+        public SlideshowManager(IMainView mainWindow, ISettingsManager settings, ISlideshowService slideshowService, IViewerStateService state)
         {
             _mainWindow = mainWindow;
             _settings = settings;

@@ -9,7 +9,7 @@ namespace grid_image_viewer
     public class SlideshowService : ISlideshowService, IDisposable
     {
         private readonly IViewerStateService _state;
-        private readonly SettingsManager _settings;
+        private readonly ISettingsManager _settings;
         private readonly DispatcherTimer _timer;
         private readonly Random _random = new Random();
         private readonly List<int> _remainingIndices = new List<int>();
@@ -18,7 +18,7 @@ namespace grid_image_viewer
         public bool IsRunning => _state.IsSlideshowRunning;
         public int[] CurrentRandomIndices { get; private set; } = new int[4] { -1, -1, -1, -1 };
 
-        public SlideshowService(IViewerStateService state, SettingsManager settings)
+        public SlideshowService(IViewerStateService state, ISettingsManager settings)
         {
             _state = state;
             _settings = settings;

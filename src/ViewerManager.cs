@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
-    internal class ViewerManager : IRecipient<NavigationMessage>, IRecipient<FolderNavigationMessage>, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
+    internal class ViewerManager : IViewerManager, IRecipient<NavigationMessage>, IRecipient<FolderNavigationMessage>, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
-        private readonly ViewerLayoutManager _layoutManager;
-        private readonly ViewerImageLoader _imageLoader;
-        private readonly ViewerCacheManager _cacheManager;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
+        private readonly IViewerLayoutManager _layoutManager;
+        private readonly IViewerImageLoader _imageLoader;
+        private readonly IViewerCacheManager _cacheManager;
 
         // Double-buffered PageRenderers to support Skia crossfade
         private PageRenderer[][] _pagesBuffer = new PageRenderer[][]
@@ -38,7 +38,7 @@ namespace grid_image_viewer
         private int _lastCachedQuadLayout = -1;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
-        public ViewerManager(MainWindow window, SettingsManager settings)
+        public ViewerManager(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -394,7 +394,7 @@ namespace grid_image_viewer
 
         public void StopAnimation() => _window.AnimationService.StopAnimation();
 
-        internal void InvalidatePage(int index) => _pageControls[index].PageCanvas.Invalidate();
+        public void InvalidatePage(int index) => _pageControls[index].PageCanvas.Invalidate();
 
         public void UpdateStretch()
         {

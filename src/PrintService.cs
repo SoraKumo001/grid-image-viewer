@@ -6,13 +6,12 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Graphics.Printing;
-using WinRT.Interop;
 
 namespace grid_image_viewer
 {
-    public class PrintService
+    public class PrintService : IPrintService
     {
-        private MainWindow _window;
+        private IMainView _window;
         private PrintManager _printManager = null!;
         private PrintDocument _printDocument = null!;
         private IPrintDocumentSource _printDocumentSource = null!;
@@ -20,7 +19,7 @@ namespace grid_image_viewer
         private BitmapImage? _printImage;
         private PrintPageDescription _pageDescription;
 
-        public PrintService(MainWindow window)
+        public PrintService(IMainView window)
         {
             _window = window;
             RegisterForPrinting();
@@ -28,7 +27,7 @@ namespace grid_image_viewer
 
         private void RegisterForPrinting()
         {
-            var hwnd = WindowNative.GetWindowHandle(_window);
+            var hwnd = _window.WindowHandle;
             _printManager = PrintManagerInterop.GetForWindow(hwnd);
             _printManager.PrintTaskRequested += PrintManager_PrintTaskRequested;
         }
@@ -72,7 +71,7 @@ namespace grid_image_viewer
                     }
                 }
 
-                var hwnd = WindowNative.GetWindowHandle(_window);
+                var hwnd = _window.WindowHandle;
                 await PrintManagerInterop.ShowPrintUIForWindowAsync(hwnd);
             }
             catch (Exception ex)

@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace grid_image_viewer
 {
-    internal class PlaylistManager
+    internal class PlaylistManager : IPlaylistManager
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
         private CancellationTokenSource? _loadCts;
 
-        public PlaylistManager(MainWindow window, SettingsManager settings)
+        public PlaylistManager(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -39,7 +39,7 @@ namespace grid_image_viewer
                 else if (action == 2) // Loop
                 {
                     _window.CurrentIndex = _window.Playlist.Count - 1;
-                    _window.ViewerManager.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
+                    _window.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
                     _ = _window.UpdateDisplayAsync();
                 }
                 // action == 0 (None) -> do nothing
@@ -55,7 +55,7 @@ namespace grid_image_viewer
                 else if (action == 2) // Loop
                 {
                     _window.CurrentIndex = 0;
-                    _window.ViewerManager.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
+                    _window.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
                     _ = _window.UpdateDisplayAsync();
                 }
                 // action == 0 (None) -> do nothing
@@ -82,7 +82,7 @@ namespace grid_image_viewer
                     }
                     else
                     {
-                        _window.ViewerManager.ShowNotification(offset > 0 ? "No more folders (End)" : "No more folders (Start)");
+                        _window.ShowNotification(offset > 0 ? "No more folders (End)" : "No more folders (Start)");
                     }
                 });
             });

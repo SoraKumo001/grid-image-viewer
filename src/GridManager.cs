@@ -13,10 +13,10 @@ using Windows.Storage;
 
 namespace grid_image_viewer
 {
-    internal class GridManager
+    internal class GridManager : IGridManager
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
 
         private ScrollViewer? _gridScrollViewer;
         private DispatcherTimer? _gridAnimationTimer;
@@ -24,7 +24,7 @@ namespace grid_image_viewer
         private int _gridDecodeSize = 300;
         private CancellationTokenSource? _gridCts;
 
-        public GridManager(MainWindow window, SettingsManager settings)
+        public GridManager(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -471,6 +471,8 @@ namespace grid_image_viewer
         }
 
         public ObservableCollection<ImageItem> GridItems { get; private set; } = new ObservableCollection<ImageItem>();
+        System.Collections.Generic.IList<ImageItem> IGridManager.GridItems => GridItems;
+
 
         public void UpdateGridItems(bool forceFullUpdate)
         {

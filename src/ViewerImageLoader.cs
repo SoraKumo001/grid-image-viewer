@@ -8,12 +8,12 @@ using Windows.Graphics.Imaging;
 
 namespace grid_image_viewer
 {
-    internal class ViewerImageLoader
+    internal class ViewerImageLoader : IViewerImageLoader
     {
-        private readonly MainWindow _window;
-        private readonly SettingsManager _settings;
+        private readonly IMainView _window;
+        private readonly ISettingsManager _settings;
 
-        public ViewerImageLoader(MainWindow window, SettingsManager settings)
+        public ViewerImageLoader(IMainView window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
@@ -25,7 +25,7 @@ namespace grid_image_viewer
             PageRenderer renderer,
             int pageIndex,
             CancellationToken token,
-            ViewerCacheManager cacheManager)
+            IViewerCacheManager cacheManager)
         {
             if (ArchiveManager.IsArchive(filePath) && !ArchiveManager.IsArchivePath(filePath))
             {

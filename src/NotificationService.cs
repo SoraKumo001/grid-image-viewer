@@ -3,12 +3,12 @@ using System;
 
 namespace grid_image_viewer
 {
-    internal class NotificationService
+    internal class NotificationService : INotificationService
     {
-        private readonly MainWindow _window;
+        private readonly IMainView _window;
         private readonly DispatcherTimer _timer;
 
-        public NotificationService(MainWindow window)
+        public NotificationService(IMainView window)
         {
             _window = window;
             _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };

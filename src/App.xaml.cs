@@ -10,21 +10,13 @@ namespace grid_image_viewer
     /// </summary>
     public partial class App : Application
     {
-        private Window? _window;
+        private MainWindow? _window;
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
         public App()
         {
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             _window = new MainWindow();
@@ -40,7 +32,7 @@ namespace grid_image_viewer
                     if (fileArgs != null && fileArgs.Files.Count > 0)
                     {
                         string filePath = fileArgs.Files[0].Path;
-                        ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
+                        _window.LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
                         fileLoaded = true;
                     }
                 }
@@ -63,13 +55,13 @@ namespace grid_image_viewer
                         var (archivePath, _) = ArchiveManager.SplitArchivePath(lastImagePath);
                         if (System.IO.File.Exists(archivePath))
                         {
-                            ((MainWindow)_window).LoadDirectory(archivePath, lastImagePath);
+                            _window.LoadDirectory(archivePath, lastImagePath);
                             fileLoaded = true;
                         }
                     }
                     else if (System.IO.File.Exists(lastImagePath))
                     {
-                        ((MainWindow)_window).LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
+                        _window.LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
                         fileLoaded = true;
                     }
                 }
@@ -80,12 +72,12 @@ namespace grid_image_viewer
                     {
                         if (System.IO.File.Exists(lastDirectoryPath))
                         {
-                            ((MainWindow)_window).LoadDirectory(lastDirectoryPath);
+                            _window.LoadDirectory(lastDirectoryPath);
                         }
                     }
                     else if (System.IO.Directory.Exists(lastDirectoryPath))
                     {
-                        ((MainWindow)_window).LoadDirectory(lastDirectoryPath);
+                        _window.LoadDirectory(lastDirectoryPath);
                     }
                 }
             }
