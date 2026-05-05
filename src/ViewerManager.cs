@@ -17,6 +17,9 @@ namespace grid_image_viewer
     {
         private readonly MainWindow _window;
         private readonly SettingsManager _settings;
+        private readonly ViewerLayoutManager _layoutManager;
+        private readonly ViewerImageLoader _imageLoader;
+        private readonly ViewerCacheManager _cacheManager;
 
         // Double-buffered PageRenderers to support Skia crossfade
         private PageRenderer[][] _pagesBuffer = new PageRenderer[][]
@@ -33,23 +36,17 @@ namespace grid_image_viewer
         private Border[] _focusBorders;
 
         private CancellationTokenSource? _displayCts;
-        private CancellationTokenSource? _folderPreloadCts;
-        private string? _cachedNextFolder;
-        private string? _cachedPrevFolder;
-        private List<string>? _cachedNextPlaylist;
-        private List<string>? _cachedPrevPlaylist;
-        private string? _lastPreloadedDirectory;
         private int _cachedQuadLayout = 1;
         private bool _lastIsSlideshowRunning = false;
         private ResourceLoader _resourceLoader = new ResourceLoader();
-
-        private Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
-        private const int MAX_CACHE_SIZE = 20;
 
         public ViewerManager(MainWindow window, SettingsManager settings)
         {
             _window = window;
             _settings = settings;
+            _layoutManager = new ViewerLayoutManager(settings);
+            _imageLoader = new ViewerImageLoader(window, settings);
+            _cacheManager = new ViewerCacheManager(window, settings);
 
             // Initialize buffer references
             int idx = _window.ViewerControl.CurrentBufferIndex;
@@ -208,11 +205,11 @@ namespace grid_image_viewer
                 int currentIndex = _window.CurrentIndex;
                 var playlistSnapshot = _window.Playlist.ToList();
 
-                _cachedQuadLayout = await Task.Run(() => GetEffectiveQuadLayout(currentIndex, playlistSnapshot));
+                _cachedQuadLayout = await Task.Run(() => _layoutManager.GetEffectiveQuadLayout(currentIndex, playlistSnapshot));
 
                 // Prepare the INACTIVE buffer
                 int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
-                UpdateLayoutGrid(splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
+                _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
 
                 var targetImages = _window.ViewerControl.PageImagesBuffer[targetBufferIdx];
                 var targetCanvases = _window.ViewerControl.PageCanvasesBuffer[targetBufferIdx];
@@ -243,7 +240,7 @@ namespace grid_image_viewer
                     if (indexToLoad != -1)
                     {
                         currentFiles.Add(_window.Playlist[indexToLoad]);
-                        loadTasks.Add(LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetImages[i], targetCanvases[i], targetLoadingRings[i], targetPages[i], i, token));
+                        loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetImages[i], targetCanvases[i], targetLoadingRings[i], targetPages[i], i, token, _cacheManager));
                     }
                 }
 
@@ -283,8 +280,8 @@ namespace grid_image_viewer
                     _window.MetadataDisplayService.UpdateMetadataPanel();
                 }
 
-                _ = PreloadAroundAsync();
-                _ = PreloadFoldersAsync();
+                _ = _cacheManager.PreloadAroundAsync(_window.CurrentIndex, _window.Playlist.ToList(), _settings.MangaSplitCount);
+                _ = _cacheManager.PreloadFoldersAsync(_window.CurrentDirectory);
             }
             finally
             {
@@ -294,242 +291,9 @@ namespace grid_image_viewer
             _window.UpdatePageIndicator();
         }
 
-        private void UpdateLayoutGrid(int splitCount, int effectiveSplitCount, int currentQuadLayout, int bufferIdx)
-        {
-            var cols = _window.ViewerControl.ColsBuffer[bufferIdx];
-            var rows = _window.ViewerControl.RowsBuffer[bufferIdx];
-            var pageGrids = _window.ViewerControl.PageGridsBuffer[bufferIdx];
-            var images = _window.ViewerControl.PageImagesBuffer[bufferIdx];
 
-            bool uniformToFill = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);
 
-            for (int i = 0; i < 4; i++)
-            {
-                images[i].HorizontalAlignment = HorizontalAlignment.Center;
-                images[i].VerticalAlignment = VerticalAlignment.Center;
-            }
 
-            if (effectiveSplitCount == 1)
-            {
-                cols[0].Width = new GridLength(1, GridUnitType.Star);
-                cols[1].Width = new GridLength(0); cols[2].Width = new GridLength(0); cols[3].Width = new GridLength(0);
-                rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
-
-                Grid.SetColumn(pageGrids[0], 0); Grid.SetRow(pageGrids[0], 0);
-                Grid.SetColumnSpan(pageGrids[0], 4); Grid.SetRowSpan(pageGrids[0], 2);
-                pageGrids[0].Visibility = Visibility.Visible;
-                pageGrids[1].Visibility = Visibility.Collapsed;
-                pageGrids[2].Visibility = Visibility.Collapsed;
-                pageGrids[3].Visibility = Visibility.Collapsed;
-            }
-            else if (effectiveSplitCount == 2)
-            {
-                cols[0].Width = new GridLength(1, GridUnitType.Star);
-                cols[1].Width = new GridLength(1, GridUnitType.Star);
-                cols[2].Width = new GridLength(0); cols[3].Width = new GridLength(0);
-                rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
-
-                Grid.SetColumn(pageGrids[0], 1); Grid.SetRow(pageGrids[0], 0);
-                Grid.SetColumnSpan(pageGrids[0], 1); Grid.SetRowSpan(pageGrids[0], 2);
-                Grid.SetColumn(pageGrids[1], 0); Grid.SetRow(pageGrids[1], 0);
-                Grid.SetColumnSpan(pageGrids[1], 1); Grid.SetRowSpan(pageGrids[1], 2);
-
-                pageGrids[0].Visibility = Visibility.Visible;
-                pageGrids[1].Visibility = Visibility.Visible;
-                pageGrids[2].Visibility = Visibility.Collapsed;
-                pageGrids[3].Visibility = Visibility.Collapsed;
-
-                if (!uniformToFill)
-                {
-                    images[0].HorizontalAlignment = HorizontalAlignment.Left;
-                    images[1].HorizontalAlignment = HorizontalAlignment.Right;
-                }
-            }
-            else if (effectiveSplitCount == 3)
-            {
-                pageGrids[0].Visibility = Visibility.Visible;
-                pageGrids[1].Visibility = Visibility.Visible;
-                pageGrids[2].Visibility = Visibility.Visible;
-                pageGrids[3].Visibility = Visibility.Collapsed;
-
-                if (currentQuadLayout == 2)
-                {
-                    cols[0].Width = new GridLength(1, GridUnitType.Star);
-                    cols[1].Width = new GridLength(1, GridUnitType.Star);
-                    cols[2].Width = new GridLength(0); cols[3].Width = new GridLength(0);
-                    rows[0].Height = new GridLength(1, GridUnitType.Star);
-                    rows[1].Height = new GridLength(1, GridUnitType.Star);
-
-                    Grid.SetColumn(pageGrids[0], 0); Grid.SetRow(pageGrids[0], 0);
-                    Grid.SetColumnSpan(pageGrids[0], 2); Grid.SetRowSpan(pageGrids[0], 1);
-                    Grid.SetColumn(pageGrids[1], 1); Grid.SetRow(pageGrids[1], 1);
-                    Grid.SetColumnSpan(pageGrids[1], 1); Grid.SetRowSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 0); Grid.SetRow(pageGrids[2], 1);
-                    Grid.SetColumnSpan(pageGrids[2], 1); Grid.SetRowSpan(pageGrids[2], 1);
-
-                    if (!uniformToFill)
-                    {
-                        images[0].VerticalAlignment = VerticalAlignment.Bottom;
-                        images[1].HorizontalAlignment = HorizontalAlignment.Left; images[1].VerticalAlignment = VerticalAlignment.Top;
-                        images[2].HorizontalAlignment = HorizontalAlignment.Right; images[2].VerticalAlignment = VerticalAlignment.Top;
-                    }
-                }
-                else
-                {
-                    cols[0].Width = new GridLength(1, GridUnitType.Star);
-                    cols[1].Width = new GridLength(1, GridUnitType.Star);
-                    cols[2].Width = new GridLength(1, GridUnitType.Star);
-                    cols[3].Width = new GridLength(0);
-                    rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
-
-                    Grid.SetColumn(pageGrids[0], 2); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
-                    Grid.SetColumn(pageGrids[1], 1); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 0); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
-                }
-            }
-            else
-            {
-                pageGrids[0].Visibility = Visibility.Visible;
-                pageGrids[1].Visibility = Visibility.Visible;
-                pageGrids[2].Visibility = Visibility.Visible;
-                pageGrids[3].Visibility = Visibility.Visible;
-
-                if (currentQuadLayout == 1 || currentQuadLayout == 0)
-                {
-                    cols[0].Width = new GridLength(1, GridUnitType.Star);
-                    cols[1].Width = new GridLength(1, GridUnitType.Star);
-                    cols[2].Width = new GridLength(1, GridUnitType.Star);
-                    cols[3].Width = new GridLength(1, GridUnitType.Star);
-                    rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
-
-                    Grid.SetColumn(pageGrids[0], 3); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
-                    Grid.SetColumn(pageGrids[1], 2); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 1); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
-                    Grid.SetColumn(pageGrids[3], 0); Grid.SetRow(pageGrids[3], 0); Grid.SetRowSpan(pageGrids[3], 2); Grid.SetColumnSpan(pageGrids[3], 1);
-                }
-                else
-                {
-                    cols[0].Width = new GridLength(1, GridUnitType.Star);
-                    cols[1].Width = new GridLength(1, GridUnitType.Star);
-                    cols[2].Width = new GridLength(0); cols[3].Width = new GridLength(0);
-                    rows[0].Height = new GridLength(1, GridUnitType.Star);
-                    rows[1].Height = new GridLength(1, GridUnitType.Star);
-
-                    Grid.SetColumn(pageGrids[0], 1); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 1); Grid.SetColumnSpan(pageGrids[0], 1);
-                    Grid.SetColumn(pageGrids[1], 0); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 1); Grid.SetColumnSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 1); Grid.SetRow(pageGrids[2], 1); Grid.SetRowSpan(pageGrids[2], 1); Grid.SetColumnSpan(pageGrids[2], 1);
-                    Grid.SetColumn(pageGrids[3], 0); Grid.SetRow(pageGrids[3], 1); Grid.SetRowSpan(pageGrids[3], 1); Grid.SetColumnSpan(pageGrids[3], 1);
-
-                    if (!uniformToFill)
-                    {
-                        images[0].HorizontalAlignment = HorizontalAlignment.Left; images[0].VerticalAlignment = VerticalAlignment.Bottom;
-                        images[1].HorizontalAlignment = HorizontalAlignment.Right; images[1].VerticalAlignment = VerticalAlignment.Bottom;
-                        images[2].HorizontalAlignment = HorizontalAlignment.Left; images[2].VerticalAlignment = VerticalAlignment.Top;
-                        images[3].HorizontalAlignment = HorizontalAlignment.Right; images[3].VerticalAlignment = VerticalAlignment.Top;
-                    }
-                }
-            }
-        }
-
-        private async Task LoadPageIntoBufferAsync(string filePath, Microsoft.UI.Xaml.Controls.Image imageCtrl, SkiaSharp.Views.Windows.SKXamlCanvas canvasCtrl, Microsoft.UI.Xaml.Controls.ProgressRing loadingRing, PageRenderer renderer, int pageIndex, CancellationToken token)
-        {
-            if (ArchiveManager.IsArchive(filePath) && !ArchiveManager.IsArchivePath(filePath))
-            {
-                _window.DispatcherQueue.TryEnqueue(() => _window.LoadDirectory(filePath));
-                return;
-            }
-
-            renderer.CurrentFilePath = filePath;
-            _window.DispatcherQueue.TryEnqueue(() => { loadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning; });
-
-            try
-            {
-                var session = _window.ImageEditService.GetSession(filePath);
-                if (session != null)
-                {
-                    renderer.Reset();
-                    renderer.CurrentFilePath = filePath;
-                    renderer.EditedBitmap = session.Current;
-                    renderer.FrameCount = 1;
-
-                    imageCtrl.Visibility = Visibility.Collapsed;
-                    canvasCtrl.Visibility = Visibility.Visible;
-                    canvasCtrl.Invalidate();
-                    return;
-                }
-
-                var ext = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
-                bool useSkia = ext == ".webp" || ext == ".gif" || ext == ".avis";
-
-                if (useSkia)
-                {
-                    await Task.Run(() =>
-                    {
-                        var tempRenderer = new PageRenderer();
-                        tempRenderer.LoadSkia(filePath, token);
-                        if (!token.IsCancellationRequested)
-                        {
-                            renderer.Reset();
-                            renderer.CurrentFilePath = filePath;
-                            renderer.Data = tempRenderer.Data;
-                            renderer.Codec = tempRenderer.Codec;
-                            renderer.Bitmap = tempRenderer.Bitmap;
-                            renderer.FrameCount = tempRenderer.FrameCount;
-                            renderer.CurrentFrame = tempRenderer.CurrentFrame;
-                            renderer.PriorFrame = tempRenderer.PriorFrame;
-                            renderer.CurrentFrameDuration = tempRenderer.CurrentFrameDuration;
-                        }
-                    });
-                    if (token.IsCancellationRequested) return;
-                    imageCtrl.Visibility = Visibility.Collapsed;
-                    canvasCtrl.Visibility = Visibility.Visible;
-                    canvasCtrl.Invalidate();
-                }
-                else
-                {
-                    byte[]? cachedBytes = null;
-                    lock (_imageCache) { _imageCache.TryGetValue(filePath, out cachedBytes); }
-
-                    Microsoft.UI.Xaml.Media.Imaging.BitmapImage? bitmapImage = null;
-
-                    if (cachedBytes != null)
-                    {
-                        using var ms = new System.IO.MemoryStream(cachedBytes);
-                        bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                    }
-                    else
-                    {
-                        try
-                        {
-                            using var stream = System.IO.File.OpenRead(filePath);
-                            bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                            await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
-                        }
-                        catch (Exception)
-                        {
-                            var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
-                            if (bmpBytes != null)
-                            {
-                                bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                                using var ms = new System.IO.MemoryStream(bmpBytes);
-                                await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                            }
-                        }
-                    }
-
-                    if (token.IsCancellationRequested) return;
-
-                    renderer.Reset();
-                    renderer.CurrentFilePath = filePath;
-                    canvasCtrl.Visibility = Visibility.Collapsed;
-                    imageCtrl.Visibility = Visibility.Visible;
-                    imageCtrl.Source = bitmapImage;
-                }
-            }
-            catch { }
-            finally { loadingRing.IsActive = false; }
-        }
 
         public void StopAnimation() => _window.AnimationService.StopAnimation();
 
@@ -563,36 +327,7 @@ namespace grid_image_viewer
             catch { }
         }
 
-        private int GetEffectiveQuadLayout(int currentIndex, List<string> playlist)
-        {
-            int layout = _settings.QuadLayoutMode;
-            if (_settings.MangaSplitCount != 4 || layout != 0) return layout;
 
-            int wideCount = 0;
-            int tallCount = 0;
-            for (int i = 0; i < 4; i++)
-            {
-                int indexToLoad = -1;
-                if (i == 0) indexToLoad = currentIndex;
-                else if (currentIndex + i < playlist.Count) indexToLoad = currentIndex + i;
-
-                if (indexToLoad != -1 && indexToLoad < playlist.Count)
-                {
-                    try
-                    {
-                        var (w, h) = ImageProcessor.GetImageSize(playlist[indexToLoad]);
-                        if (w > 0 && h > 0)
-                        {
-                            if ((double)w / h > 1.2) wideCount++;
-                            else tallCount++;
-                        }
-                    }
-                    catch { }
-                }
-            }
-            if (wideCount == 0 && tallCount == 0) return 1;
-            return wideCount >= tallCount ? 2 : 1;
-        }
 
         public void PaintCanvas(int bufferIndex, int pageIndex, SKPaintSurfaceEventArgs e)
         {
@@ -639,71 +374,12 @@ namespace grid_image_viewer
         public void Navigate(int offset, bool forceSingleStep) => _window.PlaylistManager.Navigate(offset, forceSingleStep);
         public void NavigateFolder(int offset) => _window.PlaylistManager.NavigateFolder(offset);
 
-        private async Task PreloadAroundAsync()
-        {
-            var items = _window.Playlist;
-            if (items.Count == 0) return;
-            int splitCount = _settings.MangaSplitCount;
-            var indicesToPreload = new List<int>();
-            for (int i = 1; i <= splitCount; i++)
-            {
-                int prevIdx = (_window.CurrentIndex - i) % items.Count;
-                if (prevIdx < 0) prevIdx += items.Count;
-                indicesToPreload.Add(prevIdx);
-            }
-            for (int i = 0; i < 2 * splitCount; i++)
-            {
-                int nextIdx = (_window.CurrentIndex + splitCount + i) % items.Count;
-                if (nextIdx < 0) nextIdx += items.Count;
-                indicesToPreload.Add(nextIdx);
-            }
 
-            foreach (var idx in indicesToPreload)
-            {
-                var path = items[idx];
-                lock (_imageCache) { if (_imageCache.ContainsKey(path)) continue; }
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        var bytes = await System.IO.File.ReadAllBytesAsync(path);
-                        lock (_imageCache)
-                        {
-                            if (_imageCache.Count >= MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
-                            _imageCache[path] = bytes;
-                        }
-                    }
-                    catch { }
-                });
-            }
-        }
-
-        private async Task PreloadFoldersAsync()
-        {
-            string currentDir = _window.CurrentDirectory;
-            if (string.IsNullOrEmpty(currentDir) || currentDir == _lastPreloadedDirectory) return;
-            _folderPreloadCts?.Cancel();
-            _folderPreloadCts?.Dispose();
-            _folderPreloadCts = new CancellationTokenSource();
-            var token = _folderPreloadCts.Token;
-            _lastPreloadedDirectory = currentDir;
-            try
-            {
-                _cachedNextFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, 1, token), token);
-                if (token.IsCancellationRequested) return;
-                if (!string.IsNullOrEmpty(_cachedNextFolder)) _cachedNextPlaylist = await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(_cachedNextFolder), token);
-                if (token.IsCancellationRequested) return;
-                _cachedPrevFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, -1, token), token);
-                if (token.IsCancellationRequested) return;
-                if (!string.IsNullOrEmpty(_cachedPrevFolder)) _cachedPrevPlaylist = await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(_cachedPrevFolder), token);
-            }
-            catch { }
-        }
 
         public void Dispose()
         {
             _displayCts?.Cancel();
-            _folderPreloadCts?.Cancel();
+            _cacheManager.CancelPreloads();
             foreach (var p in _pagesBuffer[0]) p.Reset();
             foreach (var p in _pagesBuffer[1]) p.Reset();
         }
