@@ -46,6 +46,12 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\grid-video-player\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.13.0" />
     <PackageReference Include="MetadataExtractor" Version="2.9.3" />
@@ -81,5 +87,8 @@
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <WindowsPackageType>MSIX</WindowsPackageType>
     <ImplicitUsings>disable</ImplicitUsings>
+    <PackageProjectUrl></PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/SoraKumo001/quick-image-viewer</RepositoryUrl>
   </PropertyGroup>
 </Project>
