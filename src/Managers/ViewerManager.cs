@@ -154,7 +154,16 @@ namespace quick_image_viewer.Managers
             UpdateStretch();
 
             int splitCount = _settings.MangaSplitCount;
-            int gridStartIndex = (splitCount > 1) ? (_window.CurrentIndex / splitCount) * splitCount : _window.CurrentIndex;
+            int gridStartIndex = _window.CurrentIndex;
+
+            if (splitCount > 1)
+            {
+                // Align to end of folder to ensure a full grid if possible
+                if (gridStartIndex + splitCount > _window.Playlist.Count)
+                {
+                    gridStartIndex = Math.Max(0, _window.Playlist.Count - splitCount);
+                }
+            }
             int effectiveSplitCount = Math.Min(splitCount, _window.Playlist.Count - gridStartIndex);
 
             // Recalculate layout for quad mode if needed

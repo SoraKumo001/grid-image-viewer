@@ -24,13 +24,13 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 - **Add to Favorites**: Save frequently viewed folders as bookmarks
 - **Quick Access**: Instantly switch folders from the side panel or context menu
 - **Reordering**: Intuitive reordering by drag & drop within the bookmark panel
-- **Multilingual Support**: Automatic switching between Japanese and English display
 
 ### 🖼️ View Modes
 
 - **Single View**: Display a single image filling the screen
 - **Split View (Manga Mode)**: Display two pages side by side. Supports right-to-left reading order and spread offset correction (Shift + Page Turn).
 - **Quad View**: Display 4 images in a grid (2x2) or horizontally (1x4). Also supports automatic layout based on aspect ratio.
+- **End-of-Folder Alignment**: Automatically adjusts the grid to show a full spread even when viewing the last images in a folder.
 - Cycle through modes sequentially using `Ctrl+G`
 
 ### 🔲 Grid Mode
@@ -66,6 +66,11 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 - **Undo/Redo**: Manage edit history and revert to the original state at any time
 - Intuitive undo/redo using `Ctrl+Z` / `Ctrl+Y`
 - Save as a new file or overwrite the edited state
+
+### 🌐 Multilingual Support
+
+- **Automatic Localization**: UI and notification messages automatically switch between Japanese and English based on your system language.
+- **English Comments**: Codebase comments are provided in English for better accessibility.
 
 ### 🖨️ Printing
 
