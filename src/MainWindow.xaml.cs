@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using AppControls = grid_image_viewer.Controls;
 
@@ -26,6 +25,8 @@ namespace grid_image_viewer
         internal NotificationService NotificationService { get; private set; }
         internal AnimationService AnimationService { get; private set; }
         internal DialogService DialogService { get; private set; }
+        internal AppWindowManager AppWindowManager { get; private set; }
+        internal BookmarkManager BookmarkManager { get; private set; }
 
         internal AppControls.ViewerPanel ViewerControl => ViewerControlInternal;
         internal AppControls.GridImagePanel GridControl => GridControlInternal;
@@ -57,7 +58,7 @@ namespace grid_image_viewer
         internal RowDefinition Row1 => ViewerControlInternal.RowsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
 
         internal bool IsGridMode { get => ViewModel.IsGridMode; set => ViewModel.IsGridMode = value; }
-        internal ObservableCollection<ImageItem> GridItems => _gridItems;
+        internal System.Collections.ObjectModel.ObservableCollection<ImageItem> GridItems => GridManager.GridItems;
         internal bool IsDialogOpen { get => ViewModel.IsDialogOpen; set => ViewModel.IsDialogOpen = value; }
         internal IList<string> Playlist => ViewModel.Playlist;
         internal int CurrentIndex { get => ViewModel.CurrentIndex; set => ViewModel.CurrentIndex = value; }
@@ -83,7 +84,7 @@ namespace grid_image_viewer
         }
 
         private SettingsManager _settings;
-        private ObservableCollection<ImageItem> _gridItems = new ObservableCollection<ImageItem>();
+
         private Random _random = new Random();
 
         public MainWindow()
@@ -100,6 +101,8 @@ namespace grid_image_viewer
             PrintService = new PrintService(this);
 
             // Initialize Managers
+            AppWindowManager = new AppWindowManager(this, _settings);
+            BookmarkManager = new BookmarkManager(this, _settings);
             PlaylistManager = new PlaylistManager(this, _settings);
             ViewerManager = new ViewerManager(this, _settings);
             GridManager = new GridManager(this, _settings);
@@ -116,59 +119,11 @@ namespace grid_image_viewer
             ViewModel.MangaSplitCount = _settings.MangaSplitCount;
             ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
 
-            _gridItems = new ObservableCollection<ImageItem>();
-            ImageGridView.ItemsSource = _gridItems;
+
 
             this.Closed += MainWindow_Closed;
 
-            ExtendsContentIntoTitleBar = true;
-            SetTitleBar(AppTitleBar);
-
-            ApplyBackgroundSettings();
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-            _settings.LoadWindowState(appWindow);
-            appWindow.Changed += (s, e) =>
-            {
-                if (e.DidPositionChange || e.DidSizeChange)
-                {
-                    _settings.UpdateNormalWindowState(appWindow);
-                }
-            };
-            try
-            {
-                var iconPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "AppIcon.ico");
-                if (System.IO.File.Exists(iconPath))
-                {
-                    appWindow.SetIcon(iconPath);
-                }
-                else
-                {
-                    var fallbackPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "..", "Assets", "AppIcon.ico");
-                    if (!System.IO.File.Exists(fallbackPath))
-                    {
-                        fallbackPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Assets", "AppIcon.ico");
-                    }
-                    if (System.IO.File.Exists(fallbackPath)) appWindow.SetIcon(fallbackPath);
-                }
-            }
-            catch { }
-
-            if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
-            {
-                var titleBar = appWindow.TitleBar;
-                titleBar.ButtonForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
-                titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
-                titleBar.ButtonHoverForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
-                titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(25, 255, 255, 255);
-                titleBar.ButtonPressedForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
-                titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(51, 255, 255, 255);
-                titleBar.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(255, 128, 128, 128);
-                titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
-            }
+            AppWindowManager.InitializeWindow();
 
             ImageGridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
 
@@ -190,21 +145,12 @@ namespace grid_image_viewer
             ViewerManager.Dispose();
             GridManager.Dispose();
             SlideshowManager.Dispose();
-            foreach (var item in _gridItems) item.DisposeCodec();
+            foreach (var item in GridItems) item.DisposeCodec();
 
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-            _settings.SaveWindowState(appWindow, CurrentImagePath, CurrentDirectory);
+            AppWindowManager.SaveWindowState();
         }
 
-        public void ApplyBackgroundSettings()
-        {
-            int mode = _settings.BackgroundColorMode;
-            if (mode == 1) RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 0, 0));
-            else if (mode == 2) RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
-            else RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
-        }
+
 
         private void ImageGridView_ItemClick(object sender, ItemClickEventArgs e) => GridManager.ImageGridView_ItemClick(sender, e);
         private void ImageGridView_SizeChanged(object sender, SizeChangedEventArgs e) => GridManager.ImageGridView_SizeChanged(sender, e);
@@ -219,33 +165,7 @@ namespace grid_image_viewer
             PlaylistManager.LoadDirectory(path, initialFile, includeSiblings, includeSubfolders, preloadedPlaylist);
         }
 
-        internal void UpdateGridItems(bool forceFullUpdate)
-        {
-            // グリッドモードでない場合は、パフォーマンスのためにリスト全体を構築しない
-            if (!IsGridMode && !forceFullUpdate)
-            {
-                if (_gridItems.Count > 1) _gridItems.Clear();
-                if (_gridItems.Count == 0 && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count)
-                {
-                    _gridItems.Add(new ImageItem { FilePath = ViewModel.Playlist[ViewModel.CurrentIndex], IsLoading = true });
-                }
-                return;
-            }
-
-            // 既に数が一致しているなら更新不要
-            if (_gridItems.Count == ViewModel.Playlist.Count && !forceFullUpdate) return;
-
-            // 大量（1000枚以上）の画像をグリッドに追加する場合のブロック時間を最小化
-            // 本来的にはインクリメンタルな読み込みが望ましいが、まずはコレクションの再作成コストを抑える
-            if (ViewModel.Playlist.Count > 1000 && !IsGridMode) return;
-
-            var newList = new ObservableCollection<ImageItem>();
-            foreach (var f in ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
-
-            _gridItems = newList;
-            ImageGridView.ItemsSource = _gridItems;
-            GridManager.RefreshThumbnails();
-        }
+        internal void UpdateGridItems(bool forceFullUpdate) => GridManager.UpdateGridItems(forceFullUpdate);
 
         internal Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
 
@@ -291,30 +211,12 @@ namespace grid_image_viewer
         private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
         private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPageIndicatorToggle_Click(sender, e);
         private void MenuSlideshow_Click(object sender, RoutedEventArgs e) => SlideshowManager.OpenSlideshowDialogAsync();
-        private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuBookmarksToggle_Click(sender, e);
-        private void MenuBookmark_Click(object sender, RoutedEventArgs e) => EditorManager.MenuBookmark_Click(sender, e);
+        private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarksToggle_Click(sender, e);
+        private void MenuBookmark_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmark_Click(sender, e);
         private void MenuBookmarkPanel_Close_Click(object sender, RoutedEventArgs e) => BookmarkPanel.Visibility = Visibility.Collapsed;
-        private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            if (e.ClickedItem is BookmarkItem item)
-            {
-                LoadDirectory(item.Path);
-                BookmarkPanel.Visibility = Visibility.Collapsed;
-            }
-        }
-        private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is string path)
-            {
-                _settings.ToggleBookmark(path, true);
-                EditorManager.UpdateBookmarkList();
-            }
-        }
-        private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
-        {
-            _settings.SaveSettings();
-            EditorManager.UpdateMenuStates();
-        }
+        private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e) => BookmarkManager.BookmarkListView_ItemClick(sender, e);
+        private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
+        private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);
 
         private void OpenSlideshowDialogAsync() => SlideshowManager.OpenSlideshowDialogAsync();
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);

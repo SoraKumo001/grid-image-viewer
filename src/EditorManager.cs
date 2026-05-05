@@ -531,47 +531,7 @@ namespace grid_image_viewer
             _window.DialogService.Show(new KeyBindingsOverlay(_window, _settings) { Name = "KeyBindingsOverlay" });
         }
 
-        public void MenuBookmark_Click(object sender, RoutedEventArgs e)
-        {
-            string dir = _window.CurrentDirectory;
-            if (string.IsNullOrEmpty(dir)) return;
 
-            bool added = _settings.ToggleBookmark(dir, true);
-            UpdateMenuStates();
-            UpdateBookmarkList();
-            _window.ViewerManager.ShowNotification(added ? "Added to bookmarks" : "Removed from bookmarks");
-        }
-
-        public void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e)
-        {
-            bool show = _window.BookmarkPanel.Visibility != Visibility.Visible;
-            _window.BookmarkPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-            if (show) UpdateBookmarkList();
-            UpdateMenuStates();
-        }
-
-        public void UpdateBookmarkList()
-        {
-            _window.BookmarkListView.ItemsSource = null;
-            _window.BookmarkListView.ItemsSource = _settings.Bookmarks;
-        }
-
-        public void MoveBookmark(string path, int direction)
-        {
-            int index = _settings.Bookmarks.FindIndex(b => b.Path == path);
-            if (index == -1) return;
-
-            int newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= _settings.Bookmarks.Count) return;
-
-            var item = _settings.Bookmarks[index];
-            _settings.Bookmarks.RemoveAt(index);
-            _settings.Bookmarks.Insert(newIndex, item);
-            _settings.SaveSettings();
-
-            UpdateBookmarkList();
-            UpdateMenuStates();
-        }
 
         internal string GetString(string key)
         {

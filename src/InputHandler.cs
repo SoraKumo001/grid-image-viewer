@@ -164,7 +164,7 @@ namespace grid_image_viewer
             if (IsMatch(_settings.KeyAddBookmark, e.Key, isCtrl, isShift, isAlt))
             {
                 // Bookmark is usually folder-based, so it targets current folder
-                _window.EditorManager.MenuBookmark_Click(sender, new RoutedEventArgs());
+                _window.BookmarkManager.MenuBookmark_Click(sender, new RoutedEventArgs());
                 e.Handled = true;
                 return;
             }
@@ -207,7 +207,7 @@ namespace grid_image_viewer
 
             if (IsMatch(_settings.KeyToggleBookmarks, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.EditorManager.MenuBookmarksToggle_Click(sender, new RoutedEventArgs());
+                _window.BookmarkManager.MenuBookmarksToggle_Click(sender, new RoutedEventArgs());
                 e.Handled = true;
                 return;
             }

@@ -39,7 +39,7 @@ namespace grid_image_viewer.Controls
                 ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
                 CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
-                _window.ApplyBackgroundSettings();
+                _window.AppWindowManager.ApplyBackgroundSettings();
             }
         }
 
@@ -65,7 +65,7 @@ namespace grid_image_viewer.Controls
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
             _settings.SaveSettings();
 
-            _window.ApplyBackgroundSettings();
+            _window.AppWindowManager.ApplyBackgroundSettings();
             _window.UpdatePageIndicator();
 
             var parent = this.Parent as Panel;

@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using SkiaSharp;
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -30,7 +31,7 @@ namespace grid_image_viewer
         public async Task LoadThumbnailsAsync(CancellationToken token)
         {
             StopGridAnimation();
-            foreach (var old in _window.GridItems) old.DisposeCodec();
+            foreach (var old in GridItems) old.DisposeCodec();
 
             // Determine decode resolution based on grid cell size (considering DPI scaling)
             int decodeSize = 300;
@@ -44,7 +45,7 @@ namespace grid_image_viewer
                 double maxDim = Math.Max(_window.ImageGridView.ActualWidth, _window.ImageGridView.ActualHeight);
                 if (maxDim > 0)
                 {
-                    int count = _window.GridItems.Count;
+                    int count = GridItems.Count;
                     int cols = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(count)));
                     decodeSize = (int)(maxDim / cols) * 2;
                 }
@@ -52,7 +53,7 @@ namespace grid_image_viewer
             decodeSize = Math.Clamp(decodeSize, 300, 1200);
             _gridDecodeSize = decodeSize;
 
-            var items = _window.GridItems.ToList();
+            var items = GridItems.ToList();
             var semaphore = new SemaphoreSlim(Math.Max(1, Environment.ProcessorCount / 2));
             var tasks = items.Select(item => Task.Run(async () =>
             {
@@ -293,7 +294,7 @@ namespace grid_image_viewer
         {
             if (_gridAnimationTimer != null) return;
             // No timer needed if there are no animated images
-            if (!_window.GridItems.Any(i => i.IsAnimated)) return;
+            if (!GridItems.Any(i => i.IsAnimated)) return;
 
             _gridAnimationTimer = new DispatcherTimer();
             _gridAnimationTimer.Interval = TimeSpan.FromMilliseconds(100);
@@ -314,7 +315,7 @@ namespace grid_image_viewer
         private void GridAnimationTimer_Tick(object? sender, object e)
         {
             if (!_window.IsGridMode) return;
-            foreach (var item in _window.GridItems)
+            foreach (var item in GridItems)
             {
                 if (item.IsAnimated)
                 {
@@ -361,7 +362,7 @@ namespace grid_image_viewer
         {
             if (_window.ImageGridView.ItemsPanelRoot is not ItemsWrapGrid wrapGrid) return;
 
-            int totalItems = _window.GridItems.Count;
+            int totalItems = GridItems.Count;
             if (totalItems == 0) return;
 
             double W = _window.ImageGridView.ActualWidth - _window.ImageGridView.Padding.Left - _window.ImageGridView.Padding.Right - 24;
@@ -369,7 +370,7 @@ namespace grid_image_viewer
             if (W <= 0 || H <= 0) return;
 
             // Calculate the mode of aspect ratios (using the most frequent ratio as the base)
-            var ratios = _window.GridItems.Select(x => x.AspectRatio).Where(r => r > 0).ToList();
+            var ratios = GridItems.Select(x => x.AspectRatio).Where(r => r > 0).ToList();
             double modeAspect = 1.0;
             if (ratios.Count > 0)
             {
@@ -434,6 +435,31 @@ namespace grid_image_viewer
                 wrapGrid.ItemWidth = finalCellW;
                 wrapGrid.ItemHeight = finalCellH;
             }
+        }
+
+        public ObservableCollection<ImageItem> GridItems { get; private set; } = new ObservableCollection<ImageItem>();
+
+        public void UpdateGridItems(bool forceFullUpdate)
+        {
+            if (!_window.IsGridMode && !forceFullUpdate)
+            {
+                if (GridItems.Count > 1) GridItems.Clear();
+                if (GridItems.Count == 0 && _window.ViewModel.CurrentIndex >= 0 && _window.ViewModel.CurrentIndex < _window.ViewModel.Playlist.Count)
+                {
+                    GridItems.Add(new ImageItem { FilePath = _window.ViewModel.Playlist[_window.ViewModel.CurrentIndex], IsLoading = true });
+                }
+                return;
+            }
+
+            if (GridItems.Count == _window.ViewModel.Playlist.Count && !forceFullUpdate) return;
+            if (_window.ViewModel.Playlist.Count > 1000 && !_window.IsGridMode) return;
+
+            var newList = new ObservableCollection<ImageItem>();
+            foreach (var f in _window.ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
+
+            GridItems = newList;
+            _window.ImageGridView.ItemsSource = GridItems;
+            RefreshThumbnails();
         }
 
         public void RefreshThumbnails()
