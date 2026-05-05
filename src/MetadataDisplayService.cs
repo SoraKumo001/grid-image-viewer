@@ -144,7 +144,7 @@ namespace grid_image_viewer
             var point = e.GetCurrentPoint(pagesGrid).Position;
             int splitCount = _settings.MangaSplitCount;
 
-            var pageGrids = _window.ViewerControl.PageGridsBuffer[_window.ViewerControl.CurrentBufferIndex];
+            var pageGrids = _window.ViewerControl.PageControlsBuffer[_window.ViewerControl.CurrentBufferIndex];
 
             int hoveredIndex = -1;
             for (int i = 0; i < splitCount; i++)

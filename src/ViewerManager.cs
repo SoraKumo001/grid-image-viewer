@@ -6,7 +6,6 @@ using Microsoft.Windows.ApplicationModel.Resources;
 using SkiaSharp.Views.Windows;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +28,7 @@ namespace grid_image_viewer
         };
 
         // These arrays will point to the CURRENT buffer's elements for general logic
-        private Grid[] _pageGrids;
+        private Microsoft.UI.Xaml.FrameworkElement[] _pageGrids;
         private Microsoft.UI.Xaml.Controls.Image[] _pageImages;
         private SkiaSharp.Views.Windows.SKXamlCanvas[] _pageCanvases;
         private Microsoft.UI.Xaml.Controls.ProgressRing[] _pageLoadingRings;
@@ -50,7 +49,7 @@ namespace grid_image_viewer
 
             // Initialize buffer references
             int idx = _window.ViewerControl.CurrentBufferIndex;
-            _pageGrids = _window.ViewerControl.PageGridsBuffer[idx];
+            _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
             _pageImages = _window.ViewerControl.PageImagesBuffer[idx];
             _pageCanvases = _window.ViewerControl.PageCanvasesBuffer[idx];
             _pageLoadingRings = _window.ViewerControl.PageLoadingRingsBuffer[idx];
@@ -65,7 +64,7 @@ namespace grid_image_viewer
         private void UpdateBufferReferences()
         {
             int idx = _window.ViewerControl.CurrentBufferIndex;
-            _pageGrids = _window.ViewerControl.PageGridsBuffer[idx];
+            _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
             _pageImages = _window.ViewerControl.PageImagesBuffer[idx];
             _pageCanvases = _window.ViewerControl.PageCanvasesBuffer[idx];
             _pageLoadingRings = _window.ViewerControl.PageLoadingRingsBuffer[idx];

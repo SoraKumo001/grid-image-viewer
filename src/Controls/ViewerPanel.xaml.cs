@@ -9,7 +9,7 @@ namespace grid_image_viewer.Controls
         public Grid[] PagesGrids { get; private set; }
 
         // Data per buffer
-        public Grid[][] PageGridsBuffer { get; private set; }
+        public ViewerPageControl[][] PageControlsBuffer { get; private set; }
         public Image[][] PageImagesBuffer { get; private set; }
         public SKXamlCanvas[][] PageCanvasesBuffer { get; private set; }
         public ProgressRing[][] PageLoadingRingsBuffer { get; private set; }
@@ -33,34 +33,34 @@ namespace grid_image_viewer.Controls
 
             PagesGrids = new Grid[] { PagesGrid1, PagesGrid2 };
 
-            PageGridsBuffer = new Grid[][]
+            PageControlsBuffer = new ViewerPageControl[][]
             {
-                new Grid[] { B1_PageGrid1, B1_PageGrid2, B1_PageGrid3, B1_PageGrid4 },
-                new Grid[] { B2_PageGrid1, B2_PageGrid2, B2_PageGrid3, B2_PageGrid4 }
+                new ViewerPageControl[] { B1_Page1, B1_Page2, B1_Page3, B1_Page4 },
+                new ViewerPageControl[] { B2_Page1, B2_Page2, B2_Page3, B2_Page4 }
             };
 
             PageImagesBuffer = new Image[][]
             {
-                new Image[] { B1_Image1, B1_Image2, B1_Image3, B1_Image4 },
-                new Image[] { B2_Image1, B2_Image2, B2_Image3, B2_Image4 }
+                new Image[] { B1_Page1.PageImage, B1_Page2.PageImage, B1_Page3.PageImage, B1_Page4.PageImage },
+                new Image[] { B2_Page1.PageImage, B2_Page2.PageImage, B2_Page3.PageImage, B2_Page4.PageImage }
             };
 
             PageCanvasesBuffer = new SKXamlCanvas[][]
             {
-                new SKXamlCanvas[] { B1_Canvas1, B1_Canvas2, B1_Canvas3, B1_Canvas4 },
-                new SKXamlCanvas[] { B2_Canvas1, B2_Canvas2, B2_Canvas3, B2_Canvas4 }
+                new SKXamlCanvas[] { B1_Page1.PageCanvas, B1_Page2.PageCanvas, B1_Page3.PageCanvas, B1_Page4.PageCanvas },
+                new SKXamlCanvas[] { B2_Page1.PageCanvas, B2_Page2.PageCanvas, B2_Page3.PageCanvas, B2_Page4.PageCanvas }
             };
 
             PageLoadingRingsBuffer = new ProgressRing[][]
             {
-                new ProgressRing[] { B1_LoadingRing1, B1_LoadingRing2, B1_LoadingRing3, B1_LoadingRing4 },
-                new ProgressRing[] { B2_LoadingRing1, B2_LoadingRing2, B2_LoadingRing3, B2_LoadingRing4 }
+                new ProgressRing[] { B1_Page1.LoadingRing, B1_Page2.LoadingRing, B1_Page3.LoadingRing, B1_Page4.LoadingRing },
+                new ProgressRing[] { B2_Page1.LoadingRing, B2_Page2.LoadingRing, B2_Page3.LoadingRing, B2_Page4.LoadingRing }
             };
 
             FocusBordersBuffer = new Border[][]
             {
-                new Border[] { B1_FocusBorder1, B1_FocusBorder2, B1_FocusBorder3, B1_FocusBorder4 },
-                new Border[] { B2_FocusBorder1, B2_FocusBorder2, B2_FocusBorder3, B2_FocusBorder4 }
+                new Border[] { B1_Page1.FocusBorder, B1_Page2.FocusBorder, B1_Page3.FocusBorder, B1_Page4.FocusBorder },
+                new Border[] { B2_Page1.FocusBorder, B2_Page2.FocusBorder, B2_Page3.FocusBorder, B2_Page4.FocusBorder }
             };
 
             ColsBuffer = new ColumnDefinition[][]

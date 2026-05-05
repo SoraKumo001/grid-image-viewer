@@ -265,7 +265,7 @@ namespace grid_image_viewer
                 var centerPoint = new Windows.Foundation.Point(cx, cy);
 
                 int targetIdx = 0;
-                var pageGrids = new Grid[] { _window.PageGrid1, _window.PageGrid2, _window.PageGrid3, _window.PageGrid4 };
+                var pageGrids = new Microsoft.UI.Xaml.FrameworkElement[] { _window.PageGrid1, _window.PageGrid2, _window.PageGrid3, _window.PageGrid4 };
                 for (int i = 0; i < 4; i++)
                 {
                     if (pageGrids[i].Visibility == Visibility.Visible)

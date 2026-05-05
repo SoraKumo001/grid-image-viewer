@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 using System.Collections.Generic;
 
 namespace grid_image_viewer
@@ -23,7 +22,7 @@ namespace grid_image_viewer
         {
             var cols = window.ViewerControl.ColsBuffer[bufferIdx];
             var rows = window.ViewerControl.RowsBuffer[bufferIdx];
-            var pageGrids = window.ViewerControl.PageGridsBuffer[bufferIdx];
+            var pageGrids = window.ViewerControl.PageControlsBuffer[bufferIdx];
             var images = window.ViewerControl.PageImagesBuffer[bufferIdx];
 
             bool uniformToFill = (window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill);

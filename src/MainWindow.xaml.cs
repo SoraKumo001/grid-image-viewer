@@ -35,15 +35,15 @@ namespace grid_image_viewer
         internal Grid PagesGrid => ViewerControlInternal.CurrentBuffer;
         internal GridView ImageGridView => GridControlInternal.GridView;
 
-        internal Grid PageGrid1 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal Grid PageGrid2 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal Grid PageGrid3 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal Grid PageGrid4 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
+        internal FrameworkElement PageGrid1 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
+        internal FrameworkElement PageGrid2 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
+        internal FrameworkElement PageGrid3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
+        internal FrameworkElement PageGrid4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
-        internal Grid CurrentContainer1 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
-        internal Grid CurrentContainer2 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
-        internal Grid CurrentContainer3 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
-        internal Grid CurrentContainer4 => ViewerControlInternal.PageGridsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
+        internal FrameworkElement CurrentContainer1 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][0];
+        internal FrameworkElement CurrentContainer2 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][1];
+        internal FrameworkElement CurrentContainer3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
+        internal FrameworkElement CurrentContainer4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
         internal Image Image1 => ViewerControlInternal.PageImagesBuffer[ViewerControlInternal.CurrentBufferIndex][0];
         internal Image Image2 => ViewerControlInternal.PageImagesBuffer[ViewerControlInternal.CurrentBufferIndex][1];
@@ -269,7 +269,7 @@ namespace grid_image_viewer
 
         internal void UpdatePageIndicator() => ViewModel.UpdatePageIndicator();
 
-        internal List<Grid> GetPageGrids() => new List<Grid> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
+        internal List<FrameworkElement> GetPageGrids() => new List<FrameworkElement> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
 
         public Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
         public Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
