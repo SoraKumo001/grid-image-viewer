@@ -147,6 +147,47 @@ namespace grid_image_viewer
 
             try { _window.AnimationService.StopAnimation(); } catch { }
             UpdateStretch();
+
+            int splitCount = _settings.MangaSplitCount;
+            int remaining = _window.Playlist.Count - _window.CurrentIndex;
+            int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+
+            // 表示内容が変わっていないかチェック（ちらつき防止）
+            var currentPaths = _pagesBuffer[_window.ViewerControl.CurrentBufferIndex]
+                .Take(effectiveSplitCount)
+                .Select(p => p.CurrentFilePath)
+                .ToList();
+
+            var nextPaths = new List<string>();
+            for (int i = 0; i < effectiveSplitCount; i++)
+            {
+                int indexToLoad = -1;
+                if (i == 0) indexToLoad = _window.CurrentIndex;
+                else
+                {
+                    if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
+                    {
+                        if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                            indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
+                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
+                            indexToLoad = _window.CurrentIndex + i;
+                    }
+                    else if (_window.CurrentIndex + i < _window.Playlist.Count)
+                    {
+                        indexToLoad = _window.CurrentIndex + i;
+                    }
+                }
+                if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
+                    nextPaths.Add(_window.Playlist[indexToLoad]);
+            }
+
+            if (currentPaths.SequenceEqual(nextPaths))
+            {
+                _window.UpdatePageIndicator();
+                _window.MetadataDisplayService.UpdateMetadataPanel();
+                return;
+            }
+
             _displayCts?.Cancel();
             _displayCts?.Dispose();
             _displayCts = new CancellationTokenSource();
@@ -154,10 +195,6 @@ namespace grid_image_viewer
 
             try
             {
-                int splitCount = _settings.MangaSplitCount;
-                int remaining = _window.Playlist.Count - _window.CurrentIndex;
-                int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
-
                 int currentIndex = _window.CurrentIndex;
                 var playlistSnapshot = _window.Playlist.ToList();
 

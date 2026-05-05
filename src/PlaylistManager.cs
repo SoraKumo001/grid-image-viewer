@@ -155,25 +155,38 @@ namespace grid_image_viewer
         {
             List<string> accumulatedFiles = new List<string>(_window.Playlist);
             var comparer = new NaturalStringComparer();
+            var lastUpdate = DateTime.Now;
 
             await FolderDiscoveryService.DiscoverFilesAsync(path, includeSiblings, includeSubfolders, (newFiles) =>
             {
-                _window.DispatcherQueue.TryEnqueue(() =>
+                // 修正: 重い並び替え処理（Distinct/OrderBy）をバックグラウンドスレッドで実行する
+                accumulatedFiles.AddRange(newFiles);
+                var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
+                accumulatedFiles = sorted;
+
+                // 修正: UI スレッドへの通知頻度を制限する（1秒以上経過した場合のみ更新）
+                if ((DateTime.Now - lastUpdate).TotalMilliseconds > 1000)
                 {
-                    if (token.IsCancellationRequested) return;
+                    lastUpdate = DateTime.Now;
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
 
-                    accumulatedFiles.AddRange(newFiles);
-                    var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
-                    accumulatedFiles = sorted;
-
-                    string currentPath = _window.CurrentImagePath;
-                    UpdatePlaylist(sorted, currentPath, true);
-                    WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
-                });
+                        string currentPath = _window.CurrentImagePath;
+                        UpdatePlaylist(sorted, currentPath, true);
+                        WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
+                    });
+                }
             }, token);
 
+            // 最終更新とステータス変更
             _window.DispatcherQueue.TryEnqueue(() =>
             {
+                if (!token.IsCancellationRequested)
+                {
+                    UpdatePlaylist(accumulatedFiles, _window.CurrentImagePath, true);
+                    WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
+                }
                 _window.IsSearchingFolder = false;
             });
         }

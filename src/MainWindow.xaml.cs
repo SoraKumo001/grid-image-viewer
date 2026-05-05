@@ -239,17 +239,23 @@ namespace grid_image_viewer
 
         internal void UpdateGridItems(bool forceFullUpdate)
         {
-            if (!IsGridMode && !forceFullUpdate && ViewModel.Playlist.Count > 500)
+            // グリッドモードでない場合は、パフォーマンスのためにリスト全体を構築しない
+            if (!IsGridMode && !forceFullUpdate)
             {
-                _gridItems.Clear();
-                if (ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count)
+                if (_gridItems.Count > 1) _gridItems.Clear();
+                if (_gridItems.Count == 0 && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count)
                 {
                     _gridItems.Add(new ImageItem { FilePath = ViewModel.Playlist[ViewModel.CurrentIndex], IsLoading = true });
                 }
                 return;
             }
 
-            if (_gridItems.Count == ViewModel.Playlist.Count) return;
+            // 既に数が一致しているなら更新不要
+            if (_gridItems.Count == ViewModel.Playlist.Count && !forceFullUpdate) return;
+
+            // 大量（1000枚以上）の画像をグリッドに追加する場合のブロック時間を最小化
+            // 本来的にはインクリメンタルな読み込みが望ましいが、まずはコレクションの再作成コストを抑える
+            if (ViewModel.Playlist.Count > 1000 && !IsGridMode) return;
 
             var newList = new ObservableCollection<ImageItem>();
             foreach (var f in ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
@@ -266,6 +272,8 @@ namespace grid_image_viewer
         internal List<Grid> GetPageGrids() => new List<Grid> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
 
         public Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
+            => (isSearching && !isSlideshowRunning) ? Visibility.Visible : Visibility.Collapsed;
 
         internal string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;
         internal void ShowNotification(string message) => ViewerManager.ShowNotification(message);

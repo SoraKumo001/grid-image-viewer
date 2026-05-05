@@ -213,7 +213,7 @@
         
         <!-- Folder Searching Overlay -->
             <Border x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Background="#88000000" 
-                    Visibility="{x:Bind BoolToVis(ViewModel.IsSearchingFolder), Mode=OneWay}" 
+                    Visibility="{x:Bind GetSearchingOverlayVisibility(ViewModel.IsSearchingFolder, ViewModel.IsSlideshowRunning), Mode=OneWay}" 
                     IsHitTestVisible="True">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                     <ProgressRing IsActive="True" Width="64" Height="64" Foreground="#00A2ED" />
