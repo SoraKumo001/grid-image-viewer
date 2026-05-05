@@ -158,66 +158,35 @@ namespace grid_image_viewer
                         return;
                     }
 
-                    codec?.Dispose();
-                    if (token.IsCancellationRequested) { skData.Dispose(); return; }
-
-                    using var skBitmap = SKBitmap.Decode(skData);
-                    skData.Dispose();
-
-                    ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
-                }
-                else
-                {
-                    SKBitmap? decoded = null;
-                    if (ArchiveManager.IsArchivePath(item.FilePath))
+                    if (codec != null)
                     {
-                        var (arc, ent) = ArchiveManager.SplitArchivePath(item.FilePath);
-                        byte[]? bytes = ArchiveManager.GetEntryBytes(arc, ent);
-                        if (bytes != null)
+                        float scale = Math.Min((float)decodeSize / codec.Info.Width, (float)decodeSize / codec.Info.Height);
+                        scale = Math.Min(scale, 1.0f);
+                        var supportedDim = codec.GetScaledDimensions(scale);
+                        var info = new SKImageInfo(supportedDim.Width, supportedDim.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+                        var skBitmap = new SKBitmap(info);
+                        if (codec.GetPixels(info, skBitmap.GetPixels()) == SKCodecResult.Success)
                         {
-                            using var skData = SKData.CreateCopy(bytes);
-                            using var codec = SKCodec.Create(skData);
-                            if (codec != null)
-                            {
-                                item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                            }
-                            decoded = SKBitmap.Decode(skData);
+                            codec.Dispose();
+                            skData.Dispose();
+                            using var skBitmapToDispose = skBitmap;
+                            ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
+                        }
+                        else
+                        {
+                            skBitmap.Dispose();
+                            codec.Dispose();
+                            skData.Dispose();
                         }
                     }
                     else
                     {
-                        for (int i = 0; i < 3; i++)
-                        {
-                            try
-                            {
-                                using (var fs = new FileStream(item.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                                {
-                                    using var codec = SKCodec.Create(fs);
-                                    if (codec != null)
-                                    {
-                                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                                    }
-                                    fs.Position = 0;
-                                    decoded = SKBitmap.Decode(fs);
-                                }
-                                break;
-                            }
-                            catch (IOException)
-                            {
-                                await Task.Delay(100, token);
-                            }
-                        }
+                        skData.Dispose();
                     }
-
-                    if (decoded == null)
-                    {
-                        var bmpBytes = ImageProcessor.DecodeToBmpBytes(item.FilePath);
-                        if (bmpBytes != null && !token.IsCancellationRequested)
-                        {
-                            using var skData = SKData.CreateCopy(bmpBytes);
-                            decoded = SKBitmap.Decode(skData);
-                        }
-                    }
+                }
+                else
+                {
+                    SKBitmap? decoded = ImageProcessor.LoadThumbnail(item.FilePath, decodeSize);
 
                     using var skBitmapToDispose = decoded;
                     if (token.IsCancellationRequested) return;

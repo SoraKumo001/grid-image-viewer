@@ -267,6 +267,45 @@ namespace grid_image_viewer
             catch { return null; }
         }
 
+        public static SKBitmap? LoadThumbnail(string path, int maxDim)
+        {
+            try
+            {
+                byte[]? bytes = ReadAllBytes(path);
+                if (bytes == null) return null;
+
+                using var data = SKData.CreateCopy(bytes);
+                using var codec = SKCodec.Create(data);
+                if (codec == null) return null;
+
+                float scale = Math.Min((float)maxDim / codec.Info.Width, (float)maxDim / codec.Info.Height);
+                scale = Math.Min(scale, 1.0f);
+
+                int w = Math.Max(1, (int)(codec.Info.Width * scale));
+                int h = Math.Max(1, (int)(codec.Info.Height * scale));
+
+                // Get the supported dimensions for the scale
+                var supportedDim = codec.GetScaledDimensions(scale);
+                var info = new SKImageInfo(supportedDim.Width, supportedDim.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+                var bitmap = new SKBitmap(info);
+                var result = codec.GetPixels(info, bitmap.GetPixels());
+                if (result == SKCodecResult.Success)
+                {
+                    if (supportedDim.Width != w || supportedDim.Height != h)
+                    {
+                        var resized = bitmap.Resize(new SKImageInfo(w, h), SKSamplingOptions.Default);
+                        bitmap.Dispose();
+                        return resized;
+                    }
+                    return bitmap;
+                }
+                bitmap.Dispose();
+            }
+            catch { }
+            return null;
+        }
+
         public static SKBitmap? GetFlippedBitmap(string sourcePath, bool horizontal, SKBitmap? currentBmp)
         {
             SKBitmap? bitmap = currentBmp;

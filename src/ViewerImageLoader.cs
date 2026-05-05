@@ -92,9 +92,10 @@ namespace grid_image_viewer
                     {
                         try
                         {
-                            using var stream = File.OpenRead(filePath);
+                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                            using var stream = await file.OpenReadAsync();
                             bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                            await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
+                            await bitmapImage.SetSourceAsync(stream);
                         }
                         catch (Exception)
                         {

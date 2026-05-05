@@ -54,7 +54,7 @@ namespace grid_image_viewer
             }
         }
 
-        public void UpdateMetadataPanel()
+        public async void UpdateMetadataPanel()
         {
             try
             {
@@ -87,7 +87,15 @@ namespace grid_image_viewer
                 }
 
                 string filePath = _window.Playlist[index];
-                var meta = MetadataService.GetMetadata(filePath);
+
+                // オフロードしてUIスレッドをブロックしないようにする
+                var meta = await System.Threading.Tasks.Task.Run(() => MetadataService.GetMetadata(filePath));
+
+                // 非同期処理中に表示状態やインデックスが変わった場合は破棄
+                if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
+                int currentIndexAtReturn = _window.CurrentIndex + _focusedPageIndex;
+                if (currentIndexAtReturn >= _window.Playlist.Count) currentIndexAtReturn = _window.CurrentIndex;
+                if (index != currentIndexAtReturn) return;
 
                 _window.TxtMetaFileName.Text = meta.FileName;
                 _window.TxtMetaDimensions.Text = meta.Dimensions;
