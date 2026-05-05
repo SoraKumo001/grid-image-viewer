@@ -22,23 +22,23 @@ jobs:
         dotnet-version: '10.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore src/grid-image-viewer.csproj
+      run: dotnet restore src/quick-image-viewer.csproj
 
     - name: Build app (Unpackaged)
-      run: dotnet build src/grid-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64
+      run: dotnet build src/quick-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64
 
     - name: Create ZIP archive
       run: |
         $buildDir = "src\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64"
         # Remove debug symbols to reduce ZIP size
         Get-ChildItem $buildDir -Filter "*.pdb" -Recurse | Remove-Item -Force
-        Compress-Archive -Path "$buildDir\*" -DestinationPath "grid-image-viewer-win-x64.zip"
+        Compress-Archive -Path "$buildDir\*" -DestinationPath "quick-image-viewer-win-x64.zip"
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: grid-image-viewer-win-x64.zip
+        files: quick-image-viewer-win-x64.zip
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
