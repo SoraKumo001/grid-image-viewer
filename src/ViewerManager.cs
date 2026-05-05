@@ -194,7 +194,9 @@ namespace grid_image_viewer
                 int currentIndex = _window.CurrentIndex;
                 var playlistSnapshot = _window.Playlist.ToList();
 
-                _cachedQuadLayout = await Task.Run(() => _layoutManager.GetEffectiveQuadLayout(currentIndex, playlistSnapshot));
+                double windowWidth = _window.Bounds.Width;
+                double windowHeight = _window.Bounds.Height;
+                _cachedQuadLayout = await Task.Run(() => _layoutManager.GetEffectiveQuadLayout(currentIndex, playlistSnapshot, windowWidth, windowHeight));
 
                 // Prepare the INACTIVE buffer
                 int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
@@ -311,6 +313,32 @@ namespace grid_image_viewer
                 }
             }
             catch { }
+        }
+
+        public void HandleWindowSizeChanged(double width, double height)
+        {
+            if (_window.Playlist.Count == 0 || _window.IsGridMode) return;
+            if (_settings.MangaSplitCount != 4 || _settings.QuadLayoutMode != 0) return;
+
+            // Run on background thread to avoid UI lag for metadata fetching (though sizes are usually cached)
+            _ = Task.Run(() =>
+            {
+                int newLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist.ToList(), width, height);
+                if (newLayout != _cachedQuadLayout)
+                {
+                    _cachedQuadLayout = newLayout;
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        int currentBufferIdx = _window.ViewerControl.CurrentBufferIndex;
+                        int splitCount = _settings.MangaSplitCount;
+                        int remaining = _window.Playlist.Count - _window.CurrentIndex;
+                        int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+
+                        _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, currentBufferIdx);
+                        for (int i = 0; i < 4; i++) InvalidatePage(i);
+                    });
+                }
+            });
         }
 
 

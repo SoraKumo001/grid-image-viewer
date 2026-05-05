@@ -25,6 +25,7 @@
         DragOver="RootGrid_DragOver"
         Drop="RootGrid_Drop"
         PointerWheelChanged="RootGrid_PointerWheelChanged"
+        SizeChanged="RootGrid_SizeChanged"
         Background="#1A1A1A"
         RequestedTheme="Dark">
         

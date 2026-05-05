@@ -153,13 +153,13 @@ namespace grid_image_viewer
             }
         }
 
-        public int GetEffectiveQuadLayout(int currentIndex, List<string> playlist)
+        public int GetEffectiveQuadLayout(int currentIndex, List<string> playlist, double windowWidth, double windowHeight)
         {
             int layout = _settings.QuadLayoutMode;
             if (_settings.MangaSplitCount != 4 || layout != 0) return layout;
 
-            int wideCount = 0;
-            int tallCount = 0;
+            double avgRatio = 0;
+            int validCount = 0;
             for (int i = 0; i < 4; i++)
             {
                 int indexToLoad = -1;
@@ -173,15 +173,25 @@ namespace grid_image_viewer
                         var (w, h) = ImageProcessor.GetImageSize(playlist[indexToLoad]);
                         if (w > 0 && h > 0)
                         {
-                            if ((double)w / h > 1.2) wideCount++;
-                            else tallCount++;
+                            avgRatio += (double)w / h;
+                            validCount++;
                         }
                     }
                     catch { }
                 }
             }
-            if (wideCount == 0 && tallCount == 0) return 1;
-            return wideCount >= tallCount ? 2 : 1;
+
+            double a = validCount > 0 ? avgRatio / validCount : 0.75; // Default to portrait ratio if no valid images
+            if (windowHeight <= 0) windowHeight = 1;
+            if (windowWidth <= 0) windowWidth = 1;
+
+            // Calculate scaled dimension for Horizontal (1)
+            double s1 = System.Math.Min(windowWidth / (4 * a), windowHeight);
+
+            // Calculate scaled dimension for 2x2 Grid (2)
+            double s2 = System.Math.Min(windowWidth / (2 * a), windowHeight / 2);
+
+            return s1 > s2 ? 1 : 2;
         }
     }
 }
