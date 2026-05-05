@@ -48,6 +48,15 @@
             <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" />
             <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" />
 
+            <StackPanel Spacing="4">
+                <TextBlock x:Uid="Settings_BoundaryAction" Text="Boundary Action (Start/End)" FontWeight="SemiBold" Foreground="White" />
+                <ComboBox x:Name="ComboBoundary" HorizontalAlignment="Stretch">
+                    <ComboBoxItem x:Uid="Settings_BoundaryAction_None" Content="Do Nothing" />
+                    <ComboBoxItem x:Uid="Settings_BoundaryAction_NextFolder" Content="Next Folder" />
+                    <ComboBoxItem x:Uid="Settings_BoundaryAction_Loop" Content="Loop" />
+                </ComboBox>
+            </StackPanel>
+
             <Grid ColumnSpacing="8" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

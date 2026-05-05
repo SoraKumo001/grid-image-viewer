@@ -369,8 +369,8 @@ namespace grid_image_viewer
 
             // Optimization: Limit the number of column possibilities to check.
             // For large collections, we won't be fitting them all on one screen anyway.
-            int maxColsToTest = Math.Min(totalItems, 100); 
-            
+            int maxColsToTest = Math.Min(totalItems, 100);
+
             for (int cols = 1; cols <= maxColsToTest; cols++)
             {
                 int rows = (int)Math.Ceiling((double)totalItems / cols);

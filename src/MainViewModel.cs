@@ -203,6 +203,13 @@ namespace grid_image_viewer
             }
         }
 
+        private int _boundaryAction = 1;
+        public int BoundaryAction
+        {
+            get => _boundaryAction;
+            set => SetProperty(ref _boundaryAction, value);
+        }
+
         public MainViewModel()
         {
             _playlist = new ObservableCollection<string>();

@@ -100,7 +100,7 @@ namespace grid_image_viewer
                 {
                     ViewerManager.HandleWindowSizeChanged(RootGrid.ActualWidth, RootGrid.ActualHeight);
                 }
-                
+
                 if (AppWindow != null && _settings != null && AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.Default)
                 {
                     _settings.UpdateNormalWindowState(AppWindow);
@@ -133,6 +133,7 @@ namespace grid_image_viewer
             // Sync ViewModel with Settings
             ViewModel.MangaSplitCount = _settings.MangaSplitCount;
             ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
+            ViewModel.BoundaryAction = _settings.BoundaryAction;
 
 
 

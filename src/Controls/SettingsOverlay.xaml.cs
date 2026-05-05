@@ -19,6 +19,7 @@ namespace grid_image_viewer.Controls
             ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
             CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
             CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
+            ComboBoundary.SelectedIndex = _settings.BoundaryAction;
 
             BtnClose.Focus(FocusState.Programmatic);
         }
@@ -39,6 +40,7 @@ namespace grid_image_viewer.Controls
                 ComboBackground.SelectedIndex = _settings.BackgroundColorMode;
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
                 CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
+                ComboBoundary.SelectedIndex = _settings.BoundaryAction;
                 _window.AppWindowManager.ApplyBackgroundSettings();
             }
         }
@@ -63,7 +65,10 @@ namespace grid_image_viewer.Controls
             _settings.BackgroundColorMode = ComboBackground.SelectedIndex;
             _settings.UseHighQualityScaling = CheckHighQuality.IsChecked ?? true;
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
+            _settings.BoundaryAction = ComboBoundary.SelectedIndex;
             _settings.SaveSettings();
+
+            _window.ViewModel.BoundaryAction = _settings.BoundaryAction;
 
             _window.AppWindowManager.ApplyBackgroundSettings();
             _window.UpdatePageIndicator();

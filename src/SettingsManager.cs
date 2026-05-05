@@ -96,6 +96,7 @@ namespace grid_image_viewer
         public int WindowY { get; set; } = -1;
         public bool IsMaximized { get; set; } = false;
 
+        public int BoundaryAction { get; set; } = 1; // 0: None, 1: NextFolder, 2: Loop
         public string LastImagePath { get; set; } = string.Empty;
         public string LastDirectoryPath { get; set; } = string.Empty;
         public System.Collections.Generic.List<BookmarkItem> Bookmarks { get; set; } = new System.Collections.Generic.List<BookmarkItem>();
@@ -146,6 +147,7 @@ namespace grid_image_viewer
         public int BackgroundColorMode { get => _data.BackgroundColorMode; set => _data.BackgroundColorMode = value; }
         public bool UseHighQualityScaling { get => _data.UseHighQualityScaling; set => _data.UseHighQualityScaling = value; }
         public bool ShowPageIndicator { get => _data.ShowPageIndicator; set => _data.ShowPageIndicator = value; }
+        public int BoundaryAction { get => _data.BoundaryAction; set => _data.BoundaryAction = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
 

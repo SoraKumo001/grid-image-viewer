@@ -33,6 +33,9 @@ namespace grid_image_viewer
         private CancellationTokenSource? _displayCts;
         private int _cachedQuadLayout = 1;
         private bool _lastIsSlideshowRunning = false;
+        private int _lastMangaSplitCount = -1;
+        private int _lastEffectiveSplitCount = -1;
+        private int _lastCachedQuadLayout = -1;
         private ResourceLoader _resourceLoader = new ResourceLoader();
 
         public ViewerManager(MainWindow window, SettingsManager settings)
@@ -150,6 +153,20 @@ namespace grid_image_viewer
             int remaining = _window.Playlist.Count - _window.CurrentIndex;
             int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
 
+            // Recalculate layout for quad mode if needed
+            if (splitCount == 4 && _settings.QuadLayoutMode == 0)
+            {
+                _cachedQuadLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist, _window.RootGrid.ActualWidth, _window.RootGrid.ActualHeight);
+            }
+            else if (splitCount == 4)
+            {
+                _cachedQuadLayout = _settings.QuadLayoutMode;
+            }
+            else
+            {
+                _cachedQuadLayout = 1; // Default to horizontal for others
+            }
+
             // 表示内容が変わっていないかチェック（ちらつき防止）
             var currentPaths = _pagesBuffer[_window.ViewerControl.CurrentBufferIndex]
                 .Take(effectiveSplitCount)
@@ -181,12 +198,16 @@ namespace grid_image_viewer
 
             bool isSlideshowRunning = _window.SlideshowManager.IsSlideshowRunning;
             bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
-            _lastIsSlideshowRunning = isSlideshowRunning;
+            bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || _cachedQuadLayout != _lastCachedQuadLayout;
 
-            if (!stateChanged && currentPaths.SequenceEqual(nextPaths))
+            _lastIsSlideshowRunning = isSlideshowRunning;
+            _lastMangaSplitCount = splitCount;
+            _lastEffectiveSplitCount = effectiveSplitCount;
+            _lastCachedQuadLayout = _cachedQuadLayout;
+
+            if (!stateChanged && !splitChanged && currentPaths.SequenceEqual(nextPaths))
             {
                 // Ensure current buffer is visible and inactive is hidden
-                // This handles the case where a slideshow stops during a crossfade
                 _window.ViewerControl.CurrentBuffer.Opacity = 1;
                 _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
                 _window.ViewerControl.InactiveBuffer.Opacity = 0;
@@ -212,75 +233,129 @@ namespace grid_image_viewer
                 double windowHeight = _window.Bounds.Height;
                 _cachedQuadLayout = await Task.Run(() => _layoutManager.GetEffectiveQuadLayout(currentIndex, playlistSnapshot, windowWidth, windowHeight));
 
-                // Prepare the INACTIVE buffer
-                int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
-                _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
-
-                var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
-                var targetPages = _pagesBuffer[targetBufferIdx];
-
-                var currentFiles = new List<string>();
-                var loadTasks = new List<Task>();
-                for (int i = 0; i < effectiveSplitCount; i++)
+                if (isSlideshowRunning)
                 {
-                    int indexToLoad = -1;
-                    if (i == 0) indexToLoad = _window.CurrentIndex;
-                    else
+                    // --- SLIDESHOW MODE: Double-Buffered with Crossfade ---
+                    int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
+                    _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
+
+                    var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
+                    var targetPages = _pagesBuffer[targetBufferIdx];
+
+                    var currentFiles = new List<string>();
+                    var loadTasks = new List<Task>();
+                    for (int i = 0; i < effectiveSplitCount; i++)
                     {
-                        if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowRandom)
+                        int indexToLoad = -1;
+                        if (i == 0) indexToLoad = _window.CurrentIndex;
+                        else
                         {
-                            if (_window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                            if (_settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
                                 indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
                             else if (_window.CurrentIndex + i < _window.Playlist.Count)
                                 indexToLoad = _window.CurrentIndex + i;
                         }
-                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
+
+                        if (indexToLoad != -1)
                         {
-                            indexToLoad = _window.CurrentIndex + i;
+                            currentFiles.Add(_window.Playlist[indexToLoad]);
+                            loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetControls[i], targetPages[i], i, token, _cacheManager));
                         }
                     }
 
-                    if (indexToLoad != -1)
+                    _window.ImageEditService.CleanupSessions(currentFiles);
+
+                    try { await Task.WhenAll(loadTasks); }
+                    catch (OperationCanceledException) { return; }
+
+                    for (int i = effectiveSplitCount; i < 4; i++)
                     {
-                        currentFiles.Add(_window.Playlist[indexToLoad]);
-                        loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(_window.Playlist[indexToLoad], targetControls[i], targetPages[i], i, token, _cacheManager));
+                        targetControls[i].PageImage.Source = null;
+                        targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                        targetControls[i].LoadingRing.IsActive = false;
+                        targetPages[i].Reset();
                     }
-                }
 
-                _window.ImageEditService.CleanupSessions(currentFiles);
+                    if (token.IsCancellationRequested) return;
 
-                try { await Task.WhenAll(loadTasks); }
-                catch (OperationCanceledException) { return; }
+                    var prevBuffer = _window.ViewerControl.CurrentBuffer;
+                    var nextBuffer = _window.ViewerControl.InactiveBuffer;
 
-                for (int i = effectiveSplitCount; i < 4; i++)
-                {
-                    targetControls[i].PageImage.Source = null;
-                    targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
-                    targetControls[i].LoadingRing.IsActive = false;
-                    targetPages[i].Reset();
-                }
-
-                if (token.IsCancellationRequested) return;
-
-                // Trigger Crossfade between buffers
-                var prevBuffer = _window.ViewerControl.CurrentBuffer;
-                var nextBuffer = _window.ViewerControl.InactiveBuffer;
-
-                if (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowCrossfade)
-                {
-                    _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
-                    UpdateBufferReferences();
-                    _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
+                    if (_settings.SlideshowCrossfade)
+                    {
+                        _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
+                        UpdateBufferReferences();
+                        _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
+                    }
+                    else
+                    {
+                        nextBuffer.Opacity = 1;
+                        nextBuffer.Visibility = Visibility.Visible;
+                        prevBuffer.Opacity = 0;
+                        prevBuffer.Visibility = Visibility.Collapsed;
+                        _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
+                        UpdateBufferReferences();
+                        _window.MetadataDisplayService.UpdateMetadataPanel();
+                    }
                 }
                 else
                 {
-                    nextBuffer.Opacity = 1;
-                    nextBuffer.Visibility = Visibility.Visible;
-                    prevBuffer.Opacity = 0;
-                    prevBuffer.Visibility = Visibility.Collapsed;
-                    _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
+                    // --- NORMAL MODE: Direct Update for individual items ---
+                    int targetBufferIdx = _window.ViewerControl.CurrentBufferIndex;
+                    _layoutManager.UpdateLayoutGrid(_window, splitCount, effectiveSplitCount, _cachedQuadLayout, targetBufferIdx);
+
+                    var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
+                    var targetPages = _pagesBuffer[targetBufferIdx];
+
+                    // Ensure current buffer is fully visible and inactive is hidden
+                    _window.ViewerControl.CurrentBuffer.Opacity = 1;
+                    _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
+                    _window.ViewerControl.InactiveBuffer.Opacity = 0;
+                    _window.ViewerControl.InactiveBuffer.Visibility = Visibility.Collapsed;
+
+                    var currentFiles = new List<string>();
+                    var loadTasks = new List<Task>();
+                    for (int i = 0; i < effectiveSplitCount; i++)
+                    {
+                        int indexToLoad = -1;
+                        if (i == 0) indexToLoad = _window.CurrentIndex;
+                        else if (_window.CurrentIndex + i < _window.Playlist.Count)
+                            indexToLoad = _window.CurrentIndex + i;
+
+                        if (indexToLoad != -1)
+                        {
+                            string path = _window.Playlist[indexToLoad];
+                            currentFiles.Add(path);
+
+                            // Only load if path changed
+                            if (targetPages[i].CurrentFilePath != path)
+                            {
+                                loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(path, targetControls[i], targetPages[i], i, token, _cacheManager));
+                            }
+                        }
+                    }
+
+                    for (int i = effectiveSplitCount; i < 4; i++)
+                    {
+                        targetControls[i].PageImage.Source = null;
+                        targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                        targetControls[i].LoadingRing.IsActive = false;
+                        targetPages[i].Reset();
+                    }
+
+                    _window.ImageEditService.CleanupSessions(currentFiles);
                     UpdateBufferReferences();
                     _window.MetadataDisplayService.UpdateMetadataPanel();
+
+                    // Do NOT await WhenAll here to allow individual updates.
+                    // However, we should await the primary image (index 0) to ensure at least one image is ready if possible,
+                    // or just let them all load independently for maximum responsiveness.
+                    // User requested "individual updates", so let's fire and forget.
+                    _ = Task.Run(async () =>
+                    {
+                        try { await Task.WhenAll(loadTasks); } catch { }
+                        _window.DispatcherQueue.TryEnqueue(() => _window.AnimationService.StartAnimation());
+                    });
                 }
 
                 _ = _cacheManager.PreloadAroundAsync(_window.CurrentIndex, _window.Playlist.ToList(), _settings.MangaSplitCount);

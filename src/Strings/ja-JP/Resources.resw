@@ -449,4 +449,16 @@
   <data name="Settings_Import.Content" xml:space="preserve">
     <value>設定のインポート</value>
   </data>
+  <data name="Settings_BoundaryAction.Text" xml:space="preserve">
+    <value>端に達した時の動作</value>
+  </data>
+  <data name="Settings_BoundaryAction_None.Content" xml:space="preserve">
+    <value>移動しない</value>
+  </data>
+  <data name="Settings_BoundaryAction_NextFolder.Content" xml:space="preserve">
+    <value>次のフォルダに移動する</value>
+  </data>
+  <data name="Settings_BoundaryAction_Loop.Content" xml:space="preserve">
+    <value>現在のフォルダでループする</value>
+  </data>
 </root>

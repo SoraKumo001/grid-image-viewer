@@ -31,14 +31,34 @@ namespace grid_image_viewer
 
             if (newIndex < 0)
             {
-                // Navigate to previous folder if at start
-                NavigateFolder(-1);
+                int action = _settings.BoundaryAction;
+                if (action == 1) // NextFolder (Previous)
+                {
+                    NavigateFolder(-1);
+                }
+                else if (action == 2) // Loop
+                {
+                    _window.CurrentIndex = _window.Playlist.Count - 1;
+                    _window.ViewerManager.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
+                    _ = _window.UpdateDisplayAsync();
+                }
+                // action == 0 (None) -> do nothing
                 return;
             }
             if (newIndex >= _window.Playlist.Count)
             {
-                // Navigate to next folder if at end
-                NavigateFolder(1);
+                int action = _settings.BoundaryAction;
+                if (action == 1) // NextFolder
+                {
+                    NavigateFolder(1);
+                }
+                else if (action == 2) // Loop
+                {
+                    _window.CurrentIndex = 0;
+                    _window.ViewerManager.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
+                    _ = _window.UpdateDisplayAsync();
+                }
+                // action == 0 (None) -> do nothing
                 return;
             }
 

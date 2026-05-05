@@ -449,4 +449,16 @@
   <data name="Settings_Import.Content" xml:space="preserve">
     <value>Import Settings</value>
   </data>
+  <data name="Settings_BoundaryAction.Text" xml:space="preserve">
+    <value>Boundary Action (Start/End)</value>
+  </data>
+  <data name="Settings_BoundaryAction_None.Content" xml:space="preserve">
+    <value>Do Nothing</value>
+  </data>
+  <data name="Settings_BoundaryAction_NextFolder.Content" xml:space="preserve">
+    <value>Navigate to Next Folder</value>
+  </data>
+  <data name="Settings_BoundaryAction_Loop.Content" xml:space="preserve">
+    <value>Loop within Current Folder</value>
+  </data>
 </root>
