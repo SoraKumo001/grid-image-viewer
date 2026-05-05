@@ -6,12 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace grid_image_viewer
 {
     public sealed partial class MainWindow : Window, IMainView, IRecipient<FullscreenMessage>, IRecipient<PlaylistUpdatedMessage>, IRecipient<SlideshowNextRequestedMessage>
     {
-        public IViewerStateService State { get; } = new ViewerStateService();
+        public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
         {
             get
@@ -206,29 +207,33 @@ namespace grid_image_viewer
         public MainWindow()
         {
             this.InitializeComponent();
-            ViewModel = new MainViewModel(State);
+            var services = ((App)Application.Current).Services;
+            ((App)Application.Current).SetMainView(this);
+
+            State = services.GetRequiredService<IViewerStateService>();
+            _settings = services.GetRequiredService<ISettingsManager>();
+            ViewModel = services.GetRequiredService<MainViewModel>();
             RootGrid.DataContext = ViewModel;
 
-            _settings = new SettingsManager();
-            SlideshowService = new SlideshowService(State, _settings);
-            SlideshowManager = new SlideshowManager(this, _settings, SlideshowService, State);
+            SlideshowService = services.GetRequiredService<ISlideshowService>();
+            SlideshowManager = services.GetRequiredService<ISlideshowManager>();
 
-            ViewerCacheManager = new ViewerCacheManager(State, _settings);
-            ViewerManager = new ViewerManager(this, _settings);
-            GridManager = new GridManager(this, _settings);
-            AppWindowManager = new AppWindowManager(this, _settings);
-            EditorManager = new EditorManager(this, _settings);
-            BookmarkManager = new BookmarkManager(this, _settings);
-            PlaylistManager = new PlaylistManager(this, _settings);
-            this.PrintService = new grid_image_viewer.PrintService(this);
+            ViewerCacheManager = services.GetRequiredService<IViewerCacheManager>();
+            ViewerManager = services.GetRequiredService<IViewerManager>();
+            GridManager = services.GetRequiredService<IGridManager>();
+            AppWindowManager = services.GetRequiredService<IAppWindowManager>();
+            EditorManager = services.GetRequiredService<IEditorManager>();
+            BookmarkManager = services.GetRequiredService<IBookmarkManager>();
+            PlaylistManager = services.GetRequiredService<IPlaylistManager>();
+            this.PrintService = services.GetRequiredService<IPrintService>();
 
-            this.AnimationService = new grid_image_viewer.AnimationService(this, _settings);
-            this.DialogService = new grid_image_viewer.DialogService(this);
-            this.NotificationService = new grid_image_viewer.NotificationService(this);
-            this.MetadataDisplayService = new grid_image_viewer.MetadataDisplayService(this, _settings);
-            ImageEditService = new ImageEditService(this);
+            this.AnimationService = services.GetRequiredService<IAnimationService>();
+            this.DialogService = services.GetRequiredService<IDialogService>();
+            this.NotificationService = services.GetRequiredService<INotificationService>();
+            this.MetadataDisplayService = services.GetRequiredService<IMetadataDisplayService>();
+            ImageEditService = services.GetRequiredService<IImageEditService>();
 
-            InputHandler = new InputHandler(this, _settings);
+            InputHandler = services.GetRequiredService<IInputHandler>();
 
             _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
             _resizeTimer.Tick += (s, e) => { _resizeTimer.Stop(); _ = UpdateDisplayAsync(); };
