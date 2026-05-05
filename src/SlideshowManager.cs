@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace grid_image_viewer
@@ -15,6 +16,8 @@ namespace grid_image_viewer
         public bool IsSlideshowRunning { get => ViewModel.IsSlideshowRunning; private set => ViewModel.IsSlideshowRunning = value; }
         public int[] SlideshowRandomIndices { get; private set; } = new int[4] { -1, -1, -1, -1 };
         private Random _random = new Random();
+        private List<int> _remainingIndices = new List<int>();
+        private int _lastPlaylistCount = 0;
         private ResourceLoader _resourceLoader = new ResourceLoader();
         private bool _wasExpanded = false;
         private MainViewModel ViewModel => _mainWindow.ViewModel;
@@ -145,6 +148,17 @@ namespace grid_image_viewer
             _slideshowTimer.Start();
             IsSlideshowRunning = true;
 
+            // Initialize random indices
+            _remainingIndices.Clear();
+            _lastPlaylistCount = _mainWindow.Playlist.Count;
+            if (_lastPlaylistCount > 0)
+            {
+                _remainingIndices.AddRange(Enumerable.Range(0, _lastPlaylistCount));
+                // Remove current index so we don't immediately show it again if we shuffle
+                _remainingIndices.Remove(_mainWindow.CurrentIndex);
+                ShuffleRemainingIndices();
+            }
+
             // Immediately show the first image or jump if random
             if (_settings.SlideshowRandom && _mainWindow.Playlist.Count > 1)
             {
@@ -222,35 +236,55 @@ namespace grid_image_viewer
 
             if (_settings.SlideshowRandom)
             {
-                int nextIdx;
-                int splits = _settings.MangaSplitCount;
-                if (playlist.Count <= 1)
+                // リストが更新（増加）されたかチェック
+                if (playlist.Count > _lastPlaylistCount)
                 {
-                    nextIdx = 0;
-                    for (int i = 0; i < 4; i++) SlideshowRandomIndices[i] = -1;
-                }
-                else
-                {
-                    do { nextIdx = _random.Next(playlist.Count); } while (nextIdx == currentIndex);
-                    SlideshowRandomIndices[0] = nextIdx;
-
-                    if (splits > 1 && playlist.Count >= splits)
+                    // 追加された分を未再生リストに加える
+                    for (int i = _lastPlaylistCount; i < playlist.Count; i++)
                     {
-                        for (int i = 1; i < splits; i++)
-                        {
-                            int r;
-                            do
-                            {
-                                r = _random.Next(playlist.Count);
-                            } while (r == nextIdx || SlideshowRandomIndices.Take(i).Contains(r) || r == currentIndex);
-                            SlideshowRandomIndices[i] = r;
-                        }
+                        _remainingIndices.Add(i);
+                    }
+                    _lastPlaylistCount = playlist.Count;
+                    // 新しく追加されたものも含めて再シャッフル（オプション）
+                    ShuffleRemainingIndices();
+                }
+
+                if (_remainingIndices.Count == 0)
+                {
+                    // 全て表示し終わったらリセット
+                    if (_settings.SlideshowLoop || _lastPlaylistCount <= 1)
+                    {
+                        _remainingIndices.AddRange(Enumerable.Range(0, playlist.Count));
+                        _remainingIndices.Remove(currentIndex); // 今の画像は除外
+                        ShuffleRemainingIndices();
                     }
                     else
                     {
-                        for (int i = 1; i < 4; i++) SlideshowRandomIndices[i] = -1;
+                        StopSlideshow();
+                        return;
                     }
                 }
+
+                int nextIdx = _remainingIndices[0];
+                _remainingIndices.RemoveAt(0);
+
+                int splits = _settings.MangaSplitCount;
+                SlideshowRandomIndices[0] = nextIdx;
+
+                if (splits > 1 && _remainingIndices.Count >= splits - 1)
+                {
+                    // 分割表示の場合、残りのキューから必要な分だけ取る
+                    for (int i = 1; i < splits; i++)
+                    {
+                        SlideshowRandomIndices[i] = _remainingIndices[0];
+                        _remainingIndices.RemoveAt(0);
+                    }
+                }
+                else
+                {
+                    for (int i = 1; i < 4; i++) SlideshowRandomIndices[i] = -1;
+                }
+
                 _mainWindow.CurrentIndex = nextIdx;
                 _ = _mainWindow.UpdateDisplayAsync();
             }
@@ -317,6 +351,19 @@ namespace grid_image_viewer
                 }
             }
         }
+        private void ShuffleRemainingIndices()
+        {
+            int n = _remainingIndices.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = _random.Next(n + 1);
+                int value = _remainingIndices[k];
+                _remainingIndices[k] = _remainingIndices[n];
+                _remainingIndices[n] = value;
+            }
+        }
+
         public void Dispose()
         {
             _slideshowTimer?.Stop();

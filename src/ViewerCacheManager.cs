@@ -49,6 +49,72 @@ namespace grid_image_viewer
             }
         }
 
+        public async Task PreloadPathsAsync(List<string> paths, CancellationToken token)
+        {
+            if (paths == null || paths.Count == 0) return;
+
+            foreach (var path in paths)
+            {
+                if (token.IsCancellationRequested) break;
+                if (string.IsNullOrEmpty(path)) continue;
+
+                // 1. バイナリキャッシュを確認・作成
+                bool needsBinary = false;
+                lock (_imageCache) { if (!_imageCache.ContainsKey(path)) needsBinary = true; }
+
+                if (needsBinary)
+                {
+                    try
+                    {
+                        var bytes = await File.ReadAllBytesAsync(path, token);
+                        lock (_imageCache)
+                        {
+                            if (_imageCache.Count >= MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
+                            _imageCache[path] = bytes;
+                        }
+                    }
+                    catch { continue; }
+                }
+
+                // 2. ソフトウェアビットマップキャッシュを確認・作成
+                bool needsBitmap = false;
+                lock (_softwareBitmapCache) { if (!_softwareBitmapCache.ContainsKey(path)) needsBitmap = true; }
+
+                if (needsBitmap)
+                {
+                    // バックグラウンドでデコード
+                    _ = Task.Run(async () =>
+                    {
+                        if (token.IsCancellationRequested) return;
+                        try
+                        {
+                            byte[]? bytes = GetCachedBytes(path);
+                            if (bytes == null) return;
+
+                            using var ms = new MemoryStream(bytes);
+                            using var stream = ms.AsRandomAccessStream();
+                            var decoder = await BitmapDecoder.CreateAsync(stream);
+                            var softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+                                BitmapPixelFormat.Bgra8,
+                                BitmapAlphaMode.Premultiplied);
+
+                            lock (_softwareBitmapCache)
+                            {
+                                if (_softwareBitmapCache.Count >= MAX_BITMAP_CACHE_SIZE)
+                                {
+                                    var firstKey = _softwareBitmapCache.Keys.First();
+                                    _softwareBitmapCache[firstKey].Dispose();
+                                    _softwareBitmapCache.Remove(firstKey);
+                                }
+                                _softwareBitmapCache[path] = softwareBitmap;
+                            }
+                        }
+                        catch { }
+                    }, token);
+                }
+            }
+        }
+
         public async Task PreloadAroundAsync(int currentIndex, List<string> playlist, int splitCount)
         {
             if (playlist.Count == 0) return;
@@ -58,6 +124,8 @@ namespace grid_image_viewer
             _preloadCts = new CancellationTokenSource();
             var token = _preloadCts.Token;
 
+            // スライドショー実行中でランダムモードの場合は、SlideshowManager側でPreloadPathsAsyncを呼ぶため
+            // ここでは基本的な前後のみを行う（またはスキップする判断も可能だが、安全のため継続）
             var indicesToPreload = new List<int>();
             // 優先度の高い順（次の画像 -> そのさらに次 -> 前の画像）
             for (int i = 0; i < 2 * splitCount; i++)
