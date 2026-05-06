@@ -1,8 +1,10 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
+using quick_image_viewer.ViewModels;
 using quick_image_viewer.Views.Controls;
 using System;
 using System.IO;
@@ -45,6 +47,7 @@ namespace quick_image_viewer.Services
 
             _window.DispatcherQueue.TryEnqueue(() =>
             {
+                if (token.IsCancellationRequested) return;
                 pageControl.ResetPlayback();
                 if (isVideo)
                 {
@@ -59,10 +62,19 @@ namespace quick_image_viewer.Services
                         // 同期的にセットできないため、UIスレッドで非同期にセット
                         _window.DispatcherQueue.TryEnqueue(async () =>
                         {
-                            await softwareSource.SetBitmapAsync(cachedThumb);
-                            pageControl.PageImage.Source = softwareSource;
-                            pageControl.PageImage.Visibility = Visibility.Visible;
-                            pageControl.PageImage.Opacity = 0.5; // 動画が重なるので少し薄くしておく
+                            try
+                            {
+                                if (token.IsCancellationRequested) return;
+                                await softwareSource.SetBitmapAsync(cachedThumb);
+                                if (token.IsCancellationRequested) return;
+                                pageControl.PageImage.Source = softwareSource;
+                                pageControl.PageImage.Visibility = Visibility.Visible;
+                                pageControl.PageImage.Opacity = 0.5; // 動画が重なるので少し薄くしておく
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Thumbnail set error: {ex.Message}");
+                            }
                         });
                     }
                     else
@@ -159,9 +171,12 @@ namespace quick_image_viewer.Services
                                             System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Opened Successfully: {filePath}");
                                             pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
+                                                if (token.IsCancellationRequested) return;
                                                 pageControl.LoadingRing.IsActive = false;
                                                 pageControl.PageImage.Visibility = Visibility.Collapsed;
                                                 pageControl.PageImage.Opacity = 1.0;
+                                                // 動画読み込み完了後にフォーカスをRootGridに戻す
+                                                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                                             });
                                         }
                                         mp.MediaOpened += OnMediaOpened;
@@ -173,7 +188,9 @@ namespace quick_image_viewer.Services
                                             System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Failed! Error: {args.Error}, Message: {args.ErrorMessage}");
                                             pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
+                                                if (token.IsCancellationRequested) return;
                                                 pageControl.LoadingRing.IsActive = false;
+                                                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                                             });
                                         }
                                         mp.MediaFailed += OnMediaFailed;
@@ -190,6 +207,7 @@ namespace quick_image_viewer.Services
                                 System.Diagnostics.Debug.WriteLine("[VideoLoader] Source creation failed (NULL)");
                                 pageControl.DispatcherQueue.TryEnqueue(() =>
                                 {
+                                    if (token.IsCancellationRequested) return;
                                     pageControl.LoadingRing.IsActive = false;
                                 });
                             }
@@ -199,6 +217,7 @@ namespace quick_image_viewer.Services
                             System.Diagnostics.Debug.WriteLine($"[VideoLoader] Background Exception: {ex.Message}");
                             pageControl.DispatcherQueue.TryEnqueue(() =>
                             {
+                                if (token.IsCancellationRequested) return;
                                 pageControl.LoadingRing.IsActive = false;
                             });
                         }
@@ -240,7 +259,15 @@ namespace quick_image_viewer.Services
                     if (cachedSoftwareBitmap != null)
                     {
                         var softwareSource = new SoftwareBitmapSource();
-                        await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
+                        try
+                        {
+                            await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] SoftwareBitmap set error: {ex.Message}");
+                            if (token.IsCancellationRequested) return;
+                        }
 
                         if (token.IsCancellationRequested) return;
 
@@ -298,7 +325,11 @@ namespace quick_image_viewer.Services
                 // 動画の場合は MediaOpened イベントで終了制御するため、ここでは画像のみ終了させる
                 if (!isVideo)
                 {
-                    _window.DispatcherQueue.TryEnqueue(() => { pageControl.LoadingRing.IsActive = false; });
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+                        pageControl.LoadingRing.IsActive = false;
+                    });
                 }
             }
         }

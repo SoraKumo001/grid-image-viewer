@@ -26,7 +26,8 @@ namespace quick_image_viewer
         IRecipient<TogglePageIndicatorMessage>,
         IRecipient<ClearImageSourceMessage>,
         IRecipient<RefreshDisplayMessage>,
-        IRecipient<BookmarksChangedMessage>
+        IRecipient<BookmarksChangedMessage>,
+        IRecipient<FocusRequestMessage>
     {
         public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
@@ -242,6 +243,7 @@ namespace quick_image_viewer
             GridControlInternal.GridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
             RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
             RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
+            RootGrid.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(RootGrid_KeyDown), true);
 
             WeakReferenceMessenger.Default.Register<FullscreenMessage>(this);
             WeakReferenceMessenger.Default.Register<PlaylistUpdatedMessage>(this);
@@ -255,6 +257,7 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<ClearImageSourceMessage>(this);
             WeakReferenceMessenger.Default.Register<RefreshDisplayMessage>(this);
             WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this);
+            WeakReferenceMessenger.Default.Register<FocusRequestMessage>(this);
         }
 
 
@@ -416,6 +419,14 @@ namespace quick_image_viewer
         public void Receive(BookmarksChangedMessage message)
         {
             UpdateBookmarkMenu();
+        }
+
+        public void Receive(FocusRequestMessage message)
+        {
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                RootGrid.Focus(FocusState.Programmatic);
+            });
         }
 
         private void UpdateBookmarkMenu()

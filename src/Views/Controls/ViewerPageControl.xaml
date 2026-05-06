@@ -6,16 +6,17 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:skia="using:SkiaSharp.Views.Windows"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    IsTabStop="False">
 
-    <Grid x:Name="InternalRootGrid" Background="Transparent" PointerExited="InternalRootGrid_PointerExited">
+    <Grid x:Name="InternalRootGrid" Background="Transparent" PointerExited="InternalRootGrid_PointerExited" IsTabStop="False">
         <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
         <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
         
         <!-- 軽量表示用のホスト -->
-        <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsTabStop="False" />
         
-        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="False" />
+        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="False" IsTabStop="False" />
         
         <!-- 独自再生コントロール -->
         <Border x:Name="CustomTransportPanel" 

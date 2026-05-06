@@ -1,6 +1,8 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using quick_image_viewer.ViewModels;
 using Windows.Media.Playback;
 namespace quick_image_viewer.Views.Controls
 {
@@ -26,7 +28,22 @@ namespace quick_image_viewer.Views.Controls
             _hideTimer.Tick += (s, e) =>
             {
                 _hideTimer.Stop();
+                bool hadFocus = false;
+                try
+                {
+                    var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot);
+                    if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
+                    {
+                        hadFocus = true;
+                    }
+                }
+                catch { }
+
                 CustomTransportPanel.Visibility = Visibility.Collapsed;
+                if (hadFocus)
+                {
+                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                }
             };
 
             _sliderUpdateTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(100) };
@@ -153,7 +170,23 @@ namespace quick_image_viewer.Views.Controls
         {
             // マウスがグリッド外に出たら即座に非表示
             _hideTimer.Stop();
+
+            bool hadFocus = false;
+            try
+            {
+                var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot);
+                if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
+                {
+                    hadFocus = true;
+                }
+            }
+            catch { }
+
             CustomTransportPanel.Visibility = Visibility.Collapsed;
+            if (hadFocus)
+            {
+                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+            }
         }
 
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
@@ -213,9 +246,39 @@ namespace quick_image_viewer.Views.Controls
             PageImage.Opacity = 1.0;
             VideoVisualHost.Visibility = Visibility.Collapsed;
             InternalMediaPlayer.Visibility = Visibility.Collapsed;
+
+            bool hadFocus = false;
+            try
+            {
+                var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot);
+                if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
+                {
+                    hadFocus = true;
+                }
+            }
+            catch { }
+
             CustomTransportPanel.Visibility = Visibility.Collapsed;
+            if (hadFocus)
+            {
+                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+            }
+
             _sliderUpdateTimer.Stop();
             _hideTimer.Stop();
+        }
+
+        private bool IsChildOf(DependencyObject child, DependencyObject parent)
+        {
+            if (child == null || parent == null) return false;
+            if (child == parent) return true;
+            var current = child;
+            while (current != null)
+            {
+                if (current == parent) return true;
+                current = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(current);
+            }
+            return false;
         }
     }
 }

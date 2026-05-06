@@ -6,7 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:skia="using:SkiaSharp.Views.Windows"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    IsTabStop="False">
 
     <ScrollViewer
         x:Name="ImageScrollViewer"
@@ -14,14 +15,16 @@
         VerticalScrollBarVisibility="Hidden"
         ZoomMode="Enabled"
         MinZoomFactor="0.1"
-        MaxZoomFactor="10.0">
+        MaxZoomFactor="10.0"
+        IsTabStop="False">
         <Grid x:Name="RootContainer"
               Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
               Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
-              Background="Transparent">
+              Background="Transparent"
+              IsTabStop="False">
 
             <!-- Buffer 1 -->
-            <Grid x:Name="PagesGrid1" Opacity="1">
+            <Grid x:Name="PagesGrid1" Opacity="1" IsTabStop="False">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="B1_Col0" />
                     <ColumnDefinition Width="*" x:Name="B1_Col1" />
@@ -40,7 +43,7 @@
             </Grid>
 
             <!-- Buffer 2 -->
-            <Grid x:Name="PagesGrid2" Opacity="0">
+            <Grid x:Name="PagesGrid2" Opacity="0" IsTabStop="False">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="B2_Col0" />
                     <ColumnDefinition Width="*" x:Name="B2_Col1" />

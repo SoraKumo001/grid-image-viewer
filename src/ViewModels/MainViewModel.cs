@@ -380,4 +380,5 @@ namespace quick_image_viewer.ViewModels
     public record UpdateMenuStatesMessage(string Path, bool CanUndo, bool CanRedo, bool HasValidPath, bool IsImageEditable);
     public record ClearImageSourceMessage(string Path);
     public record RefreshDisplayMessage();
+    public record FocusRequestMessage();
 }

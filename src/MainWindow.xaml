@@ -23,7 +23,6 @@
         x:Name="RootGrid" x:FieldModifier="internal"
         AllowDrop="True"
         IsTabStop="True"
-        KeyDown="RootGrid_KeyDown"
         DoubleTapped="RootGrid_DoubleTapped"
         DragOver="RootGrid_DragOver"
         Drop="RootGrid_Drop"

@@ -146,7 +146,7 @@ namespace quick_image_viewer.Managers
                 _window.ImageScrollViewer.Visibility = Visibility.Visible;
                 _window.ImageGridView.Visibility = Visibility.Collapsed;
                 _window.GridManager.StopGridAnimation();
-                _window.RootGrid.Focus(FocusState.Programmatic);
+                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
             }
 
             try { _window.AnimationService.StopAnimation(); } catch { }
@@ -396,6 +396,7 @@ namespace quick_image_viewer.Managers
 
             _window.AnimationService.StartAnimation();
             _window.UpdatePageIndicator();
+            WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
         }
 
 
