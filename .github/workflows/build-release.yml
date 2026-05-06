@@ -24,20 +24,22 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore src/quick-image-viewer.csproj
 
-    - name: Publish app (Unpackaged)
-      run: dotnet publish src/quick-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64 -o ./publish
+    - name: Build app (Unpackaged)
+      run: dotnet build src/quick-image-viewer.csproj -c Release -r win-x64 --self-contained true -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableMsixTooling=false -p:Platform=x64
 
     - name: Create ZIP archive
       run: |
+        $buildDir = "src\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64"
         # Remove debug symbols to reduce ZIP size
-        Get-ChildItem ./publish -Filter "*.pdb" -Recurse | Remove-Item -Force
-        Compress-Archive -Path "./publish/*" -DestinationPath "quick-image-viewer-win-x64.zip"
+        Get-ChildItem $buildDir -Filter "*.pdb" -Recurse | Remove-Item -Force
+        Compress-Archive -Path "$buildDir\*" -DestinationPath "quick-image-viewer-win-x64.zip"
 
     - name: Build Installer
       run: |
         $version = "${{ github.ref_name }}".TrimStart('v')
         if (-not $version) { $version = "1.4.0" }
-        iscc /dMyAppVersion=$version /dBuildDir=publish installer.iss
+        $buildDir = "src\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64"
+        iscc /dMyAppVersion=$version /dBuildDir=$buildDir installer.iss
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
