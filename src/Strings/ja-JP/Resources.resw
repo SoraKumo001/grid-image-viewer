@@ -530,4 +530,7 @@
   <data name="MenuOpenFolder.Text" xml:space="preserve">
     <value>フォルダを開く...</value>
   </data>
+  <data name="Settings_Extensions.Text" xml:space="preserve">
+    <value>表示対象の拡張子</value>
+  </data>
 </root>

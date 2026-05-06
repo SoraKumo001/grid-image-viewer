@@ -40,7 +40,7 @@ namespace quick_image_viewer.Managers
             return SharpCompress.Archives.ArchiveFactory.OpenArchive(path);
         }
 
-        public static List<string> GetArchiveImages(string archivePath)
+        public static List<string> GetArchiveImages(string archivePath, IEnumerable<string>? allowedExtensions = null)
         {
             var images = new List<string>();
             try
@@ -49,7 +49,7 @@ namespace quick_image_viewer.Managers
                 {
                     foreach (var entry in archive.Entries)
                     {
-                        if (entry != null && !entry.IsDirectory && FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(entry.Key) ?? ""))
+                        if (entry != null && !entry.IsDirectory && FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(entry.Key) ?? "", allowedExtensions))
                         {
                             images.Add($"{archivePath}|{entry.Key}");
                         }

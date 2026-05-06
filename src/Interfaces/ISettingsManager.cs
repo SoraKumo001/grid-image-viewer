@@ -22,6 +22,7 @@ namespace quick_image_viewer.Interfaces
         bool ShowPageIndicator { get; set; }
         int BoundaryAction { get; set; }
         int JpegQuality { get; set; }
+        List<string> EnabledExtensions { get; set; }
 
         string LastImagePath { get; }
         string LastDirectoryPath { get; }

@@ -57,6 +57,19 @@
                 </ComboBox>
             </StackPanel>
 
+            <StackPanel Spacing="4">
+                <TextBlock x:Uid="Settings_Extensions" Text="Enabled File Extensions" FontWeight="SemiBold" Foreground="White" />
+                <ScrollViewer MaxHeight="120" BorderBrush="#FF404040" BorderThickness="1" Padding="4">
+                    <ItemsControl x:Name="ItemsExtensions">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" Padding="8,0,0,0" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+
             <Grid ColumnSpacing="8" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

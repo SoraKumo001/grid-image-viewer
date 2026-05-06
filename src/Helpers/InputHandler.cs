@@ -439,7 +439,7 @@ namespace quick_image_viewer.Helpers
                     }
                     else if (item is StorageFile file)
                     {
-                        if (FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(file.Path)))
+                        if (FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(file.Path), _settings.EnabledExtensions))
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
                             _window.LoadDirectory(dir, file.Path);

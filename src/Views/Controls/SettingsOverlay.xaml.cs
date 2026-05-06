@@ -1,14 +1,25 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-
 using quick_image_viewer.Interfaces;
+using quick_image_viewer.Managers;
+using quick_image_viewer.Services;
+using System.Collections.ObjectModel;
+using System.Linq;
+
 namespace quick_image_viewer.Views.Controls
 {
+    public class ExtensionItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool IsEnabled { get; set; }
+    }
+
     public sealed partial class SettingsOverlay : UserControl
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
+        private ObservableCollection<ExtensionItem> _extensionsList = new();
 
         public SettingsOverlay(IMainView window, ISettingsManager settings)
         {
@@ -22,7 +33,24 @@ namespace quick_image_viewer.Views.Controls
             CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
             ComboBoundary.SelectedIndex = _settings.BoundaryAction;
 
+            InitializeExtensionsList();
+
             BtnClose.Focus(FocusState.Programmatic);
+        }
+
+        private void InitializeExtensionsList()
+        {
+            var all = FolderDiscoveryService.SupportedExtensions.Concat(ArchiveManager.ArchiveExtensions).Distinct().OrderBy(e => e);
+            _extensionsList.Clear();
+            foreach (var ext in all)
+            {
+                _extensionsList.Add(new ExtensionItem
+                {
+                    Name = ext,
+                    IsEnabled = _settings.EnabledExtensions.Contains(ext)
+                });
+            }
+            ItemsExtensions.ItemsSource = _extensionsList;
         }
 
         private async void BtnExport_Click(object sender, RoutedEventArgs e)
@@ -42,6 +70,7 @@ namespace quick_image_viewer.Views.Controls
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
                 CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
                 ComboBoundary.SelectedIndex = _settings.BoundaryAction;
+                InitializeExtensionsList();
                 _window.AppWindowManager.ApplyBackgroundSettings();
             }
         }
@@ -67,6 +96,9 @@ namespace quick_image_viewer.Views.Controls
             _settings.UseHighQualityScaling = CheckHighQuality.IsChecked ?? true;
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
             _settings.BoundaryAction = ComboBoundary.SelectedIndex;
+
+            _settings.EnabledExtensions = _extensionsList.Where(i => i.IsEnabled).Select(i => i.Name).ToList();
+
             _settings.SaveSettings();
 
             _window.ViewModel.BoundaryAction = _settings.BoundaryAction;

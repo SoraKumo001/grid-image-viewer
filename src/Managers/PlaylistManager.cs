@@ -109,7 +109,7 @@ namespace quick_image_viewer.Managers
             {
                 try
                 {
-                    List<string> initialFiles = preloadedPlaylist ?? FolderDiscoveryService.GetInitialPlaylist(path);
+                    List<string> initialFiles = preloadedPlaylist ?? FolderDiscoveryService.GetInitialPlaylist(path, _settings.EnabledExtensions);
 
                     _dispatcherQueue.TryEnqueue(() =>
                     {
@@ -203,7 +203,7 @@ namespace quick_image_viewer.Managers
                         WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
                     });
                 }
-            }, token);
+            }, token, _settings.EnabledExtensions);
 
             _dispatcherQueue.TryEnqueue(() =>
             {

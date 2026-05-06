@@ -16,10 +16,14 @@ namespace quick_image_viewer.Services
             ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
         };
 
-        public static bool IsSupportedExtension(string extension)
+        public static bool IsSupportedExtension(string extension, IEnumerable<string>? allowedExtensions = null)
         {
             string ext = extension.ToLowerInvariant();
-            // We also check archive extensions if ArchiveManager is available
+            if (allowedExtensions != null)
+            {
+                return allowedExtensions.Contains(ext);
+            }
+            // Fallback for cases where allowedExtensions is not provided (should be avoided)
             return SupportedExtensions.Contains(ext) || ArchiveManager.ArchiveExtensions.Contains(ext);
         }
 
@@ -28,7 +32,8 @@ namespace quick_image_viewer.Services
             bool includeSiblings,
             bool includeSubfolders,
             Action<List<string>> onBatchLoaded,
-            CancellationToken token)
+            CancellationToken token,
+            IEnumerable<string>? allowedExtensions = null)
         {
             try
             {
@@ -104,7 +109,7 @@ namespace quick_image_viewer.Services
                 {
                     if (token.IsCancellationRequested) return;
 
-                    var folderFiles = await Task.Run(() => GetFilesFromDirectory(dir, includeSubfolders), token);
+                    var folderFiles = await Task.Run(() => GetFilesFromDirectory(dir, includeSubfolders, allowedExtensions), token);
                     if (folderFiles.Count > 0)
                     {
                         onBatchLoaded?.Invoke(folderFiles);
@@ -118,7 +123,7 @@ namespace quick_image_viewer.Services
             }
         }
 
-        public static List<string> GetFilesFromDirectory(string dir, bool recursive)
+        public static List<string> GetFilesFromDirectory(string dir, bool recursive, IEnumerable<string>? allowedExtensions = null)
         {
             List<string> files = new List<string>();
             try
@@ -128,7 +133,7 @@ namespace quick_image_viewer.Services
                 var options = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
                 foreach (var f in Directory.EnumerateFiles(dir, "*", options))
                 {
-                    if (IsSupportedExtension(Path.GetExtension(f)))
+                    if (IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
                     {
                         files.Add(f);
                     }
@@ -138,16 +143,16 @@ namespace quick_image_viewer.Services
             return files;
         }
 
-        public static List<string> GetInitialPlaylist(string path)
+        public static List<string> GetInitialPlaylist(string path, IEnumerable<string>? allowedExtensions = null)
         {
             List<string> files;
             if (ArchiveManager.IsArchive(path))
             {
-                files = ArchiveManager.GetArchiveImages(path);
+                files = ArchiveManager.GetArchiveImages(path, allowedExtensions);
             }
             else
             {
-                files = GetFilesFromDirectory(path, false);
+                files = GetFilesFromDirectory(path, false, allowedExtensions);
             }
             return files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
         }

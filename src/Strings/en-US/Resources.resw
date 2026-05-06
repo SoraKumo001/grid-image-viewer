@@ -530,4 +530,7 @@
   <data name="MenuOpenFolder.Text" xml:space="preserve">
     <value>Open Folder...</value>
   </data>
+  <data name="Settings_Extensions.Text" xml:space="preserve">
+    <value>Enabled File Extensions</value>
+  </data>
 </root>

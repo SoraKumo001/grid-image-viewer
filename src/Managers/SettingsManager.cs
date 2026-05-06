@@ -100,6 +100,7 @@ namespace quick_image_viewer.Managers
         public string LastImagePath { get; set; } = string.Empty;
         public string LastDirectoryPath { get; set; } = string.Empty;
         public System.Collections.Generic.List<BookmarkItem> Bookmarks { get; set; } = new System.Collections.Generic.List<BookmarkItem>();
+        public System.Collections.Generic.List<string> EnabledExtensions { get; set; } = new System.Collections.Generic.List<string>();
     }
 
     public class SettingsManager : ISettingsManager
@@ -150,6 +151,7 @@ namespace quick_image_viewer.Managers
         public int BoundaryAction { get => _data.BoundaryAction; set => _data.BoundaryAction = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
+        public System.Collections.Generic.List<string> EnabledExtensions { get => _data.EnabledExtensions; set => _data.EnabledExtensions = value; }
 
 
         public string LastImagePath { get => _data.LastImagePath; }
@@ -185,6 +187,23 @@ namespace quick_image_viewer.Managers
                     if (_data.LegacyKeyExit.HasValue) { _data.KeyExit = new KeyBindingData(_data.LegacyKeyExit.Value); _data.LegacyKeyExit = null; }
                     if (_data.LegacyKeyToggleGrid.HasValue) { _data.KeyToggleGrid = new KeyBindingData(_data.LegacyKeyToggleGrid.Value); _data.LegacyKeyToggleGrid = null; }
                     if (_data.LegacyKeySlideshow.HasValue) { _data.KeySlideshow = new KeyBindingData(_data.LegacyKeySlideshow.Value); _data.LegacyKeySlideshow = null; }
+
+                    if (_data.EnabledExtensions == null || _data.EnabledExtensions.Count == 0)
+                    {
+                        _data.EnabledExtensions = new System.Collections.Generic.List<string>(quick_image_viewer.Services.FolderDiscoveryService.SupportedExtensions);
+                        foreach (var ext in quick_image_viewer.Managers.ArchiveManager.ArchiveExtensions)
+                        {
+                            if (!_data.EnabledExtensions.Contains(ext)) _data.EnabledExtensions.Add(ext);
+                        }
+                    }
+                }
+                else
+                {
+                    _data.EnabledExtensions = new System.Collections.Generic.List<string>(quick_image_viewer.Services.FolderDiscoveryService.SupportedExtensions);
+                    foreach (var ext in quick_image_viewer.Managers.ArchiveManager.ArchiveExtensions)
+                    {
+                        if (!_data.EnabledExtensions.Contains(ext)) _data.EnabledExtensions.Add(ext);
+                    }
                 }
             }
             catch
