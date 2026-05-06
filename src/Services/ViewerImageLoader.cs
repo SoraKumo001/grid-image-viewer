@@ -200,10 +200,20 @@ namespace quick_image_viewer.Services
                                         void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
                                         {
                                             sender.MediaFailed -= OnMediaFailed;
+                                            string errorMsg = args.Error switch
+                                            {
+                                                Windows.Media.Playback.MediaPlayerError.Aborted => "Playback aborted",
+                                                Windows.Media.Playback.MediaPlayerError.NetworkError => "Network error",
+                                                Windows.Media.Playback.MediaPlayerError.DecodingError => "Decoding error (Missing Codec?)",
+                                                Windows.Media.Playback.MediaPlayerError.SourceNotSupported => "Source format not supported",
+                                                _ => "Unknown playback error"
+                                            };
+
                                             pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
                                                 if (token.IsCancellationRequested) return;
                                                 pageControl.LoadingRing.IsActive = false;
+                                                _window.ShowNotification($"Video Error: {errorMsg}");
                                                 WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                                             });
                                         }
