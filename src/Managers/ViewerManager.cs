@@ -15,7 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace quick_image_viewer.Managers
 {
-    internal class ViewerManager : IViewerManager, IRecipient<NavigationMessage>, IRecipient<FolderNavigationMessage>, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
+    internal class ViewerManager : IViewerManager, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
@@ -53,8 +53,6 @@ namespace quick_image_viewer.Managers
             // Do NOT initialize buffer references here as UI might not be ready
             // They will be initialized on first use in UpdateDisplayAsync or other methods
 
-            WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
-            WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
             WeakReferenceMessenger.Default.Register<ZoomMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleMetadataMessage>(this);
         }
@@ -67,8 +65,7 @@ namespace quick_image_viewer.Managers
             _pageControls = _window.ViewerControl.PageControlsBuffer[idx];
         }
 
-        public void Receive(NavigationMessage message) => Navigate(message.Offset, message.ForceSingleStep);
-        public void Receive(FolderNavigationMessage message) => NavigateFolder(message.Offset);
+
 
         public void Receive(ZoomMessage message)
         {

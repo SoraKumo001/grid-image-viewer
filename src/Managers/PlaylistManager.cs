@@ -13,7 +13,10 @@ using System.Threading.Tasks;
 
 namespace quick_image_viewer.Managers
 {
-    internal class PlaylistManager : IPlaylistManager
+    internal class PlaylistManager : IPlaylistManager,
+        IRecipient<NavigationMessage>,
+        IRecipient<FolderNavigationMessage>,
+        IRecipient<LoadDirectoryMessage>
     {
         private readonly IViewerStateService _state;
         private readonly ISettingsManager _settings;
@@ -27,7 +30,15 @@ namespace quick_image_viewer.Managers
             _settings = settings;
             _notification = notification;
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+            WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
+            WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
+            WeakReferenceMessenger.Default.Register<LoadDirectoryMessage>(this);
         }
+
+        public void Receive(NavigationMessage message) => Navigate(message.Offset, message.ForceSingleStep);
+        public void Receive(FolderNavigationMessage message) => NavigateFolder(message.Offset);
+        public void Receive(LoadDirectoryMessage message) => LoadDirectory(message.Path, message.InitialFile, message.IncludeSiblings, message.IncludeSubfolders, message.PreloadedPlaylist);
 
         public void Navigate(int offset, bool forceSingleStep)
         {

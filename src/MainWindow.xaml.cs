@@ -28,10 +28,7 @@ namespace quick_image_viewer
         IRecipient<ClearImageSourceMessage>,
         IRecipient<RefreshDisplayMessage>,
         IRecipient<BookmarksChangedMessage>,
-        IRecipient<FocusRequestMessage>,
-        IRecipient<FolderNavigationMessage>,
-        IRecipient<NavigationMessage>,
-        IRecipient<LoadDirectoryMessage>
+        IRecipient<FocusRequestMessage>
     {
         public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
@@ -262,9 +259,6 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<RefreshDisplayMessage>(this);
             WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this);
             WeakReferenceMessenger.Default.Register<FocusRequestMessage>(this);
-            WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
-            WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
-            WeakReferenceMessenger.Default.Register<LoadDirectoryMessage>(this);
         }
 
 
@@ -444,21 +438,6 @@ namespace quick_image_viewer
             {
                 RootGrid.Focus(FocusState.Programmatic);
             });
-        }
-
-        public void Receive(FolderNavigationMessage message)
-        {
-            PlaylistManager.NavigateFolder(message.Offset);
-        }
-
-        public void Receive(NavigationMessage message)
-        {
-            PlaylistManager.Navigate(message.Offset, message.ForceSingleStep);
-        }
-
-        public void Receive(LoadDirectoryMessage message)
-        {
-            PlaylistManager.LoadDirectory(message.Path, message.InitialFile, message.IncludeSiblings, message.IncludeSubfolders, message.PreloadedPlaylist);
         }
 
         private void UpdateBookmarkMenu()
