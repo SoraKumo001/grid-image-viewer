@@ -200,6 +200,7 @@ namespace quick_image_viewer.Views.Controls
             {
                 if (InternalMediaPlayer.MediaPlayer != null)
                 {
+                    // Source = null は重い場合があるが、リソース解放のために必要
                     InternalMediaPlayer.MediaPlayer.Pause();
                     InternalMediaPlayer.Source = null;
                 }
@@ -209,6 +210,7 @@ namespace quick_image_viewer.Views.Controls
                 System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] ResetPlayback Error: {ex.Message}");
             }
 
+            PageImage.Opacity = 1.0;
             VideoVisualHost.Visibility = Visibility.Collapsed;
             InternalMediaPlayer.Visibility = Visibility.Collapsed;
             CustomTransportPanel.Visibility = Visibility.Collapsed;

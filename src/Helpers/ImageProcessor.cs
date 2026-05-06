@@ -3,6 +3,10 @@ using quick_image_viewer.Managers;
 using SkiaSharp;
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
+using Windows.Storage;
+using Windows.Storage.FileProperties;
 namespace quick_image_viewer.Helpers
 {
     public static class ImageProcessor
@@ -389,6 +393,14 @@ namespace quick_image_viewer.Helpers
                 }
                 else
                 {
+                    var ext = Path.GetExtension(sourcePath).ToLowerInvariant();
+                    string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+                    if (videoExtensions.Contains(ext))
+                    {
+                        // 動画の場合はとりあえず 0,0 を返して詳細は後で取得（またはデフォルト値）
+                        return (1920, 1080);
+                    }
+
                     using var stream = File.OpenRead(sourcePath);
                     using var codec = SKCodec.Create(stream);
                     if (codec != null) result = (codec.Info.Width, codec.Info.Height);
@@ -402,6 +414,25 @@ namespace quick_image_viewer.Helpers
             }
             catch { }
             return (0, 0);
+        }
+
+        public static async Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280)
+        {
+            try
+            {
+                if (ArchiveManager.IsArchivePath(filePath)) return null; // アーカイブ内は別途検討
+
+                var file = await StorageFile.GetFileFromPathAsync(filePath);
+                using var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.VideosView, maxDim, ThumbnailOptions.UseCurrentScale);
+
+                if (thumbnail != null)
+                {
+                    var decoder = await BitmapDecoder.CreateAsync(thumbnail);
+                    return await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                }
+            }
+            catch { }
+            return null;
         }
     }
 }

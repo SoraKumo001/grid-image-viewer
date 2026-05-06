@@ -49,12 +49,28 @@ namespace quick_image_viewer.Services
                 if (isVideo)
                 {
                     pageControl.LoadingRing.IsActive = true;
-                    pageControl.PageImage.Visibility = Visibility.Collapsed;
                     pageControl.PageCanvas.Visibility = Visibility.Collapsed;
 
-                    // プレイヤーを再利用（または新規作成）して即座にセットアップ
+                    // サムネイルがあれば表示
+                    var cachedThumb = cacheManager.GetCachedSoftwareBitmap(filePath);
+                    if (cachedThumb != null)
+                    {
+                        var softwareSource = new SoftwareBitmapSource();
+                        // 同期的にセットできないため、UIスレッドで非同期にセット
+                        _window.DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            await softwareSource.SetBitmapAsync(cachedThumb);
+                            pageControl.PageImage.Source = softwareSource;
+                            pageControl.PageImage.Visibility = Visibility.Visible;
+                            pageControl.PageImage.Opacity = 0.5; // 動画が重なるので少し薄くしておく
+                        });
+                    }
+                    else
+                    {
+                        pageControl.PageImage.Visibility = Visibility.Collapsed;
+                    }
+
                     pageControl.GetOrCreateMediaPlayer();
-                    System.Diagnostics.Debug.WriteLine($"[VideoLoader] Immediate UI reset and player pre-warm: {filePath}");
                 }
                 else
                 {
@@ -144,6 +160,8 @@ namespace quick_image_viewer.Services
                                             pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
                                                 pageControl.LoadingRing.IsActive = false;
+                                                pageControl.PageImage.Visibility = Visibility.Collapsed;
+                                                pageControl.PageImage.Opacity = 1.0;
                                             });
                                         }
                                         mp.MediaOpened += OnMediaOpened;

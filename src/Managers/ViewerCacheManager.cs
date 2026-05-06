@@ -56,10 +56,38 @@ namespace quick_image_viewer.Managers
         {
             if (paths == null || paths.Count == 0) return;
 
+            string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+
             foreach (var path in paths)
             {
                 if (token.IsCancellationRequested) break;
                 if (string.IsNullOrEmpty(path)) continue;
+
+                var ext = Path.GetExtension(path).ToLowerInvariant();
+                bool isVideo = videoExtensions.Contains(ext);
+
+                if (isVideo)
+                {
+                    // 動画のサムネイルキャッシュ
+                    bool needsVideoThumb = false;
+                    lock (_softwareBitmapCache) { if (!_softwareBitmapCache.ContainsKey(path)) needsVideoThumb = true; }
+                    if (needsVideoThumb)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            if (token.IsCancellationRequested) return;
+                            var thumb = await ImageProcessor.ExtractVideoThumbnailAsync(path);
+                            if (thumb != null)
+                            {
+                                lock (_softwareBitmapCache)
+                                {
+                                    AddSoftwareBitmapToCache(path, thumb);
+                                }
+                            }
+                        }, token);
+                    }
+                    continue;
+                }
 
                 // 1. バイナリキャッシュを確認・作成
                 bool needsBinary = false;
@@ -103,19 +131,24 @@ namespace quick_image_viewer.Managers
 
                             lock (_softwareBitmapCache)
                             {
-                                if (_softwareBitmapCache.Count >= MAX_BITMAP_CACHE_SIZE)
-                                {
-                                    var firstKey = _softwareBitmapCache.Keys.First();
-                                    _softwareBitmapCache[firstKey].Dispose();
-                                    _softwareBitmapCache.Remove(firstKey);
-                                }
-                                _softwareBitmapCache[path] = softwareBitmap;
+                                AddSoftwareBitmapToCache(path, softwareBitmap);
                             }
                         }
                         catch { }
                     }, token);
                 }
             }
+        }
+
+        private void AddSoftwareBitmapToCache(string path, SoftwareBitmap bitmap)
+        {
+            if (_softwareBitmapCache.Count >= MAX_BITMAP_CACHE_SIZE)
+            {
+                var firstKey = _softwareBitmapCache.Keys.First();
+                _softwareBitmapCache[firstKey].Dispose();
+                _softwareBitmapCache.Remove(firstKey);
+            }
+            _softwareBitmapCache[path] = bitmap;
         }
 
         public async Task PreloadAroundAsync(int currentIndex, List<string> playlist, int splitCount)
@@ -127,10 +160,9 @@ namespace quick_image_viewer.Managers
             _preloadCts = new CancellationTokenSource();
             var token = _preloadCts.Token;
 
-            // スライドショー実行中でランダムモードの場合は、SlideshowManager側でPreloadPathsAsyncを呼ぶため
-            // ここでは基本的な前後のみを行う（またはスキップする判断も可能だが、安全のため継続）
+            string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+
             var indicesToPreload = new List<int>();
-            // 優先度の高い順（次の画像 -> そのさらに次 -> 前の画像）
             for (int i = 0; i < 2 * splitCount; i++)
             {
                 int nextIdx = (currentIndex + splitCount + i) % playlist.Count;
@@ -148,6 +180,27 @@ namespace quick_image_viewer.Managers
             {
                 if (token.IsCancellationRequested) break;
                 var path = playlist[idx];
+                var ext = Path.GetExtension(path).ToLowerInvariant();
+                bool isVideo = videoExtensions.Contains(ext);
+
+                if (isVideo)
+                {
+                    bool needsVideoThumb = false;
+                    lock (_softwareBitmapCache) { if (!_softwareBitmapCache.ContainsKey(path)) needsVideoThumb = true; }
+                    if (needsVideoThumb)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            if (token.IsCancellationRequested) return;
+                            var thumb = await ImageProcessor.ExtractVideoThumbnailAsync(path);
+                            if (thumb != null)
+                            {
+                                lock (_softwareBitmapCache) { AddSoftwareBitmapToCache(path, thumb); }
+                            }
+                        }, token);
+                    }
+                    continue;
+                }
 
                 bool needsBinary = false;
                 lock (_imageCache) { if (!_imageCache.ContainsKey(path)) needsBinary = true; }
@@ -166,11 +219,7 @@ namespace quick_image_viewer.Managers
                     catch { continue; }
                 }
 
-                // 次の1画面分（splitCount分）はデコードまで行う
-                bool isVeryNear = false;
-                int distance = (idx - currentIndex + playlist.Count) % playlist.Count;
-                if (distance >= 0 && distance < 2 * splitCount) isVeryNear = true;
-
+                bool isVeryNear = (idx - currentIndex + playlist.Count) % playlist.Count < 2 * splitCount;
                 if (isVeryNear)
                 {
                     bool needsBitmap = false;
@@ -178,7 +227,6 @@ namespace quick_image_viewer.Managers
 
                     if (needsBitmap)
                     {
-                        // UIスレッドを介さず、バックグラウンドでデコードを行う
                         _ = Task.Run(async () =>
                         {
                             if (token.IsCancellationRequested) return;
@@ -194,16 +242,7 @@ namespace quick_image_viewer.Managers
                                     BitmapPixelFormat.Bgra8,
                                     BitmapAlphaMode.Premultiplied);
 
-                                lock (_softwareBitmapCache)
-                                {
-                                    if (_softwareBitmapCache.Count >= MAX_BITMAP_CACHE_SIZE)
-                                    {
-                                        var firstKey = _softwareBitmapCache.Keys.First();
-                                        _softwareBitmapCache[firstKey].Dispose();
-                                        _softwareBitmapCache.Remove(firstKey);
-                                    }
-                                    _softwareBitmapCache[path] = softwareBitmap;
-                                }
+                                lock (_softwareBitmapCache) { AddSoftwareBitmapToCache(path, softwareBitmap); }
                             }
                             catch { }
                         }, token);
