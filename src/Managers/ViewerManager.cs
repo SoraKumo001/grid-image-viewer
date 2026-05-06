@@ -31,8 +31,8 @@ namespace quick_image_viewer.Managers
         };
 
         // These arrays will point to the CURRENT buffer's elements for general logic
-        private Microsoft.UI.Xaml.FrameworkElement[] _pageGrids;
-        private ViewerPageControl[] _pageControls;
+        private Microsoft.UI.Xaml.FrameworkElement[] _pageGrids = Array.Empty<Microsoft.UI.Xaml.FrameworkElement>();
+        private ViewerPageControl[] _pageControls = Array.Empty<ViewerPageControl>();
 
         private CancellationTokenSource? _displayCts;
         private int _cachedQuadLayout = 1;
@@ -50,10 +50,8 @@ namespace quick_image_viewer.Managers
             _imageLoader = new ViewerImageLoader(window, settings);
             _cacheManager = new ViewerCacheManager(window.State, settings);
 
-            // Initialize buffer references
-            int idx = _window.ViewerControl.CurrentBufferIndex;
-            _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
-            _pageControls = _window.ViewerControl.PageControlsBuffer[idx];
+            // Do NOT initialize buffer references here as UI might not be ready
+            // They will be initialized on first use in UpdateDisplayAsync or other methods
 
             WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
             WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
@@ -63,6 +61,7 @@ namespace quick_image_viewer.Managers
 
         private void UpdateBufferReferences()
         {
+            if (_window.ViewerControl == null) return;
             int idx = _window.ViewerControl.CurrentBufferIndex;
             _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
             _pageControls = _window.ViewerControl.PageControlsBuffer[idx];
@@ -85,7 +84,7 @@ namespace quick_image_viewer.Managers
 
         public void Receive(ToggleMetadataMessage message) => ToggleMetadataPanel();
 
-        public PageRenderer[] Pages => _pagesBuffer[_window.ViewerControl.CurrentBufferIndex];
+        public PageRenderer[] Pages => _window.ViewerControl != null ? _pagesBuffer[_window.ViewerControl.CurrentBufferIndex] : _pagesBuffer[0];
         public ViewerPageControl[] PageControls => _pageControls;
 
         public string? GetPathForPage(int index)
@@ -106,6 +105,9 @@ namespace quick_image_viewer.Managers
                 _window.DispatcherQueue.TryEnqueue(async () => await UpdateDisplayAsync());
                 return;
             }
+
+            if (_window.ViewerControl == null) return;
+            UpdateBufferReferences();
 
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count)
             {
@@ -409,6 +411,7 @@ namespace quick_image_viewer.Managers
 
         public void UpdateStretch()
         {
+            if (_window.ViewerControl == null) return;
             try
             {
                 var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill)
@@ -524,9 +527,12 @@ namespace quick_image_viewer.Managers
         {
             _displayCts?.Cancel();
             _cacheManager.CancelPreloads();
-            foreach (var buffer in _window.ViewerControl.PageControlsBuffer)
+            if (_window.ViewerControl != null)
             {
-                foreach (var control in buffer) control.ResetPlayback();
+                foreach (var buffer in _window.ViewerControl.PageControlsBuffer)
+                {
+                    foreach (var control in buffer) control.ResetPlayback();
+                }
             }
             foreach (var p in _pagesBuffer[0]) p.Reset();
             foreach (var p in _pagesBuffer[1]) p.Reset();

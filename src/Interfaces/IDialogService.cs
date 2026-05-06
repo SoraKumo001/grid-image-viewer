@@ -14,6 +14,6 @@ namespace quick_image_viewer.Interfaces
         void ShowSettingsOverlay(ISettingsManager settings, int initialTabIndex = 0);
         void ShowResizeOverlay(string sourcePath, int origW, int origH);
         void ShowToneAdjustmentOverlay(string sourcePath, SKBitmap? baseBmp);
-        
+
     }
 }

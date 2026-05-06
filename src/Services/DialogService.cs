@@ -86,6 +86,6 @@ namespace quick_image_viewer.Services
             Show(new ToneAdjustmentOverlay(_window, sourcePath, baseBmp) { Name = "ToneAdjustmentOverlay" });
         }
 
-        
+
     }
 }

@@ -33,7 +33,15 @@ namespace quick_image_viewer.Managers
             _window = window;
             _settings = settings;
 
-            _window.ImageGridView.Loaded += (s, e) => SetupScrollListener();
+            // UI access must be deferred until InitializeComponent is complete.
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_window.ImageGridView != null)
+                {
+                    _window.ImageGridView.Loaded += (s, e) => SetupScrollListener();
+                    _window.ImageGridView.ContainerContentChanging += GridView_ContainerContentChanging;
+                }
+            });
 
             _resizeDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _resizeDebounceTimer.Tick += (s, e) =>
@@ -44,8 +52,6 @@ namespace quick_image_viewer.Managers
                     UpdateGridLayout();
                 }
             };
-
-            _window.ImageGridView.ContainerContentChanging += GridView_ContainerContentChanging;
         }
 
         private void GridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

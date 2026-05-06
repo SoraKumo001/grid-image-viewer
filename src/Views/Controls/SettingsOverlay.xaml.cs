@@ -63,7 +63,7 @@ namespace quick_image_viewer.Views.Controls
             InitializeKeyBindingData();
             InitializeExtensionsList();
             InitializeKeyBindingsList();
-            
+
             if (initialTabIndex >= 0 && initialTabIndex < SettingsPivot.Items.Count)
             {
                 SettingsPivot.SelectedIndex = initialTabIndex;
@@ -212,7 +212,7 @@ namespace quick_image_viewer.Views.Controls
                 Text = text,
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-                Foreground = (Microsoft.UI.Xaml.Media.SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"],
+                Foreground = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"],
                 Margin = new Thickness(4, 16, 0, 4)
             };
         }
@@ -247,7 +247,7 @@ namespace quick_image_viewer.Views.Controls
             btn.Click += (s, e) =>
             {
                 btn.Content = "...";
-                btn.Background = (Microsoft.UI.Xaml.Media.SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"];
+                btn.Background = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"];
             };
 
             btn.PreviewKeyDown += (s, e) =>
@@ -342,7 +342,7 @@ namespace quick_image_viewer.Views.Controls
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
                 CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
                 ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
-                
+
                 InitializeKeyBindingData();
                 InitializeExtensionsList();
                 InitializeKeyBindingsList();
@@ -371,7 +371,7 @@ namespace quick_image_viewer.Views.Controls
         private void SaveAndClose()
         {
             _settings.JpegQuality = (int)SliderQuality.Value;
-            
+
             if (ComboBackground.SelectedIndex >= 0)
                 _settings.BackgroundColorMode = ComboBackground.SelectedIndex;
 

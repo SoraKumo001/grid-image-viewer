@@ -13,6 +13,7 @@ namespace quick_image_viewer.ViewModels
     {
         public IViewerStateService State { get; }
         private readonly Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue;
+        private readonly IEditorManager _editorManager;
 
         // Commands
         public ICommand NavigateNextCommand { get; }
@@ -192,9 +193,10 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial int BoundaryAction { get; set; } = 1;
 
-        public MainViewModel(IViewerStateService stateService)
+        public MainViewModel(IViewerStateService stateService, IEditorManager editorManager)
         {
             State = stateService;
+            _editorManager = editorManager;
             _dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
             // Subscribe to state changes to update UI
@@ -327,7 +329,7 @@ namespace quick_image_viewer.ViewModels
             if (!string.IsNullOrEmpty(dir))
             {
                 bool isBookmarked = settings.Bookmarks.Exists(b => b.Path == dir);
-                BookmarkMenuText = isBookmarked ? "Remove from bookmarks" : "Bookmark this folder"; // Should ideally use resources
+                BookmarkMenuText = isBookmarked ? _editorManager.GetString("MenuBookmark_Remove") : _editorManager.GetString("MenuBookmark_Add");
             }
         }
 
