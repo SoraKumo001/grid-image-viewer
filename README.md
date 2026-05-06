@@ -87,6 +87,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 - **Area Selection**: Drag to select an area and right-click to copy
 - **State Preservation**: Restore window size, position, currently viewed image, and the last visited directory on the next startup.
 - **Settings Portability**: Supports exporting and importing settings as JSON.
+- **Customizable Extension Filters**: Individually enable or disable specific file extensions for images, videos, and archives. Group-specific "ALL/NONE" toggle buttons allow for intuitive management.
 - **On-Screen Notifications**: Overlay notifications for mode changes and stretch settings.
 - **Pointer-Aware Operations**: When multiple images are displayed, operations like rotation, deletion, and copying target the image directly under the mouse cursor.
 
@@ -138,7 +139,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 ## Requirements
 
 - Windows 10 (1809) or later
-- .NET 8.0
+- .NET 10.0
 
 > [!NOTE]
 > To play certain video codecs such as HEVC (H.265) or AV1, you may need to install the "HEVC Video Extensions" or "AV1 Video Extension" from the Microsoft Store.
@@ -152,7 +153,8 @@ dotnet build -c Release -a x64
 ## Tech Stack
 
 - **UI Framework**: WinUI 3 (Windows App SDK 2.0)
+- **Architecture**: Decoupled MVVM with CommunityToolkit.Mvvm
 - **Image Rendering**: SkiaSharp 3.x
 - **Archive Support**: SharpCompress
-- **Language**: C# (.NET 8.0)
+- **Language**: C# (.NET 10.0)
 - **Settings Management**: Persistence via JSON format (LocalApplicationData)

@@ -81,6 +81,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 - **範囲選択**: ドラッグで領域を選択し、右クリックからコピー
 - **状態の保存**: ウィンドウサイズ・位置・表示中の画像・最後に開いていたディレクトリを次回起動時に復元
 - **設定のポータビリティ**: 設定内容の JSON エクスポート/インポートに対応
+- **拡張子フィルタのカスタマイズ**: 画像・動画・アーカイブの各グループごとに、表示対象とする拡張子を個別にオン/オフ可能。一括切り替えボタンにより直感的な操作が可能です。
 - **操作通知**: 表示モードやストレッチモードの切り替えを画面上にオーバーレイ通知
 - **マウス位置優先の操作**: 複数画像表示時、回転・削除・パスコピー等の操作はマウスカーソルが置かれている画像を優先的に対象とします
 
@@ -137,7 +138,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 ## 動作要件
 
 - Windows 10 (1809) 以降
-- .NET 8.0
+- .NET 10.0
 
 > [!NOTE]
 > HEVC (H.265) や AV1 などの特定のビデオコーデックを再生するには、Microsoft Store から「HEVC ビデオ拡張機能」や「AV1 Video Extension」などのインストールが必要になる場合があります。
@@ -151,7 +152,8 @@ dotnet build -c Release -a x64
 ## 技術スタック
 
 - **UI フレームワーク**: WinUI 3 (Windows App SDK 2.0)
+- **アーキテクチャ**: CommunityToolkit.Mvvm による疎結合な MVVM パターン
 - **画像レンダリング**: SkiaSharp 3.x
 - **圧縮アーカイブ対応**: SharpCompress
-- **言語**: C# (.NET 8.0)
+- **言語**: C# (.NET 10.0)
 - **設定管理**: JSON形式による永続化 (LocalApplicationData)

@@ -2,7 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.3.1 (Current) - 2026-05-06
+## v1.4.0 (Current) - 2026-05-06
+
+- **Core Architecture**:
+  - [Refactor] Completed the transition to a fully decoupled MVVM architecture using `CommunityToolkit.Mvvm`, improving testability and code separation.
+  - [Refactor] Componentized the UI by splitting large views into reusable controls (`ViewerPanel`, `GridImagePanel`, etc.).
+  - [Improvement] Centralized cross-component communication via `WeakReferenceMessenger`.
+- **Navigation & Media Support**:
+  - [Fix] Resolved an issue where folders containing only video files were skipped during folder navigation.
+  - [Improvement] Integrated extension filters into folder navigation logic; folders containing only disabled extensions are now correctly skipped.
+  - [Fix] Fixed navigation logic to correctly handle mixed-media playlists (images, videos, and archives) in multi-page view modes.
+- **Settings & UI**:
+  - [Feature] Added "ALL" and "NONE" toggle buttons for each extension group (Images, Videos, Archives) in the settings overlay for easier configuration.
+  - [Improvement] Optimized extension filtering to apply changes immediately to the active playlist and background preloading.
+  - [Fix] Enhanced focus management to ensure keyboard navigation remains active after closing overlays or interacting with video controls.
+- **Stability & Performance**:
+  - [Fix] Resolved critical WinRT exceptions related to `ResourceLoader` and `XamlRoot` access by ensuring proper visual tree attachment and thread-safe resource retrieval.
+  - [Fix] Fixed potential crashes in `SlideshowService` and `ViewerManager` related to bounds checking and empty playlists.
+- **Project Maintenance**:
+  - Updated target framework to **.NET 10.0**.
+  - Updated README documentation to reflect the new architecture and features.
+
+## v1.3.1 - 2026-05-06
 
 - **Slideshow Optimization**:
   - [Fix] Resolved an issue where a redundant crossfade effect occurred during slideshow playback when the playlist was updated by background file discovery.
