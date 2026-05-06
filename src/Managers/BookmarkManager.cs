@@ -52,8 +52,8 @@ namespace quick_image_viewer.Managers
 
         public void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e)
         {
-            bool show = _window.BookmarkPanel.Visibility != Visibility.Visible;
-            _window.BookmarkPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            bool show = !_window.ViewModel.IsBookmarkPanelVisible;
+            _window.ViewModel.IsBookmarkPanelVisible = show;
             if (show) UpdateBookmarkList();
             _window.EditorManager.UpdateMenuStates();
         }
@@ -63,7 +63,7 @@ namespace quick_image_viewer.Managers
             if (e.ClickedItem is BookmarkItem item)
             {
                 _window.LoadDirectory(item.Path);
-                _window.BookmarkPanel.Visibility = Visibility.Collapsed;
+                _window.ViewModel.IsBookmarkPanelVisible = false;
             }
         }
 

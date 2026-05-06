@@ -122,50 +122,42 @@ namespace quick_image_viewer.Managers
                 }
             }
 
-            _window.MenuUndo.IsEnabled = canUndo;
-            _window.MenuRedo.IsEnabled = canRedo;
+            var vm = ((MainWindow)_window).ViewModel;
+
+            vm.CanUndo = canUndo;
+            vm.CanRedo = canRedo;
             bool isArchiveEntry = ArchiveManager.IsArchivePath(path);
-            _window.MenuSaveAs.IsEnabled = hasPath;
-            _window.MenuOverwrite.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuCrop.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuResize.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuRotate.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuFlip.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuTone.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuFilter.IsEnabled = hasPath && !isArchiveEntry;
-            _window.MenuPrint.IsEnabled = hasPath;
+            vm.HasValidPath = hasPath;
+            vm.IsImageEditable = hasPath && !isArchiveEntry;
 
             // Update View Mode checked states
             int splitCount = _settings.MangaSplitCount;
-            _window.MenuViewSingle.IsChecked = (splitCount == 1);
-            _window.MenuViewDouble.IsChecked = (splitCount == 2);
-            _window.MenuViewQuad.IsChecked = (splitCount == 4);
+            vm.IsViewSingle = (splitCount == 1);
+            vm.IsViewDouble = (splitCount == 2);
+            vm.IsViewQuad = (splitCount == 4);
 
             // Update Quad Layout checked states
             int layoutMode = _settings.QuadLayoutMode;
-            _window.MenuLayoutAuto.IsChecked = (layoutMode == 0);
-            _window.MenuLayoutHorz.IsChecked = (layoutMode == 1);
-            _window.MenuLayoutGrid.IsChecked = (layoutMode == 2);
+            vm.IsLayoutAuto = (layoutMode == 0);
+            vm.IsLayoutHorz = (layoutMode == 1);
+            vm.IsLayoutGrid = (layoutMode == 2);
 
             // Update Stretch Mode checked states
             int stretchMode = _settings.ImageStretchMode;
-            _window.MenuStretchOriginal.IsChecked = (stretchMode == 0);
-            _window.MenuStretchContain.IsChecked = (stretchMode == 2);
-            _window.MenuStretchCover.IsChecked = (stretchMode == 3);
+            vm.IsStretchOriginal = (stretchMode == 0);
+            vm.IsStretchContain = (stretchMode == 2);
+            vm.IsStretchCover = (stretchMode == 3);
 
             // Update Metadata checked state
-            _window.MenuMetadata.IsChecked = (_window.MetadataPanel.Visibility == Visibility.Visible);
-            _window.MenuPageIndicatorToggle.IsChecked = _settings.ShowPageIndicator;
+            vm.ShowPageIndicator = _settings.ShowPageIndicator;
 
             // Update Bookmark state
             string? dir = !string.IsNullOrEmpty(path) ? Path.GetDirectoryName(path) : _window.CurrentDirectory;
             if (!string.IsNullOrEmpty(dir))
             {
                 bool isBookmarked = _settings.Bookmarks.Exists(b => b.Path == dir);
-                _window.MenuBookmark.Text = isBookmarked ? GetString("MenuBookmark_Remove") : GetString("MenuBookmark_Add");
+                vm.BookmarkMenuText = isBookmarked ? GetString("MenuBookmark_Remove") : GetString("MenuBookmark_Add");
             }
-
-            _window.MenuBookmarksToggle.IsChecked = (_window.BookmarkPanel.Visibility == Visibility.Visible);
 
             // Populate Bookmark List Sub-menu
             _window.MenuBookmarkList.Items.Clear();
@@ -485,9 +477,10 @@ namespace quick_image_viewer.Managers
                 _window.ViewModel.MangaSplitCount = count;
 
                 // Ensure radio behavior
-                _window.MenuViewSingle.IsChecked = (count == 1);
-                _window.MenuViewDouble.IsChecked = (count == 2);
-                _window.MenuViewQuad.IsChecked = (count == 4);
+                var vm = ((MainWindow)_window).ViewModel;
+                vm.IsViewSingle = (count == 1);
+                vm.IsViewDouble = (count == 2);
+                vm.IsViewQuad = (count == 4);
 
                 _ = _window.UpdateDisplayAsync();
             }
@@ -501,9 +494,10 @@ namespace quick_image_viewer.Managers
                 _settings.SaveMangaMode();
 
                 // Ensure radio behavior
-                _window.MenuLayoutAuto.IsChecked = (mode == 0);
-                _window.MenuLayoutHorz.IsChecked = (mode == 1);
-                _window.MenuLayoutGrid.IsChecked = (mode == 2);
+                var vm = ((MainWindow)_window).ViewModel;
+                vm.IsLayoutAuto = (mode == 0);
+                vm.IsLayoutHorz = (mode == 1);
+                vm.IsLayoutGrid = (mode == 2);
 
                 if (_settings.MangaSplitCount == 4)
                 {
@@ -520,9 +514,10 @@ namespace quick_image_viewer.Managers
                 _settings.SaveSettings();
 
                 // Ensure radio behavior
-                _window.MenuStretchOriginal.IsChecked = (mode == 0);
-                _window.MenuStretchContain.IsChecked = (mode == 2);
-                _window.MenuStretchCover.IsChecked = (mode == 3);
+                var vm = ((MainWindow)_window).ViewModel;
+                vm.IsStretchOriginal = (mode == 0);
+                vm.IsStretchContain = (mode == 2);
+                vm.IsStretchCover = (mode == 3);
 
                 _window.ViewerManager.UpdateStretch();
             }

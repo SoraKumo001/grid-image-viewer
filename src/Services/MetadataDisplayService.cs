@@ -17,7 +17,7 @@ namespace quick_image_viewer.Services
 
         public void ToggleMetadataPanel(bool cycle = true)
         {
-            if (_window.MetadataPanel.Visibility == Visibility.Visible)
+            if (_window.ViewModel.IsMetadataVisible)
             {
                 int total = 0;
                 int splitCount = _settings.MangaSplitCount;
@@ -32,7 +32,7 @@ namespace quick_image_viewer.Services
                     if (_focusedPageIndex >= total)
                     {
                         _focusedPageIndex = 0;
-                        _window.MetadataPanel.Visibility = Visibility.Collapsed;
+                        _window.ViewModel.IsMetadataVisible = false;
                         UpdateFocusBorders();
                     }
                     else
@@ -42,14 +42,14 @@ namespace quick_image_viewer.Services
                 }
                 else
                 {
-                    _window.MetadataPanel.Visibility = Visibility.Collapsed;
+                    _window.ViewModel.IsMetadataVisible = false;
                     UpdateFocusBorders();
                 }
             }
             else
             {
                 _focusedPageIndex = 0;
-                _window.MetadataPanel.Visibility = Visibility.Visible;
+                _window.ViewModel.IsMetadataVisible = true;
                 UpdateMetadataPanel();
             }
         }
@@ -58,7 +58,7 @@ namespace quick_image_viewer.Services
         {
             try
             {
-                if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0)
+                if (!_window.ViewModel.IsMetadataVisible || _window.Playlist.Count == 0)
                 {
                     UpdateFocusBorders();
                     return;
@@ -92,7 +92,7 @@ namespace quick_image_viewer.Services
                 var meta = await System.Threading.Tasks.Task.Run(() => MetadataService.GetMetadata(filePath));
 
                 // 非同期処理中に表示状態やインデックスが変わった場合は破棄
-                if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
+                if (!_window.ViewModel.IsMetadataVisible || _window.Playlist.Count == 0) return;
                 int currentIndexAtReturn = _window.CurrentIndex + _focusedPageIndex;
                 if (currentIndexAtReturn >= _window.Playlist.Count) currentIndexAtReturn = _window.CurrentIndex;
                 if (index != currentIndexAtReturn) return;
@@ -128,7 +128,7 @@ namespace quick_image_viewer.Services
 
         public void UpdateFocusBorders()
         {
-            bool panelVisible = _window.MetadataPanel.Visibility == Visibility.Visible;
+            bool panelVisible = _window.ViewModel.IsMetadataVisible;
             var focusControls = _window.ViewerControl.PageControlsBuffer[_window.ViewerControl.CurrentBufferIndex];
 
             for (int i = 0; i < 4; i++)
@@ -146,7 +146,7 @@ namespace quick_image_viewer.Services
 
         public void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
-            if (_window.MetadataPanel.Visibility != Visibility.Visible || _window.Playlist.Count == 0) return;
+            if (!_window.ViewModel.IsMetadataVisible || _window.Playlist.Count == 0) return;
 
             var pagesGrid = _window.PagesGrid; // Active buffer grid
             var point = e.GetCurrentPoint(pagesGrid).Position;

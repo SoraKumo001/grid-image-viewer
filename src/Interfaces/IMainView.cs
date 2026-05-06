@@ -25,7 +25,6 @@ namespace quick_image_viewer.Interfaces
         UIElement NotificationOverlay { get; }
         TextBlock NotificationText { get; }
 
-        UIElement MetadataPanel { get; }
         TextBlock TxtMetaTitle { get; }
         TextBlock TxtMetaFileName { get; }
         TextBlock TxtMetaDimensions { get; }
@@ -94,37 +93,9 @@ namespace quick_image_viewer.Interfaces
         NumberBox SlideshowInterval { get; }
         NumberBox SlideshowCrossfadeDuration { get; }
 
-        UIElement BookmarkPanel { get; }
 
-        MenuFlyoutItem MenuUndo { get; }
-        MenuFlyoutItem MenuRedo { get; }
-        MenuFlyoutSubItem MenuSaveAs { get; }
-        MenuFlyoutItem MenuOverwrite { get; }
-        MenuFlyoutItem MenuCrop { get; }
-        MenuFlyoutItem MenuResize { get; }
-        MenuFlyoutSubItem MenuRotate { get; }
-        MenuFlyoutSubItem MenuFlip { get; }
-        MenuFlyoutItem MenuTone { get; }
-        MenuFlyoutSubItem MenuFilter { get; }
-        MenuFlyoutItem MenuPrint { get; }
 
-        ToggleMenuFlyoutItem MenuViewSingle { get; }
-        ToggleMenuFlyoutItem MenuViewDouble { get; }
-        ToggleMenuFlyoutItem MenuViewQuad { get; }
 
-        ToggleMenuFlyoutItem MenuLayoutAuto { get; }
-        ToggleMenuFlyoutItem MenuLayoutHorz { get; }
-        ToggleMenuFlyoutItem MenuLayoutGrid { get; }
-
-        ToggleMenuFlyoutItem MenuStretchOriginal { get; }
-        ToggleMenuFlyoutItem MenuStretchContain { get; }
-        ToggleMenuFlyoutItem MenuStretchCover { get; }
-
-        ToggleMenuFlyoutItem MenuMetadata { get; }
-        ToggleMenuFlyoutItem MenuPageIndicatorToggle { get; }
-
-        MenuFlyoutItem MenuBookmark { get; }
-        ToggleMenuFlyoutItem MenuBookmarksToggle { get; }
         MenuFlyoutSubItem MenuBookmarkList { get; }
 
 

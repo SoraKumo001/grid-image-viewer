@@ -14,7 +14,14 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 namespace quick_image_viewer
 {
-    public sealed partial class MainWindow : Window, IMainView, IRecipient<FullscreenMessage>, IRecipient<PlaylistUpdatedMessage>, IRecipient<SlideshowNextRequestedMessage>
+    public sealed partial class MainWindow : Window, IMainView,
+        IRecipient<FullscreenMessage>,
+        IRecipient<PlaylistUpdatedMessage>,
+        IRecipient<SlideshowNextRequestedMessage>,
+        IRecipient<ToggleGridMessage>,
+        IRecipient<ToggleMangaMessage>,
+        IRecipient<ToggleStretchMessage>,
+        IRecipient<ToggleBookmarkMessage>
     {
         public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
@@ -72,36 +79,8 @@ namespace quick_image_viewer
         FrameworkElement IMainView.PageGrid3 => PageGrid3;
         FrameworkElement IMainView.PageGrid4 => PageGrid4;
 
-        UIElement IMainView.BookmarkPanel => BookmarkPanel;
-        MenuFlyoutItem IMainView.MenuUndo => MenuUndo;
-        MenuFlyoutItem IMainView.MenuRedo => MenuRedo;
-        MenuFlyoutSubItem IMainView.MenuSaveAs => MenuSaveAs;
-        MenuFlyoutItem IMainView.MenuOverwrite => MenuOverwrite;
-        MenuFlyoutItem IMainView.MenuCrop => MenuCrop;
-        MenuFlyoutItem IMainView.MenuResize => MenuResize;
-        MenuFlyoutSubItem IMainView.MenuRotate => MenuRotate;
-        MenuFlyoutSubItem IMainView.MenuFlip => MenuFlip;
-        MenuFlyoutItem IMainView.MenuTone => MenuTone;
-        MenuFlyoutSubItem IMainView.MenuFilter => MenuFilter;
-        MenuFlyoutItem IMainView.MenuPrint => MenuPrint;
 
-        ToggleMenuFlyoutItem IMainView.MenuViewSingle => MenuViewSingle;
-        ToggleMenuFlyoutItem IMainView.MenuViewDouble => MenuViewDouble;
-        ToggleMenuFlyoutItem IMainView.MenuViewQuad => MenuViewQuad;
 
-        ToggleMenuFlyoutItem IMainView.MenuLayoutAuto => MenuLayoutAuto;
-        ToggleMenuFlyoutItem IMainView.MenuLayoutHorz => MenuLayoutHorz;
-        ToggleMenuFlyoutItem IMainView.MenuLayoutGrid => MenuLayoutGrid;
-
-        ToggleMenuFlyoutItem IMainView.MenuStretchOriginal => MenuStretchOriginal;
-        ToggleMenuFlyoutItem IMainView.MenuStretchContain => MenuStretchContain;
-        ToggleMenuFlyoutItem IMainView.MenuStretchCover => MenuStretchCover;
-
-        ToggleMenuFlyoutItem IMainView.MenuMetadata => MenuMetadata;
-        ToggleMenuFlyoutItem IMainView.MenuPageIndicatorToggle => MenuPageIndicatorToggle;
-
-        MenuFlyoutItem IMainView.MenuBookmark => MenuBookmark;
-        ToggleMenuFlyoutItem IMainView.MenuBookmarksToggle => MenuBookmarksToggle;
         MenuFlyoutSubItem IMainView.MenuBookmarkList => MenuBookmarkList;
 
         ContentDialog IMainView.SlideshowDialog => SlideshowDialog;
@@ -145,7 +124,6 @@ namespace quick_image_viewer
         ScrollViewer IMainView.ImageScrollViewer => ImageScrollViewer;
         UIElement IMainView.NotificationOverlay => NotificationOverlay;
         TextBlock IMainView.NotificationText => NotificationText;
-        UIElement IMainView.MetadataPanel => MetadataPanel;
         TextBlock IMainView.TxtMetaTitle => TxtMetaTitle;
         TextBlock IMainView.TxtMetaFileName => TxtMetaFileName;
         TextBlock IMainView.TxtMetaDimensions => TxtMetaDimensions;
@@ -259,10 +237,19 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<FullscreenMessage>(this);
             WeakReferenceMessenger.Default.Register<PlaylistUpdatedMessage>(this);
             WeakReferenceMessenger.Default.Register<SlideshowNextRequestedMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleGridMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleMangaMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleStretchMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleBookmarkMessage>(this);
         }
 
 
-        public void Receive(FullscreenMessage message) => IsFullscreen = !IsFullscreen;
+        public void Receive(FullscreenMessage message)
+        {
+            IsFullscreen = !IsFullscreen;
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            ShowNotification(loader.GetString(IsFullscreen ? "Notification_FullscreenOn" : "Notification_FullscreenOff"));
+        }
 
         public void Receive(PlaylistUpdatedMessage message)
         {
@@ -299,6 +286,45 @@ namespace quick_image_viewer
                     }
                 }
             }
+        }
+
+        public void Receive(ToggleGridMessage message)
+        {
+            IsGridMode = !IsGridMode;
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            ShowNotification(loader.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
+            _ = UpdateDisplayAsync();
+        }
+
+        public void Receive(ToggleMangaMessage message)
+        {
+            int count = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
+            _settings.MangaSplitCount = count;
+            _settings.SaveMangaMode();
+            ViewModel.MangaSplitCount = count;
+            _ = UpdateDisplayAsync();
+
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            string modeKey = count == 1 ? "MenuViewMode_Single/Text" : (count == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
+            ShowNotification(loader.GetString(modeKey));
+        }
+
+        public void Receive(ToggleStretchMessage message)
+        {
+            int current = _settings.ImageStretchMode;
+            int next = current == 2 ? 3 : (current == 3 ? 0 : 2);
+            _settings.ImageStretchMode = next;
+            _settings.SaveSettings();
+            ViewerManager.UpdateStretch();
+
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
+            ShowNotification(loader.GetString(modeKey));
+        }
+
+        public void Receive(ToggleBookmarkMessage message)
+        {
+            BookmarkManager.MenuBookmark_Click(this, new RoutedEventArgs());
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -384,7 +410,7 @@ namespace quick_image_viewer
         private void MenuSlideshow_Click(object sender, RoutedEventArgs e) => SlideshowManager.OpenSlideshowDialogAsync();
         private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarksToggle_Click(sender, e);
         private void MenuBookmark_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmark_Click(sender, e);
-        private void MenuBookmarkPanel_Close_Click(object sender, RoutedEventArgs e) => BookmarkPanel.Visibility = Visibility.Collapsed;
+        private void MenuBookmarkPanel_Close_Click(object sender, RoutedEventArgs e) => ViewModel.IsBookmarkPanelVisible = false;
         private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e) => BookmarkManager.BookmarkListView_ItemClick(sender, e);
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
         private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);

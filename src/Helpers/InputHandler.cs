@@ -165,8 +165,7 @@ namespace quick_image_viewer.Helpers
             }
             if (IsMatch(_settings.KeyAddBookmark, e.Key, isCtrl, isShift, isAlt))
             {
-                // Bookmark is usually folder-based, so it targets current folder
-                _window.BookmarkManager.MenuBookmark_Click(sender, new RoutedEventArgs());
+                _window.ViewModel.ToggleBookmarkCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -217,49 +216,27 @@ namespace quick_image_viewer.Helpers
             if (IsMatch(_settings.KeyToggleFullscreen, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.ViewModel.ToggleFullscreenCommand.Execute(null);
-                string state = _window.IsFullscreen ? "ON" : "OFF";
-                _window.ShowNotification(_resourceLoader.GetString(_window.IsFullscreen ? "Notification_FullscreenOn" : "Notification_FullscreenOff"));
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleStretchMode, e.Key, isCtrl, isShift, isAlt))
             {
-                int current = _settings.ImageStretchMode;
-                int next = current == 2 ? 3 : (current == 3 ? 0 : 2);
-                _settings.ImageStretchMode = next;
-                _settings.SaveSettings();
-                _window.ViewerManager.UpdateStretch();
-
-                string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
-                string modeName = _resourceLoader.GetString(modeKey);
-                _window.ShowNotification(modeName);
-
+                _window.ViewModel.ToggleStretchModeCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleManga, e.Key, isCtrl, isShift, isAlt))
             {
-                int count = _settings.MangaSplitCount == 1 ? 2 : (_settings.MangaSplitCount == 2 ? 4 : 1);
-                _settings.MangaSplitCount = count;
-                _settings.SaveMangaMode();
-                _ = _window.UpdateDisplayAsync();
-
-                string modeKey = count == 1 ? "MenuViewMode_Single/Text" : (count == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
-                string modeName = _resourceLoader.GetString(modeKey);
-                _window.ShowNotification(modeName);
-
+                _window.ViewModel.ToggleMangaModeCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleGrid, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.IsGridMode = !_window.IsGridMode;
-                string state = _window.IsGridMode ? "ON" : "OFF";
-                _window.ShowNotification(_resourceLoader.GetString(_window.IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
-                _ = _window.UpdateDisplayAsync();
+                _window.ViewModel.ToggleGridModeCommand.Execute(null);
                 e.Handled = true;
                 return;
             }

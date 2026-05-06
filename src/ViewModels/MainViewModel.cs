@@ -25,6 +25,10 @@ namespace quick_image_viewer.ViewModels
         public ICommand RotateLeftCommand { get; }
         public ICommand ToggleMetadataCommand { get; }
         public ICommand OpenSlideshowCommand { get; }
+        public ICommand ToggleBookmarkCommand { get; }
+        public ICommand DeleteFileCommand { get; }
+        public ICommand ToggleMangaModeCommand { get; }
+        public ICommand ToggleStretchModeCommand { get; }
 
         public ObservableCollection<string> Playlist
         {
@@ -107,6 +111,27 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial bool IsDialogOpen { get; set; }
 
+        [ObservableProperty] public partial bool CanUndo { get; set; }
+        [ObservableProperty] public partial bool CanRedo { get; set; }
+        [ObservableProperty] public partial bool HasValidPath { get; set; }
+        [ObservableProperty] public partial bool IsImageEditable { get; set; }
+
+        [ObservableProperty] public partial bool IsViewSingle { get; set; }
+        [ObservableProperty] public partial bool IsViewDouble { get; set; }
+        [ObservableProperty] public partial bool IsViewQuad { get; set; }
+
+        [ObservableProperty] public partial bool IsLayoutAuto { get; set; }
+        [ObservableProperty] public partial bool IsLayoutHorz { get; set; }
+        [ObservableProperty] public partial bool IsLayoutGrid { get; set; }
+
+        [ObservableProperty] public partial bool IsStretchOriginal { get; set; }
+        [ObservableProperty] public partial bool IsStretchContain { get; set; }
+        [ObservableProperty] public partial bool IsStretchCover { get; set; }
+
+        [ObservableProperty] public partial bool IsMetadataVisible { get; set; }
+        [ObservableProperty] public partial bool IsBookmarkPanelVisible { get; set; }
+        [ObservableProperty] public partial string BookmarkMenuText { get; set; } = "Bookmark this folder";
+
         [ObservableProperty]
         public partial bool IsPageIndicatorVisible { get; set; }
 
@@ -157,7 +182,7 @@ namespace quick_image_viewer.ViewModels
             NavigatePrevCommand = new RelayCommand(() => Navigate(-1));
             NavigateNextFolderCommand = new RelayCommand(() => NavigateFolder(1));
             NavigatePrevFolderCommand = new RelayCommand(() => NavigateFolder(-1));
-            ToggleGridModeCommand = new RelayCommand(() => IsGridMode = !IsGridMode);
+            ToggleGridModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleGridMessage>());
             ToggleFullscreenCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<FullscreenMessage>());
             ZoomInCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(1.2f)));
             ZoomOutCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(1.0f / 1.2f)));
@@ -166,6 +191,10 @@ namespace quick_image_viewer.ViewModels
             RotateLeftCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new EditMessage("Rotate", -90)));
             ToggleMetadataCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleMetadataMessage>());
             OpenSlideshowCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<OpenSlideshowMessage>());
+            ToggleBookmarkCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkMessage>());
+            DeleteFileCommand = new RelayCommand(() => { /* Path needed, maybe handled in InputHandler directly or via message */ });
+            ToggleMangaModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleMangaMessage>());
+            ToggleStretchModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleStretchMessage>());
 
             // Default values
             SlideshowInterval = 5.0;
@@ -206,4 +235,9 @@ namespace quick_image_viewer.ViewModels
     public record EditMessage(string Type, object Value);
     public record ToggleMetadataMessage();
     public record OpenSlideshowMessage();
+    public record ToggleGridMessage();
+    public record ToggleMangaMessage();
+    public record ToggleStretchMessage();
+    public record ToggleBookmarkMessage();
+    public record DeleteFileMessage(string Path);
 }
