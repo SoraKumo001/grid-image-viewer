@@ -124,6 +124,28 @@ namespace quick_image_viewer.Managers
             });
         }
 
+        public void RemoveFromPlaylist(string path)
+        {
+            int index = _window.Playlist.IndexOf(path);
+            if (index != -1)
+            {
+                // If we are deleting the current image, move to the next one
+                if (path == _window.CurrentImagePath)
+                {
+                    Navigate(1, true);
+                }
+
+                _window.Playlist.RemoveAt(index);
+                _window.GridItems.RemoveAt(index);
+
+                // Adjust current index if we deleted something before it
+                if (_window.CurrentIndex > index) _window.CurrentIndex--;
+                if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;
+
+                WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
+            }
+        }
+
         private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, CancellationToken token)
         {
             if (_window.Playlist.Count > 0)

@@ -21,7 +21,9 @@ namespace quick_image_viewer
         IRecipient<ToggleGridMessage>,
         IRecipient<ToggleMangaMessage>,
         IRecipient<ToggleStretchMessage>,
-        IRecipient<ToggleBookmarkMessage>
+        IRecipient<DeleteFileMessage>,
+        IRecipient<ShellActionMessage>,
+        IRecipient<TogglePageIndicatorMessage>
     {
         public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
@@ -240,7 +242,9 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<ToggleGridMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleMangaMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleStretchMessage>(this);
-            WeakReferenceMessenger.Default.Register<ToggleBookmarkMessage>(this);
+            WeakReferenceMessenger.Default.Register<DeleteFileMessage>(this);
+            WeakReferenceMessenger.Default.Register<ShellActionMessage>(this);
+            WeakReferenceMessenger.Default.Register<TogglePageIndicatorMessage>(this);
         }
 
 
@@ -322,9 +326,71 @@ namespace quick_image_viewer
             ShowNotification(loader.GetString(modeKey));
         }
 
-        public void Receive(ToggleBookmarkMessage message)
+        public void Receive(DeleteFileMessage message)
         {
-            BookmarkManager.MenuBookmark_Click(this, new RoutedEventArgs());
+            _ = HandleDeleteFileAsync(message.Path);
+        }
+
+        public async Task HandleDeleteFileAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            var dialog = new ContentDialog
+            {
+                Title = loader.GetString("DeleteDialog_Title"),
+                Content = loader.GetString("DeleteDialog_Content"),
+                PrimaryButtonText = loader.GetString("DeleteDialog_Primary"),
+                CloseButtonText = loader.GetString("DeleteDialog_Close"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            IsDialogOpen = true;
+            var result = await dialog.ShowAsync();
+            IsDialogOpen = false;
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    if (System.IO.File.Exists(path))
+                    {
+                        System.IO.File.Delete(path);
+                        PlaylistManager.RemoveFromPlaylist(path);
+                        ShowNotification(loader.GetString("Notification_Deleted"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowNotification("Error: " + ex.Message);
+                }
+            }
+        }
+
+        public void Receive(ShellActionMessage message)
+        {
+            switch (message.Action)
+            {
+                case "OpenExplorer":
+                    EditorManager.ContextTargetPath = message.Path;
+                    EditorManager.MenuOpenExplorer_Click(null!, null!);
+                    break;
+                case "Settings":
+                    EditorManager.MenuSettings_Click(null!, null!);
+                    break;
+                case "KeyBindings":
+                    EditorManager.MenuKeyBindings_Click(null!, null!);
+                    break;
+                case "Support":
+                    EditorManager.MenuSupport_Click(null!, null!);
+                    break;
+            }
+        }
+
+        public void Receive(TogglePageIndicatorMessage message)
+        {
+            EditorManager.MenuPageIndicatorToggle_Click(null!, null!);
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -386,36 +452,27 @@ namespace quick_image_viewer
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 
         private void EditMenuFlyout_Opening(object sender, object e) => EditorManager.EditMenuFlyout_Opening(sender, e);
-        private void RootGrid_RightTapped(object sender, RightTappedRoutedEventArgs e) => EditorManager.UpdateTargetIndexAtPoint(e.GetPosition(PagesGrid));
-        private void MenuSaveAs_Click(object sender, RoutedEventArgs e) => EditorManager.MenuSaveAs_Click(sender, e);
-        private void MenuOverwrite_Click(object sender, RoutedEventArgs e) => EditorManager.MenuOverwrite_Click(sender, e);
-        private void MenuCrop_Click(object sender, RoutedEventArgs e) => EditorManager.MenuCrop_Click(sender, e);
-        private void MenuResize_Click(object sender, RoutedEventArgs e) => EditorManager.MenuResize_Click(sender, e);
-        private void MenuRotate_Click(object sender, RoutedEventArgs e) => EditorManager.MenuRotate_Click(sender, e);
-        private void MenuFlip_Click(object sender, RoutedEventArgs e) => EditorManager.MenuFlip_Click(sender, e);
-        private void MenuTone_Click(object sender, RoutedEventArgs e) => EditorManager.MenuTone_Click(sender, e);
-        private void MenuFilter_Click(object sender, RoutedEventArgs e) => EditorManager.MenuFilter_Click(sender, e);
-        private void MenuOpenExplorer_Click(object sender, RoutedEventArgs e) => EditorManager.MenuOpenExplorer_Click(sender, e);
-        private void MenuPrint_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPrint_Click(sender, e);
+        private void RootGrid_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            var point = e.GetPosition(PagesGrid);
+            EditorManager.UpdateTargetIndexAtPoint(point);
+            ViewModel.ContextPath = EditorManager.ContextTargetPath;
+        }
+
+
+
+
+
+
+        private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarksToggle_Click(sender, e);
+        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
+        private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPageIndicatorToggle_Click(sender, e);
         private void MenuViewMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuLayoutMode_Click(sender, e);
         private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuStretchMode_Click(sender, e);
-        private void MenuKeyBindings_Click(object sender, RoutedEventArgs e) => EditorManager.MenuKeyBindings_Click(sender, e);
-        private void MenuSettings_Click(object sender, RoutedEventArgs e) => EditorManager.MenuSettings_Click(sender, e);
-        private void MenuSupport_Click(object sender, RoutedEventArgs e) => EditorManager.MenuSupport_Click(sender, e);
-        private void MenuUndo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuUndo_Click(sender, e);
-        private void MenuRedo_Click(object sender, RoutedEventArgs e) => EditorManager.MenuRedo_Click(sender, e);
-        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
-        private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPageIndicatorToggle_Click(sender, e);
-        private void MenuSlideshow_Click(object sender, RoutedEventArgs e) => SlideshowManager.OpenSlideshowDialogAsync();
-        private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarksToggle_Click(sender, e);
-        private void MenuBookmark_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmark_Click(sender, e);
-        private void MenuBookmarkPanel_Close_Click(object sender, RoutedEventArgs e) => ViewModel.IsBookmarkPanelVisible = false;
         private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e) => BookmarkManager.BookmarkListView_ItemClick(sender, e);
-        private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
         private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);
-
-        private void OpenSlideshowDialogAsync() => SlideshowManager.OpenSlideshowDialogAsync();
+        private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);
         private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) => SlideshowManager.SlideshowDialog_PrimaryButtonClick(sender, args);
     }

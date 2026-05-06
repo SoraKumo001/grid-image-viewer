@@ -1,10 +1,12 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-
 using quick_image_viewer.Interfaces;
+using quick_image_viewer.ViewModels;
+
 namespace quick_image_viewer.Managers
 {
-    internal class BookmarkManager : IBookmarkManager
+    internal class BookmarkManager : IBookmarkManager, IRecipient<ToggleBookmarkMessage>, IRecipient<ToggleBookmarkPanelMessage>
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
@@ -13,7 +15,12 @@ namespace quick_image_viewer.Managers
         {
             _window = window;
             _settings = settings;
+            WeakReferenceMessenger.Default.Register<ToggleBookmarkMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleBookmarkPanelMessage>(this);
         }
+
+        public void Receive(ToggleBookmarkMessage message) => MenuBookmark_Click(null!, null!);
+        public void Receive(ToggleBookmarkPanelMessage message) => MenuBookmarksToggle_Click(null!, null!);
 
         public void UpdateBookmarkList()
         {

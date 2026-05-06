@@ -16,7 +16,7 @@ using Windows.Storage;
 using Windows.System;
 namespace quick_image_viewer.Managers
 {
-    public class EditorManager : IEditorManager, IRecipient<EditMessage>
+    public class EditorManager : IEditorManager, IRecipient<EditMessage>, IRecipient<EditActionMessage>, IRecipient<ViewActionMessage>
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
@@ -37,6 +37,8 @@ namespace quick_image_viewer.Managers
             PreloadStrings();
 
             WeakReferenceMessenger.Default.Register<EditMessage>(this);
+            WeakReferenceMessenger.Default.Register<EditActionMessage>(this);
+            WeakReferenceMessenger.Default.Register<ViewActionMessage>(this);
         }
 
         public void Receive(EditMessage message)
@@ -49,7 +51,36 @@ namespace quick_image_viewer.Managers
                     MenuRotate_Click(new MenuFlyoutItem { Tag = degrees.ToString() }, new RoutedEventArgs());
                 }
             }
-            // Add other edit types as needed
+        }
+
+        public void Receive(EditActionMessage message)
+        {
+            _contextTargetPath = !string.IsNullOrEmpty(message.Path) ? message.Path : _window.CurrentImagePath;
+
+            switch (message.Action)
+            {
+                case "Undo": MenuUndo_Click(null!, null!); break;
+                case "Redo": MenuRedo_Click(null!, null!); break;
+                case "Overwrite": MenuOverwrite_Click(null!, null!); break;
+                case "SaveAs": MenuSaveAs_Click(new MenuFlyoutItem { Tag = message.Value?.ToString() ?? ".jpg" }, null!); break;
+                case "Print": MenuPrint_Click(null!, null!); break;
+                case "Crop": MenuCrop_Click(null!, null!); break;
+                case "Resize": MenuResize_Click(null!, null!); break;
+                case "Tone": MenuTone_Click(null!, null!); break;
+                case "Filter": MenuFilter_Click(new MenuFlyoutItem { Tag = message.Value?.ToString() }, null!); break;
+                case "Flip": MenuFlip_Click(new MenuFlyoutItem { Tag = message.Value?.ToString() }, null!); break;
+                case "Rotate": MenuRotate_Click(new MenuFlyoutItem { Tag = message.Value?.ToString() }, null!); break;
+            }
+        }
+
+        public void Receive(ViewActionMessage message)
+        {
+            switch (message.Action)
+            {
+                case "ViewMode": MenuViewMode_Click(new ToggleMenuFlyoutItem { Tag = message.Value.ToString() }, null!); break;
+                case "LayoutMode": MenuLayoutMode_Click(new ToggleMenuFlyoutItem { Tag = message.Value.ToString() }, null!); break;
+                case "StretchMode": MenuStretchMode_Click(new ToggleMenuFlyoutItem { Tag = message.Value.ToString() }, null!); break;
+            }
         }
 
         private void PreloadStrings()
@@ -81,6 +112,8 @@ namespace quick_image_viewer.Managers
             {
                 _contextTargetPath = _window.CurrentImagePath;
             }
+
+            _window.ViewModel.ContextPath = _contextTargetPath;
 
             UpdateMenuStates();
         }

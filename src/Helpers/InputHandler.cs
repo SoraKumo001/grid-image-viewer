@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -5,6 +6,7 @@ using Microsoft.Windows.ApplicationModel.Resources;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
+using quick_image_viewer.ViewModels;
 using System;
 using System.IO;
 using Windows.ApplicationModel.DataTransfer;
@@ -78,19 +80,19 @@ namespace quick_image_viewer.Helpers
             {
                 if (e.Key == VirtualKey.Z)
                 {
-                    _window.EditorManager.MenuUndo_Click(sender, new RoutedEventArgs());
+                    _window.ViewModel.UndoCommand.Execute(GetPathAtPointer());
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == VirtualKey.Y)
                 {
-                    _window.EditorManager.MenuRedo_Click(sender, new RoutedEventArgs());
+                    _window.ViewModel.RedoCommand.Execute(GetPathAtPointer());
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == VirtualKey.S)
                 {
-                    _window.EditorManager.MenuOverwrite_Click(sender, new RoutedEventArgs());
+                    _window.ViewModel.OverwriteCommand.Execute(GetPathAtPointer());
                     e.Handled = true;
                     return;
                 }
@@ -158,8 +160,7 @@ namespace quick_image_viewer.Helpers
             }
             if (IsMatch(_settings.KeyFlipHorizontal, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.EditorManager.ContextTargetPath = GetPathAtPointer();
-                _window.EditorManager.MenuFlip_Click(new MenuFlyoutItem { Tag = "Horz" }, new RoutedEventArgs());
+                _window.ViewModel.FlipHorzCommand.Execute(GetPathAtPointer());
                 e.Handled = true;
                 return;
             }
@@ -172,7 +173,7 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyDeleteFile, e.Key, isCtrl, isShift, isAlt))
             {
-                _ = HandleDeleteFileAsync(GetPathAtPointer());
+                WeakReferenceMessenger.Default.Send(new DeleteFileMessage(GetPathAtPointer()));
                 e.Handled = true;
                 return;
             }
@@ -208,7 +209,7 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyToggleBookmarks, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.BookmarkManager.MenuBookmarksToggle_Click(sender, new RoutedEventArgs());
+                _window.ViewModel.ToggleBookmarkPanelCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -421,21 +422,7 @@ namespace quick_image_viewer.Helpers
         public void HandleDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (_window.IsDialogOpen) return;
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-            if (appWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
-            {
-                appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                _window.AppTitleBar.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
-                _window.AppTitleBar.Visibility = Visibility.Collapsed;
-            }
+            _window.ViewModel.ToggleFullscreenCommand.Execute(null);
         }
 
         public async void HandleDrop(object sender, DragEventArgs e)
@@ -475,58 +462,5 @@ namespace quick_image_viewer.Helpers
             e.AcceptedOperation = DataPackageOperation.Copy;
         }
 
-        private async System.Threading.Tasks.Task HandleDeleteFileAsync(string path)
-        {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
-
-            var dialog = new ContentDialog
-            {
-                Title = _resourceLoader.GetString("DeleteDialog_Title") ?? "Delete File",
-                Content = string.Format(_resourceLoader.GetString("DeleteDialog_Content") ?? "Are you sure you want to delete this file?\n{0}", Path.GetFileName(path)),
-                PrimaryButtonText = _resourceLoader.GetString("DeleteDialog_PrimaryButton") ?? "Delete",
-                CloseButtonText = _resourceLoader.GetString("DeleteDialog_CloseButton") ?? "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = _window.Content.XamlRoot
-            };
-
-            _window.IsDialogOpen = true;
-            var result = await dialog.ShowAsync();
-            _window.IsDialogOpen = false;
-
-            if (result == ContentDialogResult.Primary)
-            {
-                try
-                {
-                    int deleteIndex = _window.Playlist.IndexOf(path);
-
-                    // If we are deleting the current image, move to the next one
-                    if (path == _window.CurrentImagePath)
-                    {
-                        _window.Navigate(1, true);
-                    }
-
-                    // Delete file
-                    File.Delete(path);
-
-                    // Remove from playlist
-                    if (deleteIndex != -1)
-                    {
-                        _window.Playlist.RemoveAt(deleteIndex);
-                        _window.GridItems.RemoveAt(deleteIndex);
-
-                        // Adjust current index if we deleted something before it
-                        if (_window.CurrentIndex > deleteIndex) _window.CurrentIndex--;
-                        if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;
-                    }
-
-                    _window.ShowNotification(_resourceLoader.GetString("Notification_FileDeleted"));
-                    _ = _window.UpdateDisplayAsync();
-                }
-                catch (Exception ex)
-                {
-                    _window.ShowNotification(string.Format(_resourceLoader.GetString("Notification_DeleteFailed"), ex.Message));
-                }
-            }
-        }
     }
 }
