@@ -13,6 +13,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 ### 🖼️ Image Viewing
 
 - **Supported Formats**: JPG, JPEG, PNG, BMP, GIF, WebP (animation supported), AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX, etc.
+- **Video Playback**: Supports MP4, WebM, MKV, MOV, AVI, and WMV formats (Loop playback, Mute settings, Seek bar display).
 - **Direct Archive Support**: View images directly inside ZIP, CBZ, RAR, CBR, and 7z archives without extraction.
 - **High-Quality Scaling**: Smooth and high-quality image scaling powered by SkiaSharp 3.x (can be enabled in settings).
 - **High-Quality Rendering**: Fast image drawing using SkiaSharp
@@ -138,6 +139,9 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 
 - Windows 10 (1809) or later
 - .NET 8.0
+
+> [!NOTE]
+> To play certain video codecs such as HEVC (H.265) or AV1, you may need to install the "HEVC Video Extensions" or "AV1 Video Extension" from the Microsoft Store.
 
 ## Build
 

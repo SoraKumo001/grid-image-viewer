@@ -58,7 +58,7 @@
                 <local:ViewerPageControl x:Name="B2_Page4" Visibility="Collapsed" />
             </Grid>
 
-            <Grid x:Name="OverlayGrid" Background="Transparent" IsHitTestVisible="True" />
+            <Grid x:Name="OverlayGrid" Background="Transparent" IsHitTestVisible="False" />
         </Grid>
     </ScrollViewer>
 </UserControl>

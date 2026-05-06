@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using Windows.Media.Core;
-using Windows.Storage.Streams;
 namespace quick_image_viewer.Services
 {
     internal class ViewerImageLoader : IViewerImageLoader
@@ -62,44 +61,128 @@ namespace quick_image_viewer.Services
                 }
 
                 var ext = Path.GetExtension(filePath).ToLowerInvariant();
-                bool isWebM = ext == ".webm";
+                string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+                bool isVideo = videoExtensions.Contains(ext);
                 bool useSkia = ext == ".webp" || ext == ".gif" || ext == ".avis";
 
-                if (isWebM)
+                if (isVideo)
                 {
-                    IRandomAccessStream? stream = null;
-                    if (ArchiveManager.IsArchivePath(filePath))
+                    pageControl.LoadingRing.IsActive = true;
+                    System.Diagnostics.Debug.WriteLine($"[VideoLoader] Starting load: {filePath}");
+
+                    // メディアソースの生成をバックグラウンドで行う
+                    await Task.Run(() =>
                     {
-                        await Task.Run(() =>
+                        try
                         {
-                            var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
-                            var s = ArchiveManager.GetEntryStream(arc, entry);
-                            if (s != null) stream = s.AsRandomAccessStream();
-                        });
-                    }
+                            if (token.IsCancellationRequested) return;
 
-                    _window.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        pageControl.PageImage.Visibility = Visibility.Collapsed;
-                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
-                        pageControl.PagePlayer.Visibility = Visibility.Visible;
+                            MediaSource? source = null;
+                            if (ArchiveManager.IsArchivePath(filePath))
+                            {
+                                var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                                var stream = ArchiveManager.GetEntryStream(arc, entry);
+                                if (token.IsCancellationRequested) { stream?.Dispose(); return; }
 
-                        if (stream != null)
-                        {
-                            pageControl.PagePlayer.Source = MediaSource.CreateFromStream(stream, "video/webm");
-                        }
-                        else if (!ArchiveManager.IsArchivePath(filePath))
-                        {
-                            pageControl.PagePlayer.Source = MediaSource.CreateFromUri(new Uri(filePath));
-                        }
+                                string mimeType = ext switch
+                                {
+                                    ".mp4" => "video/mp4",
+                                    ".mkv" => "video/x-matroska",
+                                    ".mov" => "video/quicktime",
+                                    ".avi" => "video/x-msvideo",
+                                    ".wmv" => "video/x-ms-wmv",
+                                    ".flv" => "video/x-flv",
+                                    _ => "video/webm"
+                                };
+                                if (stream != null)
+                                {
+                                    source = MediaSource.CreateFromStream(stream.AsRandomAccessStream(), mimeType);
+                                    System.Diagnostics.Debug.WriteLine($"[VideoLoader] Created source from archive stream. Mime: {mimeType}");
+                                }
+                            }
+                            else
+                            {
+                                source = MediaSource.CreateFromUri(new Uri(filePath));
+                                System.Diagnostics.Debug.WriteLine($"[VideoLoader] Created source from URI");
+                            }
 
-                        if (pageControl.PagePlayer.MediaPlayer != null)
-                        {
-                            pageControl.PagePlayer.MediaPlayer.IsLoopingEnabled = true;
-                            pageControl.PagePlayer.MediaPlayer.IsMuted = true;
+                            if (token.IsCancellationRequested) { source?.Dispose(); return; }
+
+                            if (source != null)
+                            {
+                                pageControl.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (token.IsCancellationRequested) { source.Dispose(); return; }
+                                    try
+                                    {
+                                        pageControl.PageImage.Visibility = Visibility.Collapsed;
+                                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                                        pageControl.PagePlayer.Visibility = Visibility.Visible;
+
+                                        pageControl.PagePlayer.Source = source;
+
+                                        if (pageControl.PagePlayer.MediaPlayer != null)
+                                        {
+                                            var mp = pageControl.PagePlayer.MediaPlayer;
+                                            mp.IsLoopingEnabled = true;
+                                            mp.IsMuted = true;
+
+                                            // 準備完了時にローディングを消す
+                                            void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
+                                            {
+                                                sender.MediaOpened -= OnMediaOpened;
+                                                System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Opened Successfully: {filePath}");
+                                                pageControl.DispatcherQueue.TryEnqueue(() =>
+                                                {
+                                                    pageControl.LoadingRing.IsActive = false;
+                                                });
+                                            }
+                                            mp.MediaOpened += OnMediaOpened;
+
+                                            // エラー時も消す
+                                            void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
+                                            {
+                                                sender.MediaFailed -= OnMediaFailed;
+                                                System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Failed! Error: {args.Error}, Message: {args.ErrorMessage}");
+                                                pageControl.DispatcherQueue.TryEnqueue(() =>
+                                                {
+                                                    pageControl.LoadingRing.IsActive = false;
+                                                });
+                                            }
+                                            mp.MediaFailed += OnMediaFailed;
+                                        }
+                                        else
+                                        {
+                                            System.Diagnostics.Debug.WriteLine("[VideoLoader] MediaPlayer is NULL");
+                                            pageControl.LoadingRing.IsActive = false;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[VideoLoader] UI Thread Exception: {ex.Message}");
+                                        pageControl.LoadingRing.IsActive = false;
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine("[VideoLoader] Source creation failed (NULL)");
+                                pageControl.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    pageControl.LoadingRing.IsActive = false;
+                                });
+                            }
                         }
-                        pageControl.LoadingRing.IsActive = false;
-                    });
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[VideoLoader] Background Exception: {ex.Message}");
+                            pageControl.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                pageControl.LoadingRing.IsActive = false;
+                            });
+                        }
+                    }, token);
+
                     renderer.Reset();
                     renderer.CurrentFilePath = filePath;
                     return;

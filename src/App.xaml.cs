@@ -22,6 +22,12 @@ namespace quick_image_viewer
 
         public App()
         {
+            this.UnhandledException += (s, e) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Unhandled Exception: {e.Message}");
+                System.Diagnostics.Debug.WriteLine($"[App] Exception StackTrace: {e.Exception?.StackTrace}");
+                // e.Handled = true; // 必要に応じて継続させる場合はこれを有効にする
+            };
             Services = ConfigureServices();
             InitializeComponent();
         }

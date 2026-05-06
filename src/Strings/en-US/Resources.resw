@@ -518,4 +518,16 @@
   <data name="Notification_DeleteFailed" xml:space="preserve">
     <value>Delete failed: {0}</value>
   </data>
+  <data name="WelcomePanel_Title.Text" xml:space="preserve">
+    <value>No images loaded</value>
+  </data>
+  <data name="WelcomePanel_Instruction.Text" xml:space="preserve">
+    <value>Drag &amp; drop a folder here, or open one using the button below</value>
+  </data>
+  <data name="WelcomePanel_OpenButtonText.Text" xml:space="preserve">
+    <value>Open Folder</value>
+  </data>
+  <data name="MenuOpenFolder.Text" xml:space="preserve">
+    <value>Open Folder...</value>
+  </data>
 </root>

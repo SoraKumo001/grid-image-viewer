@@ -7,7 +7,7 @@ using quick_image_viewer.ViewModels;
 
 namespace quick_image_viewer.Managers
 {
-    internal class BookmarkManager : IBookmarkManager, IRecipient<ToggleBookmarkMessage>, IRecipient<ToggleBookmarkPanelMessage>
+    internal class BookmarkManager : IBookmarkManager, IRecipient<ToggleBookmarkMessage>
     {
         private readonly IViewerStateService _state;
         private readonly ISettingsManager _settings;
@@ -22,11 +22,9 @@ namespace quick_image_viewer.Managers
             _playlist = playlist;
 
             WeakReferenceMessenger.Default.Register<ToggleBookmarkMessage>(this);
-            WeakReferenceMessenger.Default.Register<ToggleBookmarkPanelMessage>(this);
         }
 
         public void Receive(ToggleBookmarkMessage message) => MenuBookmark_Click(null!, null!);
-        public void Receive(ToggleBookmarkPanelMessage message) => MenuBookmarksToggle_Click(null!, null!);
 
         public void UpdateBookmarkList()
         {

@@ -11,6 +11,7 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 ### 🖼️ 画像表示
 
 - **対応フォーマット**: JPG, JPEG, PNG, BMP, GIF, WebP（アニメーション対応）, AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX 等
+- **動画再生**: MP4, WebM, MKV, MOV, AVI, WMV 形式の再生に対応（ループ再生、ミュート設定、シークバー表示）
 - **圧縮ファイル直接表示**: ZIP, CBZ, RAR, CBR, 7z 形式の圧縮ファイルを解凍せずに直接閲覧可能
 - **高品質スケーリング**: SkiaSharp 3.x による滑らかで高品質な画像拡大・縮小（設定で有効化可能）
 - **高品質レンダリング**: SkiaSharp による高速な画像描画
@@ -137,6 +138,9 @@ https://github.com/SoraKumo001/quick-image-viewer/releases
 
 - Windows 10 (1809) 以降
 - .NET 8.0
+
+> [!NOTE]
+> HEVC (H.265) や AV1 などの特定のビデオコーデックを再生するには、Microsoft Store から「HEVC ビデオ拡張機能」や「AV1 Video Extension」などのインストールが必要になる場合があります。
 
 ## ビルド
 

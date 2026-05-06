@@ -193,13 +193,15 @@ namespace quick_image_viewer
 
         public MainWindow()
         {
-            this.InitializeComponent();
             var services = ((App)Application.Current).Services;
             ((App)Application.Current).SetMainView(this);
 
             State = services.GetRequiredService<IViewerStateService>();
             _settings = services.GetRequiredService<ISettingsManager>();
             ViewModel = services.GetRequiredService<MainViewModel>();
+
+            this.InitializeComponent();
+
             RootGrid.DataContext = ViewModel;
 
             SlideshowService = services.GetRequiredService<ISlideshowService>();
@@ -238,6 +240,8 @@ namespace quick_image_viewer
             this.Closed += MainWindow_Closed;
             AppWindowManager.InitializeWindow();
             GridControlInternal.GridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
+            RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
+            RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
 
             WeakReferenceMessenger.Default.Register<FullscreenMessage>(this);
             WeakReferenceMessenger.Default.Register<PlaylistUpdatedMessage>(this);
@@ -467,6 +471,7 @@ namespace quick_image_viewer
         public List<FrameworkElement> GetPageGrids() => new List<FrameworkElement> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
 
         public Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility BoolToVisInverse(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
         public Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
             => (isSearching && !isSlideshowRunning) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -515,5 +520,18 @@ namespace quick_image_viewer
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);
         private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) => SlideshowManager.SlideshowDialog_PrimaryButtonClick(sender, args);
+
+        private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new Windows.Storage.Pickers.FolderPicker();
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            picker.FileTypeFilter.Add("*");
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                LoadDirectory(folder.Path);
+            }
+        }
     }
 }

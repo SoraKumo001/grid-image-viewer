@@ -8,10 +8,53 @@
     xmlns:skia="using:SkiaSharp.Views.Windows"
     mc:Ignorable="d">
 
-    <Grid x:Name="InternalRootGrid">
-        <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
-        <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" />
-        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+    <Grid x:Name="InternalRootGrid" Background="Transparent" PointerExited="InternalRootGrid_PointerExited">
+        <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
+        <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
+        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="True" />
+        
+        <!-- 独自再生コントロール -->
+        <Border x:Name="CustomTransportPanel" 
+                VerticalAlignment="Bottom" 
+                HorizontalAlignment="Stretch" 
+                Margin="20,0,20,12" 
+                Padding="16,6" 
+                Background="#CC1F1F1F" 
+                CornerRadius="10" 
+                Visibility="Collapsed" 
+                IsHitTestVisible="True">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="PlayPauseButton" 
+                        Style="{StaticResource SubtleButtonStyle}" 
+                        Padding="8" Click="PlayPauseButton_Click">
+                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="18" Foreground="White" />
+                </Button>
+
+                <Slider x:Name="TimelineSlider" 
+                        Grid.Column="1" 
+                        VerticalAlignment="Center" 
+                        Margin="0,0,0,0" 
+                        Minimum="0" 
+                        StepFrequency="0.01" 
+                        PointerCaptureLost="TimelineSlider_PointerCaptureLost" 
+                        ValueChanged="TimelineSlider_ValueChanged" />
+
+                <TextBlock x:Name="TimeText" 
+                           Grid.Column="2" 
+                           Text="00:00 / 00:00" 
+                           VerticalAlignment="Center" 
+                           Foreground="#888888" 
+                           FontSize="12" 
+                           FontFamily="Consolas" />
+            </Grid>
+        </Border>
+
         <ProgressRing x:Name="InternalLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100" IsActive="False" />
         <Border x:Name="InternalFocusBorder" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
     </Grid>

@@ -518,4 +518,16 @@
   <data name="Notification_DeleteFailed" xml:space="preserve">
     <value>削除に失敗しました: {0}</value>
   </data>
+  <data name="WelcomePanel_Title.Text" xml:space="preserve">
+    <value>画像が読み込まれていません</value>
+  </data>
+  <data name="WelcomePanel_Instruction.Text" xml:space="preserve">
+    <value>フォルダをドラッグ＆ドロップするか、下のボタンから開いてください</value>
+  </data>
+  <data name="WelcomePanel_OpenButtonText.Text" xml:space="preserve">
+    <value>フォルダを開く</value>
+  </data>
+  <data name="MenuOpenFolder.Text" xml:space="preserve">
+    <value>フォルダを開く...</value>
+  </data>
 </root>

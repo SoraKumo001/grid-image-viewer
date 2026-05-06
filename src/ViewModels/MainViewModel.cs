@@ -12,6 +12,7 @@ namespace quick_image_viewer.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         public IViewerStateService State { get; }
+        private readonly Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue;
 
         // Commands
         public ICommand NavigateNextCommand { get; }
@@ -130,6 +131,7 @@ namespace quick_image_viewer.ViewModels
         }
 
         public bool IsViewerMode => !IsGridMode;
+        public bool HasImages => Playlist != null && Playlist.Count > 0;
 
         public string CurrentImagePath => (Playlist != null && CurrentIndex >= 0 && CurrentIndex < Playlist.Count) ? Playlist[CurrentIndex] : string.Empty;
 
@@ -193,6 +195,7 @@ namespace quick_image_viewer.ViewModels
         public MainViewModel(IViewerStateService stateService)
         {
             State = stateService;
+            _dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
             // Subscribe to state changes to update UI
             if (State is INotifyPropertyChanged npc)
@@ -208,7 +211,11 @@ namespace quick_image_viewer.ViewModels
                         if (e.PropertyName == nameof(State.CurrentIndex)) _overrideDisplayIndex = null;
                         UpdatePageIndicator();
                         if (e.PropertyName == nameof(State.IsGridMode)) OnPropertyChanged(nameof(IsViewerMode));
-                        if (e.PropertyName == nameof(State.CurrentIndex) || e.PropertyName == nameof(State.Playlist)) OnPropertyChanged(nameof(CurrentImagePath));
+                        if (e.PropertyName == nameof(State.CurrentIndex) || e.PropertyName == nameof(State.Playlist))
+                        {
+                            OnPropertyChanged(nameof(CurrentImagePath));
+                            OnPropertyChanged(nameof(HasImages));
+                        }
                         if (e.PropertyName == nameof(State.CurrentDirectory)) UpdateBookmarkMenuText();
                     }
                 };
@@ -262,41 +269,50 @@ namespace quick_image_viewer.ViewModels
 
             WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this, (r, m) =>
             {
-                var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
-                Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(settings.Bookmarks);
-                UpdateBookmarkMenuText();
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
+                    Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(settings.Bookmarks);
+                    UpdateBookmarkMenuText();
+                });
             });
 
             WeakReferenceMessenger.Default.Register<ToggleBookmarkPanelMessage>(this, (r, m) =>
             {
-                IsBookmarkPanelVisible = !IsBookmarkPanelVisible;
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    IsBookmarkPanelVisible = !IsBookmarkPanelVisible;
+                });
             });
 
             WeakReferenceMessenger.Default.Register<UpdateMenuStatesMessage>(this, (r, m) =>
             {
-                CanUndo = m.CanUndo;
-                CanRedo = m.CanRedo;
-                HasValidPath = m.HasValidPath;
-                IsImageEditable = m.IsImageEditable;
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    CanUndo = m.CanUndo;
+                    CanRedo = m.CanRedo;
+                    HasValidPath = m.HasValidPath;
+                    IsImageEditable = m.IsImageEditable;
 
-                var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
-                int splitCount = settings.MangaSplitCount;
-                IsViewSingle = (splitCount == 1);
-                IsViewDouble = (splitCount == 2);
-                IsViewQuad = (splitCount == 4);
+                    var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
+                    int splitCount = settings.MangaSplitCount;
+                    IsViewSingle = (splitCount == 1);
+                    IsViewDouble = (splitCount == 2);
+                    IsViewQuad = (splitCount == 4);
 
-                int layoutMode = settings.QuadLayoutMode;
-                IsLayoutAuto = (layoutMode == 0);
-                IsLayoutHorz = (layoutMode == 1);
-                IsLayoutGrid = (layoutMode == 2);
+                    int layoutMode = settings.QuadLayoutMode;
+                    IsLayoutAuto = (layoutMode == 0);
+                    IsLayoutHorz = (layoutMode == 1);
+                    IsLayoutGrid = (layoutMode == 2);
 
-                int stretchMode = settings.ImageStretchMode;
-                IsStretchOriginal = (stretchMode == 0);
-                IsStretchContain = (stretchMode == 2);
-                IsStretchCover = (stretchMode == 3);
+                    int stretchMode = settings.ImageStretchMode;
+                    IsStretchOriginal = (stretchMode == 0);
+                    IsStretchContain = (stretchMode == 2);
+                    IsStretchCover = (stretchMode == 3);
 
-                ShowPageIndicator = settings.ShowPageIndicator;
-                UpdateBookmarkMenuText();
+                    ShowPageIndicator = settings.ShowPageIndicator;
+                    UpdateBookmarkMenuText();
+                });
             });
 
             // Default values
