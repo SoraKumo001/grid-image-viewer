@@ -191,6 +191,7 @@
                     </Button>
                 </Grid>
                 <ListView x:Name="BookmarkListView" x:FieldModifier="internal" Grid.Row="1" Padding="0,0,0,16" 
+                          ItemsSource="{x:Bind ViewModel.Bookmarks, Mode=OneWay}"
                           SelectionMode="None" IsItemClickEnabled="True" ItemClick="BookmarkListView_ItemClick"
                           CanReorderItems="True" CanDragItems="True" AllowDrop="True" DragItemsCompleted="BookmarkListView_DragItemsCompleted">
                     <ListView.ItemTemplate>

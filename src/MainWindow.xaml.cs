@@ -23,7 +23,10 @@ namespace quick_image_viewer
         IRecipient<ToggleStretchMessage>,
         IRecipient<DeleteFileMessage>,
         IRecipient<ShellActionMessage>,
-        IRecipient<TogglePageIndicatorMessage>
+        IRecipient<TogglePageIndicatorMessage>,
+        IRecipient<ClearImageSourceMessage>,
+        IRecipient<RefreshDisplayMessage>,
+        IRecipient<BookmarksChangedMessage>
     {
         public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
@@ -245,6 +248,9 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<DeleteFileMessage>(this);
             WeakReferenceMessenger.Default.Register<ShellActionMessage>(this);
             WeakReferenceMessenger.Default.Register<TogglePageIndicatorMessage>(this);
+            WeakReferenceMessenger.Default.Register<ClearImageSourceMessage>(this);
+            WeakReferenceMessenger.Default.Register<RefreshDisplayMessage>(this);
+            WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this);
         }
 
 
@@ -391,6 +397,40 @@ namespace quick_image_viewer
         public void Receive(TogglePageIndicatorMessage message)
         {
             EditorManager.MenuPageIndicatorToggle_Click(null!, null!);
+        }
+
+        public void Receive(ClearImageSourceMessage message)
+        {
+            ((IMainView)this).ClearCachedBitmap(message.Path);
+        }
+
+        public void Receive(RefreshDisplayMessage message)
+        {
+            _ = UpdateDisplayAsync();
+        }
+
+        public void Receive(BookmarksChangedMessage message)
+        {
+            UpdateBookmarkMenu();
+        }
+
+        private void UpdateBookmarkMenu()
+        {
+            MenuBookmarkList.Items.Clear();
+            if (_settings.Bookmarks.Count == 0)
+            {
+                var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+                MenuBookmarkList.Items.Add(new MenuFlyoutItem { Text = loader.GetString("Bookmark_Empty"), IsEnabled = false });
+            }
+            else
+            {
+                foreach (var bm in _settings.Bookmarks)
+                {
+                    var bmItem = new MenuFlyoutItem { Text = bm.Name, Tag = bm.Path };
+                    bmItem.Click += (s, e) => LoadDirectory(bm.Path);
+                    MenuBookmarkList.Items.Add(bmItem);
+                }
+            }
         }
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)

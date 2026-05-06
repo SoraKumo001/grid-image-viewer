@@ -1,7 +1,10 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using quick_image_viewer.Interfaces;
+using quick_image_viewer.Views.Controls;
+using SkiaSharp;
 using System.Linq;
+
 namespace quick_image_viewer.Services
 {
     internal class DialogService : IDialogService
@@ -61,6 +64,31 @@ namespace quick_image_viewer.Services
                 ));
 
             _window.IsDialogOpen = anyOpen;
+        }
+
+        public void ShowCropOverlay()
+        {
+            Show(new CropOverlay(_window) { Name = "CropOverlay" });
+        }
+
+        public void ShowSettingsOverlay(ISettingsManager settings)
+        {
+            Show(new SettingsOverlay(_window, settings) { Name = "SettingsOverlay" });
+        }
+
+        public void ShowResizeOverlay(string sourcePath, int origW, int origH)
+        {
+            Show(new ResizeOverlay(_window, sourcePath, origW, origH) { Name = "ResizeOverlay" });
+        }
+
+        public void ShowToneAdjustmentOverlay(string sourcePath, SKBitmap? baseBmp)
+        {
+            Show(new ToneAdjustmentOverlay(_window, sourcePath, baseBmp) { Name = "ToneAdjustmentOverlay" });
+        }
+
+        public void ShowKeyBindingsOverlay(ISettingsManager settings)
+        {
+            Show(new KeyBindingsOverlay(_window, settings) { Name = "KeyBindingsOverlay" });
         }
     }
 }

@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Dispatching;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
@@ -9,28 +10,33 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace quick_image_viewer.Managers
 {
     internal class PlaylistManager : IPlaylistManager
     {
-        private readonly IMainView _window;
+        private readonly IViewerStateService _state;
         private readonly ISettingsManager _settings;
+        private readonly INotificationService _notification;
+        private readonly DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _loadCts;
 
-        public PlaylistManager(IMainView window, ISettingsManager settings)
+        public PlaylistManager(IViewerStateService state, ISettingsManager settings, INotificationService notification)
         {
-            _window = window;
+            _state = state;
             _settings = settings;
+            _notification = notification;
+            _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         }
 
         public void Navigate(int offset, bool forceSingleStep)
         {
-            if (_window.Playlist.Count == 0) return;
+            if (_state.Playlist.Count == 0) return;
 
             int step = forceSingleStep ? 1 : _settings.MangaSplitCount;
             int actualOffset = offset * step;
 
-            int newIndex = _window.CurrentIndex + actualOffset;
+            int newIndex = _state.CurrentIndex + actualOffset;
 
             if (newIndex < 0)
             {
@@ -41,14 +47,13 @@ namespace quick_image_viewer.Managers
                 }
                 else if (action == 2) // Loop
                 {
-                    _window.CurrentIndex = _window.Playlist.Count - 1;
-                    _window.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
-                    _ = _window.UpdateDisplayAsync();
+                    _state.CurrentIndex = _state.Playlist.Count - 1;
+                    _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
+                    WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
                 }
-                // action == 0 (None) -> do nothing
                 return;
             }
-            if (newIndex >= _window.Playlist.Count)
+            if (newIndex >= _state.Playlist.Count)
             {
                 int action = _settings.BoundaryAction;
                 if (action == 1) // NextFolder
@@ -57,36 +62,35 @@ namespace quick_image_viewer.Managers
                 }
                 else if (action == 2) // Loop
                 {
-                    _window.CurrentIndex = 0;
-                    _window.ShowNotification(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
-                    _ = _window.UpdateDisplayAsync();
+                    _state.CurrentIndex = 0;
+                    _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
+                    WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
                 }
-                // action == 0 (None) -> do nothing
                 return;
             }
 
-            _window.CurrentIndex = newIndex;
-            _ = _window.UpdateDisplayAsync();
+            _state.CurrentIndex = newIndex;
+            WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
         }
 
         public void NavigateFolder(int offset)
         {
-            string currentDir = _window.CurrentDirectory;
+            string currentDir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(currentDir)) return;
 
             _ = Task.Run(() =>
             {
                 string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset);
-                _window.DispatcherQueue.TryEnqueue(() =>
+                _dispatcherQueue.TryEnqueue(() =>
                 {
                     if (!string.IsNullOrEmpty(targetDir))
                     {
-                        _window.LoadDirectory(targetDir, string.Empty);
+                        LoadDirectory(targetDir, string.Empty);
                     }
                     else
                     {
                         var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-                        _window.ShowNotification(loader.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
+                        _notification.Show(loader.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
                     }
                 });
             });
@@ -96,9 +100,9 @@ namespace quick_image_viewer.Managers
         {
             _loadCts?.Cancel();
             _loadCts = new CancellationTokenSource();
-            _window.CurrentDirectory = path;
-            _window.IsSearchingFolder = true;
-            _window.Playlist.Clear();
+            _state.CurrentDirectory = path;
+            _state.IsSearchingFolder = true;
+            _state.Playlist.Clear();
             var token = _loadCts.Token;
 
             _ = Task.Run(() =>
@@ -107,7 +111,7 @@ namespace quick_image_viewer.Managers
                 {
                     List<string> initialFiles = preloadedPlaylist ?? FolderDiscoveryService.GetInitialPlaylist(path);
 
-                    _window.DispatcherQueue.TryEnqueue(() =>
+                    _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
                         UpdatePlaylist(initialFiles, initialFile, true);
@@ -116,39 +120,17 @@ namespace quick_image_viewer.Managers
                 }
                 catch
                 {
-                    _window.DispatcherQueue.TryEnqueue(() =>
+                    _dispatcherQueue.TryEnqueue(() =>
                     {
-                        _window.IsSearchingFolder = false;
+                        _state.IsSearchingFolder = false;
                     });
                 }
             });
         }
 
-        public void RemoveFromPlaylist(string path)
-        {
-            int index = _window.Playlist.IndexOf(path);
-            if (index != -1)
-            {
-                // If we are deleting the current image, move to the next one
-                if (path == _window.CurrentImagePath)
-                {
-                    Navigate(1, true);
-                }
-
-                _window.Playlist.RemoveAt(index);
-                _window.GridItems.RemoveAt(index);
-
-                // Adjust current index if we deleted something before it
-                if (_window.CurrentIndex > index) _window.CurrentIndex--;
-                if (_window.CurrentIndex >= _window.Playlist.Count) _window.CurrentIndex = _window.Playlist.Count - 1;
-
-                WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
-            }
-        }
-
         private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, CancellationToken token)
         {
-            if (_window.Playlist.Count > 0)
+            if (_state.Playlist.Count > 0)
             {
                 WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
 
@@ -158,7 +140,7 @@ namespace quick_image_viewer.Managers
                 }
                 else
                 {
-                    _window.IsSearchingFolder = false;
+                    _state.IsSearchingFolder = false;
                 }
             }
             else if (includeSiblings || includeSubfolders)
@@ -167,13 +149,13 @@ namespace quick_image_viewer.Managers
             }
             else
             {
-                _window.IsSearchingFolder = false;
+                _state.IsSearchingFolder = false;
             }
         }
 
         private void UpdatePlaylist(List<string> files, string targetPath, bool alreadySorted)
         {
-            string currentPath = !string.IsNullOrEmpty(targetPath) ? targetPath : _window.CurrentImagePath;
+            string currentPath = !string.IsNullOrEmpty(targetPath) ? targetPath : _state.CurrentImagePath;
             List<string> sortedFiles;
             if (alreadySorted)
             {
@@ -184,57 +166,74 @@ namespace quick_image_viewer.Managers
                 sortedFiles = files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
             }
 
-            _window.ViewModel.Playlist = new ObservableCollection<string>(sortedFiles);
+            _state.Playlist = new ObservableCollection<string>(sortedFiles);
 
-            if (_window.Playlist.Count > 0)
+            if (_state.Playlist.Count > 0)
             {
-                int idx = _window.Playlist.IndexOf(currentPath);
-                _window.CurrentIndex = idx >= 0 ? idx : 0;
+                int idx = _state.Playlist.IndexOf(currentPath);
+                _state.CurrentIndex = idx >= 0 ? idx : 0;
             }
             else
             {
-                _window.CurrentIndex = -1;
+                _state.CurrentIndex = -1;
             }
         }
 
         private async Task DiscoverAdditionalFilesAsync(string path, string initialFile, bool includeSiblings, bool includeSubfolders, CancellationToken token)
         {
-            List<string> accumulatedFiles = new List<string>(_window.Playlist);
+            List<string> accumulatedFiles = new List<string>(_state.Playlist);
             var comparer = new NaturalStringComparer();
             var lastUpdate = DateTime.Now;
 
             await FolderDiscoveryService.DiscoverFilesAsync(path, includeSiblings, includeSubfolders, (newFiles) =>
             {
-                // 修正: 重い並び替え処理（Distinct/OrderBy）をバックグラウンドスレッドで実行する
                 accumulatedFiles.AddRange(newFiles);
                 var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
                 accumulatedFiles = sorted;
 
-                // 修正: UI スレッドへの通知頻度を制限する（1秒以上経過した場合のみ更新）
                 if ((DateTime.Now - lastUpdate).TotalMilliseconds > 1000)
                 {
                     lastUpdate = DateTime.Now;
-                    _window.DispatcherQueue.TryEnqueue(() =>
+                    _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
 
-                        string currentPath = _window.CurrentImagePath;
+                        string currentPath = _state.CurrentImagePath;
                         UpdatePlaylist(sorted, currentPath, true);
                         WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
                     });
                 }
             }, token);
 
-            // 最終更新とステータス変更
-            _window.DispatcherQueue.TryEnqueue(() =>
+            _dispatcherQueue.TryEnqueue(() =>
             {
                 if (!token.IsCancellationRequested)
                 {
-                    UpdatePlaylist(accumulatedFiles, _window.CurrentImagePath, true);
+                    UpdatePlaylist(accumulatedFiles, _state.CurrentImagePath, true);
                     WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
                 }
-                _window.IsSearchingFolder = false;
+                _state.IsSearchingFolder = false;
             });
+        }
+
+        public void RemoveFromPlaylist(string path)
+        {
+            int index = _state.Playlist.IndexOf(path);
+            if (index != -1)
+            {
+                if (path == _state.CurrentImagePath)
+                {
+                    Navigate(1, true);
+                }
+
+                _state.Playlist.RemoveAt(index);
+                // GridItems management moved to GridManager via message
+
+                if (_state.CurrentIndex > index) _state.CurrentIndex--;
+                if (_state.CurrentIndex >= _state.Playlist.Count) _state.CurrentIndex = _state.Playlist.Count - 1;
+
+                WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
+            }
         }
     }
 }

@@ -9,6 +9,8 @@ namespace quick_image_viewer.Services
         string CurrentDirectory { get; set; }
         bool IsGridMode { get; set; }
         bool IsSlideshowRunning { get; set; }
+        bool IsSearchingFolder { get; set; }
+        string CurrentImagePath { get; }
     }
 
     public partial class ViewerStateService : ObservableObject, IViewerStateService
@@ -27,5 +29,10 @@ namespace quick_image_viewer.Services
 
         [ObservableProperty]
         public partial bool IsSlideshowRunning { get; set; } = false;
+
+        [ObservableProperty]
+        public partial bool IsSearchingFolder { get; set; } = false;
+
+        public string CurrentImagePath => (Playlist != null && CurrentIndex >= 0 && CurrentIndex < Playlist.Count) ? Playlist[CurrentIndex] : string.Empty;
     }
 }

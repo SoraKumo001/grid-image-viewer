@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Xaml;
+using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -156,6 +158,13 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty] public partial string BookmarkMenuText { get; set; } = "Bookmark this folder";
         [ObservableProperty] public partial string ContextPath { get; set; } = string.Empty;
 
+        private ObservableCollection<quick_image_viewer.Managers.BookmarkItem> _bookmarks = new();
+        public ObservableCollection<quick_image_viewer.Managers.BookmarkItem> Bookmarks
+        {
+            get => _bookmarks;
+            set => SetProperty(ref _bookmarks, value);
+        }
+
         [ObservableProperty]
         public partial bool IsPageIndicatorVisible { get; set; }
 
@@ -193,15 +202,22 @@ namespace quick_image_viewer.ViewModels
                     OnPropertyChanged(e.PropertyName);
                     if (e.PropertyName == nameof(State.Playlist) ||
                         e.PropertyName == nameof(State.CurrentIndex) ||
-                        e.PropertyName == nameof(State.IsGridMode))
+                        e.PropertyName == nameof(State.IsGridMode) ||
+                        e.PropertyName == nameof(State.CurrentDirectory))
                     {
                         if (e.PropertyName == nameof(State.CurrentIndex)) _overrideDisplayIndex = null;
                         UpdatePageIndicator();
                         if (e.PropertyName == nameof(State.IsGridMode)) OnPropertyChanged(nameof(IsViewerMode));
                         if (e.PropertyName == nameof(State.CurrentIndex) || e.PropertyName == nameof(State.Playlist)) OnPropertyChanged(nameof(CurrentImagePath));
+                        if (e.PropertyName == nameof(State.CurrentDirectory)) UpdateBookmarkMenuText();
                     }
                 };
             }
+
+            // Initialize Bookmarks
+            var initialSettings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
+            Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(initialSettings.Bookmarks);
+            UpdateBookmarkMenuText();
 
             NavigateNextCommand = new RelayCommand(() => Navigate(1));
             NavigatePrevCommand = new RelayCommand(() => Navigate(-1));
@@ -244,9 +260,59 @@ namespace quick_image_viewer.ViewModels
             KeyBindingsCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("KeyBindings")));
             SupportCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("Support")));
 
+            WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this, (r, m) =>
+            {
+                var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
+                Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(settings.Bookmarks);
+                UpdateBookmarkMenuText();
+            });
+
+            WeakReferenceMessenger.Default.Register<ToggleBookmarkPanelMessage>(this, (r, m) =>
+            {
+                IsBookmarkPanelVisible = !IsBookmarkPanelVisible;
+            });
+
+            WeakReferenceMessenger.Default.Register<UpdateMenuStatesMessage>(this, (r, m) =>
+            {
+                CanUndo = m.CanUndo;
+                CanRedo = m.CanRedo;
+                HasValidPath = m.HasValidPath;
+                IsImageEditable = m.IsImageEditable;
+
+                var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
+                int splitCount = settings.MangaSplitCount;
+                IsViewSingle = (splitCount == 1);
+                IsViewDouble = (splitCount == 2);
+                IsViewQuad = (splitCount == 4);
+
+                int layoutMode = settings.QuadLayoutMode;
+                IsLayoutAuto = (layoutMode == 0);
+                IsLayoutHorz = (layoutMode == 1);
+                IsLayoutGrid = (layoutMode == 2);
+
+                int stretchMode = settings.ImageStretchMode;
+                IsStretchOriginal = (stretchMode == 0);
+                IsStretchContain = (stretchMode == 2);
+                IsStretchCover = (stretchMode == 3);
+
+                ShowPageIndicator = settings.ShowPageIndicator;
+                UpdateBookmarkMenuText();
+            });
+
             // Default values
             SlideshowInterval = 5.0;
             SlideshowCrossfadeDuration = 0.5;
+        }
+
+        private void UpdateBookmarkMenuText()
+        {
+            var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
+            string dir = CurrentDirectory;
+            if (!string.IsNullOrEmpty(dir))
+            {
+                bool isBookmarked = settings.Bookmarks.Exists(b => b.Path == dir);
+                BookmarkMenuText = isBookmarked ? "Remove from bookmarks" : "Bookmark this folder"; // Should ideally use resources
+            }
         }
 
         private void Navigate(int offset)
@@ -294,4 +360,8 @@ namespace quick_image_viewer.ViewModels
     public record ShellActionMessage(string Action, string Path = "");
     public record ViewActionMessage(string Action, int Value);
     public record EditFilterArgs(string Path, string Filter);
+    public record BookmarksChangedMessage();
+    public record UpdateMenuStatesMessage(string Path, bool CanUndo, bool CanRedo, bool HasValidPath, bool IsImageEditable);
+    public record ClearImageSourceMessage(string Path);
+    public record RefreshDisplayMessage();
 }

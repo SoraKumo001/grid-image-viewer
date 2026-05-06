@@ -2,19 +2,25 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using quick_image_viewer.Interfaces;
+using quick_image_viewer.Services;
 using quick_image_viewer.ViewModels;
 
 namespace quick_image_viewer.Managers
 {
     internal class BookmarkManager : IBookmarkManager, IRecipient<ToggleBookmarkMessage>, IRecipient<ToggleBookmarkPanelMessage>
     {
-        private readonly IMainView _window;
+        private readonly IViewerStateService _state;
         private readonly ISettingsManager _settings;
+        private readonly INotificationService _notification;
+        private readonly IPlaylistManager _playlist;
 
-        public BookmarkManager(IMainView window, ISettingsManager settings)
+        public BookmarkManager(IViewerStateService state, ISettingsManager settings, INotificationService notification, IPlaylistManager playlist)
         {
-            _window = window;
+            _state = state;
             _settings = settings;
+            _notification = notification;
+            _playlist = playlist;
+
             WeakReferenceMessenger.Default.Register<ToggleBookmarkMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleBookmarkPanelMessage>(this);
         }
@@ -24,8 +30,8 @@ namespace quick_image_viewer.Managers
 
         public void UpdateBookmarkList()
         {
-            _window.BookmarkListView.ItemsSource = null;
-            _window.BookmarkListView.ItemsSource = _settings.Bookmarks;
+            // Now handled by MainViewModel listening to BookmarksChangedMessage
+            WeakReferenceMessenger.Default.Send(new BookmarksChangedMessage());
         }
 
         public void MoveBookmark(string path, int direction)
@@ -42,35 +48,33 @@ namespace quick_image_viewer.Managers
             _settings.SaveSettings();
 
             UpdateBookmarkList();
-            _window.EditorManager.UpdateMenuStates();
         }
 
         public void MenuBookmark_Click(object sender, RoutedEventArgs e)
         {
-            string dir = _window.CurrentDirectory;
+            string dir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(dir)) return;
 
             bool added = _settings.ToggleBookmark(dir, true);
-            _window.EditorManager.UpdateMenuStates();
             UpdateBookmarkList();
+
             var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            _window.ShowNotification(loader.GetString(added ? "Notification_AddedToBookmarks" : "Notification_RemovedFromBookmarks"));
+            _notification.Show(loader.GetString(added ? "Notification_AddedToBookmarks" : "Notification_RemovedFromBookmarks"));
         }
 
         public void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e)
         {
-            bool show = !_window.ViewModel.IsBookmarkPanelVisible;
-            _window.ViewModel.IsBookmarkPanelVisible = show;
-            if (show) UpdateBookmarkList();
-            _window.EditorManager.UpdateMenuStates();
+            WeakReferenceMessenger.Default.Send(new ToggleBookmarkPanelMessage());
         }
 
         public void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is BookmarkItem item)
             {
-                _window.LoadDirectory(item.Path);
-                _window.ViewModel.IsBookmarkPanelVisible = false;
+                _playlist.LoadDirectory(item.Path);
+                // We might want a message to close the panel if needed, but for now we can rely on ViewModel
+                // Or just send the toggle message again to close it
+                WeakReferenceMessenger.Default.Send(new ToggleBookmarkPanelMessage());
             }
         }
 
@@ -80,14 +84,13 @@ namespace quick_image_viewer.Managers
             {
                 _settings.ToggleBookmark(path, true);
                 UpdateBookmarkList();
-                _window.EditorManager.UpdateMenuStates();
             }
         }
 
         public void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             _settings.SaveSettings();
-            _window.EditorManager.UpdateMenuStates();
+            UpdateBookmarkList();
         }
     }
 }
