@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -422,7 +423,7 @@ namespace quick_image_viewer.Views.Controls
                 // Refresh playlist if extensions changed
                 if (!string.IsNullOrEmpty(_window.CurrentDirectory))
                 {
-                    _window.LoadDirectory(_window.CurrentDirectory, _window.CurrentImagePath);
+                    WeakReferenceMessenger.Default.Send(new quick_image_viewer.ViewModels.LoadDirectoryMessage(_window.CurrentDirectory, _window.CurrentImagePath));
                 }
             }
 

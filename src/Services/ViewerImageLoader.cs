@@ -36,7 +36,7 @@ namespace quick_image_viewer.Services
         {
             if (ArchiveManager.IsArchive(filePath) && !ArchiveManager.IsArchivePath(filePath))
             {
-                _window.DispatcherQueue.TryEnqueue(() => _window.LoadDirectory(filePath));
+                _window.DispatcherQueue.TryEnqueue(() => CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(filePath)));
                 return;
             }
 

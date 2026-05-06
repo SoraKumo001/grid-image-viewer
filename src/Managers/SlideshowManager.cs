@@ -142,7 +142,7 @@ namespace quick_image_viewer.Managers
             {
                 _wasExpanded = true;
                 string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
-                _mainWindow.LoadDirectory(_state.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly);
+                WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(_state.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly));
             }
 
             _slideshowService.Start();
@@ -197,7 +197,7 @@ namespace quick_image_viewer.Managers
             {
                 _wasExpanded = false;
                 string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
-                _mainWindow.LoadDirectory(_state.CurrentDirectory, currentPath, false, false);
+                WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(_state.CurrentDirectory, currentPath, false, false));
             }
             else
             {

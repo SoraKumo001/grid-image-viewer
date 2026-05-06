@@ -28,7 +28,10 @@ namespace quick_image_viewer
         IRecipient<ClearImageSourceMessage>,
         IRecipient<RefreshDisplayMessage>,
         IRecipient<BookmarksChangedMessage>,
-        IRecipient<FocusRequestMessage>
+        IRecipient<FocusRequestMessage>,
+        IRecipient<FolderNavigationMessage>,
+        IRecipient<NavigationMessage>,
+        IRecipient<LoadDirectoryMessage>
     {
         public IViewerStateService State { get; private set; }
         public new Microsoft.UI.Windowing.AppWindow AppWindow
@@ -117,8 +120,7 @@ namespace quick_image_viewer
                 }
             }
         }
-        void IMainView.LoadDirectory(string path, string initialFile, bool includeSiblings, bool includeSubfolders, List<string>? preloadedPlaylist)
-            => LoadDirectory(path, initialFile, includeSiblings, includeSubfolders, preloadedPlaylist);
+
         void IMainView.Close() => Close();
         Microsoft.UI.Windowing.AppWindow IMainView.AppWindow => AppWindow;
         System.Collections.ObjectModel.ObservableCollection<string> IMainView.Playlist => ViewModel.Playlist;
@@ -241,7 +243,7 @@ namespace quick_image_viewer
 
             this.Closed += MainWindow_Closed;
             AppWindowManager.InitializeWindow();
-            GridControlInternal.GridView.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
+
             RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
             RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
             RootGrid.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(RootGrid_KeyDown), true);
@@ -260,6 +262,9 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<RefreshDisplayMessage>(this);
             WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this);
             WeakReferenceMessenger.Default.Register<FocusRequestMessage>(this);
+            WeakReferenceMessenger.Default.Register<FolderNavigationMessage>(this);
+            WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
+            WeakReferenceMessenger.Default.Register<LoadDirectoryMessage>(this);
         }
 
 
@@ -291,7 +296,7 @@ namespace quick_image_viewer
                     {
                         if (_settings.SlideshowNextFolder)
                         {
-                            NavigateFolder(1);
+                            WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(1));
                         }
                         else if (_settings.SlideshowLoop)
                         {
@@ -441,6 +446,21 @@ namespace quick_image_viewer
             });
         }
 
+        public void Receive(FolderNavigationMessage message)
+        {
+            PlaylistManager.NavigateFolder(message.Offset);
+        }
+
+        public void Receive(NavigationMessage message)
+        {
+            PlaylistManager.Navigate(message.Offset, message.ForceSingleStep);
+        }
+
+        public void Receive(LoadDirectoryMessage message)
+        {
+            PlaylistManager.LoadDirectory(message.Path, message.InitialFile, message.IncludeSiblings, message.IncludeSubfolders, message.PreloadedPlaylist);
+        }
+
         private void UpdateBookmarkMenu()
         {
             MenuBookmarkList.Items.Clear();
@@ -500,11 +520,7 @@ namespace quick_image_viewer
 
         public string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;
         public void ShowNotification(string message) => ViewerManager.ShowNotification(message);
-        public void Navigate(int offset, bool forceSingleStep = false) => WeakReferenceMessenger.Default.Send(new NavigationMessage(offset, forceSingleStep));
-        public void NavigateFolder(int offset) => WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
 
-        void IMainView.Navigate(int direction, bool forceSingleStep) => Navigate(direction, forceSingleStep);
-        void IMainView.NavigateFolder(int direction) => NavigateFolder(direction);
 
 
         private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
@@ -514,7 +530,7 @@ namespace quick_image_viewer
             _resizeTimer.Stop();
             _resizeTimer.Start();
         }
-        private void ImageGridView_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
+
         private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerMoved(sender, e);
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);

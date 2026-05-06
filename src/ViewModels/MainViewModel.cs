@@ -315,4 +315,5 @@ namespace quick_image_viewer.ViewModels
     public record ClearImageSourceMessage(string Path);
     public record RefreshDisplayMessage();
     public record FocusRequestMessage();
+    public record LoadDirectoryMessage(string Path, string InitialFile = "", bool IncludeSiblings = false, bool IncludeSubfolders = false, System.Collections.Generic.List<string>? PreloadedPlaylist = null);
 }

@@ -40,7 +40,7 @@ namespace quick_image_viewer.Interfaces
         bool IsDialogOpen { get; set; }
 
 
-        void LoadDirectory(string path, string initialFile = "", bool includeSiblings = false, bool includeSubfolders = false, System.Collections.Generic.List<string>? preloadedPlaylist = null);
+
         void UpdatePageIndicator();
         Task UpdateDisplayAsync();
         void UpdateGridItems(bool forceFullUpdate);
@@ -48,8 +48,6 @@ namespace quick_image_viewer.Interfaces
         void StopAnimation();
         void ClearCachedBitmap(string path);
         void Close();
-        void Navigate(int direction, bool forceSingleStep = false);
-        void NavigateFolder(int direction);
 
         Microsoft.UI.Windowing.AppWindow AppWindow { get; }
         bool IsSearchingFolder { get; set; }

@@ -18,7 +18,7 @@ namespace quick_image_viewer.Helpers
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
-        private ScrollViewer? _gridScrollViewer;
+
         private ResourceLoader _resourceLoader = new ResourceLoader();
         private Windows.Foundation.Point _lastPointerPoint;
 
@@ -259,111 +259,45 @@ namespace quick_image_viewer.Helpers
 
             if (_window.IsGridMode)
             {
-                // Handle cursor keys during grid mode
-                if (e.Key == Windows.System.VirtualKey.Left || e.Key == Windows.System.VirtualKey.Right ||
-                    e.Key == Windows.System.VirtualKey.Up || e.Key == Windows.System.VirtualKey.Down)
-                {
-                    int selectedIdx = _window.ImageGridView.SelectedIndex;
-                    int columns = 1;
-                    if (_window.ImageGridView.ItemsPanelRoot is ItemsWrapGrid wrap && wrap.ItemWidth > 0)
-                    {
-                        double availW = _window.ImageGridView.ActualWidth - _window.ImageGridView.Padding.Left - _window.ImageGridView.Padding.Right - 24;
-                        columns = Math.Max(1, (int)(availW / wrap.ItemWidth));
-                    }
-                    int currentRow = selectedIdx / columns;
-                    int totalRows = (int)Math.Ceiling((double)_window.GridItems.Count / columns);
-
-                    if (e.Key == Windows.System.VirtualKey.Up && currentRow == 0)
-                    {
-                        _window.NavigateFolder(-1);
-                        e.Handled = true;
-                        return;
-                    }
-                    if (e.Key == Windows.System.VirtualKey.Down && currentRow >= totalRows - 1)
-                    {
-                        _window.NavigateFolder(1);
-                        e.Handled = true;
-                        return;
-                    }
-
-                    if (e.Key == Windows.System.VirtualKey.Down && currentRow == totalRows - 2)
-                    {
-                        int targetIdx = selectedIdx + columns;
-                        if (targetIdx >= _window.GridItems.Count)
-                        {
-                            _window.ImageGridView.SelectedIndex = _window.GridItems.Count - 1;
-                            _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
-
-                            _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
-                            {
-                                var container = _window.ImageGridView.ContainerFromIndex(_window.ImageGridView.SelectedIndex) as GridViewItem;
-                                container?.Focus(FocusState.Programmatic);
-                            });
-                            e.Handled = true;
-                            return;
-                        }
-                    }
-
-                    var focused = FocusManager.GetFocusedElement(_window.Content.XamlRoot);
-                    if (focused is not GridViewItem)
-                    {
-                        if (_window.ImageGridView.SelectedItem != null)
-                        {
-                            var container = _window.ImageGridView.ContainerFromItem(_window.ImageGridView.SelectedItem) as GridViewItem;
-                            container?.Focus(FocusState.Programmatic);
-                        }
-                        e.Handled = true;
-                    }
-                }
-                return;
+                return; // Keyboard navigation inside grid is handled by GridImagePanel
             }
 
             if (e.Key == Windows.System.VirtualKey.Left)
             {
-                _window.Navigate(_settings.MangaSplitCount > 1 ? 1 : -1, isShift);
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(_settings.MangaSplitCount > 1 ? 1 : -1, isShift));
                 e.Handled = true;
                 return;
             }
             if (e.Key == Windows.System.VirtualKey.Right)
             {
-                _window.Navigate(_settings.MangaSplitCount > 1 ? -1 : 1, isShift);
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(_settings.MangaSplitCount > 1 ? -1 : 1, isShift));
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyPrevImage, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.Navigate(-1, isShift);
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(-1, isShift));
                 e.Handled = true;
             }
             else if (IsMatch(_settings.KeyNextImage, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.Navigate(1, isShift);
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(1, isShift));
                 e.Handled = true;
             }
             else if (IsMatch(_settings.KeyPrevFolder, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.NavigateFolder(-1);
+                WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(-1));
                 e.Handled = true;
             }
             else if (IsMatch(_settings.KeyNextFolder, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.NavigateFolder(1);
+                WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(1));
                 e.Handled = true;
             }
         }
 
-        private ScrollViewer? GetScrollViewer(DependencyObject element)
-        {
-            if (element is ScrollViewer sv) return sv;
-            for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(element, i);
-                var result = GetScrollViewer(child);
-                if (result != null) return result;
-            }
-            return null;
-        }
+
 
         public void HandlePointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
@@ -381,41 +315,17 @@ namespace quick_image_viewer.Helpers
 
             if (_window.IsGridMode)
             {
-                if (_gridScrollViewer == null)
-                {
-                    _gridScrollViewer = GetScrollViewer(_window.ImageGridView);
-                }
-
-                if (_gridScrollViewer != null)
-                {
-                    if (props.MouseWheelDelta < 0) // Scroll down
-                    {
-                        if (_gridScrollViewer.VerticalOffset >= _gridScrollViewer.ScrollableHeight - 0.5)
-                        {
-                            _window.NavigateFolder(1);
-                            e.Handled = true;
-                        }
-                    }
-                    else // Scroll up
-                    {
-                        if (_gridScrollViewer.VerticalOffset <= 0.5)
-                        {
-                            _window.NavigateFolder(-1);
-                            e.Handled = true;
-                        }
-                    }
-                }
-                return;
+                return; // Scroll events inside grid are handled by GridImagePanel
             }
 
             // Navigate images (Single image display mode)
             if (props.MouseWheelDelta < 0)
             {
-                _window.Navigate(1, isShift); // Next
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(1, isShift)); // Next
             }
             else
             {
-                _window.Navigate(-1, isShift); // Prev
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(-1, isShift)); // Prev
             }
             e.Handled = true;
         }
@@ -436,18 +346,18 @@ namespace quick_image_viewer.Helpers
                     var item = items[0];
                     if (item is StorageFolder folder)
                     {
-                        _window.LoadDirectory(folder.Path, string.Empty);
+                        WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(folder.Path, string.Empty));
                     }
                     else if (item is StorageFile file)
                     {
                         if (FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(file.Path), _settings.EnabledExtensions))
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
-                            _window.LoadDirectory(dir, file.Path);
+                            WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(dir, file.Path));
                         }
                         else if (ArchiveManager.IsArchive(file.Path))
                         {
-                            _window.LoadDirectory(file.Path);
+                            WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(file.Path));
                         }
                         else
                         {
