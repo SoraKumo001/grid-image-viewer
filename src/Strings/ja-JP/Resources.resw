@@ -65,7 +65,7 @@
     <value>名前を付けて保存...</value>
   </data>
   <data name="MenuOverwrite.Text" xml:space="preserve">
-    <value>上書き保存</value>
+    <value>上書き保存 (Ctrl+S)</value>
   </data>
   <data name="MenuPrint.Text" xml:space="preserve">
     <value>印刷</value>
@@ -290,10 +290,10 @@
     <value>JPEG/WebP 保存品質</value>
   </data>
   <data name="MenuUndo.Text" xml:space="preserve">
-    <value>元に戻す</value>
+    <value>元に戻す (Ctrl+Z)</value>
   </data>
   <data name="MenuRedo.Text" xml:space="preserve">
-    <value>やり直し</value>
+    <value>やり直し (Ctrl+Y)</value>
   </data>
   <data name="KeyBinding_Metadata" xml:space="preserve">
     <value>メタデータ表示切替</value>
@@ -550,5 +550,26 @@
   </data>
   <data name="Settings_Extensions.Text" xml:space="preserve">
     <value>表示対象の拡張子</value>
+  </data>
+  <data name="MenuFile.Text" xml:space="preserve">
+    <value>ファイル</value>
+  </data>
+  <data name="MenuEdit.Text" xml:space="preserve">
+    <value>編集</value>
+  </data>
+  <data name="MenuView.Text" xml:space="preserve">
+    <value>表示</value>
+  </data>
+  <data name="MenuSettingsSub.Text" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="MenuStretchMode.Text" xml:space="preserve">
+    <value>表示サイズ (ストレッチ)</value>
+  </data>
+  <data name="MenuCopyPath.Text" xml:space="preserve">
+    <value>ファイルパスをコピー</value>
+  </data>
+  <data name="MenuDeleteFile.Text" xml:space="preserve">
+    <value>ファイルを削除</value>
   </data>
 </root>

@@ -65,7 +65,7 @@
     <value>Save As...</value>
   </data>
   <data name="MenuOverwrite.Text" xml:space="preserve">
-    <value>Overwrite</value>
+    <value>Overwrite (Ctrl+S)</value>
   </data>
   <data name="MenuPrint.Text" xml:space="preserve">
     <value>Print</value>
@@ -284,10 +284,10 @@
     <value>JPEG/WebP Save Quality</value>
   </data>
   <data name="MenuUndo.Text" xml:space="preserve">
-    <value>Undo</value>
+    <value>Undo (Ctrl+Z)</value>
   </data>
   <data name="MenuRedo.Text" xml:space="preserve">
-    <value>Redo</value>
+    <value>Redo (Ctrl+Y)</value>
   </data>
   <data name="KeyBinding_Metadata" xml:space="preserve">
     <value>Toggle Metadata</value>
@@ -550,5 +550,26 @@
   </data>
   <data name="Settings_Extensions.Text" xml:space="preserve">
     <value>Enabled File Extensions</value>
+  </data>
+  <data name="MenuFile.Text" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="MenuEdit.Text" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="MenuView.Text" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="MenuSettingsSub.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="MenuStretchMode.Text" xml:space="preserve">
+    <value>Stretch Mode</value>
+  </data>
+  <data name="MenuCopyPath.Text" xml:space="preserve">
+    <value>Copy File Path</value>
+  </data>
+  <data name="MenuDeleteFile.Text" xml:space="preserve">
+    <value>Delete File</value>
   </data>
 </root>

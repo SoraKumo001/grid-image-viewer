@@ -31,6 +31,7 @@ namespace quick_image_viewer.Helpers
         public void HandlePointerMoved(object sender, PointerRoutedEventArgs e)
         {
             _lastPointerPoint = e.GetCurrentPoint(_window.PagesGrid).Position;
+            _window.MetadataDisplayService.HandlePointerMoved(e);
         }
 
         private string GetPathAtPointer()

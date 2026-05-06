@@ -33,6 +33,7 @@ namespace quick_image_viewer.ViewModels
         public ICommand OpenSlideshowCommand { get; }
         public ICommand ToggleBookmarkCommand { get; }
         public ICommand ToggleBookmarkPanelCommand { get; }
+        public ICommand CopyPathCommand { get; }
         public ICommand DeleteFileCommand { get; }
         public ICommand ToggleMangaModeCommand { get; }
         public ICommand ToggleStretchModeCommand { get; }
@@ -245,6 +246,7 @@ namespace quick_image_viewer.ViewModels
             OpenSlideshowCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<OpenSlideshowMessage>());
             ToggleBookmarkCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkMessage>());
             ToggleBookmarkPanelCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkPanelMessage>());
+            CopyPathCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new CopyPathMessage(path ?? string.Empty)));
             DeleteFileCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new DeleteFileMessage(path ?? string.Empty)));
             ToggleMangaModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleMangaMessage>());
             ToggleStretchModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleStretchMessage>());
@@ -373,6 +375,7 @@ namespace quick_image_viewer.ViewModels
     public record ToggleBookmarkMessage();
     public record ToggleBookmarkPanelMessage();
     public record TogglePageIndicatorMessage();
+    public record CopyPathMessage(string Path);
     public record DeleteFileMessage(string Path);
     public record EditActionMessage(string Action, string Path, object? Value = null);
     public record ShellActionMessage(string Action, string Path = "");

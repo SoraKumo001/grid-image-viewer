@@ -21,6 +21,7 @@ namespace quick_image_viewer
         IRecipient<ToggleGridMessage>,
         IRecipient<ToggleMangaMessage>,
         IRecipient<ToggleStretchMessage>,
+        IRecipient<CopyPathMessage>,
         IRecipient<DeleteFileMessage>,
         IRecipient<ShellActionMessage>,
         IRecipient<TogglePageIndicatorMessage>,
@@ -251,6 +252,7 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<ToggleGridMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleMangaMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleStretchMessage>(this);
+            WeakReferenceMessenger.Default.Register<CopyPathMessage>(this);
             WeakReferenceMessenger.Default.Register<DeleteFileMessage>(this);
             WeakReferenceMessenger.Default.Register<ShellActionMessage>(this);
             WeakReferenceMessenger.Default.Register<TogglePageIndicatorMessage>(this);
@@ -337,6 +339,16 @@ namespace quick_image_viewer
             var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
             string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
             ShowNotification(loader.GetString(modeKey));
+        }
+
+        public void Receive(CopyPathMessage message)
+        {
+            if (string.IsNullOrEmpty(message.Path)) return;
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(message.Path);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            ShowNotification(loader.GetString("Notification_PathCopied"));
         }
 
         public void Receive(DeleteFileMessage message)

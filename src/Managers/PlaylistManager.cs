@@ -34,24 +34,40 @@ namespace quick_image_viewer.Managers
             if (_state.Playlist.Count == 0) return;
 
             int step = forceSingleStep ? 1 : _settings.MangaSplitCount;
-            int actualOffset = offset * step;
+            int currentIndex = _state.CurrentIndex;
 
-            int newIndex = _state.CurrentIndex + actualOffset;
+            // Align base index for multi-page navigation when near the end of folder
+            // to ensure consistent page-by-page movement even when the last page is shifted to fill the grid.
+            if (!forceSingleStep && step > 1 && currentIndex + step > _state.Playlist.Count)
+            {
+                currentIndex = Math.Max(0, _state.Playlist.Count - step);
+            }
+
+            int actualOffset = offset * step;
+            int newIndex = currentIndex + actualOffset;
 
             if (newIndex < 0)
             {
-                int action = _settings.BoundaryAction;
-                if (action == 1) // NextFolder (Previous)
+                // If we're not at the very beginning, first go to index 0 before jumping to previous folder/looping.
+                if (currentIndex > 0)
                 {
-                    NavigateFolder(-1);
+                    newIndex = 0;
                 }
-                else if (action == 2) // Loop
+                else
                 {
-                    _state.CurrentIndex = _state.Playlist.Count - 1;
-                    _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
-                    WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+                    int action = _settings.BoundaryAction;
+                    if (action == 1) // NextFolder (Previous)
+                    {
+                        NavigateFolder(-1);
+                    }
+                    else if (action == 2) // Loop
+                    {
+                        _state.CurrentIndex = _state.Playlist.Count - 1;
+                        _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
+                        WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+                    }
+                    return;
                 }
-                return;
             }
             if (newIndex >= _state.Playlist.Count)
             {
