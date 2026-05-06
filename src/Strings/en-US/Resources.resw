@@ -572,4 +572,10 @@
   <data name="MenuDeleteFile.Text" xml:space="preserve">
     <value>Delete File</value>
   </data>
+  <data name="Settings_Options.Text" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Settings_Maintenance.Text" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
 </root>

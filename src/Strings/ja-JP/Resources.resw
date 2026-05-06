@@ -572,4 +572,10 @@
   <data name="MenuDeleteFile.Text" xml:space="preserve">
     <value>ファイルを削除</value>
   </data>
+  <data name="Settings_Options.Text" xml:space="preserve">
+    <value>オプション</value>
+  </data>
+  <data name="Settings_Maintenance.Text" xml:space="preserve">
+    <value>メンテナンス</value>
+  </data>
 </root>

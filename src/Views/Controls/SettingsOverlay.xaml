@@ -41,9 +41,9 @@
                     <!-- Display Tab -->
                     <PivotItem x:Uid="Settings_Tab_Display" Header="Display">
                         <ScrollViewer Padding="24,16">
-                            <StackPanel Spacing="20">
-                                <StackPanel Spacing="8">
-                                    <TextBlock x:Uid="Settings_Background" Text="Background Color" Foreground="White" />
+                            <StackPanel Spacing="24">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_Background" Text="Background Color" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
                                     <ComboBox x:Name="ComboBackground" HorizontalAlignment="Stretch" SelectionChanged="SettingControl_Changed">
                                         <ComboBoxItem x:Uid="Settings_Background_System" Content="System (Mica)" />
                                         <ComboBoxItem x:Uid="Settings_Background_Black" Content="Black" />
@@ -51,8 +51,13 @@
                                     </ComboBox>
                                 </StackPanel>
 
-                                <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" Click="SettingControl_Changed" />
-                                <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" Click="SettingControl_Changed" />
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_Options" Text="Options" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
+                                    <StackPanel Spacing="8">
+                                        <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" Click="SettingControl_Changed" />
+                                        <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" Click="SettingControl_Changed" />
+                                    </StackPanel>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </PivotItem>
@@ -60,15 +65,15 @@
                     <!-- Navigation Tab -->
                     <PivotItem x:Uid="Settings_Tab_Navigation" Header="Navigation">
                         <ScrollViewer Padding="24,16">
-                            <StackPanel Spacing="20">
-                                <StackPanel Spacing="8">
-                                    <TextBlock x:Uid="Settings_BoundaryAction" Text="Boundary Action (Start/End)" Foreground="White" />
+                            <StackPanel Spacing="24">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_BoundaryAction" Text="Boundary Action (Start/End)" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
                                     <ComboBox x:Name="ComboBoundary" HorizontalAlignment="Stretch" SelectionChanged="SettingControl_Changed">
                                         <ComboBoxItem x:Uid="Settings_BoundaryAction_None" Content="Do Nothing" />
                                         <ComboBoxItem x:Uid="Settings_BoundaryAction_NextFolder" Content="Next Folder" />
                                         <ComboBoxItem x:Uid="Settings_BoundaryAction_Loop" Content="Loop" />
                                     </ComboBox>
-                                    <TextBlock Text="Action when reaching first or last image in folder" FontSize="11" Foreground="#888888" Margin="2,0,0,0" />
+                                    <TextBlock Text="Action when reaching first or last image in folder" FontSize="11" Foreground="#666666" Margin="2,0,0,0" />
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
@@ -77,9 +82,9 @@
                     <!-- Files Tab -->
                     <PivotItem x:Uid="Settings_Tab_Files" Header="Files">
                         <ScrollViewer Padding="24,16">
-                            <StackPanel Spacing="20">
-                                <StackPanel Spacing="8">
-                                    <TextBlock x:Uid="Settings_JpegQuality" Text="JPEG/WebP Save Quality" Foreground="White" />
+                            <StackPanel Spacing="24">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_JpegQuality" Text="JPEG/WebP Save Quality" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -90,8 +95,8 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <StackPanel Spacing="8">
-                                    <TextBlock x:Uid="Settings_Extensions" Text="Enabled File Extensions" Foreground="White" />
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_Extensions" Text="Enabled File Extensions" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
 
                                     <Grid ColumnSpacing="4" Margin="0,0,0,4">
                                         <Grid.ColumnDefinitions>
@@ -127,12 +132,12 @@
 
                     <!-- Key Bindings Tab -->
                     <PivotItem x:Uid="Settings_Tab_KeyBindings" Header="Shortcuts">
-                        <Grid Padding="0,12,0,0">
+                        <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <ScrollViewer Padding="24,0,24,16">
+                            <ScrollViewer Padding="24,16,24,16">
                                 <StackPanel x:Name="BindingsStack" Spacing="8">
                                     <!-- Dynamic content -->
                                 </StackPanel>
@@ -144,15 +149,18 @@
                     <!-- System Tab -->
                     <PivotItem x:Uid="Settings_Tab_System" Header="System">
                         <ScrollViewer Padding="24,16">
-                            <StackPanel Spacing="20">
-                                <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button x:Name="BtnExport" x:Uid="Settings_Export" Content="Export Settings" HorizontalAlignment="Stretch" Click="BtnExport_Click" />
-                                    <Button x:Name="BtnImport" x:Uid="Settings_Import" Grid.Column="1" Content="Import Settings" HorizontalAlignment="Stretch" Click="BtnImport_Click" />
-                                </Grid>
+                            <StackPanel Spacing="24">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_Maintenance" Text="Maintenance" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="BtnExport" x:Uid="Settings_Export" Content="Export Settings" HorizontalAlignment="Stretch" Click="BtnExport_Click" />
+                                        <Button x:Name="BtnImport" x:Uid="Settings_Import" Grid.Column="1" Content="Import Settings" HorizontalAlignment="Stretch" Click="BtnImport_Click" />
+                                    </Grid>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </PivotItem>

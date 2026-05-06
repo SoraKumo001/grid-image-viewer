@@ -210,10 +210,10 @@ namespace quick_image_viewer.Views.Controls
             return new TextBlock
             {
                 Text = text,
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-                Foreground = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"],
-                Margin = new Thickness(4, 16, 0, 4)
+                FontSize = 12,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 170, 170, 170)), // #AAAAAA
+                Margin = new Thickness(0, 12, 0, 8)
             };
         }
 
