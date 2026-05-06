@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.4.0 (Current) - 2026-05-06
+## v1.4.1 (Current) - 2026-05-06
+
+- **Deployment & Distribution**:
+  - [Feature] Added support for **Inno Setup** to generate a non-packaged installer (`.exe`) for easier installation.
+  - [Improvement] The installer is configured to run with **user-level privileges**, allowing installation without administrator rights.
+  - [Feature] Integrated installer generation into the GitHub Actions CI/CD workflow; the installer is now automatically attached to new releases.
+  - [Improvement] Transitioned to a `dotnet publish` based build process for more reliable self-contained distribution.
+- **Project Maintenance**:
+  - [Refactor] Standardized the build output directory structure for consistent packaging across ZIP and Installer formats.
+
+## v1.4.0 - 2026-05-06
 
 - **Core Architecture**:
   - [Refactor] Completed the transition to a fully decoupled MVVM architecture using `CommunityToolkit.Mvvm`, improving testability and code separation.
