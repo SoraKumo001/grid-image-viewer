@@ -188,18 +188,31 @@ namespace quick_image_viewer.Managers
 
             var nextPaths = new List<string>();
             int maxIndexInView = gridStartIndex;
+            bool isSlideshowRunning = _window.SlideshowManager.IsSlideshowRunning;
+
             for (int i = 0; i < effectiveSplitCount; i++)
             {
-                int targetIndex = gridStartIndex + i;
-                if (targetIndex < _window.Playlist.Count)
+                int targetIndex = -1;
+                if (isSlideshowRunning && _settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                {
+                    targetIndex = _window.SlideshowManager.SlideshowRandomIndices[i];
+                }
+                else
+                {
+                    targetIndex = gridStartIndex + i;
+                }
+
+                if (targetIndex >= 0 && targetIndex < _window.Playlist.Count)
                 {
                     nextPaths.Add(_window.Playlist[targetIndex]);
-                    maxIndexInView = targetIndex;
+                    if (!isSlideshowRunning || !_settings.SlideshowRandom)
+                    {
+                        maxIndexInView = targetIndex;
+                    }
                 }
             }
             _window.ViewModel.OverrideDisplayIndex = maxIndexInView + 1;
 
-            bool isSlideshowRunning = _window.SlideshowManager.IsSlideshowRunning;
             bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
             bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || _cachedQuadLayout != _lastCachedQuadLayout;
 
