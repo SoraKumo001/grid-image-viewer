@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Input;
 using Windows.Foundation;
 namespace quick_image_viewer.Interfaces
 {
-    public interface IEditorManager
+    public interface IMenuStateManager
     {
         string ContextTargetPath { get; set; }
         void UpdateMenuStates();

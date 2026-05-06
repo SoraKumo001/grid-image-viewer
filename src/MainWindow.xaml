@@ -43,68 +43,68 @@
                         </Setter>
                     </Style>
                 </MenuFlyout.MenuFlyoutPresenterStyle>
-                <MenuFlyoutItem x:Name="MenuUndo" x:FieldModifier="internal" x:Uid="MenuUndo" Text="Undo (Ctrl+Z)" Command="{x:Bind ViewModel.UndoCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanUndo, Mode=OneWay}" />
-                <MenuFlyoutItem x:Name="MenuRedo" x:FieldModifier="internal" x:Uid="MenuRedo" Text="Redo (Ctrl+Y)" Command="{x:Bind ViewModel.RedoCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanRedo, Mode=OneWay}" />
+                <MenuFlyoutItem x:Name="MenuUndo" x:FieldModifier="internal" x:Uid="MenuUndo" Text="Undo (Ctrl+Z)" Command="{x:Bind ViewModel.Editor.UndoCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.CanUndo, Mode=OneWay}" />
+                <MenuFlyoutItem x:Name="MenuRedo" x:FieldModifier="internal" x:Uid="MenuRedo" Text="Redo (Ctrl+Y)" Command="{x:Bind ViewModel.Editor.RedoCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.CanRedo, Mode=OneWay}" />
                 <MenuFlyoutSeparator />
 
                 <MenuFlyoutItem x:Name="MenuOpenFolder" x:FieldModifier="internal" x:Uid="MenuOpenFolder" Text="Open Folder..." Click="OpenFolderButton_Click" />
 
                 <MenuFlyoutSubItem x:Name="MenuFile" x:Uid="MenuFile" Text="File">
-                    <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Command="{x:Bind ViewModel.OpenExplorerCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
-                    <MenuFlyoutItem x:Name="MenuCopyPath" x:FieldModifier="internal" x:Uid="MenuCopyPath" Text="Copy File Path" Command="{x:Bind ViewModel.CopyPathCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
-                    <MenuFlyoutItem x:Name="MenuPrint" x:FieldModifier="internal" x:Uid="MenuPrint" Text="Print" Command="{x:Bind ViewModel.PrintCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.HasValidPath, Mode=OneWay}" />
+                    <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Command="{x:Bind ViewModel.Editor.OpenExplorerCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
+                    <MenuFlyoutItem x:Name="MenuCopyPath" x:FieldModifier="internal" x:Uid="MenuCopyPath" Text="Copy File Path" Command="{x:Bind ViewModel.Editor.CopyPathCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
+                    <MenuFlyoutItem x:Name="MenuPrint" x:FieldModifier="internal" x:Uid="MenuPrint" Text="Print" Command="{x:Bind ViewModel.Editor.PrintCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.HasValidPath, Mode=OneWay}" />
                     <MenuFlyoutSeparator />
-                    <MenuFlyoutItem x:Name="MenuOverwrite" x:FieldModifier="internal" x:Uid="MenuOverwrite" Text="Overwrite (Ctrl+S)" Command="{x:Bind ViewModel.OverwriteCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}" />
-                    <MenuFlyoutSubItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As..." IsEnabled="{x:Bind ViewModel.HasValidPath, Mode=OneWay}">
-                        <MenuFlyoutItem Text="JPEG" Command="{x:Bind ViewModel.SaveAsCommand}" CommandParameter=".jpg" />
-                        <MenuFlyoutItem Text="PNG" Command="{x:Bind ViewModel.SaveAsCommand}" CommandParameter=".png" />
-                        <MenuFlyoutItem Text="WebP" Command="{x:Bind ViewModel.SaveAsCommand}" CommandParameter=".webp" />
-                        <MenuFlyoutItem Text="BMP" Command="{x:Bind ViewModel.SaveAsCommand}" CommandParameter=".bmp" />
+                    <MenuFlyoutItem x:Name="MenuOverwrite" x:FieldModifier="internal" x:Uid="MenuOverwrite" Text="Overwrite (Ctrl+S)" Command="{x:Bind ViewModel.Editor.OverwriteCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
+                    <MenuFlyoutSubItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As..." IsEnabled="{x:Bind ViewModel.Editor.HasValidPath, Mode=OneWay}">
+                        <MenuFlyoutItem Text="JPEG" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".jpg" />
+                        <MenuFlyoutItem Text="PNG" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".png" />
+                        <MenuFlyoutItem Text="WebP" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".webp" />
+                        <MenuFlyoutItem Text="BMP" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".bmp" />
                     </MenuFlyoutSubItem>
                     <MenuFlyoutSeparator />
-                    <MenuFlyoutItem x:Name="MenuDeleteFile" x:FieldModifier="internal" x:Uid="MenuDeleteFile" Text="Delete File" Command="{x:Bind ViewModel.DeleteFileCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
+                    <MenuFlyoutItem x:Name="MenuDeleteFile" x:FieldModifier="internal" x:Uid="MenuDeleteFile" Text="Delete File" Command="{x:Bind ViewModel.Editor.DeleteFileCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
                 </MenuFlyoutSubItem>
 
                 <MenuFlyoutSubItem x:Name="MenuEdit" x:Uid="MenuEdit" Text="Edit">
-                    <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" x:Uid="MenuCrop" Text="Crop (Selection)" Command="{x:Bind ViewModel.CropCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}" />
-                    <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" x:Uid="MenuResize" Text="Resize" Command="{x:Bind ViewModel.ResizeCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}" />
-                    <MenuFlyoutSubItem x:Name="MenuRotate" x:FieldModifier="internal" x:Uid="MenuRotate" Text="Rotate" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}">
-                        <MenuFlyoutItem x:Uid="MenuRotate_Right90" Text="Rotate Right 90°" Command="{x:Bind ViewModel.RotateRightCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
-                        <MenuFlyoutItem x:Uid="MenuRotate_Left90" Text="Rotate Left 90°" Command="{x:Bind ViewModel.RotateLeftCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
-                        <MenuFlyoutItem x:Uid="MenuRotate_180" Text="Rotate 180°" Command="{x:Bind ViewModel.Rotate180Command}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
+                    <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" x:Uid="MenuCrop" Text="Crop (Selection)" Command="{x:Bind ViewModel.Editor.CropCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
+                    <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" x:Uid="MenuResize" Text="Resize" Command="{x:Bind ViewModel.Editor.ResizeCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
+                    <MenuFlyoutSubItem x:Name="MenuRotate" x:FieldModifier="internal" x:Uid="MenuRotate" Text="Rotate" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}">
+                        <MenuFlyoutItem x:Uid="MenuRotate_Right90" Text="Rotate Right 90°" Command="{x:Bind ViewModel.Editor.RotateRightCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
+                        <MenuFlyoutItem x:Uid="MenuRotate_Left90" Text="Rotate Left 90°" Command="{x:Bind ViewModel.Editor.RotateLeftCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
+                        <MenuFlyoutItem x:Uid="MenuRotate_180" Text="Rotate 180°" Command="{x:Bind ViewModel.Editor.Rotate180Command}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
                     </MenuFlyoutSubItem>
-                    <MenuFlyoutSubItem x:Name="MenuFlip" x:FieldModifier="internal" x:Uid="MenuFlip" Text="Flip" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}">
-                        <MenuFlyoutItem x:Uid="MenuFlip_Horz" Text="Flip Horizontal" Command="{x:Bind ViewModel.FlipHorzCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
-                        <MenuFlyoutItem x:Uid="MenuFlip_Vert" Text="Flip Vertical" Command="{x:Bind ViewModel.FlipVertCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" />
+                    <MenuFlyoutSubItem x:Name="MenuFlip" x:FieldModifier="internal" x:Uid="MenuFlip" Text="Flip" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}">
+                        <MenuFlyoutItem x:Uid="MenuFlip_Horz" Text="Flip Horizontal" Command="{x:Bind ViewModel.Editor.FlipHorzCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
+                        <MenuFlyoutItem x:Uid="MenuFlip_Vert" Text="Flip Vertical" Command="{x:Bind ViewModel.Editor.FlipVertCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
                     </MenuFlyoutSubItem>
                     <MenuFlyoutSeparator />
-                    <MenuFlyoutItem x:Name="MenuTone" x:FieldModifier="internal" x:Uid="MenuTone" Text="Tone Adjustment" Command="{x:Bind ViewModel.ToneCommand}" CommandParameter="{x:Bind ViewModel.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}" />
-                    <MenuFlyoutSubItem x:Name="MenuFilter" x:FieldModifier="internal" x:Uid="MenuFilter" Text="Filters" IsEnabled="{x:Bind ViewModel.IsImageEditable, Mode=OneWay}">
-                        <MenuFlyoutItem x:Uid="MenuFilter_Grayscale" Text="Grayscale" Command="{x:Bind ViewModel.FilterCommand}" CommandParameter="Grayscale" />
-                        <MenuFlyoutItem x:Uid="MenuFilter_Sepia" Text="Sepia" Command="{x:Bind ViewModel.FilterCommand}" CommandParameter="Sepia" />
-                        <MenuFlyoutItem x:Uid="MenuFilter_Invert" Text="Negative/Positive" Command="{x:Bind ViewModel.FilterCommand}" CommandParameter="Invert" />
+                    <MenuFlyoutItem x:Name="MenuTone" x:FieldModifier="internal" x:Uid="MenuTone" Text="Tone Adjustment" Command="{x:Bind ViewModel.Editor.ToneCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
+                    <MenuFlyoutSubItem x:Name="MenuFilter" x:FieldModifier="internal" x:Uid="MenuFilter" Text="Filters" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}">
+                        <MenuFlyoutItem x:Uid="MenuFilter_Grayscale" Text="Grayscale" Command="{x:Bind ViewModel.Editor.FilterCommand}" CommandParameter="Grayscale" />
+                        <MenuFlyoutItem x:Uid="MenuFilter_Sepia" Text="Sepia" Command="{x:Bind ViewModel.Editor.FilterCommand}" CommandParameter="Sepia" />
+                        <MenuFlyoutItem x:Uid="MenuFilter_Invert" Text="Negative/Positive" Command="{x:Bind ViewModel.Editor.FilterCommand}" CommandParameter="Invert" />
                     </MenuFlyoutSubItem>
                 </MenuFlyoutSubItem>
 
                 <MenuFlyoutSeparator />
 
                 <MenuFlyoutSubItem x:Name="MenuView" x:Uid="MenuView" Text="View">
-                    <ToggleMenuFlyoutItem x:Name="MenuMetadata" x:FieldModifier="internal" x:Uid="MenuMetadata" Text="Show Image Information (I)" Click="MenuMetadata_Click" IsChecked="{x:Bind ViewModel.IsMetadataVisible, Mode=OneWay}" />
+                    <ToggleMenuFlyoutItem x:Name="MenuMetadata" x:FieldModifier="internal" x:Uid="MenuMetadata" Text="Show Image Information (I)" Click="MenuMetadata_Click" IsChecked="{x:Bind ViewModel.Viewer.IsMetadataVisible, Mode=OneWay}" />
 <MenuFlyoutSeparator />
                     <MenuFlyoutSubItem x:Name="MenuViewMode" x:FieldModifier="internal" x:Uid="MenuViewMode" Text="View Mode">
-                        <ToggleMenuFlyoutItem x:Name="MenuViewSingle" x:FieldModifier="internal" x:Uid="MenuViewMode_Single" Text="Single" Click="MenuViewMode_Click" Tag="1" IsChecked="{x:Bind ViewModel.IsViewSingle, Mode=OneWay}" />
-                        <ToggleMenuFlyoutItem x:Name="MenuViewDouble" x:FieldModifier="internal" x:Uid="MenuViewMode_Double" Text="Manga (2-split)" Click="MenuViewMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.IsViewDouble, Mode=OneWay}" />
-                        <ToggleMenuFlyoutItem x:Name="MenuViewQuad" x:FieldModifier="internal" x:Uid="MenuViewMode_Quad" Text="Quad (4-split)" Click="MenuViewMode_Click" Tag="4" IsChecked="{x:Bind ViewModel.IsViewQuad, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuViewSingle" x:FieldModifier="internal" x:Uid="MenuViewMode_Single" Text="Single" Click="MenuViewMode_Click" Tag="1" IsChecked="{x:Bind ViewModel.Viewer.IsViewSingle, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuViewDouble" x:FieldModifier="internal" x:Uid="MenuViewMode_Double" Text="Manga (2-split)" Click="MenuViewMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.Viewer.IsViewDouble, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuViewQuad" x:FieldModifier="internal" x:Uid="MenuViewMode_Quad" Text="Quad (4-split)" Click="MenuViewMode_Click" Tag="4" IsChecked="{x:Bind ViewModel.Viewer.IsViewQuad, Mode=OneWay}" />
                     </MenuFlyoutSubItem>
                     <MenuFlyoutSubItem x:Name="MenuQuadLayout" x:FieldModifier="internal" x:Uid="MenuQuadLayout" Text="Quad Layout">
-                        <ToggleMenuFlyoutItem x:Name="MenuLayoutAuto" x:FieldModifier="internal" x:Uid="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" IsChecked="{x:Bind ViewModel.IsLayoutAuto, Mode=OneWay}" />
-                        <ToggleMenuFlyoutItem x:Name="MenuLayoutHorz" x:FieldModifier="internal" x:Uid="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" IsChecked="{x:Bind ViewModel.IsLayoutHorz, Mode=OneWay}" />
-                        <ToggleMenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.IsLayoutGrid, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuLayoutAuto" x:FieldModifier="internal" x:Uid="MenuLayoutAuto" Text="Auto (Aspect Ratio)" Click="MenuLayoutMode_Click" Tag="0" IsChecked="{x:Bind ViewModel.Viewer.IsLayoutAuto, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuLayoutHorz" x:FieldModifier="internal" x:Uid="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" IsChecked="{x:Bind ViewModel.Viewer.IsLayoutHorz, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.Viewer.IsLayoutGrid, Mode=OneWay}" />
                     </MenuFlyoutSubItem>
                     <MenuFlyoutSubItem x:Name="MenuStretchMode" x:Uid="MenuStretchMode" Text="Stretch Mode">
-                        <ToggleMenuFlyoutItem x:Name="MenuStretchContain" x:FieldModifier="internal" x:Uid="MenuStretchContain" Text="Contain (Uniform)" Click="MenuStretchMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.IsStretchContain, Mode=OneWay}" />
-                        <ToggleMenuFlyoutItem x:Name="MenuStretchCover" x:FieldModifier="internal" x:Uid="MenuStretchCover" Text="Cover (UniformToFill)" Click="MenuStretchMode_Click" Tag="3" IsChecked="{x:Bind ViewModel.IsStretchCover, Mode=OneWay}" />
-                        <ToggleMenuFlyoutItem x:Name="MenuStretchOriginal" x:FieldModifier="internal" x:Uid="MenuStretchOriginal" Text="Original Size (None)" Click="MenuStretchMode_Click" Tag="0" IsChecked="{x:Bind ViewModel.IsStretchOriginal, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuStretchContain" x:FieldModifier="internal" x:Uid="MenuStretchContain" Text="Contain (Uniform)" Click="MenuStretchMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.Viewer.IsStretchContain, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuStretchCover" x:FieldModifier="internal" x:Uid="MenuStretchCover" Text="Cover (UniformToFill)" Click="MenuStretchMode_Click" Tag="3" IsChecked="{x:Bind ViewModel.Viewer.IsStretchCover, Mode=OneWay}" />
+                        <ToggleMenuFlyoutItem x:Name="MenuStretchOriginal" x:FieldModifier="internal" x:Uid="MenuStretchOriginal" Text="Original Size (None)" Click="MenuStretchMode_Click" Tag="0" IsChecked="{x:Bind ViewModel.Viewer.IsStretchOriginal, Mode=OneWay}" />
                     </MenuFlyoutSubItem>
                 </MenuFlyoutSubItem>
 
@@ -171,7 +171,7 @@
                         HorizontalAlignment="Right" VerticalAlignment="Top"
                         Margin="0,20,20,0"
                         Background="#CC000000" CornerRadius="8" Padding="16"
-                        Visibility="{x:Bind BoolToVis(ViewModel.IsMetadataVisible), Mode=OneWay}" MaxWidth="350" IsHitTestVisible="True">
+                        Visibility="{x:Bind BoolToVis(ViewModel.Viewer.IsMetadataVisible), Mode=OneWay}" MaxWidth="350" IsHitTestVisible="True">
                     <StackPanel Spacing="4">
                         <TextBlock x:Name="TxtMetaTitle" x:FieldModifier="internal" x:Uid="TxtMetaTitle" Text="IMAGE INFORMATION" FontSize="10" Foreground="#888888" FontWeight="Bold" Margin="0,0,0,4"/>
                         <TextBlock x:Name="TxtMetaFileName" x:FieldModifier="internal" Foreground="White" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>

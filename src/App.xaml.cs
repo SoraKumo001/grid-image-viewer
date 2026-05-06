@@ -53,7 +53,7 @@ namespace quick_image_viewer
             services.AddSingleton<IViewerManager, ViewerManager>();
             services.AddSingleton<IGridManager, GridManager>();
             services.AddSingleton<IAppWindowManager, AppWindowManager>();
-            services.AddSingleton<IEditorManager, EditorManager>();
+            services.AddSingleton<IMenuStateManager, MenuStateManager>();
             services.AddSingleton<IBookmarkManager, BookmarkManager>();
             services.AddSingleton<IPlaylistManager, PlaylistManager>();
             services.AddSingleton<IPrintService, PrintService>();

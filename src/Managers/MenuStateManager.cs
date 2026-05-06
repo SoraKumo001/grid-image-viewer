@@ -18,7 +18,7 @@ using Windows.System;
 
 namespace quick_image_viewer.Managers
 {
-    public class EditorManager : IEditorManager, IRecipient<EditMessage>, IRecipient<EditActionMessage>, IRecipient<ViewActionMessage>
+    public class MenuStateManager : IMenuStateManager, IRecipient<EditMessage>, IRecipient<EditActionMessage>, IRecipient<ViewActionMessage>
     {
         private readonly IViewerStateService _state;
         private readonly ISettingsManager _settings;
@@ -39,7 +39,7 @@ namespace quick_image_viewer.Managers
 
         public string ContextTargetPath { get => _contextTargetPath; set => _contextTargetPath = value; }
 
-        public EditorManager(
+        public MenuStateManager(
             IViewerStateService state,
             ISettingsManager settings,
             IImageEditService imageEdit,

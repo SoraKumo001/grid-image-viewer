@@ -67,7 +67,7 @@ namespace quick_image_viewer.Interfaces
         IPlaylistManager PlaylistManager { get; }
         IViewerManager ViewerManager { get; }
         IGridManager GridManager { get; }
-        IEditorManager EditorManager { get; }
+        IMenuStateManager MenuStateManager { get; }
         IBookmarkManager BookmarkManager { get; }
         IAppWindowManager AppWindowManager { get; }
         ListView BookmarkListView { get; }

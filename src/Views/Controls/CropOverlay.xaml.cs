@@ -103,12 +103,12 @@ namespace quick_image_viewer.Views.Controls
         {
             if (SelectionRect.Visibility != Visibility.Visible || SelectionRect.Width < 5) return;
 
-            // Use the same math as EditorManager.MenuCrop_Click but relative to this overlay
+            // Use the same math as MenuStateManager.MenuCrop_Click but relative to this overlay
             // Actually, we need to find which image was clicked. 
-            // In the original EditorManager, it used _window.PagesGrid to determine coordinates.
+            // In the original MenuStateManager, it used _window.PagesGrid to determine coordinates.
             // Since this overlay is exactly over the RootGrid (or Row 1), we can transform points.
 
-            _window.EditorManager.ExecuteCropWithRect(_selectionRect);
+            _window.MenuStateManager.ExecuteCropWithRect(_selectionRect);
             _window.DialogService.Close(this);
         }
     }

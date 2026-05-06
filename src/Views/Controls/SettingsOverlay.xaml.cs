@@ -286,7 +286,7 @@ namespace quick_image_viewer.Views.Controls
             return string.Join(" + ", parts);
         }
 
-        private string GetString(string key) => _window.EditorManager.GetString(key);
+        private string GetString(string key) => _window.MenuStateManager.GetString(key);
 
         private void BtnResetKeyBindings_Click(object sender, RoutedEventArgs e)
         {

@@ -13,48 +13,23 @@ namespace quick_image_viewer.ViewModels
     {
         public IViewerStateService State { get; }
         private readonly Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue;
-        private readonly IEditorManager _editorManager;
+        private readonly IMenuStateManager _menuStateManager;
 
         // Commands
         public ICommand NavigateNextCommand { get; }
         public ICommand NavigatePrevCommand { get; }
         public ICommand NavigateNextFolderCommand { get; }
         public ICommand NavigatePrevFolderCommand { get; }
-        public ICommand ToggleGridModeCommand { get; }
-        public ICommand ToggleFullscreenCommand { get; }
         public ICommand TogglePageIndicatorCommand { get; }
-        public ICommand ZoomInCommand { get; }
-        public ICommand ZoomOutCommand { get; }
-        public ICommand ZoomResetCommand { get; }
-        public ICommand RotateRightCommand { get; }
-        public ICommand RotateLeftCommand { get; }
-        public ICommand Rotate180Command { get; }
-        public ICommand ToggleMetadataCommand { get; }
         public ICommand OpenSlideshowCommand { get; }
         public ICommand ToggleBookmarkCommand { get; }
         public ICommand ToggleBookmarkPanelCommand { get; }
-        public ICommand CopyPathCommand { get; }
-        public ICommand DeleteFileCommand { get; }
-        public ICommand ToggleMangaModeCommand { get; }
-        public ICommand ToggleStretchModeCommand { get; }
-        public ICommand ViewModeCommand { get; }
-        public ICommand LayoutModeCommand { get; }
-        public ICommand StretchModeCommand { get; }
-        public ICommand UndoCommand { get; }
-        public ICommand RedoCommand { get; }
-        public ICommand OverwriteCommand { get; }
-        public ICommand SaveAsCommand { get; }
-        public ICommand PrintCommand { get; }
-        public ICommand CropCommand { get; }
-        public ICommand ResizeCommand { get; }
-        public ICommand ToneCommand { get; }
-        public ICommand FilterCommand { get; }
-        public ICommand FlipHorzCommand { get; }
-        public ICommand FlipVertCommand { get; }
-        public ICommand OpenExplorerCommand { get; }
         public ICommand SettingsCommand { get; }
         public ICommand KeyBindingsCommand { get; }
         public ICommand SupportCommand { get; }
+
+        public EditorViewModel Editor { get; } = new EditorViewModel();
+        public ViewerViewModel Viewer { get; } = new ViewerViewModel();
 
         public ObservableCollection<string> Playlist
         {
@@ -140,27 +115,10 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial bool IsDialogOpen { get; set; }
 
-        [ObservableProperty] public partial bool CanUndo { get; set; }
-        [ObservableProperty] public partial bool CanRedo { get; set; }
-        [ObservableProperty] public partial bool HasValidPath { get; set; }
-        [ObservableProperty] public partial bool IsImageEditable { get; set; }
 
-        [ObservableProperty] public partial bool IsViewSingle { get; set; }
-        [ObservableProperty] public partial bool IsViewDouble { get; set; }
-        [ObservableProperty] public partial bool IsViewQuad { get; set; }
 
-        [ObservableProperty] public partial bool IsLayoutAuto { get; set; }
-        [ObservableProperty] public partial bool IsLayoutHorz { get; set; }
-        [ObservableProperty] public partial bool IsLayoutGrid { get; set; }
-
-        [ObservableProperty] public partial bool IsStretchOriginal { get; set; }
-        [ObservableProperty] public partial bool IsStretchContain { get; set; }
-        [ObservableProperty] public partial bool IsStretchCover { get; set; }
-
-        [ObservableProperty] public partial bool IsMetadataVisible { get; set; }
         [ObservableProperty] public partial bool IsBookmarkPanelVisible { get; set; }
         [ObservableProperty] public partial string BookmarkMenuText { get; set; } = "Bookmark this folder";
-        [ObservableProperty] public partial string ContextPath { get; set; } = string.Empty;
 
         private ObservableCollection<quick_image_viewer.Managers.BookmarkItem> _bookmarks = new();
         public ObservableCollection<quick_image_viewer.Managers.BookmarkItem> Bookmarks
@@ -194,10 +152,10 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial int BoundaryAction { get; set; } = 1;
 
-        public MainViewModel(IViewerStateService stateService, IEditorManager editorManager)
+        public MainViewModel(IViewerStateService stateService, IMenuStateManager menuStateManager)
         {
             State = stateService;
-            _editorManager = editorManager;
+            _menuStateManager = menuStateManager;
             _dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
             // Subscribe to state changes to update UI
@@ -233,40 +191,11 @@ namespace quick_image_viewer.ViewModels
             NavigatePrevCommand = new RelayCommand(() => Navigate(-1));
             NavigateNextFolderCommand = new RelayCommand(() => NavigateFolder(1));
             NavigatePrevFolderCommand = new RelayCommand(() => NavigateFolder(-1));
-            ToggleGridModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleGridMessage>());
-            ToggleFullscreenCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<FullscreenMessage>());
             TogglePageIndicatorCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<TogglePageIndicatorMessage>());
-            ZoomInCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(1.2f)));
-            ZoomOutCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(1.0f / 1.2f)));
-            ZoomResetCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ZoomMessage(0)));
-            RotateRightCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Rotate", path ?? string.Empty, 90)));
-            RotateLeftCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Rotate", path ?? string.Empty, -90)));
-            Rotate180Command = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Rotate", path ?? string.Empty, 180)));
-            ToggleMetadataCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleMetadataMessage>());
             OpenSlideshowCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<OpenSlideshowMessage>());
             ToggleBookmarkCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkMessage>());
             ToggleBookmarkPanelCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkPanelMessage>());
-            CopyPathCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new CopyPathMessage(path ?? string.Empty)));
-            DeleteFileCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new DeleteFileMessage(path ?? string.Empty)));
-            ToggleMangaModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleMangaMessage>());
-            ToggleStretchModeCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleStretchMessage>());
-            ViewModeCommand = new RelayCommand<string>(val => WeakReferenceMessenger.Default.Send(new ViewActionMessage("ViewMode", int.Parse(val ?? "1"))));
-            LayoutModeCommand = new RelayCommand<string>(val => WeakReferenceMessenger.Default.Send(new ViewActionMessage("LayoutMode", int.Parse(val ?? "0"))));
-            StretchModeCommand = new RelayCommand<string>(val => WeakReferenceMessenger.Default.Send(new ViewActionMessage("StretchMode", int.Parse(val ?? "2"))));
 
-            UndoCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Undo", path ?? string.Empty)));
-            RedoCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Redo", path ?? string.Empty)));
-            OverwriteCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Overwrite", path ?? string.Empty)));
-            SaveAsCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("SaveAs", path ?? string.Empty)));
-            PrintCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Print", path ?? string.Empty)));
-            CropCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Crop", path ?? string.Empty)));
-            ResizeCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Resize", path ?? string.Empty)));
-            ToneCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Tone", path ?? string.Empty)));
-            FilterCommand = new RelayCommand<string>(filter => WeakReferenceMessenger.Default.Send(new EditActionMessage("Filter", ContextPath ?? CurrentImagePath, filter)));
-            FlipHorzCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Flip", path ?? string.Empty, "Horz")));
-            FlipVertCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Flip", path ?? string.Empty, "Vert")));
-
-            OpenExplorerCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new ShellActionMessage("OpenExplorer", path ?? string.Empty)));
             SettingsCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("Settings")));
             KeyBindingsCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("KeyBindings")));
             SupportCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("Support")));
@@ -293,26 +222,26 @@ namespace quick_image_viewer.ViewModels
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
-                    CanUndo = m.CanUndo;
-                    CanRedo = m.CanRedo;
-                    HasValidPath = m.HasValidPath;
-                    IsImageEditable = m.IsImageEditable;
+                    Editor.CanUndo = m.CanUndo;
+                    Editor.CanRedo = m.CanRedo;
+                    Editor.HasValidPath = m.HasValidPath;
+                    Editor.IsImageEditable = m.IsImageEditable;
 
                     var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
                     int splitCount = settings.MangaSplitCount;
-                    IsViewSingle = (splitCount == 1);
-                    IsViewDouble = (splitCount == 2);
-                    IsViewQuad = (splitCount == 4);
+                    Viewer.IsViewSingle = (splitCount == 1);
+                    Viewer.IsViewDouble = (splitCount == 2);
+                    Viewer.IsViewQuad = (splitCount == 4);
 
                     int layoutMode = settings.QuadLayoutMode;
-                    IsLayoutAuto = (layoutMode == 0);
-                    IsLayoutHorz = (layoutMode == 1);
-                    IsLayoutGrid = (layoutMode == 2);
+                    Viewer.IsLayoutAuto = (layoutMode == 0);
+                    Viewer.IsLayoutHorz = (layoutMode == 1);
+                    Viewer.IsLayoutGrid = (layoutMode == 2);
 
                     int stretchMode = settings.ImageStretchMode;
-                    IsStretchOriginal = (stretchMode == 0);
-                    IsStretchContain = (stretchMode == 2);
-                    IsStretchCover = (stretchMode == 3);
+                    Viewer.IsStretchOriginal = (stretchMode == 0);
+                    Viewer.IsStretchContain = (stretchMode == 2);
+                    Viewer.IsStretchCover = (stretchMode == 3);
 
                     ShowPageIndicator = settings.ShowPageIndicator;
                     UpdateBookmarkMenuText();
@@ -331,7 +260,7 @@ namespace quick_image_viewer.ViewModels
             if (!string.IsNullOrEmpty(dir))
             {
                 bool isBookmarked = settings.Bookmarks.Exists(b => b.Path == dir);
-                BookmarkMenuText = isBookmarked ? _editorManager.GetString("MenuBookmark_Remove") : _editorManager.GetString("MenuBookmark_Add");
+                BookmarkMenuText = isBookmarked ? _menuStateManager.GetString("MenuBookmark_Remove") : _menuStateManager.GetString("MenuBookmark_Add");
             }
         }
 

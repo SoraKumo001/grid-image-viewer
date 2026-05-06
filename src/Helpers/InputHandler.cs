@@ -81,19 +81,19 @@ namespace quick_image_viewer.Helpers
             {
                 if (e.Key == VirtualKey.Z)
                 {
-                    _window.ViewModel.UndoCommand.Execute(GetPathAtPointer());
+                    _window.ViewModel.Editor.UndoCommand.Execute(GetPathAtPointer());
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == VirtualKey.Y)
                 {
-                    _window.ViewModel.RedoCommand.Execute(GetPathAtPointer());
+                    _window.ViewModel.Editor.RedoCommand.Execute(GetPathAtPointer());
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == VirtualKey.S)
                 {
-                    _window.ViewModel.OverwriteCommand.Execute(GetPathAtPointer());
+                    _window.ViewModel.Editor.OverwriteCommand.Execute(GetPathAtPointer());
                     e.Handled = true;
                     return;
                 }
@@ -115,19 +115,19 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyZoomIn, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ZoomInCommand.Execute(null);
+                _window.ViewModel.Viewer.ZoomInCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyZoomOut, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ZoomOutCommand.Execute(null);
+                _window.ViewModel.Viewer.ZoomOutCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyZoomReset, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ZoomResetCommand.Execute(null);
+                _window.ViewModel.Viewer.ZoomResetCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -149,19 +149,19 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyRotateRight, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.RotateRightCommand.Execute(null);
+                _window.ViewModel.Editor.RotateRightCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyRotateLeft, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.RotateLeftCommand.Execute(null);
+                _window.ViewModel.Editor.RotateLeftCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
             if (IsMatch(_settings.KeyFlipHorizontal, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.FlipHorzCommand.Execute(GetPathAtPointer());
+                _window.ViewModel.Editor.FlipHorzCommand.Execute(GetPathAtPointer());
                 e.Handled = true;
                 return;
             }
@@ -203,7 +203,7 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyMetadata, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ToggleMetadataCommand.Execute(null);
+                _window.ViewModel.Viewer.ToggleMetadataCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -217,28 +217,28 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyToggleFullscreen, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ToggleFullscreenCommand.Execute(null);
+                _window.ViewModel.Viewer.ToggleFullscreenCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleStretchMode, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ToggleStretchModeCommand.Execute(null);
+                _window.ViewModel.Viewer.ToggleStretchModeCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleManga, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ToggleMangaModeCommand.Execute(null);
+                _window.ViewModel.Viewer.ToggleMangaModeCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
 
             if (IsMatch(_settings.KeyToggleGrid, e.Key, isCtrl, isShift, isAlt))
             {
-                _window.ViewModel.ToggleGridModeCommand.Execute(null);
+                _window.ViewModel.Viewer.ToggleGridModeCommand.Execute(null);
                 e.Handled = true;
                 return;
             }
@@ -423,7 +423,7 @@ namespace quick_image_viewer.Helpers
         public void HandleDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (_window.IsDialogOpen) return;
-            _window.ViewModel.ToggleFullscreenCommand.Execute(null);
+            _window.ViewModel.Viewer.ToggleFullscreenCommand.Execute(null);
         }
 
         public async void HandleDrop(object sender, DragEventArgs e)

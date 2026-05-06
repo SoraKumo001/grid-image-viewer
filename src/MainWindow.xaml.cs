@@ -56,7 +56,7 @@ namespace quick_image_viewer
         public IViewerManager ViewerManager { get; private set; }
         public IGridManager GridManager { get; private set; }
         public IAppWindowManager AppWindowManager { get; private set; }
-        public IEditorManager EditorManager { get; private set; }
+        public IMenuStateManager MenuStateManager { get; private set; }
         public IBookmarkManager BookmarkManager { get; private set; }
         public IPlaylistManager PlaylistManager { get; private set; }
         public IPrintService PrintService { get; private set; }
@@ -75,7 +75,7 @@ namespace quick_image_viewer
         IPlaylistManager IMainView.PlaylistManager => PlaylistManager;
         IViewerManager IMainView.ViewerManager => ViewerManager;
         IGridManager IMainView.GridManager => GridManager;
-        IEditorManager IMainView.EditorManager => EditorManager;
+        IMenuStateManager IMainView.MenuStateManager => MenuStateManager;
         ListView IMainView.BookmarkListView => BookmarkListView;
         IPrintService IMainView.PrintService => PrintService;
         IBookmarkManager IMainView.BookmarkManager => BookmarkManager;
@@ -213,7 +213,7 @@ namespace quick_image_viewer
             ViewerManager = services.GetRequiredService<IViewerManager>();
             GridManager = services.GetRequiredService<IGridManager>();
             AppWindowManager = services.GetRequiredService<IAppWindowManager>();
-            EditorManager = services.GetRequiredService<IEditorManager>();
+            MenuStateManager = services.GetRequiredService<IMenuStateManager>();
             BookmarkManager = services.GetRequiredService<IBookmarkManager>();
             PlaylistManager = services.GetRequiredService<IPlaylistManager>();
             this.PrintService = services.GetRequiredService<IPrintService>();
@@ -398,24 +398,24 @@ namespace quick_image_viewer
             switch (message.Action)
             {
                 case "OpenExplorer":
-                    EditorManager.ContextTargetPath = message.Path;
-                    EditorManager.MenuOpenExplorer_Click(null!, null!);
+                    MenuStateManager.ContextTargetPath = message.Path;
+                    MenuStateManager.MenuOpenExplorer_Click(null!, null!);
                     break;
                 case "Settings":
-                    EditorManager.MenuSettings_Click(null!, null!);
+                    MenuStateManager.MenuSettings_Click(null!, null!);
                     break;
                 case "KeyBindings":
-                    EditorManager.MenuKeyBindings_Click(null!, null!);
+                    MenuStateManager.MenuKeyBindings_Click(null!, null!);
                     break;
                 case "Support":
-                    EditorManager.MenuSupport_Click(null!, null!);
+                    MenuStateManager.MenuSupport_Click(null!, null!);
                     break;
             }
         }
 
         public void Receive(TogglePageIndicatorMessage message)
         {
-            EditorManager.MenuPageIndicatorToggle_Click(null!, null!);
+            MenuStateManager.MenuPageIndicatorToggle_Click(null!, null!);
         }
 
         public void Receive(ClearImageSourceMessage message)
@@ -519,12 +519,12 @@ namespace quick_image_viewer
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 
-        private void EditMenuFlyout_Opening(object sender, object e) => EditorManager.EditMenuFlyout_Opening(sender, e);
+        private void EditMenuFlyout_Opening(object sender, object e) => MenuStateManager.EditMenuFlyout_Opening(sender, e);
         private void RootGrid_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var point = e.GetPosition(PagesGrid);
-            EditorManager.UpdateTargetIndexAtPoint(point);
-            ViewModel.ContextPath = EditorManager.ContextTargetPath;
+            MenuStateManager.UpdateTargetIndexAtPoint(point);
+            ViewModel.Editor.ContextPath = MenuStateManager.ContextTargetPath;
         }
 
 
@@ -533,11 +533,11 @@ namespace quick_image_viewer
 
 
         private void MenuBookmarksToggle_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarksToggle_Click(sender, e);
-        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => EditorManager.MenuMetadata_Click(sender, e);
-        private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => EditorManager.MenuPageIndicatorToggle_Click(sender, e);
-        private void MenuViewMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuViewMode_Click(sender, e);
-        private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuLayoutMode_Click(sender, e);
-        private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => EditorManager.MenuStretchMode_Click(sender, e);
+        private void MenuMetadata_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuMetadata_Click(sender, e);
+        private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuPageIndicatorToggle_Click(sender, e);
+        private void MenuViewMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuViewMode_Click(sender, e);
+        private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuLayoutMode_Click(sender, e);
+        private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuStretchMode_Click(sender, e);
         private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e) => BookmarkManager.BookmarkListView_ItemClick(sender, e);
         private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
