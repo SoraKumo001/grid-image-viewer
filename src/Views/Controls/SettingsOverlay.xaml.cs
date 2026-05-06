@@ -22,7 +22,9 @@ namespace quick_image_viewer.Views.Controls
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
-        private ObservableCollection<ExtensionItem> _extensionsList = new();
+        private ObservableCollection<ExtensionItem> _extensionsImages = new();
+        private ObservableCollection<ExtensionItem> _extensionsVideos = new();
+        private ObservableCollection<ExtensionItem> _extensionsArchives = new();
         private bool _isInitializing = true;
 
         private KeyBindingData _tempNextImage = null!;
@@ -130,35 +132,80 @@ namespace quick_image_viewer.Views.Controls
             if (sender is Button btn)
             {
                 string tag = btn.Content.ToString() ?? "";
-                string[] videoExts = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+                var allLists = new[] { _extensionsImages, _extensionsVideos, _extensionsArchives };
 
-                foreach (var item in _extensionsList)
+                foreach (var list in allLists)
                 {
-                    if (tag == "All") item.IsEnabled = true;
-                    else if (tag == "None") item.IsEnabled = false;
-                    else if (tag == "Images") item.IsEnabled = !videoExts.Contains(item.Name) && !ArchiveManager.ArchiveExtensions.Contains(item.Name);
-                    else if (tag == "Videos") item.IsEnabled = videoExts.Contains(item.Name);
+                    foreach (var item in list)
+                    {
+                        if (tag == "All")
+                        {
+                            item.IsEnabled = true;
+                        }
+                        else if (tag == "None")
+                        {
+                            item.IsEnabled = false;
+                        }
+                        else if (tag == "Images" && list == _extensionsImages)
+                        {
+                            item.IsEnabled = true;
+                        }
+                        else if (tag == "Videos" && list == _extensionsVideos)
+                        {
+                            item.IsEnabled = true;
+                        }
+                        else if (tag == "Archives" && list == _extensionsArchives)
+                        {
+                            item.IsEnabled = true;
+                        }
+                    }
                 }
 
                 // Refresh UI
-                ItemsExtensions.ItemsSource = null;
-                ItemsExtensions.ItemsSource = _extensionsList;
+                ItemsExtensionsImages.ItemsSource = null;
+                ItemsExtensionsImages.ItemsSource = _extensionsImages;
+                ItemsExtensionsVideos.ItemsSource = null;
+                ItemsExtensionsVideos.ItemsSource = _extensionsVideos;
+                ItemsExtensionsArchives.ItemsSource = null;
+                ItemsExtensionsArchives.ItemsSource = _extensionsArchives;
             }
         }
 
         private void InitializeExtensionsList()
         {
+            string[] videoExts = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+
+            _extensionsImages.Clear();
+            _extensionsVideos.Clear();
+            _extensionsArchives.Clear();
+
             var all = FolderDiscoveryService.SupportedExtensions.Concat(ArchiveManager.ArchiveExtensions).Distinct().OrderBy(e => e);
-            _extensionsList.Clear();
+
             foreach (var ext in all)
             {
-                _extensionsList.Add(new ExtensionItem
+                var item = new ExtensionItem
                 {
                     Name = ext,
                     IsEnabled = _settings.EnabledExtensions.Contains(ext)
-                });
+                };
+
+                if (ArchiveManager.ArchiveExtensions.Contains(ext))
+                {
+                    _extensionsArchives.Add(item);
+                }
+                else if (videoExts.Contains(ext))
+                {
+                    _extensionsVideos.Add(item);
+                }
+                else
+                {
+                    _extensionsImages.Add(item);
+                }
             }
-            ItemsExtensions.ItemsSource = _extensionsList;
+
+            ItemsExtensionsImages.ItemsSource = _extensionsImages;
+            ItemsExtensionsVideos.ItemsSource = _extensionsVideos;
+            ItemsExtensionsArchives.ItemsSource = _extensionsArchives;
         }
 
         private void InitializeKeyBindingsList()
@@ -405,7 +452,10 @@ namespace quick_image_viewer.Views.Controls
             _settings.KeyZoomReset = _tempZoomReset;
             _settings.KeyZoom100 = _tempZoom100;
 
-            var newExts = _extensionsList.Where(i => i.IsEnabled).Select(i => i.Name).ToList();
+            var newExts = _extensionsImages.Concat(_extensionsVideos).Concat(_extensionsArchives)
+                .Where(i => i.IsEnabled)
+                .Select(i => i.Name)
+                .ToList();
             bool extChanged = !_settings.EnabledExtensions.SequenceEqual(newExts);
             _settings.EnabledExtensions = newExts;
 

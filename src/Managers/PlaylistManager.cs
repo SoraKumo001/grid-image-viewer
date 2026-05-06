@@ -40,64 +40,142 @@ namespace quick_image_viewer.Managers
         public void Receive(FolderNavigationMessage message) => NavigateFolder(message.Offset);
         public void Receive(LoadDirectoryMessage message) => LoadDirectory(message.Path, message.InitialFile, message.IncludeSiblings, message.IncludeSubfolders, message.PreloadedPlaylist);
 
+        public int GetEffectiveSplitCount()
+        {
+            int splitCount = _settings.MangaSplitCount;
+            if (splitCount <= 1 || _state.Playlist.Count == 0) return 1;
+
+            int currentIndex = _state.CurrentIndex;
+            if (currentIndex < 0 || currentIndex >= _state.Playlist.Count) return 1;
+
+            int remaining = _state.Playlist.Count - currentIndex;
+            int effective = Math.Min(splitCount, remaining);
+
+            // Archives (Covers) are always single page in folder view
+            if (ArchiveManager.IsArchive(_state.Playlist[currentIndex]) && !ArchiveManager.IsArchivePath(_state.Playlist[currentIndex]))
+            {
+                return 1;
+            }
+
+            // Normal images: stop spread if we hit an archive
+            for (int i = 1; i < effective; i++)
+            {
+                if (ArchiveManager.IsArchive(_state.Playlist[currentIndex + i]) && !ArchiveManager.IsArchivePath(_state.Playlist[currentIndex + i]))
+                {
+                    return i;
+                }
+            }
+            return effective;
+        }
+
         public void Navigate(int offset, bool forceSingleStep)
         {
             if (_state.Playlist.Count == 0) return;
 
-            int step = forceSingleStep ? 1 : _settings.MangaSplitCount;
-            int currentIndex = _state.CurrentIndex;
+            int step = _settings.MangaSplitCount;
+            int newIndex = _state.CurrentIndex;
 
-            // Align base index for multi-page navigation when near the end of folder
-            // to ensure consistent page-by-page movement even when the last page is shifted to fill the grid.
-            if (!forceSingleStep && step > 1 && currentIndex + step > _state.Playlist.Count)
+            if (forceSingleStep || step <= 1)
             {
-                currentIndex = Math.Max(0, _state.Playlist.Count - step);
+                newIndex = _state.CurrentIndex + offset;
             }
-
-            int actualOffset = offset * step;
-            int newIndex = currentIndex + actualOffset;
-
-            if (newIndex < 0)
+            else if (offset > 0)
             {
-                // If we're not at the very beginning, first go to index 0 before jumping to previous folder/looping.
-                if (currentIndex > 0)
+                // Go forward by current visible spreads
+                for (int i = 0; i < offset; i++)
                 {
-                    newIndex = 0;
-                }
-                else
-                {
-                    int action = _settings.BoundaryAction;
-                    if (action == 1) // NextFolder (Previous)
-                    {
-                        NavigateFolder(-1);
-                    }
-                    else if (action == 2) // Loop
-                    {
-                        _state.CurrentIndex = _state.Playlist.Count - 1;
-                        _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
-                        WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
-                    }
-                    return;
+                    newIndex += GetEffectiveSplitCountForIndex(newIndex);
+                    if (newIndex >= _state.Playlist.Count) break;
                 }
             }
-            if (newIndex >= _state.Playlist.Count)
+            else
+            {
+                // Go backward by previous spreads
+                for (int i = 0; i < Math.Abs(offset); i++)
+                {
+                    if (newIndex <= 0) break;
+
+                    int target = newIndex - 1;
+                    if (ArchiveManager.IsArchive(_state.Playlist[target]) && !ArchiveManager.IsArchivePath(_state.Playlist[target]))
+                    {
+                        // The item before is an archive, it's a spread of its own
+                        newIndex = target;
+                    }
+                    else
+                    {
+                        // The item before is a normal image, look back to find spread start
+                        int moved = 0;
+                        while (target > 0 && moved < step - 1)
+                        {
+                            if (ArchiveManager.IsArchive(_state.Playlist[target - 1]) && !ArchiveManager.IsArchivePath(_state.Playlist[target - 1]))
+                                break;
+                            target--;
+                            moved++;
+                        }
+                        newIndex = target;
+                    }
+                }
+            }
+
+            // Boundary checks
+            if (newIndex < 0 || (offset < 0 && newIndex == _state.CurrentIndex && _state.CurrentIndex == 0))
             {
                 int action = _settings.BoundaryAction;
-                if (action == 1) // NextFolder
+                if (action == 1) { NavigateFolder(-1); return; }
+                else if (action == 2)
                 {
-                    NavigateFolder(1);
+                    // Loop to end: find the START of the LAST spread
+                    int lastStart = _state.Playlist.Count - 1;
+                    int moved = 0;
+                    while (lastStart > 0 && moved < step - 1)
+                    {
+                        if (ArchiveManager.IsArchive(_state.Playlist[lastStart]) && !ArchiveManager.IsArchivePath(_state.Playlist[lastStart])) break;
+                        if (ArchiveManager.IsArchive(_state.Playlist[lastStart - 1]) && !ArchiveManager.IsArchivePath(_state.Playlist[lastStart - 1])) break;
+                        lastStart--;
+                        moved++;
+                    }
+                    newIndex = lastStart;
+                    _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
                 }
-                else if (action == 2) // Loop
+                else { newIndex = 0; }
+            }
+            else if (newIndex >= _state.Playlist.Count)
+            {
+                int action = _settings.BoundaryAction;
+                if (action == 1) { NavigateFolder(1); return; }
+                else if (action == 2)
                 {
-                    _state.CurrentIndex = 0;
+                    newIndex = 0;
                     _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
-                    WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
                 }
-                return;
+                else { newIndex = _state.CurrentIndex; }
             }
 
-            _state.CurrentIndex = newIndex;
-            WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+            if (newIndex < 0) newIndex = 0;
+            if (newIndex >= _state.Playlist.Count) newIndex = Math.Max(0, _state.Playlist.Count - 1);
+
+            if (newIndex != _state.CurrentIndex)
+            {
+                _state.CurrentIndex = newIndex;
+                WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+            }
+        }
+
+        private int GetEffectiveSplitCountForIndex(int index)
+        {
+            int splitCount = _settings.MangaSplitCount;
+            if (splitCount <= 1 || index < 0 || index >= _state.Playlist.Count) return 1;
+
+            int remaining = _state.Playlist.Count - index;
+            int effective = Math.Min(splitCount, remaining);
+
+            if (ArchiveManager.IsArchive(_state.Playlist[index]) && !ArchiveManager.IsArchivePath(_state.Playlist[index])) return 1;
+
+            for (int i = 1; i < effective; i++)
+            {
+                if (ArchiveManager.IsArchive(_state.Playlist[index + i]) && !ArchiveManager.IsArchivePath(_state.Playlist[index + i])) return i;
+            }
+            return effective;
         }
 
         public void NavigateFolder(int offset)
@@ -150,6 +228,7 @@ namespace quick_image_viewer.Managers
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         _state.IsSearchingFolder = false;
+                        WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     });
                 }
             });
@@ -168,6 +247,7 @@ namespace quick_image_viewer.Managers
                 else
                 {
                     _state.IsSearchingFolder = false;
+                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                 }
             }
             else if (includeSiblings || includeSubfolders)
@@ -177,6 +257,7 @@ namespace quick_image_viewer.Managers
             else
             {
                 _state.IsSearchingFolder = false;
+                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
             }
         }
 
@@ -240,6 +321,7 @@ namespace quick_image_viewer.Managers
                     WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
                 }
                 _state.IsSearchingFolder = false;
+                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
             });
         }
 

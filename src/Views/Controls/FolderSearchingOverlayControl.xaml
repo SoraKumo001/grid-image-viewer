@@ -4,9 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" IsHitTestVisible="True">
+    mc:Ignorable="d" IsHitTestVisible="True" IsTabStop="False">
 
-    <Border Background="#88000000">
+    <Border Background="#88000000" IsTabStop="False">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,150" Spacing="12">
             <ProgressRing IsActive="True" Width="64" Height="64" Foreground="#00A2ED" />
             <TextBlock x:Uid="SearchingText" Text="Searching for images..." Foreground="White" FontSize="18" FontWeight="SemiBold" />

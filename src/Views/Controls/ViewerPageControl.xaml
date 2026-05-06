@@ -16,7 +16,7 @@
         <!-- 軽量表示用のホスト -->
         <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsTabStop="False" />
         
-        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="False" IsTabStop="False" />
+        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="False" IsTabStop="False" AllowFocusOnInteraction="False" />
         
         <!-- 独自再生コントロール -->
         <Border x:Name="CustomTransportPanel" 
@@ -27,7 +27,8 @@
                 Background="#CC1F1F1F" 
                 CornerRadius="10" 
                 Visibility="Collapsed" 
-                IsHitTestVisible="True">
+                IsHitTestVisible="True"
+                IsTabStop="False">
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -37,7 +38,8 @@
 
                 <Button x:Name="PlayPauseButton" 
                         Style="{StaticResource SubtleButtonStyle}" 
-                        Padding="8" Click="PlayPauseButton_Click">
+                        Padding="8" Click="PlayPauseButton_Click"
+                        IsTabStop="False" AllowFocusOnInteraction="False">
                     <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="18" Foreground="White" />
                 </Button>
 
@@ -48,7 +50,8 @@
                         Minimum="0" 
                         StepFrequency="0.01" 
                         PointerCaptureLost="TimelineSlider_PointerCaptureLost" 
-                        ValueChanged="TimelineSlider_ValueChanged" />
+                        ValueChanged="TimelineSlider_ValueChanged"
+                        IsTabStop="False" AllowFocusOnInteraction="False" />
 
                 <TextBlock x:Name="TimeText" 
                            Grid.Column="2" 

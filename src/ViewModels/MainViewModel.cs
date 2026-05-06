@@ -1,17 +1,19 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.UI.Xaml;
 using quick_image_viewer.Interfaces;
+using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
+
 namespace quick_image_viewer.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
         public IViewerStateService State { get; }
+        private readonly ISettingsManager _settings;
         private readonly Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue;
         private readonly IMenuStateManager _menuStateManager;
 
@@ -115,8 +117,6 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial bool IsDialogOpen { get; set; }
 
-
-
         [ObservableProperty] public partial bool IsBookmarkPanelVisible { get; set; }
         [ObservableProperty] public partial string BookmarkMenuText { get; set; } = "Bookmark this folder";
 
@@ -132,6 +132,12 @@ namespace quick_image_viewer.ViewModels
 
         [ObservableProperty]
         public partial string PageIndicatorText { get; set; } = string.Empty;
+
+        private int _totalImages = 0;
+        private int _totalArchives = 0;
+        private readonly System.Collections.Generic.List<int> _imageRanks = new();
+        private readonly System.Collections.Generic.List<int> _archiveRanks = new();
+        private bool _isInsideArchive = false;
 
         private int _mangaSplitCount = 1;
         public int MangaSplitCount
@@ -152,10 +158,11 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial int BoundaryAction { get; set; } = 1;
 
-        public MainViewModel(IViewerStateService stateService, IMenuStateManager menuStateManager)
+        public MainViewModel(IViewerStateService stateService, IMenuStateManager menuStateManager, ISettingsManager settings)
         {
             State = stateService;
             _menuStateManager = menuStateManager;
+            _settings = settings;
             _dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
             // Subscribe to state changes to update UI
@@ -169,6 +176,7 @@ namespace quick_image_viewer.ViewModels
                         e.PropertyName == nameof(State.IsGridMode) ||
                         e.PropertyName == nameof(State.CurrentDirectory))
                     {
+                        if (e.PropertyName == nameof(State.Playlist)) RecalculateStats();
                         if (e.PropertyName == nameof(State.CurrentIndex)) _overrideDisplayIndex = null;
                         UpdatePageIndicator();
                         if (e.PropertyName == nameof(State.IsGridMode)) OnPropertyChanged(nameof(IsViewerMode));
@@ -183,8 +191,7 @@ namespace quick_image_viewer.ViewModels
             }
 
             // Initialize Bookmarks
-            var initialSettings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
-            Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(initialSettings.Bookmarks);
+            Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(_settings.Bookmarks);
             UpdateBookmarkMenuText();
 
             NavigateNextCommand = new RelayCommand(() => Navigate(1));
@@ -204,8 +211,7 @@ namespace quick_image_viewer.ViewModels
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
-                    var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
-                    Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(settings.Bookmarks);
+                    Bookmarks = new ObservableCollection<quick_image_viewer.Managers.BookmarkItem>(_settings.Bookmarks);
                     UpdateBookmarkMenuText();
                 });
             });
@@ -227,23 +233,22 @@ namespace quick_image_viewer.ViewModels
                     Editor.HasValidPath = m.HasValidPath;
                     Editor.IsImageEditable = m.IsImageEditable;
 
-                    var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
-                    int splitCount = settings.MangaSplitCount;
+                    int splitCount = _settings.MangaSplitCount;
                     Viewer.IsViewSingle = (splitCount == 1);
                     Viewer.IsViewDouble = (splitCount == 2);
                     Viewer.IsViewQuad = (splitCount == 4);
 
-                    int layoutMode = settings.QuadLayoutMode;
+                    int layoutMode = _settings.QuadLayoutMode;
                     Viewer.IsLayoutAuto = (layoutMode == 0);
                     Viewer.IsLayoutHorz = (layoutMode == 1);
                     Viewer.IsLayoutGrid = (layoutMode == 2);
 
-                    int stretchMode = settings.ImageStretchMode;
+                    int stretchMode = _settings.ImageStretchMode;
                     Viewer.IsStretchOriginal = (stretchMode == 0);
                     Viewer.IsStretchContain = (stretchMode == 2);
                     Viewer.IsStretchCover = (stretchMode == 3);
 
-                    ShowPageIndicator = settings.ShowPageIndicator;
+                    ShowPageIndicator = _settings.ShowPageIndicator;
                     UpdateBookmarkMenuText();
                 });
             });
@@ -251,15 +256,17 @@ namespace quick_image_viewer.ViewModels
             // Default values
             SlideshowInterval = 5.0;
             SlideshowCrossfadeDuration = 0.5;
+
+            // Initial stats
+            RecalculateStats();
         }
 
         private void UpdateBookmarkMenuText()
         {
-            var settings = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ISettingsManager>(((App)Application.Current).Services);
             string dir = CurrentDirectory;
             if (!string.IsNullOrEmpty(dir))
             {
-                bool isBookmarked = settings.Bookmarks.Exists(b => b.Path == dir);
+                bool isBookmarked = _settings.Bookmarks.Exists(b => b.Path == dir);
                 BookmarkMenuText = isBookmarked ? _menuStateManager.GetString("MenuBookmark_Remove") : _menuStateManager.GetString("MenuBookmark_Add");
             }
         }
@@ -274,12 +281,82 @@ namespace quick_image_viewer.ViewModels
             WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
         }
 
+        private void RecalculateStats()
+        {
+            _totalImages = 0;
+            _totalArchives = 0;
+            _imageRanks.Clear();
+            _archiveRanks.Clear();
+
+            if (Playlist == null || Playlist.Count == 0) return;
+
+            // Determine if we are inside an archive by checking the first item
+            _isInsideArchive = ArchiveManager.IsArchivePath(Playlist[0]);
+
+            if (_isInsideArchive)
+            {
+                // Everything is an image inside an archive
+                _totalImages = Playlist.Count;
+                for (int i = 0; i < Playlist.Count; i++)
+                {
+                    _imageRanks.Add(i + 1);
+                    _archiveRanks.Add(-1);
+                }
+            }
+            else
+            {
+                // Folder view: Separate loose images and archives
+                foreach (var path in Playlist)
+                {
+                    if (ArchiveManager.IsArchive(path) && !ArchiveManager.IsArchivePath(path))
+                    {
+                        _totalArchives++;
+                        _archiveRanks.Add(_totalArchives);
+                        _imageRanks.Add(-1);
+                    }
+                    else
+                    {
+                        _totalImages++;
+                        _imageRanks.Add(_totalImages);
+                        _archiveRanks.Add(-1);
+                    }
+                }
+            }
+        }
+
         public void UpdatePageIndicator()
         {
-            if (ShowPageIndicator && Playlist != null && Playlist.Count > 0 && CurrentIndex >= 0)
+            if (ShowPageIndicator && Playlist != null && Playlist.Count > 0 && CurrentIndex >= 0 && _imageRanks.Count == Playlist.Count)
             {
-                int displayIndex = OverrideDisplayIndex ?? (IsGridMode ? (CurrentIndex + 1) : System.Math.Min(CurrentIndex + MangaSplitCount, Playlist.Count));
-                PageIndicatorText = $"{displayIndex} / {Playlist.Count}";
+                // In manga mode, the index displayed is the "highest" index currently on screen
+                int playlistIndex = (OverrideDisplayIndex.HasValue) ? OverrideDisplayIndex.Value - 1 : CurrentIndex;
+                if (!OverrideDisplayIndex.HasValue && !IsGridMode && MangaSplitCount > 1)
+                {
+                    // Fallback calculation if OverrideDisplayIndex is not set
+                    playlistIndex = System.Math.Min(CurrentIndex + MangaSplitCount - 1, Playlist.Count - 1);
+                }
+
+                if (playlistIndex < 0) playlistIndex = 0;
+                if (playlistIndex >= Playlist.Count) playlistIndex = Playlist.Count - 1;
+
+                if (_isInsideArchive)
+                {
+                    PageIndicatorText = $"{playlistIndex + 1} / {Playlist.Count}";
+                }
+                else
+                {
+                    bool isArchive = ArchiveManager.IsArchive(Playlist[playlistIndex]) && !ArchiveManager.IsArchivePath(Playlist[playlistIndex]);
+                    if (isArchive)
+                    {
+                        int rank = _archiveRanks[playlistIndex];
+                        PageIndicatorText = $"Archive {rank} / {_totalArchives}";
+                    }
+                    else
+                    {
+                        int rank = _imageRanks[playlistIndex];
+                        PageIndicatorText = $"{rank} / {_totalImages}";
+                    }
+                }
                 IsPageIndicatorVisible = true;
             }
             else

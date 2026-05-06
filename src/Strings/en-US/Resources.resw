@@ -470,6 +470,9 @@
   <data name="Settings_BoundaryAction.Text" xml:space="preserve">
     <value>Boundary Action (Start/End)</value>
   </data>
+  <data name="Settings_BoundaryAction_Description.Text" xml:space="preserve">
+    <value>Action when reaching the first or last image in a folder</value>
+  </data>
   <data name="Settings_BoundaryAction_None.Content" xml:space="preserve">
     <value>Do Nothing</value>
   </data>
@@ -577,5 +580,14 @@
   </data>
   <data name="Settings_Maintenance.Text" xml:space="preserve">
     <value>Maintenance</value>
+  </data>
+  <data name="Settings_Extensions_Images.Text" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="Settings_Extensions_Videos.Text" xml:space="preserve">
+    <value>Videos</value>
+  </data>
+  <data name="Settings_Extensions_Archives.Text" xml:space="preserve">
+    <value>Archives (Compression)</value>
   </data>
 </root>

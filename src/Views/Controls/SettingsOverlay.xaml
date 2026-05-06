@@ -73,7 +73,7 @@
                                         <ComboBoxItem x:Uid="Settings_BoundaryAction_NextFolder" Content="Next Folder" />
                                         <ComboBoxItem x:Uid="Settings_BoundaryAction_Loop" Content="Loop" />
                                     </ComboBox>
-                                    <TextBlock Text="Action when reaching first or last image in folder" FontSize="11" Foreground="#666666" Margin="2,0,0,0" />
+                                    <TextBlock x:Uid="Settings_BoundaryAction_Description" Text="Action when reaching first or last image in folder" FontSize="11" Foreground="#666666" Margin="2,0,0,0" />
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
@@ -104,26 +104,68 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="BtnExtAll" Content="All" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
                                         <Button x:Name="BtnExtImages" Grid.Column="1" Content="Images" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
                                         <Button x:Name="BtnExtVideos" Grid.Column="2" Content="Videos" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
-                                        <Button x:Name="BtnExtNone" Grid.Column="3" Content="None" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
+                                        <Button x:Name="BtnExtArchives" Grid.Column="3" Content="Archives" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
+                                        <Button x:Name="BtnExtNone" Grid.Column="4" Content="None" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
                                     </Grid>
 
                                     <Border BorderBrush="#FF404040" BorderThickness="1" CornerRadius="4" Background="#FF1A1A1A">
-                                        <ItemsControl x:Name="ItemsExtensions" Margin="8">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="3" ItemWidth="110" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" FontSize="12" />
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                        <StackPanel Margin="12" Spacing="16">
+                                            <!-- Images Group -->
+                                            <StackPanel Spacing="8">
+                                                <TextBlock x:Uid="Settings_Extensions_Images" Text="Images" Foreground="#888888" FontSize="11" FontWeight="SemiBold" />
+                                                <ItemsControl x:Name="ItemsExtensionsImages">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="110" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" FontSize="12" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- Videos Group -->
+                                            <StackPanel Spacing="8">
+                                                <TextBlock x:Uid="Settings_Extensions_Videos" Text="Videos" Foreground="#888888" FontSize="11" FontWeight="SemiBold" />
+                                                <ItemsControl x:Name="ItemsExtensionsVideos">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="110" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" FontSize="12" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- Archives Group -->
+                                            <StackPanel Spacing="8">
+                                                <TextBlock x:Uid="Settings_Extensions_Archives" Text="Archives" Foreground="#888888" FontSize="11" FontWeight="SemiBold" />
+                                                <ItemsControl x:Name="ItemsExtensionsArchives">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="110" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" FontSize="12" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </StackPanel>

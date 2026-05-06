@@ -470,6 +470,9 @@
   <data name="Settings_BoundaryAction.Text" xml:space="preserve">
     <value>端に達した時の動作</value>
   </data>
+  <data name="Settings_BoundaryAction_Description.Text" xml:space="preserve">
+    <value>フォルダ内の最初または最後の画像に達した時の動作を設定します</value>
+  </data>
   <data name="Settings_BoundaryAction_None.Content" xml:space="preserve">
     <value>移動しない</value>
   </data>
@@ -577,5 +580,14 @@
   </data>
   <data name="Settings_Maintenance.Text" xml:space="preserve">
     <value>メンテナンス</value>
+  </data>
+  <data name="Settings_Extensions_Images.Text" xml:space="preserve">
+    <value>画像</value>
+  </data>
+  <data name="Settings_Extensions_Videos.Text" xml:space="preserve">
+    <value>動画</value>
+  </data>
+  <data name="Settings_Extensions_Archives.Text" xml:space="preserve">
+    <value>アーカイブ (圧縮ファイル)</value>
   </data>
 </root>

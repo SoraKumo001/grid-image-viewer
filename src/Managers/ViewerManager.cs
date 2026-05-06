@@ -81,6 +81,8 @@ namespace quick_image_viewer.Managers
 
         public void Receive(ToggleMetadataMessage message) => ToggleMetadataPanel();
 
+        public int GetEffectiveSplitCount() => _window.PlaylistManager.GetEffectiveSplitCount();
+
         public PageRenderer[] Pages => _window.ViewerControl != null ? _pagesBuffer[_window.ViewerControl.CurrentBufferIndex] : _pagesBuffer[0];
         public ViewerPageControl[] PageControls => _pageControls;
 
@@ -154,16 +156,29 @@ namespace quick_image_viewer.Managers
 
             int splitCount = _settings.MangaSplitCount;
             int gridStartIndex = _window.CurrentIndex;
+            int effectiveSplitCount = GetEffectiveSplitCount();
 
-            if (splitCount > 1)
+            // Align to end of folder to ensure a full grid if possible (only for normal images)
+            if (splitCount > 1 && effectiveSplitCount < splitCount && gridStartIndex + splitCount > _window.Playlist.Count)
             {
-                // Align to end of folder to ensure a full grid if possible
-                if (gridStartIndex + splitCount > _window.Playlist.Count)
+                // Only align if we are not on an archive and not breaking an archive unit
+                int potentialStart = Math.Max(0, _window.Playlist.Count - splitCount);
+                bool containsArchive = false;
+                for (int i = 0; i < splitCount; i++)
                 {
-                    gridStartIndex = Math.Max(0, _window.Playlist.Count - splitCount);
+                    if (ArchiveManager.IsArchive(_window.Playlist[potentialStart + i]) && !ArchiveManager.IsArchivePath(_window.Playlist[potentialStart + i]))
+                    {
+                        containsArchive = true;
+                        break;
+                    }
+                }
+
+                if (!containsArchive)
+                {
+                    gridStartIndex = potentialStart;
+                    effectiveSplitCount = splitCount;
                 }
             }
-            int effectiveSplitCount = Math.Min(splitCount, _window.Playlist.Count - gridStartIndex);
 
             // Recalculate layout for quad mode if needed
             if (splitCount == 4 && _settings.QuadLayoutMode == 0)
@@ -454,8 +469,7 @@ namespace quick_image_viewer.Managers
                     {
                         int currentBufferIdx = _window.ViewerControl.CurrentBufferIndex;
                         int splitCount = _settings.MangaSplitCount;
-                        int remaining = _window.Playlist.Count - _window.CurrentIndex;
-                        int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+                        int effectiveSplitCount = _lastEffectiveSplitCount;
 
                         _layoutManager.UpdateLayoutGrid(
                             _window.ViewerControl.ColsBuffer[currentBufferIdx],
@@ -481,9 +495,7 @@ namespace quick_image_viewer.Managers
             int hAlign = 1; // Center
             int vAlign = 1; // Center
 
-            int remaining = _window.Playlist.Count - _window.CurrentIndex;
-            int splitCount = _settings.MangaSplitCount;
-            int effectiveSplitCount = Math.Max(1, Math.Min(splitCount, remaining));
+            int effectiveSplitCount = _lastEffectiveSplitCount > 0 ? _lastEffectiveSplitCount : 1;
 
             if (effectiveSplitCount == 2) hAlign = pageIndex == 0 ? 0 : 2;
             else if (effectiveSplitCount == 3)
