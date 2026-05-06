@@ -43,21 +43,28 @@ namespace quick_image_viewer.Services
                 {
                     string cleanPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     string? parent = Path.GetDirectoryName(cleanPath);
-                    if (parent != null)
+                    if (parent != null && Directory.Exists(parent))
                     {
                         try
                         {
-                            if (Directory.Exists(parent))
+                            foreach (var d in Directory.EnumerateDirectories(parent))
                             {
-                                foreach (var d in Directory.EnumerateDirectories(parent))
+                                if (token.IsCancellationRequested) return;
+                                if (d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
                                 {
-                                    if (token.IsCancellationRequested) return;
-                                    if (d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
-                                    {
-                                        targetDirs.Add(d);
-                                    }
+                                    targetDirs.Add(d);
                                 }
                             }
+                            var siblingFiles = new List<string>();
+                            foreach (var f in Directory.EnumerateFiles(parent))
+                            {
+                                if (token.IsCancellationRequested) return;
+                                if (f != cleanPath && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
+                                {
+                                    siblingFiles.Add(f);
+                                }
+                            }
+                            if (siblingFiles.Count > 0) onBatchLoaded?.Invoke(siblingFiles);
                         }
                         catch { }
                     }

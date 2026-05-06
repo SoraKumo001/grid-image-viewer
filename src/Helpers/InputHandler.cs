@@ -238,6 +238,19 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyToggleGrid, e.Key, isCtrl, isShift, isAlt))
             {
+                // ItemClick in GridView marks Enter as Handled and sets IsGridMode = false.
+                // If we don't check e.Handled, we end up toggling it right back to true.
+                if (e.Handled && e.Key == VirtualKey.Enter)
+                {
+                    return;
+                }
+
+                // If we are still in grid mode, let the GridView handle the Enter key natively.
+                if (_window.IsGridMode && e.Key == VirtualKey.Enter)
+                {
+                    return;
+                }
+
                 _window.ViewModel.Viewer.ToggleGridModeCommand.Execute(null);
                 e.Handled = true;
                 return;
@@ -350,12 +363,16 @@ namespace quick_image_viewer.Helpers
                     }
                     else if (item is StorageFile file)
                     {
-                        if (FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(file.Path), _settings.EnabledExtensions))
+                        string ext = Path.GetExtension(file.Path).ToLowerInvariant();
+                        bool isSupported = FolderDiscoveryService.IsSupportedExtension(ext, _settings.EnabledExtensions);
+                        bool isArchive = ArchiveManager.IsArchive(file.Path);
+
+                        if (isSupported)
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
                             WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(dir, file.Path));
                         }
-                        else if (ArchiveManager.IsArchive(file.Path))
+                        else if (isArchive)
                         {
                             WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(file.Path));
                         }

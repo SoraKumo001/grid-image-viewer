@@ -66,6 +66,15 @@ namespace quick_image_viewer.Views.Controls
                 mp.IsLoopingEnabled = true;
                 mp.IsMuted = true;
                 mp.AutoPlay = true;
+
+                // Ensure loop mode continues to work for successive videos loaded in the same player
+                mp.MediaOpened += (s, args) =>
+                {
+                    if (s is MediaPlayer player)
+                    {
+                        player.IsLoopingEnabled = true;
+                    }
+                };
                 InternalMediaPlayer.SetMediaPlayer(mp);
 
             }

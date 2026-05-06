@@ -36,8 +36,15 @@ namespace quick_image_viewer.Services
         {
             if (ArchiveManager.IsArchive(filePath) && !ArchiveManager.IsArchivePath(filePath))
             {
-                _window.DispatcherQueue.TryEnqueue(() => CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(filePath)));
-                return;
+                var archiveImages = ArchiveManager.GetArchiveImages(filePath, _settings.EnabledExtensions);
+                if (archiveImages.Count > 0)
+                {
+                    filePath = archiveImages[0];
+                }
+                else
+                {
+                    return;
+                }
             }
 
             renderer.CurrentFilePath = filePath;
@@ -161,7 +168,12 @@ namespace quick_image_viewer.Services
                                         mp.SetSurfaceSize(new Windows.Foundation.Size(width, height));
 
                                         // ソースのセット
-                                        mp.Source = source;
+                                        var playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);
+                                        var playbackList = new Windows.Media.Playback.MediaPlaybackList();
+                                        playbackList.AutoRepeatEnabled = true;
+                                        playbackList.Items.Add(playbackItem);
+                                        mp.Source = playbackList;
+                                        mp.IsLoopingEnabled = true; // Safety redundancy
 
                                         // 準備完了時にローディングを消す
                                         void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
@@ -174,6 +186,10 @@ namespace quick_image_viewer.Services
                                                 pageControl.LoadingRing.IsActive = false;
                                                 pageControl.PageImage.Visibility = Visibility.Collapsed;
                                                 pageControl.PageImage.Opacity = 1.0;
+
+                                                // Ensure playback starts
+                                                sender.Play();
+
                                                 // 動画読み込み完了後にフォーカスをRootGridに戻す
                                                 WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                                             });

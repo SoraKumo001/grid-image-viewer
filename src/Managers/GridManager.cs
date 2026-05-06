@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
@@ -6,6 +7,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Models;
+using quick_image_viewer.ViewModels;
 using SkiaSharp;
 using System;
 using System.Collections.ObjectModel;
@@ -201,6 +203,9 @@ namespace quick_image_viewer.Managers
 
                 var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
                 bool mightBeAnimated = ext == ".webp" || ext == ".gif" || ext == ".avis" || ext == ".webm";
+                string[] videoExtensions = { ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+                bool isVideo = videoExtensions.Contains(ext);
+                bool isArchive = ArchiveManager.IsArchive(item.FilePath);
 
                 if (mightBeAnimated)
                 {
@@ -281,6 +286,33 @@ namespace quick_image_viewer.Managers
                     else
                     {
                         skData.Dispose();
+                    }
+                }
+                else if (isVideo)
+                {
+                    var softwareBitmap = await ImageProcessor.ExtractVideoThumbnailAsync(item.FilePath, (uint)decodeSize);
+                    if (softwareBitmap != null)
+                    {
+                        _window.DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            if (token.IsCancellationRequested) return;
+                            var source = new SoftwareBitmapSource();
+                            await source.SetBitmapAsync(softwareBitmap);
+                            item.Thumbnail = source;
+                        });
+                    }
+                }
+                else if (isArchive)
+                {
+                    var archiveImages = await Task.Run(() => ArchiveManager.GetArchiveImages(item.FilePath, _settings.EnabledExtensions));
+                    if (archiveImages.Count > 0)
+                    {
+                        SKBitmap? decoded = ImageProcessor.LoadThumbnail(archiveImages[0], decodeSize);
+                        if (decoded != null)
+                        {
+                            using var skBitmapToDispose = decoded;
+                            ProcessDecodedBitmap(decoded, item, decodeSize, token);
+                        }
                     }
                 }
                 else
@@ -420,6 +452,11 @@ namespace quick_image_viewer.Managers
                 int idx = _window.Playlist.IndexOf(item.FilePath);
                 if (idx >= 0)
                 {
+                    if (ArchiveManager.IsArchive(item.FilePath) && !ArchiveManager.IsArchivePath(item.FilePath))
+                    {
+                        WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(item.FilePath));
+                        return;
+                    }
                     _window.CurrentIndex = idx;
                     _window.IsGridMode = false;
                     _ = _window.UpdateDisplayAsync();
