@@ -443,6 +443,24 @@
   <data name="Settings_HighQuality.Content" xml:space="preserve">
     <value>高品質スケーリング</value>
   </data>
+  <data name="Settings_ShowPageIndicator.Content" xml:space="preserve">
+    <value>ページ数を表示</value>
+  </data>
+  <data name="Settings_Tab_Display.Header" xml:space="preserve">
+    <value>表示</value>
+  </data>
+  <data name="Settings_Tab_Navigation.Header" xml:space="preserve">
+    <value>移動</value>
+  </data>
+  <data name="Settings_Tab_Files.Header" xml:space="preserve">
+    <value>ファイル</value>
+  </data>
+  <data name="Settings_Tab_System.Header" xml:space="preserve">
+    <value>システム</value>
+  </data>
+  <data name="Settings_Tab_KeyBindings.Header" xml:space="preserve">
+    <value>ショートカット</value>
+  </data>
   <data name="Settings_Export.Content" xml:space="preserve">
     <value>設定のエクスポート</value>
   </data>

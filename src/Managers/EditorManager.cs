@@ -229,7 +229,7 @@ namespace quick_image_viewer.Managers
 
         public void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
-            _dialog.ShowSettingsOverlay(_settings);
+            _dialog.ShowSettingsOverlay(_settings, 0); // Open with Display tab
         }
 
         public async void MenuSupport_Click(object sender, RoutedEventArgs e)
@@ -374,7 +374,7 @@ namespace quick_image_viewer.Managers
 
         public void MenuKeyBindings_Click(object sender, RoutedEventArgs e)
         {
-            _dialog.ShowKeyBindingsOverlay(_settings);
+            _dialog.ShowSettingsOverlay(_settings, 3); // Open with Shortcuts tab
         }
 
         public string GetString(string key)

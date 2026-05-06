@@ -11,9 +11,9 @@ namespace quick_image_viewer.Interfaces
 
         // Specialized dialog methods to decouple Managers from View
         void ShowCropOverlay();
-        void ShowSettingsOverlay(ISettingsManager settings);
+        void ShowSettingsOverlay(ISettingsManager settings, int initialTabIndex = 0);
         void ShowResizeOverlay(string sourcePath, int origW, int origH);
         void ShowToneAdjustmentOverlay(string sourcePath, SKBitmap? baseBmp);
-        void ShowKeyBindingsOverlay(ISettingsManager settings);
+        
     }
 }

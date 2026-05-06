@@ -71,9 +71,9 @@ namespace quick_image_viewer.Services
             Show(new CropOverlay(_window) { Name = "CropOverlay" });
         }
 
-        public void ShowSettingsOverlay(ISettingsManager settings)
+        public void ShowSettingsOverlay(ISettingsManager settings, int initialTabIndex = 0)
         {
-            Show(new SettingsOverlay(_window, settings) { Name = "SettingsOverlay" });
+            Show(new SettingsOverlay(_window, settings, initialTabIndex) { Name = "SettingsOverlay" });
         }
 
         public void ShowResizeOverlay(string sourcePath, int origW, int origH)
@@ -86,9 +86,6 @@ namespace quick_image_viewer.Services
             Show(new ToneAdjustmentOverlay(_window, sourcePath, baseBmp) { Name = "ToneAdjustmentOverlay" });
         }
 
-        public void ShowKeyBindingsOverlay(ISettingsManager settings)
-        {
-            Show(new KeyBindingsOverlay(_window, settings) { Name = "KeyBindingsOverlay" });
-        }
+        
     }
 }

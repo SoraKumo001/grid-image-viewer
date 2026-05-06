@@ -428,7 +428,11 @@ namespace quick_image_viewer.Managers
                 }
                 for (int b = 0; b < 2; b++)
                 {
-                    for (int i = 0; i < 4; i++) _pagesBuffer[b][i].StretchMode = stretchMode;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        _pagesBuffer[b][i].StretchMode = stretchMode;
+                        _pagesBuffer[b][i].UseHighQualityScaling = _settings.UseHighQualityScaling;
+                    }
                 }
             }
             catch { }

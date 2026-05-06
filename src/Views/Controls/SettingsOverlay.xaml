@@ -10,76 +10,159 @@
     RequestedTheme="Dark"
     KeyDown="Overlay_KeyDown">
 
-    <Grid Background="#01000000">
-        <StackPanel
-            Spacing="16"
-            Padding="24"
+    <Grid Background="#44000000">
+        <Border
             Background="#FF202020"
-            CornerRadius="8"
+            CornerRadius="12"
             BorderBrush="#FF404040"
             BorderThickness="1"
-            Width="320"
+            Width="420"
+            Height="540"
             HorizontalAlignment="Center"
-            VerticalAlignment="Center">
-
-            <TextBlock x:Uid="Settings_Title" Text="General Settings" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="White" />
-
-            <StackPanel Spacing="4">
-                <TextBlock x:Uid="Settings_JpegQuality" Text="JPEG/WebP Quality" FontWeight="SemiBold" Foreground="White" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Slider x:Name="SliderQuality" Minimum="1" Maximum="100" StepFrequency="1" />
-                    <TextBlock Grid.Column="1" Text="{Binding ElementName=SliderQuality, Path=Value}" VerticalAlignment="Center" Margin="8,0,0,0" Width="40" Foreground="White" />
+            VerticalAlignment="Center"
+            Padding="0">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <!-- Header -->
+                <Grid Padding="24,16" Background="#FF282828" CornerRadius="12,12,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE713;" FontSize="18" Foreground="#00A2ED" />
+                        <TextBlock x:Uid="Settings_Title" Text="General Settings" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="White" />
+                    </StackPanel>
                 </Grid>
-            </StackPanel>
 
-            <StackPanel Spacing="4">
-                <TextBlock x:Uid="Settings_Background" Text="Background Color" FontWeight="SemiBold" Foreground="White" />
-                <ComboBox x:Name="ComboBackground" HorizontalAlignment="Stretch">
-                    <ComboBoxItem x:Uid="Settings_Background_System" Content="System (Mica)" />
-                    <ComboBoxItem x:Uid="Settings_Background_Black" Content="Black" />
-                    <ComboBoxItem x:Uid="Settings_Background_White" Content="White" />
-                </ComboBox>
-            </StackPanel>
+                <!-- Content -->
+                <Pivot Grid.Row="1" x:Name="SettingsPivot">
+                    <Pivot.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="14" />
+                        </DataTemplate>
+                    </Pivot.HeaderTemplate>
 
-            <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" />
-            <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" />
+                    <!-- Display Tab -->
+                    <PivotItem x:Uid="Settings_Tab_Display" Header="Display">
+                        <ScrollViewer Padding="24,16">
+                            <StackPanel Spacing="20">
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Uid="Settings_Background" Text="Background Color" Foreground="White" />
+                                    <ComboBox x:Name="ComboBackground" HorizontalAlignment="Stretch" SelectionChanged="SettingControl_Changed">
+                                        <ComboBoxItem x:Uid="Settings_Background_System" Content="System (Mica)" />
+                                        <ComboBoxItem x:Uid="Settings_Background_Black" Content="Black" />
+                                        <ComboBoxItem x:Uid="Settings_Background_White" Content="White" />
+                                    </ComboBox>
+                                </StackPanel>
 
-            <StackPanel Spacing="4">
-                <TextBlock x:Uid="Settings_BoundaryAction" Text="Boundary Action (Start/End)" FontWeight="SemiBold" Foreground="White" />
-                <ComboBox x:Name="ComboBoundary" HorizontalAlignment="Stretch">
-                    <ComboBoxItem x:Uid="Settings_BoundaryAction_None" Content="Do Nothing" />
-                    <ComboBoxItem x:Uid="Settings_BoundaryAction_NextFolder" Content="Next Folder" />
-                    <ComboBoxItem x:Uid="Settings_BoundaryAction_Loop" Content="Loop" />
-                </ComboBox>
-            </StackPanel>
+                                <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" Click="SettingControl_Changed" />
+                                <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" Click="SettingControl_Changed" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </PivotItem>
 
-            <StackPanel Spacing="4">
-                <TextBlock x:Uid="Settings_Extensions" Text="Enabled File Extensions" FontWeight="SemiBold" Foreground="White" />
-                <ScrollViewer MaxHeight="120" BorderBrush="#FF404040" BorderThickness="1" Padding="4">
-                    <ItemsControl x:Name="ItemsExtensions">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" Padding="8,0,0,0" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </StackPanel>
+                    <!-- Navigation Tab -->
+                    <PivotItem x:Uid="Settings_Tab_Navigation" Header="Navigation">
+                        <ScrollViewer Padding="24,16">
+                            <StackPanel Spacing="20">
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Uid="Settings_BoundaryAction" Text="Boundary Action (Start/End)" Foreground="White" />
+                                    <ComboBox x:Name="ComboBoundary" HorizontalAlignment="Stretch" SelectionChanged="SettingControl_Changed">
+                                        <ComboBoxItem x:Uid="Settings_BoundaryAction_None" Content="Do Nothing" />
+                                        <ComboBoxItem x:Uid="Settings_BoundaryAction_NextFolder" Content="Next Folder" />
+                                        <ComboBoxItem x:Uid="Settings_BoundaryAction_Loop" Content="Loop" />
+                                    </ComboBox>
+                                    <TextBlock Text="Action when reaching first or last image in folder" FontSize="11" Foreground="#888888" Margin="2,0,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </PivotItem>
 
-            <Grid ColumnSpacing="8" Margin="0,8,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Button x:Name="BtnExport" x:Uid="Settings_Export" Content="Export Settings" HorizontalAlignment="Stretch" Click="BtnExport_Click" />
-                <Button x:Name="BtnImport" x:Uid="Settings_Import" Grid.Column="1" Content="Import Settings" HorizontalAlignment="Stretch" Click="BtnImport_Click" />
+                    <!-- Files Tab -->
+                    <PivotItem x:Uid="Settings_Tab_Files" Header="Files">
+                        <ScrollViewer Padding="24,16">
+                            <StackPanel Spacing="20">
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Uid="Settings_JpegQuality" Text="JPEG/WebP Save Quality" Foreground="White" />
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="32" />
+                                        </Grid.ColumnDefinitions>
+                                        <Slider x:Name="SliderQuality" Minimum="1" Maximum="100" StepFrequency="1" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding ElementName=SliderQuality, Path=Value}" VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Uid="Settings_Extensions" Text="Enabled File Extensions" Foreground="White" />
+
+                                    <Grid ColumnSpacing="4" Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="BtnExtAll" Content="All" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
+                                        <Button x:Name="BtnExtImages" Grid.Column="1" Content="Images" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
+                                        <Button x:Name="BtnExtVideos" Grid.Column="2" Content="Videos" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
+                                        <Button x:Name="BtnExtNone" Grid.Column="3" Content="None" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
+                                    </Grid>
+
+                                    <Border BorderBrush="#FF404040" BorderThickness="1" CornerRadius="4" Background="#FF1A1A1A">
+                                        <ItemsControl x:Name="ItemsExtensions" Margin="8">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="3" ItemWidth="110" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" FontSize="12" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </PivotItem>
+
+                    <!-- Key Bindings Tab -->
+                    <PivotItem x:Uid="Settings_Tab_KeyBindings" Header="Shortcuts">
+                        <Grid Padding="0,12,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <ScrollViewer Padding="24,0,24,16">
+                                <StackPanel x:Name="BindingsStack" Spacing="8">
+                                    <!-- Dynamic content -->
+                                </StackPanel>
+                            </ScrollViewer>
+                            <Button x:Uid="KeyBinding_ResetAll" Grid.Row="1" Content="Reset All" HorizontalAlignment="Right" Margin="24,0,24,12" Click="BtnResetKeyBindings_Click" />
+                        </Grid>
+                    </PivotItem>
+
+                    <!-- System Tab -->
+                    <PivotItem x:Uid="Settings_Tab_System" Header="System">
+                        <ScrollViewer Padding="24,16">
+                            <StackPanel Spacing="20">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnExport" x:Uid="Settings_Export" Content="Export Settings" HorizontalAlignment="Stretch" Click="BtnExport_Click" />
+                                    <Button x:Name="BtnImport" x:Uid="Settings_Import" Grid.Column="1" Content="Import Settings" HorizontalAlignment="Stretch" Click="BtnImport_Click" />
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </PivotItem>
+                </Pivot>
+
+                <!-- Footer -->
+                <Grid Grid.Row="2" Padding="24,16" Background="#FF282828" CornerRadius="0,0,12,12">
+                    <Button x:Name="BtnClose" x:Uid="ToneAdjustment_Close" Content="Close" Width="100" HorizontalAlignment="Right" Style="{StaticResource AccentButtonStyle}" Click="BtnClose_Click" />
+                </Grid>
             </Grid>
-
-            <Button x:Name="BtnClose" x:Uid="ToneAdjustment_Close" Content="Close" Width="80" HorizontalAlignment="Right" Margin="0,16,0,0" Style="{StaticResource AccentButtonStyle}" Click="BtnClose_Click" />
-        </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

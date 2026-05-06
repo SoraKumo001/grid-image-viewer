@@ -443,6 +443,24 @@
   <data name="Settings_HighQuality.Content" xml:space="preserve">
     <value>High Quality Scaling</value>
   </data>
+  <data name="Settings_ShowPageIndicator.Content" xml:space="preserve">
+    <value>Show Page Count</value>
+  </data>
+  <data name="Settings_Tab_Display.Header" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Settings_Tab_Navigation.Header" xml:space="preserve">
+    <value>Navigation</value>
+  </data>
+  <data name="Settings_Tab_Files.Header" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="Settings_Tab_System.Header" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Settings_Tab_KeyBindings.Header" xml:space="preserve">
+    <value>Shortcuts</value>
+  </data>
   <data name="Settings_Export.Content" xml:space="preserve">
     <value>Export Settings</value>
   </data>
