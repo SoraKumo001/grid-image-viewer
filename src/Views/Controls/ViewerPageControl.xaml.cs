@@ -67,7 +67,7 @@ namespace quick_image_viewer.Views.Controls
                 mp.IsMuted = true;
                 mp.AutoPlay = true;
                 InternalMediaPlayer.SetMediaPlayer(mp);
-                System.Diagnostics.Debug.WriteLine("[ViewerPageControl] Created and cached new MediaPlayer instance.");
+
             }
 
             InternalMediaPlayer.Visibility = Visibility.Visible;
@@ -108,9 +108,8 @@ namespace quick_image_viewer.Views.Controls
                     InternalMediaPlayer.MediaPlayer.PlaybackSession.Position = System.TimeSpan.FromSeconds(TimelineSlider.Value);
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] Seek Error (Released): {ex.Message}");
             }
         }
 
@@ -138,10 +137,9 @@ namespace quick_image_viewer.Views.Controls
                     UpdatePlayPauseIcon(session.PlaybackState);
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                // ここは頻繁に呼ばれるので、特定のCOMExceptionなどは無視しても良いが調査用に出力
-                System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] UpdateSlider Exception: {ex.Message}");
+                // ここは頻繁に呼ばれるので、特定のCOMExceptionなどは無視しても良い
             }
         }
 
@@ -215,9 +213,8 @@ namespace quick_image_viewer.Views.Controls
                     player.PlaybackSession.Position = System.TimeSpan.FromSeconds(e.NewValue);
                     ShowControls();
                 }
-                catch (System.Exception ex)
+                catch (System.Exception)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] Seek Error (ValueChanged): {ex.Message}");
                 }
             }
         }
@@ -238,9 +235,8 @@ namespace quick_image_viewer.Views.Controls
                     InternalMediaPlayer.Source = null;
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] ResetPlayback Error: {ex.Message}");
             }
 
             PageImage.Opacity = 1.0;

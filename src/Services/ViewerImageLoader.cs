@@ -71,9 +71,8 @@ namespace quick_image_viewer.Services
                                 pageControl.PageImage.Visibility = Visibility.Visible;
                                 pageControl.PageImage.Opacity = 0.5; // 動画が重なるので少し薄くしておく
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
-                                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Thumbnail set error: {ex.Message}");
                             }
                         });
                     }
@@ -168,7 +167,7 @@ namespace quick_image_viewer.Services
                                         void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
                                         {
                                             sender.MediaOpened -= OnMediaOpened;
-                                            System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Opened Successfully: {filePath}");
+
                                             pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
                                                 if (token.IsCancellationRequested) return;
@@ -185,7 +184,6 @@ namespace quick_image_viewer.Services
                                         void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
                                         {
                                             sender.MediaFailed -= OnMediaFailed;
-                                            System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Failed! Error: {args.Error}, Message: {args.ErrorMessage}");
                                             pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
                                                 if (token.IsCancellationRequested) return;
@@ -195,16 +193,14 @@ namespace quick_image_viewer.Services
                                         }
                                         mp.MediaFailed += OnMediaFailed;
                                     }
-                                    catch (Exception ex)
+                                    catch (Exception)
                                     {
-                                        System.Diagnostics.Debug.WriteLine($"[VideoLoader] UI Thread Exception: {ex.Message}");
                                         pageControl.LoadingRing.IsActive = false;
                                     }
                                 });
                             }
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine("[VideoLoader] Source creation failed (NULL)");
                                 pageControl.DispatcherQueue.TryEnqueue(() =>
                                 {
                                     if (token.IsCancellationRequested) return;
@@ -212,9 +208,8 @@ namespace quick_image_viewer.Services
                                 });
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[VideoLoader] Background Exception: {ex.Message}");
                             pageControl.DispatcherQueue.TryEnqueue(() =>
                             {
                                 if (token.IsCancellationRequested) return;
@@ -263,9 +258,8 @@ namespace quick_image_viewer.Services
                         {
                             await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] SoftwareBitmap set error: {ex.Message}");
                             if (token.IsCancellationRequested) return;
                         }
 
