@@ -98,26 +98,22 @@
                                 <StackPanel Spacing="12">
                                     <TextBlock x:Uid="Settings_Extensions" Text="Enabled File Extensions" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
 
-                                    <Grid ColumnSpacing="4" Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Button x:Name="BtnExtAll" Content="All" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
-                                        <Button x:Name="BtnExtImages" Grid.Column="1" Content="Images" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
-                                        <Button x:Name="BtnExtVideos" Grid.Column="2" Content="Videos" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
-                                        <Button x:Name="BtnExtArchives" Grid.Column="3" Content="Archives" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
-                                        <Button x:Name="BtnExtNone" Grid.Column="4" Content="None" FontSize="10" Padding="4,2" HorizontalAlignment="Stretch" Click="BtnExtFilter_Click" />
-                                    </Grid>
 
                                     <Border BorderBrush="#FF404040" BorderThickness="1" CornerRadius="4" Background="#FF1A1A1A">
                                         <StackPanel Margin="12" Spacing="16">
                                             <!-- Images Group -->
                                             <StackPanel Spacing="8">
-                                                <TextBlock x:Uid="Settings_Extensions_Images" Text="Images" Foreground="#888888" FontSize="11" FontWeight="SemiBold" />
+                                                <Grid Margin="0,0,0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="Settings_Extensions_Images" Text="Images" Foreground="#888888" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                                        <Button Content="ALL" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Images_All" Style="{StaticResource DefaultButtonStyle}" />
+                                                        <Button Content="NONE" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Images_None" Style="{StaticResource DefaultButtonStyle}" />
+                                                    </StackPanel>
+                                                </Grid>
                                                 <ItemsControl x:Name="ItemsExtensionsImages">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
@@ -134,7 +130,17 @@
 
                                             <!-- Videos Group -->
                                             <StackPanel Spacing="8">
-                                                <TextBlock x:Uid="Settings_Extensions_Videos" Text="Videos" Foreground="#888888" FontSize="11" FontWeight="SemiBold" />
+                                                <Grid Margin="0,0,0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="Settings_Extensions_Videos" Text="Videos" Foreground="#888888" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                                        <Button Content="ALL" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Videos_All" Style="{StaticResource DefaultButtonStyle}" />
+                                                        <Button Content="NONE" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Videos_None" Style="{StaticResource DefaultButtonStyle}" />
+                                                    </StackPanel>
+                                                </Grid>
                                                 <ItemsControl x:Name="ItemsExtensionsVideos">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
@@ -151,7 +157,17 @@
 
                                             <!-- Archives Group -->
                                             <StackPanel Spacing="8">
-                                                <TextBlock x:Uid="Settings_Extensions_Archives" Text="Archives" Foreground="#888888" FontSize="11" FontWeight="SemiBold" />
+                                                <Grid Margin="0,0,0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Uid="Settings_Extensions_Archives" Text="Archives" Foreground="#888888" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                                        <Button Content="ALL" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Archives_All" Style="{StaticResource DefaultButtonStyle}" />
+                                                        <Button Content="NONE" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Archives_None" Style="{StaticResource DefaultButtonStyle}" />
+                                                    </StackPanel>
+                                                </Grid>
                                                 <ItemsControl x:Name="ItemsExtensionsArchives">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>

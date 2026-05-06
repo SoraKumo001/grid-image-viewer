@@ -127,48 +127,44 @@ namespace quick_image_viewer.Views.Controls
             _window.ViewerManager.UpdateStretch();
         }
 
-        private void BtnExtFilter_Click(object sender, RoutedEventArgs e)
+
+        private void BtnGroupFilter_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn)
+            if (sender is Button btn && btn.Tag is string tag)
             {
-                string tag = btn.Content.ToString() ?? "";
-                var allLists = new[] { _extensionsImages, _extensionsVideos, _extensionsArchives };
+                var parts = tag.Split('_');
+                if (parts.Length != 2) return;
 
-                foreach (var list in allLists)
+                string group = parts[0];
+                string action = parts[1];
+
+                ObservableCollection<ExtensionItem>? targetList = group switch
                 {
-                    foreach (var item in list)
-                    {
-                        if (tag == "All")
-                        {
-                            item.IsEnabled = true;
-                        }
-                        else if (tag == "None")
-                        {
-                            item.IsEnabled = false;
-                        }
-                        else if (tag == "Images" && list == _extensionsImages)
-                        {
-                            item.IsEnabled = true;
-                        }
-                        else if (tag == "Videos" && list == _extensionsVideos)
-                        {
-                            item.IsEnabled = true;
-                        }
-                        else if (tag == "Archives" && list == _extensionsArchives)
-                        {
-                            item.IsEnabled = true;
-                        }
-                    }
-                }
+                    "Images" => _extensionsImages,
+                    "Videos" => _extensionsVideos,
+                    "Archives" => _extensionsArchives,
+                    _ => null
+                };
 
-                // Refresh UI
-                ItemsExtensionsImages.ItemsSource = null;
-                ItemsExtensionsImages.ItemsSource = _extensionsImages;
-                ItemsExtensionsVideos.ItemsSource = null;
-                ItemsExtensionsVideos.ItemsSource = _extensionsVideos;
-                ItemsExtensionsArchives.ItemsSource = null;
-                ItemsExtensionsArchives.ItemsSource = _extensionsArchives;
+                if (targetList != null)
+                {
+                    foreach (var item in targetList)
+                    {
+                        item.IsEnabled = (action == "All");
+                    }
+                    RefreshExtensionsUI();
+                }
             }
+        }
+
+        private void RefreshExtensionsUI()
+        {
+            ItemsExtensionsImages.ItemsSource = null;
+            ItemsExtensionsImages.ItemsSource = _extensionsImages;
+            ItemsExtensionsVideos.ItemsSource = null;
+            ItemsExtensionsVideos.ItemsSource = _extensionsVideos;
+            ItemsExtensionsArchives.ItemsSource = null;
+            ItemsExtensionsArchives.ItemsSource = _extensionsArchives;
         }
 
         private void InitializeExtensionsList()

@@ -153,7 +153,7 @@ namespace quick_image_viewer.Services
         public static List<string> GetInitialPlaylist(string path, IEnumerable<string>? allowedExtensions = null)
         {
             List<string> files;
-            if (ArchiveManager.IsArchive(path))
+            if (ArchiveManager.IsArchive(path, allowedExtensions))
             {
                 files = ArchiveManager.GetArchiveImages(path, allowedExtensions);
             }

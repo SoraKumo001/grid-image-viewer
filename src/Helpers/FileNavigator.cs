@@ -30,12 +30,12 @@ namespace quick_image_viewer.Helpers
             for (int i = 0; i < maxIterations; i++)
             {
                 if (token.IsCancellationRequested) return null;
-                node = offset == 1 ? GetNextNodeDFS(node) : GetPrevNodeDFS(node);
+                node = offset == 1 ? GetNextNodeDFS(node, allowedExtensions) : GetPrevNodeDFS(node, allowedExtensions);
                 if (string.IsNullOrEmpty(node)) break;
 
                 try
                 {
-                    if (ArchiveManager.IsArchive(node))
+                    if (ArchiveManager.IsArchive(node, allowedExtensions))
                     {
                         if (ArchiveManager.GetArchiveImages(node, allowedExtensions).Any())
                         {
@@ -57,22 +57,22 @@ namespace quick_image_viewer.Helpers
             return null;
         }
 
-        private static string[] GetChildNodes(string path)
+        private static string[] GetChildNodes(string path, IEnumerable<string>? allowedExtensions = null)
         {
             try
             {
                 if (!Directory.Exists(path)) return Array.Empty<string>();
                 return Directory.EnumerateFileSystemEntries(path)
-                    .Where(e => Directory.Exists(e) || ArchiveManager.IsArchive(e))
+                    .Where(e => Directory.Exists(e) || ArchiveManager.IsArchive(e, allowedExtensions))
                     .OrderBy(e => e, new NaturalStringComparer())
                     .ToArray();
             }
             catch { return Array.Empty<string>(); }
         }
 
-        private static string? GetNextNodeDFS(string current)
+        private static string? GetNextNodeDFS(string current, IEnumerable<string>? allowedExtensions = null)
         {
-            var children = GetChildNodes(current);
+            var children = GetChildNodes(current, allowedExtensions);
             if (children.Length > 0) return children[0];
 
             string node = current;
@@ -83,7 +83,7 @@ namespace quick_image_viewer.Helpers
 
                 try
                 {
-                    var siblings = GetChildNodes(parent.FullName);
+                    var siblings = GetChildNodes(parent.FullName, allowedExtensions);
                     int idx = Array.FindIndex(siblings, d => string.Equals(d, node, StringComparison.OrdinalIgnoreCase));
                     if (idx != -1 && idx + 1 < siblings.Length)
                     {
@@ -96,21 +96,21 @@ namespace quick_image_viewer.Helpers
             }
         }
 
-        private static string? GetPrevNodeDFS(string current)
+        private static string? GetPrevNodeDFS(string current, IEnumerable<string>? allowedExtensions = null)
         {
             var parent = Directory.GetParent(current);
             if (parent == null) return null;
 
             try
             {
-                var siblings = GetChildNodes(parent.FullName);
+                var siblings = GetChildNodes(parent.FullName, allowedExtensions);
                 int idx = Array.FindIndex(siblings, d => string.Equals(d, current, StringComparison.OrdinalIgnoreCase));
                 if (idx > 0)
                 {
                     string node = siblings[idx - 1];
                     while (true)
                     {
-                        var children = GetChildNodes(node);
+                        var children = GetChildNodes(node, allowedExtensions);
                         if (children.Length == 0) return node;
                         node = children[children.Length - 1];
                     }

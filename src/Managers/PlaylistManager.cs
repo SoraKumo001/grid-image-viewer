@@ -241,7 +241,7 @@ namespace quick_image_viewer.Managers
             {
                 WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
 
-                if (!ArchiveManager.IsArchive(path) && (includeSiblings || includeSubfolders))
+                if (!ArchiveManager.IsArchive(path, _settings.EnabledExtensions) && (includeSiblings || includeSubfolders))
                 {
                     _ = Task.Run(() => DiscoverAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
                 }

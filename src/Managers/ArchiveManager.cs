@@ -11,11 +11,16 @@ namespace quick_image_viewer.Managers
     {
         public static readonly string[] ArchiveExtensions = { ".zip", ".cbz", ".rar", ".cbr", ".7z" };
 
-        public static bool IsArchive(string path)
+        public static bool IsArchive(string path, IEnumerable<string>? allowedExtensions = null)
         {
             if (string.IsNullOrEmpty(path)) return false;
             if (!File.Exists(path)) return false;
             string ext = Path.GetExtension(path).ToLowerInvariant();
+
+            if (allowedExtensions != null)
+            {
+                return ArchiveExtensions.Contains(ext) && allowedExtensions.Contains(ext);
+            }
             return ArchiveExtensions.Contains(ext);
         }
 
