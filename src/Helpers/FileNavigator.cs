@@ -23,7 +23,7 @@ namespace quick_image_viewer.Helpers
     {
         private static readonly HashSet<string> ImageExtensions = new HashSet<string>(
             new[] {
-                ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
+                ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".webm", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
                 ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
             },
             StringComparer.OrdinalIgnoreCase);

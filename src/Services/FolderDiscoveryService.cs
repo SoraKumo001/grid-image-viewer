@@ -12,7 +12,7 @@ namespace quick_image_viewer.Services
     {
         public static readonly string[] SupportedExtensions =
         {
-            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
+            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".webm", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
             ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
         };
 

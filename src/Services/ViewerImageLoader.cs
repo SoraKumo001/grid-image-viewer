@@ -9,6 +9,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+using Windows.Media.Core;
+using Windows.Storage.Streams;
 namespace quick_image_viewer.Services
 {
     internal class ViewerImageLoader : IViewerImageLoader
@@ -37,7 +39,11 @@ namespace quick_image_viewer.Services
             }
 
             renderer.CurrentFilePath = filePath;
-            _window.DispatcherQueue.TryEnqueue(() => { pageControl.LoadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning; });
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                pageControl.ResetPlayback();
+                pageControl.LoadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
+            });
 
             try
             {
@@ -56,7 +62,48 @@ namespace quick_image_viewer.Services
                 }
 
                 var ext = Path.GetExtension(filePath).ToLowerInvariant();
+                bool isWebM = ext == ".webm";
                 bool useSkia = ext == ".webp" || ext == ".gif" || ext == ".avis";
+
+                if (isWebM)
+                {
+                    IRandomAccessStream? stream = null;
+                    if (ArchiveManager.IsArchivePath(filePath))
+                    {
+                        await Task.Run(() =>
+                        {
+                            var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                            var s = ArchiveManager.GetEntryStream(arc, entry);
+                            if (s != null) stream = s.AsRandomAccessStream();
+                        });
+                    }
+
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        pageControl.PageImage.Visibility = Visibility.Collapsed;
+                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                        pageControl.PagePlayer.Visibility = Visibility.Visible;
+
+                        if (stream != null)
+                        {
+                            pageControl.PagePlayer.Source = MediaSource.CreateFromStream(stream, "video/webm");
+                        }
+                        else if (!ArchiveManager.IsArchivePath(filePath))
+                        {
+                            pageControl.PagePlayer.Source = MediaSource.CreateFromUri(new Uri(filePath));
+                        }
+
+                        if (pageControl.PagePlayer.MediaPlayer != null)
+                        {
+                            pageControl.PagePlayer.MediaPlayer.IsLoopingEnabled = true;
+                            pageControl.PagePlayer.MediaPlayer.IsMuted = true;
+                        }
+                        pageControl.LoadingRing.IsActive = false;
+                    });
+                    renderer.Reset();
+                    renderer.CurrentFilePath = filePath;
+                    return;
+                }
 
                 if (useSkia)
                 {
@@ -142,7 +189,10 @@ namespace quick_image_viewer.Services
                 }
             }
             catch { }
-            finally { pageControl.LoadingRing.IsActive = false; }
+            finally
+            {
+                _window.DispatcherQueue.TryEnqueue(() => { pageControl.LoadingRing.IsActive = false; });
+            }
         }
     }
 }

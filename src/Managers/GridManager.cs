@@ -194,7 +194,7 @@ namespace quick_image_viewer.Managers
                 if (token.IsCancellationRequested) return;
 
                 var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
-                bool mightBeAnimated = ext == ".webp" || ext == ".gif" || ext == ".avis";
+                bool mightBeAnimated = ext == ".webp" || ext == ".gif" || ext == ".avis" || ext == ".webm";
 
                 if (mightBeAnimated)
                 {

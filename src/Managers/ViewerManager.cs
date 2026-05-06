@@ -295,6 +295,7 @@ namespace quick_image_viewer.Managers
                     {
                         targetControls[i].PageImage.Source = null;
                         targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                        targetControls[i].ResetPlayback();
                         targetControls[i].LoadingRing.IsActive = false;
                         targetPages[i].Reset();
                     }
@@ -366,6 +367,7 @@ namespace quick_image_viewer.Managers
                     {
                         targetControls[i].PageImage.Source = null;
                         targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                        targetControls[i].ResetPlayback();
                         targetControls[i].LoadingRing.IsActive = false;
                         targetPages[i].Reset();
                     }
@@ -517,6 +519,10 @@ namespace quick_image_viewer.Managers
         {
             _displayCts?.Cancel();
             _cacheManager.CancelPreloads();
+            foreach (var buffer in _window.ViewerControl.PageControlsBuffer)
+            {
+                foreach (var control in buffer) control.ResetPlayback();
+            }
             foreach (var p in _pagesBuffer[0]) p.Reset();
             foreach (var p in _pagesBuffer[1]) p.Reset();
         }
