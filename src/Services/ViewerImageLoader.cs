@@ -6,6 +6,7 @@ using quick_image_viewer.Managers;
 using quick_image_viewer.Views.Controls;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -276,7 +277,11 @@ namespace quick_image_viewer.Services
             catch { }
             finally
             {
-                _window.DispatcherQueue.TryEnqueue(() => { pageControl.LoadingRing.IsActive = false; });
+                // 動画の場合は MediaOpened イベントで終了制御するため、ここでは画像のみ終了させる
+                if (!isVideo)
+                {
+                    _window.DispatcherQueue.TryEnqueue(() => { pageControl.LoadingRing.IsActive = false; });
+                }
             }
         }
     }
