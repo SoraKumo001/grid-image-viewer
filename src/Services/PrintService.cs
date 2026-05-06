@@ -13,6 +13,7 @@ namespace quick_image_viewer.Services
     public class PrintService : IPrintService
     {
         private IMainView _window;
+        private ISettingsManager _settings;
         private PrintManager _printManager = null!;
         private PrintDocument _printDocument = null!;
         private IPrintDocumentSource _printDocumentSource = null!;
@@ -20,9 +21,10 @@ namespace quick_image_viewer.Services
         private BitmapImage? _printImage;
         private PrintPageDescription _pageDescription;
 
-        public PrintService(IMainView window)
+        public PrintService(IMainView window, ISettingsManager settings)
         {
             _window = window;
+            _settings = settings;
             RegisterForPrinting();
         }
 
@@ -77,8 +79,7 @@ namespace quick_image_viewer.Services
             }
             catch (Exception ex)
             {
-                var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-                _window.ShowNotification(string.Format(loader.GetString("Notification_PrintError"), ex.Message));
+                _window.ShowNotification(string.Format(_settings.GetString("Notification_PrintError"), ex.Message));
             }
         }
 

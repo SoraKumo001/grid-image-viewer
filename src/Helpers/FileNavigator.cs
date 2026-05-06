@@ -1,4 +1,5 @@
 using quick_image_viewer.Managers;
+using quick_image_viewer.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,14 +22,7 @@ namespace quick_image_viewer.Helpers
 
     public static class FileNavigator
     {
-        private static readonly HashSet<string> ImageExtensions = new HashSet<string>(
-            new[] {
-                ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".webm", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
-                ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
-            },
-            StringComparer.OrdinalIgnoreCase);
-
-        public static string? FindNextImageFolder(string currentPath, int offset, CancellationToken token = default)
+        public static string? FindNextImageFolder(string currentPath, int offset, IEnumerable<string>? allowedExtensions = null, CancellationToken token = default)
         {
             string? node = currentPath;
 
@@ -43,7 +37,7 @@ namespace quick_image_viewer.Helpers
                 {
                     if (ArchiveManager.IsArchive(node))
                     {
-                        if (ArchiveManager.GetArchiveImages(node).Any())
+                        if (ArchiveManager.GetArchiveImages(node, allowedExtensions).Any())
                         {
                             return node;
                         }
@@ -51,7 +45,7 @@ namespace quick_image_viewer.Helpers
                     }
 
                     bool hasImages = Directory.EnumerateFiles(node)
-                                              .Any(f => ImageExtensions.Contains(Path.GetExtension(f)));
+                                              .Any(f => FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(f), allowedExtensions));
                     if (hasImages)
                     {
                         return node;

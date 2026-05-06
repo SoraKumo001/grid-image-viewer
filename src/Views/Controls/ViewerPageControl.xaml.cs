@@ -31,7 +31,7 @@ namespace quick_image_viewer.Views.Controls
                 bool hadFocus = false;
                 try
                 {
-                    var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot);
+                    var focused = (this.IsLoaded && this.XamlRoot != null ? Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot) : null);
                     if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
                     {
                         hadFocus = true;
@@ -181,7 +181,7 @@ namespace quick_image_viewer.Views.Controls
             bool hadFocus = false;
             try
             {
-                var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot);
+                var focused = (this.IsLoaded && this.XamlRoot != null ? Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot) : null);
                 if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
                 {
                     hadFocus = true;
@@ -255,7 +255,7 @@ namespace quick_image_viewer.Views.Controls
             bool hadFocus = false;
             try
             {
-                var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot);
+                var focused = (this.IsLoaded && this.XamlRoot != null ? Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot) : null);
                 if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
                 {
                     hadFocus = true;

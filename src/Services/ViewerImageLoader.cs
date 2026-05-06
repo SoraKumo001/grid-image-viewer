@@ -162,10 +162,20 @@ namespace quick_image_viewer.Services
                                     try
                                     {
                                         // デコード解像度の最適化: 表示サイズに合わせてサーフェスサイズを制限
-                                        double scale = pageControl.XamlRoot?.RasterizationScale ?? 1.0;
+                                        double scale = 1.0;
+                                        try
+                                        {
+                                            // XamlRoot access can throw if the element is not yet in the visual tree
+                                            if (pageControl.IsLoaded && pageControl.XamlRoot != null)
+                                            {
+                                                scale = pageControl.XamlRoot.RasterizationScale;
+                                            }
+                                        }
+                                        catch { }
+
                                         uint width = (uint)Math.Max(1, pageControl.ActualWidth * scale);
                                         uint height = (uint)Math.Max(1, pageControl.ActualHeight * scale);
-                                        mp.SetSurfaceSize(new Windows.Foundation.Size(width, height));
+                                        try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
 
                                         // ソースのセット
                                         var playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);

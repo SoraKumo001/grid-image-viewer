@@ -61,5 +61,6 @@ namespace quick_image_viewer.Interfaces
         void SaveWindowState(Microsoft.UI.Windowing.AppWindow appWindow, string currentImagePath, string currentDirectory);
         System.Threading.Tasks.Task ExportSettingsAsync(System.IntPtr windowHandle);
         System.Threading.Tasks.Task<bool> ImportSettingsAsync(System.IntPtr windowHandle);
+        string GetString(string key);
     }
 }

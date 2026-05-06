@@ -108,6 +108,7 @@ namespace quick_image_viewer.Managers
             if (_window.ViewerControl == null) return;
             UpdateBufferReferences();
 
+
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count)
             {
                 // Clear display if playlist is empty
@@ -159,10 +160,10 @@ namespace quick_image_viewer.Managers
             int effectiveSplitCount = GetEffectiveSplitCount();
 
             // Align to end of folder to ensure a full grid if possible (only for normal images)
-            if (splitCount > 1 && effectiveSplitCount < splitCount && gridStartIndex + splitCount > _window.Playlist.Count)
+            if (splitCount > 1 && effectiveSplitCount < splitCount && _window.Playlist.Count >= splitCount && gridStartIndex + splitCount > _window.Playlist.Count)
             {
                 // Only align if we are not on an archive and not breaking an archive unit
-                int potentialStart = Math.Max(0, _window.Playlist.Count - splitCount);
+                int potentialStart = _window.Playlist.Count - splitCount;
                 bool containsArchive = false;
                 for (int i = 0; i < splitCount; i++)
                 {

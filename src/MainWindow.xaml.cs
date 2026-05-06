@@ -265,8 +265,7 @@ namespace quick_image_viewer
         public void Receive(FullscreenMessage message)
         {
             IsFullscreen = !IsFullscreen;
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            ShowNotification(loader.GetString(IsFullscreen ? "Notification_FullscreenOn" : "Notification_FullscreenOff"));
+            ShowNotification(_settings.GetString(IsFullscreen ? "Notification_FullscreenOn" : "Notification_FullscreenOff"));
         }
 
         public void Receive(PlaylistUpdatedMessage message)
@@ -309,8 +308,7 @@ namespace quick_image_viewer
         public void Receive(ToggleGridMessage message)
         {
             IsGridMode = !IsGridMode;
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            ShowNotification(loader.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
+            ShowNotification(_settings.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
             _ = UpdateDisplayAsync();
         }
 
@@ -346,8 +344,7 @@ namespace quick_image_viewer
             var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
             dataPackage.SetText(message.Path);
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            ShowNotification(loader.GetString("Notification_PathCopied"));
+            ShowNotification(_settings.GetString("Notification_PathCopied"));
         }
 
         public void Receive(DeleteFileMessage message)
@@ -359,15 +356,14 @@ namespace quick_image_viewer
         {
             if (string.IsNullOrEmpty(path)) return;
 
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
             var dialog = new ContentDialog
             {
-                Title = loader.GetString("DeleteDialog_Title"),
-                Content = loader.GetString("DeleteDialog_Content"),
-                PrimaryButtonText = loader.GetString("DeleteDialog_Primary"),
-                CloseButtonText = loader.GetString("DeleteDialog_Close"),
+                Title = _settings.GetString("DeleteDialog_Title"),
+                Content = _settings.GetString("DeleteDialog_Content"),
+                PrimaryButtonText = _settings.GetString("DeleteDialog_Primary"),
+                CloseButtonText = _settings.GetString("DeleteDialog_Close"),
                 DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot
+                XamlRoot = this.Content?.XamlRoot
             };
 
             IsDialogOpen = true;
@@ -382,7 +378,7 @@ namespace quick_image_viewer
                     {
                         System.IO.File.Delete(path);
                         PlaylistManager.RemoveFromPlaylist(path);
-                        ShowNotification(loader.GetString("Notification_Deleted"));
+                        ShowNotification(_settings.GetString("Notification_Deleted"));
                     }
                 }
                 catch (Exception ex)
@@ -445,8 +441,7 @@ namespace quick_image_viewer
             MenuBookmarkList.Items.Clear();
             if (_settings.Bookmarks.Count == 0)
             {
-                var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-                MenuBookmarkList.Items.Add(new MenuFlyoutItem { Text = loader.GetString("Bookmark_Empty"), IsEnabled = false });
+                MenuBookmarkList.Items.Add(new MenuFlyoutItem { Text = _settings.GetString("Bookmark_Empty"), IsEnabled = false });
             }
             else
             {

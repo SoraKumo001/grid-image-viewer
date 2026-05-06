@@ -1,7 +1,6 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Windows.ApplicationModel.Resources;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
 using quick_image_viewer.ViewModels;
@@ -19,7 +18,6 @@ namespace quick_image_viewer.Managers
         public bool IsSlideshowRunning { get => _state.IsSlideshowRunning; }
         public int[] SlideshowRandomIndices { get => _slideshowService.CurrentRandomIndices; }
 
-        private ResourceLoader _resourceLoader = new ResourceLoader();
         private bool _wasExpanded = false;
         private MainViewModel ViewModel => _mainWindow.ViewModel;
 
@@ -70,7 +68,8 @@ namespace quick_image_viewer.Managers
 
             SetSlideshowControlsEnabled(false);
 
-            _mainWindow.SlideshowDialog.XamlRoot = _mainWindow.Content.XamlRoot;
+            if (_mainWindow.Content?.XamlRoot != null)
+                _mainWindow.SlideshowDialog.XamlRoot = _mainWindow.Content.XamlRoot;
 
             _mainWindow.SlideshowDialog.Opened -= SlideshowDialog_Opened;
             _mainWindow.SlideshowDialog.Opened += SlideshowDialog_Opened;
@@ -135,7 +134,7 @@ namespace quick_image_viewer.Managers
                 _mainWindow.IsFullscreen = true;
             }
 
-            _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStarted"));
+            _mainWindow.ViewerManager.ShowNotification(_settings.GetString("Notification_SlideshowStarted"));
 
             bool isExpanding = _settings.SlideshowIncludeSiblings || _settings.SlideshowCurrentFolderOnly;
             if (isExpanding)
@@ -186,7 +185,7 @@ namespace quick_image_viewer.Managers
             if (!IsSlideshowRunning) return;
 
             _slideshowService.Stop();
-            _mainWindow.ViewerManager.ShowNotification(_resourceLoader.GetString("Notification_SlideshowStopped"));
+            _mainWindow.ViewerManager.ShowNotification(_settings.GetString("Notification_SlideshowStopped"));
 
             if (_settings.SlideshowFullscreen)
             {

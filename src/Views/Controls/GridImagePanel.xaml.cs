@@ -65,7 +65,7 @@ namespace quick_image_viewer.Views.Controls
                     }
                 }
 
-                var focused = FocusManager.GetFocusedElement(this.XamlRoot);
+                var focused = (this.IsLoaded && this.XamlRoot != null ? FocusManager.GetFocusedElement(this.XamlRoot) : null);
                 if (focused is not GridViewItem)
                 {
                     if (ImageGridView.SelectedItem != null)

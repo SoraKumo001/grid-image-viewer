@@ -351,5 +351,19 @@ namespace quick_image_viewer.Managers
                 return true; // Added
             }
         }
+
+        private Microsoft.Windows.ApplicationModel.Resources.ResourceLoader? _resourceLoader;
+        public string GetString(string key)
+        {
+            try
+            {
+                _resourceLoader ??= new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+                return _resourceLoader.GetString(key);
+            }
+            catch
+            {
+                return key;
+            }
+        }
     }
 }

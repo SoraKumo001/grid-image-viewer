@@ -84,6 +84,7 @@ namespace quick_image_viewer.Services
         private void HandleRandomNext()
         {
             var playlist = _state.Playlist;
+
             if (playlist.Count > _lastPlaylistCount)
             {
                 for (int i = _lastPlaylistCount; i < playlist.Count; i++) _remainingIndices.Add(i);
@@ -109,20 +110,22 @@ namespace quick_image_viewer.Services
             int nextIdx = _remainingIndices[0];
             _remainingIndices.RemoveAt(0);
 
-            int splits = _settings.MangaSplitCount;
+            int splits = Math.Clamp(_settings.MangaSplitCount, 1, 4);
             CurrentRandomIndices[0] = nextIdx;
+
+            // Clear indices first
+            for (int i = 1; i < 4; i++) CurrentRandomIndices[i] = -1;
 
             if (splits > 1 && _remainingIndices.Count >= splits - 1)
             {
                 for (int i = 1; i < splits; i++)
                 {
-                    CurrentRandomIndices[i] = _remainingIndices[0];
-                    _remainingIndices.RemoveAt(0);
+                    if (_remainingIndices.Count > 0)
+                    {
+                        CurrentRandomIndices[i] = _remainingIndices[0];
+                        _remainingIndices.RemoveAt(0);
+                    }
                 }
-            }
-            else
-            {
-                for (int i = 1; i < 4; i++) CurrentRandomIndices[i] = -1;
             }
 
             _state.CurrentIndex = nextIdx;

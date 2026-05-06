@@ -135,7 +135,7 @@ namespace quick_image_viewer.Managers
                         moved++;
                     }
                     newIndex = lastStart;
-                    _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedEnd"));
+                    _notification.Show(_settings.GetString("Notification_LoopedEnd"));
                 }
                 else { newIndex = 0; }
             }
@@ -146,7 +146,7 @@ namespace quick_image_viewer.Managers
                 else if (action == 2)
                 {
                     newIndex = 0;
-                    _notification.Show(new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString("Notification_LoopedStart"));
+                    _notification.Show(_settings.GetString("Notification_LoopedStart"));
                 }
                 else { newIndex = _state.CurrentIndex; }
             }
@@ -183,9 +183,11 @@ namespace quick_image_viewer.Managers
             string currentDir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(currentDir)) return;
 
+            var allowedExtensions = _settings.EnabledExtensions;
+
             _ = Task.Run(() =>
             {
-                string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset);
+                string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset, allowedExtensions);
                 _dispatcherQueue.TryEnqueue(() =>
                 {
                     if (!string.IsNullOrEmpty(targetDir))
@@ -194,8 +196,7 @@ namespace quick_image_viewer.Managers
                     }
                     else
                     {
-                        var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-                        _notification.Show(loader.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
+                        _notification.Show(_settings.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
                     }
                 });
             });

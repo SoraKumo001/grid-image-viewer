@@ -2,7 +2,6 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.Windows.ApplicationModel.Resources;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
@@ -19,7 +18,6 @@ namespace quick_image_viewer.Helpers
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
 
-        private ResourceLoader _resourceLoader = new ResourceLoader();
         private Windows.Foundation.Point _lastPointerPoint;
 
         public InputHandler(IMainView window, ISettingsManager settings)
@@ -107,7 +105,7 @@ namespace quick_image_viewer.Helpers
                     var dataPackage = new DataPackage();
                     dataPackage.SetText(path);
                     Clipboard.SetContent(dataPackage);
-                    _window.ShowNotification(_resourceLoader.GetString("Notification_PathCopied"));
+                    _window.ShowNotification(_settings.GetString("Notification_PathCopied"));
                 }
                 e.Handled = true;
                 return;
@@ -378,7 +376,7 @@ namespace quick_image_viewer.Helpers
                         }
                         else
                         {
-                            _window.ShowNotification(_resourceLoader.GetString("Notification_NotAnImage"));
+                            _window.ShowNotification(_settings.GetString("Notification_NotAnImage"));
                         }
                     }
                 }

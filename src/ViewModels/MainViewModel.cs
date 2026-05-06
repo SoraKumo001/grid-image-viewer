@@ -326,6 +326,7 @@ namespace quick_image_viewer.ViewModels
 
         public void UpdatePageIndicator()
         {
+
             if (ShowPageIndicator && Playlist != null && Playlist.Count > 0 && CurrentIndex >= 0 && _imageRanks.Count == Playlist.Count)
             {
                 // In manga mode, the index displayed is the "highest" index currently on screen
