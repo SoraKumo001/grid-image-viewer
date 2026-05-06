@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.3.0 (Current) - 2026-05-05
+## v1.3.1 (Current) - 2026-05-06
+
+- **Slideshow Optimization**:
+  - [Fix] Resolved an issue where a redundant crossfade effect occurred during slideshow playback when the playlist was updated by background file discovery.
+  - [Improvement] Optimized the display update logic to prevent unnecessary re-rendering when the currently displayed images remain unchanged.
+- **Layout & Rendering**:
+  - [Feature] Implemented end-of-folder alignment for multi-view modes (Double/Quad), ensuring a full grid is displayed when reaching the end of a playlist.
+  - [Improvement] Enhanced display synchronization between buffers to ensure seamless transitions and consistent state across different view modes.
+
+## v1.3.0 - 2026-05-05
 
 - **Architecture Overhaul**:
   - [Refactor] Restructured the entire codebase into a modular directory hierarchy (`Interfaces`, `Services`, `Managers`, `Models`, `ViewModels`, `Helpers`, `Views`), significantly improving project maintainability and alignment with MVVM patterns.
