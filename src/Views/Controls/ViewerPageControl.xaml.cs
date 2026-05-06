@@ -40,6 +40,36 @@ namespace quick_image_viewer.Views.Controls
             InternalRootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(InternalRootGrid_PointerMoved), true);
         }
 
+        public Windows.Media.Playback.MediaPlayer GetOrCreateMediaPlayer()
+        {
+            var mp = InternalMediaPlayer.MediaPlayer;
+            if (mp == null)
+            {
+                mp = new Windows.Media.Playback.MediaPlayer();
+                mp.IsLoopingEnabled = true;
+                mp.IsMuted = true;
+                mp.AutoPlay = true;
+                InternalMediaPlayer.SetMediaPlayer(mp);
+                System.Diagnostics.Debug.WriteLine("[ViewerPageControl] Created and cached new MediaPlayer instance.");
+            }
+
+            InternalMediaPlayer.Visibility = Visibility.Visible;
+            VideoVisualHost.Visibility = Visibility.Collapsed;
+            return mp;
+        }
+
+        public void SetupPlayer(Windows.Media.Playback.MediaPlayer player)
+        {
+            if (InternalMediaPlayer.MediaPlayer != player)
+            {
+                InternalMediaPlayer.SetMediaPlayer(player);
+            }
+            InternalMediaPlayer.Visibility = Visibility.Visible;
+            VideoVisualHost.Visibility = Visibility.Collapsed;
+        }
+
+        private void UpdateVideoVisualSize() { }
+
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
             ShowControls();
@@ -69,11 +99,12 @@ namespace quick_image_viewer.Views.Controls
 
         private void UpdateSlider()
         {
-            if (_isDraggingSlider || InternalMediaPlayer.MediaPlayer == null) return;
+            var player = InternalMediaPlayer.MediaPlayer;
+            if (_isDraggingSlider || player == null) return;
 
             try
             {
-                var session = InternalMediaPlayer.MediaPlayer.PlaybackSession;
+                var session = player.PlaybackSession;
                 if (session == null) return;
 
                 // 読み込み中やエラー時はスキップ
@@ -106,7 +137,8 @@ namespace quick_image_viewer.Views.Controls
 
         public void ShowControls()
         {
-            if (InternalMediaPlayer.Visibility == Microsoft.UI.Xaml.Visibility.Visible)
+            var isVisible = InternalMediaPlayer.Visibility == Visibility.Visible || VideoVisualHost.Visibility == Visibility.Visible;
+            if (isVisible)
             {
                 CustomTransportPanel.Visibility = Visibility.Visible;
 
@@ -126,13 +158,14 @@ namespace quick_image_viewer.Views.Controls
 
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
         {
-            if (InternalMediaPlayer.MediaPlayer == null) return;
+            var player = InternalMediaPlayer.MediaPlayer;
+            if (player == null) return;
 
-            var session = InternalMediaPlayer.MediaPlayer.PlaybackSession;
+            var session = player.PlaybackSession;
             if (session.PlaybackState == MediaPlaybackState.Playing)
-                InternalMediaPlayer.MediaPlayer.Pause();
+                player.Pause();
             else
-                InternalMediaPlayer.MediaPlayer.Play();
+                player.Play();
 
             UpdatePlayPauseIcon(session.PlaybackState);
             ShowControls();
@@ -141,11 +174,12 @@ namespace quick_image_viewer.Views.Controls
         private void TimelineSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
             // ドラッグ中のみ、再生位置を同期させる（タイマー更新との競合を防ぐ）
-            if (_isDraggingSlider && InternalMediaPlayer.MediaPlayer != null)
+            var player = InternalMediaPlayer.MediaPlayer;
+            if (_isDraggingSlider && player != null)
             {
                 try
                 {
-                    InternalMediaPlayer.MediaPlayer.PlaybackSession.Position = System.TimeSpan.FromSeconds(e.NewValue);
+                    player.PlaybackSession.Position = System.TimeSpan.FromSeconds(e.NewValue);
                     ShowControls();
                 }
                 catch (System.Exception ex)
@@ -174,7 +208,9 @@ namespace quick_image_viewer.Views.Controls
             {
                 System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] ResetPlayback Error: {ex.Message}");
             }
-            InternalMediaPlayer.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+
+            VideoVisualHost.Visibility = Visibility.Collapsed;
+            InternalMediaPlayer.Visibility = Visibility.Collapsed;
             CustomTransportPanel.Visibility = Visibility.Collapsed;
             _sliderUpdateTimer.Stop();
             _hideTimer.Stop();

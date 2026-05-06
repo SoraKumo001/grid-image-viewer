@@ -38,10 +38,27 @@ namespace quick_image_viewer.Services
             }
 
             renderer.CurrentFilePath = filePath;
+            var ext = Path.GetExtension(filePath).ToLowerInvariant();
+            string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+            bool isVideo = videoExtensions.Contains(ext);
+
             _window.DispatcherQueue.TryEnqueue(() =>
             {
                 pageControl.ResetPlayback();
-                pageControl.LoadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
+                if (isVideo)
+                {
+                    pageControl.LoadingRing.IsActive = true;
+                    pageControl.PageImage.Visibility = Visibility.Collapsed;
+                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+
+                    // プレイヤーを再利用（または新規作成）して即座にセットアップ
+                    pageControl.GetOrCreateMediaPlayer();
+                    System.Diagnostics.Debug.WriteLine($"[VideoLoader] Immediate UI reset and player pre-warm: {filePath}");
+                }
+                else
+                {
+                    pageControl.LoadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
+                }
             });
 
             try
@@ -60,16 +77,10 @@ namespace quick_image_viewer.Services
                     return;
                 }
 
-                var ext = Path.GetExtension(filePath).ToLowerInvariant();
-                string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
-                bool isVideo = videoExtensions.Contains(ext);
                 bool useSkia = ext == ".webp" || ext == ".gif" || ext == ".avis";
 
                 if (isVideo)
                 {
-                    pageControl.LoadingRing.IsActive = true;
-                    System.Diagnostics.Debug.WriteLine($"[VideoLoader] Starting load: {filePath}");
-
                     // メディアソースの生成をバックグラウンドで行う
                     await Task.Run(() =>
                     {
@@ -97,13 +108,11 @@ namespace quick_image_viewer.Services
                                 if (stream != null)
                                 {
                                     source = MediaSource.CreateFromStream(stream.AsRandomAccessStream(), mimeType);
-                                    System.Diagnostics.Debug.WriteLine($"[VideoLoader] Created source from archive stream. Mime: {mimeType}");
                                 }
                             }
                             else
                             {
                                 source = MediaSource.CreateFromUri(new Uri(filePath));
-                                System.Diagnostics.Debug.WriteLine($"[VideoLoader] Created source from URI");
                             }
 
                             if (token.IsCancellationRequested) { source?.Dispose(); return; }
@@ -112,50 +121,43 @@ namespace quick_image_viewer.Services
                             {
                                 pageControl.DispatcherQueue.TryEnqueue(() =>
                                 {
-                                    if (token.IsCancellationRequested) { source.Dispose(); return; }
+                                    var mp = pageControl.PagePlayer.MediaPlayer;
+                                    if (mp == null || token.IsCancellationRequested) { source.Dispose(); return; }
+
                                     try
                                     {
-                                        pageControl.PageImage.Visibility = Visibility.Collapsed;
-                                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
-                                        pageControl.PagePlayer.Visibility = Visibility.Visible;
+                                        // デコード解像度の最適化: 表示サイズに合わせてサーフェスサイズを制限
+                                        double scale = pageControl.XamlRoot?.RasterizationScale ?? 1.0;
+                                        uint width = (uint)Math.Max(1, pageControl.ActualWidth * scale);
+                                        uint height = (uint)Math.Max(1, pageControl.ActualHeight * scale);
+                                        mp.SetSurfaceSize(new Windows.Foundation.Size(width, height));
 
-                                        pageControl.PagePlayer.Source = source;
+                                        // ソースのセット
+                                        mp.Source = source;
 
-                                        if (pageControl.PagePlayer.MediaPlayer != null)
+                                        // 準備完了時にローディングを消す
+                                        void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
                                         {
-                                            var mp = pageControl.PagePlayer.MediaPlayer;
-                                            mp.IsLoopingEnabled = true;
-                                            mp.IsMuted = true;
-
-                                            // 準備完了時にローディングを消す
-                                            void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
+                                            sender.MediaOpened -= OnMediaOpened;
+                                            System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Opened Successfully: {filePath}");
+                                            pageControl.DispatcherQueue.TryEnqueue(() =>
                                             {
-                                                sender.MediaOpened -= OnMediaOpened;
-                                                System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Opened Successfully: {filePath}");
-                                                pageControl.DispatcherQueue.TryEnqueue(() =>
-                                                {
-                                                    pageControl.LoadingRing.IsActive = false;
-                                                });
-                                            }
-                                            mp.MediaOpened += OnMediaOpened;
-
-                                            // エラー時も消す
-                                            void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
-                                            {
-                                                sender.MediaFailed -= OnMediaFailed;
-                                                System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Failed! Error: {args.Error}, Message: {args.ErrorMessage}");
-                                                pageControl.DispatcherQueue.TryEnqueue(() =>
-                                                {
-                                                    pageControl.LoadingRing.IsActive = false;
-                                                });
-                                            }
-                                            mp.MediaFailed += OnMediaFailed;
+                                                pageControl.LoadingRing.IsActive = false;
+                                            });
                                         }
-                                        else
+                                        mp.MediaOpened += OnMediaOpened;
+
+                                        // エラー時も消す
+                                        void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
                                         {
-                                            System.Diagnostics.Debug.WriteLine("[VideoLoader] MediaPlayer is NULL");
-                                            pageControl.LoadingRing.IsActive = false;
+                                            sender.MediaFailed -= OnMediaFailed;
+                                            System.Diagnostics.Debug.WriteLine($"[VideoLoader] Media Failed! Error: {args.Error}, Message: {args.ErrorMessage}");
+                                            pageControl.DispatcherQueue.TryEnqueue(() =>
+                                            {
+                                                pageControl.LoadingRing.IsActive = false;
+                                            });
                                         }
+                                        mp.MediaFailed += OnMediaFailed;
                                     }
                                     catch (Exception ex)
                                     {

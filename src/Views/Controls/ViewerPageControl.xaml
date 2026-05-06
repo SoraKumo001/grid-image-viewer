@@ -11,7 +11,11 @@
     <Grid x:Name="InternalRootGrid" Background="Transparent" PointerExited="InternalRootGrid_PointerExited">
         <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
         <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
-        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="True" />
+        
+        <!-- 軽量表示用のホスト -->
+        <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        
+        <MediaPlayerElement x:Name="InternalMediaPlayer" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AreTransportControlsEnabled="False" IsHitTestVisible="False" />
         
         <!-- 独自再生コントロール -->
         <Border x:Name="CustomTransportPanel" 
