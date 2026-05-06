@@ -1,0 +1,12 @@
+<UserControl
+    x:Class="quick_image_viewer.Views.Controls.NotificationOverlayControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" IsHitTestVisible="False">
+
+    <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,80" Padding="40,24" Background="#CC000000" CornerRadius="16">
+        <TextBlock x:Name="NotificationText" Foreground="White" FontSize="36" FontWeight="Bold" />
+    </Border>
+</UserControl>

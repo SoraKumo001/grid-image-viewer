@@ -76,7 +76,7 @@ namespace quick_image_viewer
         IViewerManager IMainView.ViewerManager => ViewerManager;
         IGridManager IMainView.GridManager => GridManager;
         IMenuStateManager IMainView.MenuStateManager => MenuStateManager;
-        ListView IMainView.BookmarkListView => BookmarkListView;
+        ListView IMainView.BookmarkListView => BookmarkPanel.ListView;
         IPrintService IMainView.PrintService => PrintService;
         IBookmarkManager IMainView.BookmarkManager => BookmarkManager;
         IAppWindowManager IMainView.AppWindowManager => AppWindowManager;
@@ -130,7 +130,7 @@ namespace quick_image_viewer
         string IMainView.CurrentDirectory { get => CurrentDirectory; set => CurrentDirectory = value; }
         ScrollViewer IMainView.ImageScrollViewer => ImageScrollViewer;
         UIElement IMainView.NotificationOverlay => NotificationOverlay;
-        TextBlock IMainView.NotificationText => NotificationText;
+        TextBlock IMainView.NotificationText => NotificationOverlay.Text;
         TextBlock IMainView.TxtMetaTitle => TxtMetaTitle;
         TextBlock IMainView.TxtMetaFileName => TxtMetaFileName;
         TextBlock IMainView.TxtMetaDimensions => TxtMetaDimensions;
@@ -544,7 +544,7 @@ namespace quick_image_viewer
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);
         private void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args) => SlideshowManager.SlideshowDialog_PrimaryButtonClick(sender, args);
 
-        private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+        private async void OpenFolderButton_Click(object sender, object e)
         {
             var picker = new Windows.Storage.Pickers.FolderPicker();
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);

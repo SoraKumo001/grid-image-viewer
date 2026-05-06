@@ -1,0 +1,18 @@
+<UserControl
+    x:Class="quick_image_viewer.Views.Controls.PageIndicatorControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:quick_image_viewer.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" IsHitTestVisible="False">
+
+    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom"
+            Margin="12" Padding="8,4"
+            Background="#66000000" CornerRadius="4">
+        <TextBlock x:Name="PageIndicatorText"
+                   Text="{x:Bind ViewModel.PageIndicatorText, Mode=OneWay}"
+                   Foreground="White" FontSize="11" FontWeight="SemiBold"
+                   VerticalAlignment="Center"/>
+    </Border>
+</UserControl>
