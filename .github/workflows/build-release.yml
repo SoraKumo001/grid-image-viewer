@@ -11,6 +11,9 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      # Opt into Node.js 24 to address deprecation warnings for Node.js 20
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
     - name: Checkout Code
