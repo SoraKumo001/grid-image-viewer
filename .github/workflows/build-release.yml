@@ -66,8 +66,9 @@ jobs:
         
         # 1. Try exact tag match
         $tagEscaped = [regex]::Escape($tag)
-        # Note: We use \s* after tag to handle potential trailing spaces or content like "(Current)"
-        $pattern = "(?ms)^##\s+" + $tagEscaped + "\s*.*?\n(.*?)(?=\n##\s+v|\z)"
+        # Note: We use (?![.\d]) to ensure exact version match (e.g., avoid v1.4.4 matching v1.4.4.1)
+        # followed by \s* to handle potential trailing spaces or content like "(Current)"
+        $pattern = "(?ms)^##\s+" + $tagEscaped + "(?![.\d])\s*.*?\n(.*?)(?=\n##\s+v|\z)"
         
         if ($changelog -match $pattern) {
             Write-Host "Match found for tag $tag"
