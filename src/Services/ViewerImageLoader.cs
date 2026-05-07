@@ -64,23 +64,30 @@ namespace quick_image_viewer.Services
                     if (cachedThumb != null)
                     {
                         var softwareSource = new SoftwareBitmapSource();
-                        // 同期的にセットできないため、UIスレッドで非同期にセット
                         _window.DispatcherQueue.TryEnqueue(async () =>
                         {
                             try
                             {
-                                if (token.IsCancellationRequested) return;
+                                if (token.IsCancellationRequested)
+                                {
+                                    softwareSource.Dispose();
+                                    return;
+                                }
                                 await softwareSource.SetBitmapAsync(cachedThumb);
-                                if (token.IsCancellationRequested) return;
+                                if (token.IsCancellationRequested || pageControl.IsMediaReady)
+                                {
+                                    softwareSource.Dispose();
+                                    return;
+                                }
 
-                                // 動画の再生準備が既に整っている場合は、サムネイルを表示しない（レースコンディション対策）
-                                if (pageControl.IsMediaReady) return;
-
-                                pageControl.PageImage.Source = softwareSource;
+                                pageControl.UpdateSoftwareSource(softwareSource);
                                 pageControl.PageImage.Visibility = Visibility.Visible;
                                 pageControl.PageImage.Opacity = 0.5;
                             }
-                            catch { }
+                            catch
+                            {
+                                softwareSource.Dispose();
+                            }
                         });
                     }
                     else
@@ -130,51 +137,59 @@ namespace quick_image_viewer.Services
 
                                 try
                                 {
-                                    // FFmpegInteropX Configuration
-                                    var config = new MediaSourceConfig();
-                                    // GPUクラッシュ対策: デコーダモードを自動に設定しつつ、安定性重視のオプションを付与
-                                    config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
-                                    config.Video.VideoOutputAllowBgra8 = false;
-                                    config.General.FastSeek = true;
-
-                                    // 読み込みバッファを調整してカクつきやハングを抑制
-                                    config.General.ReadAheadBufferDuration = TimeSpan.FromSeconds(1);
-
-                                    FFmpegMediaSource? ffmpegSource = null;
-
+                                    // グローバルロックの取得（デコーダエンジンの初期化競合を防ぐ）
+                                    await ViewerPageControl.GetGlobalInitSemaphore().WaitAsync(token);
                                     try
                                     {
-                                        if (ArchiveManager.IsArchivePath(filePath))
+                                        if (token.IsCancellationRequested) return;
+
+                                        // FFmpegInteropX Configuration
+                                        var config = new MediaSourceConfig();
+                                        config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
+                                        config.Video.VideoOutputAllowBgra8 = false;
+                                        config.General.FastSeek = true;
+                                        config.General.ReadAheadBufferDuration = TimeSpan.FromSeconds(1);
+
+                                        FFmpegMediaSource? ffmpegSource = null;
+
+                                        try
                                         {
-                                            var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
-                                            var stream = ArchiveManager.GetEntryStream(arc, entry);
-                                            if (stream != null)
+                                            if (ArchiveManager.IsArchivePath(filePath))
                                             {
-                                                ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
+                                                var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                                                var stream = ArchiveManager.GetEntryStream(arc, entry);
+                                                if (stream != null)
+                                                {
+                                                    ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                                                var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
+                                                ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
                                             }
                                         }
-                                        else
+                                        catch (Exception)
                                         {
-                                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                                            var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
-                                            ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
+                                            pageControl.LoadingRing.IsActive = false;
+                                            throw;
                                         }
-                                    }
-                                    catch (Exception)
-                                    {
-                                        pageControl.LoadingRing.IsActive = false;
-                                        throw;
-                                    }
 
-                                    if (ffmpegSource == null || token.IsCancellationRequested)
-                                    {
-                                        ffmpegSource?.Dispose();
-                                        pageControl.LoadingRing.IsActive = false;
-                                        return;
-                                    }
+                                        if (ffmpegSource == null || token.IsCancellationRequested)
+                                        {
+                                            ffmpegSource?.Dispose();
+                                            pageControl.LoadingRing.IsActive = false;
+                                            return;
+                                        }
 
-                                    // ViewerPageControl にソースを保持させる (Dispose管理のため)
-                                    pageControl.FFmpegSource = ffmpegSource;
+                                        // ViewerPageControl にソースを保持させる (Dispose管理のため)
+                                        pageControl.FFmpegSource = ffmpegSource;
+                                    }
+                                    finally
+                                    {
+                                        ViewerPageControl.GetGlobalInitSemaphore().Release();
+                                    }
 
                                     // イベントハンドラの定義
                                     void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
@@ -239,8 +254,12 @@ namespace quick_image_viewer.Services
 
                                     // MediaPlayer にセット
                                     mp.Source = null;
-                                    await ffmpegSource.OpenWithMediaPlayerAsync(mp);
-                                    ffmpegSource.PlaybackSession = mp.PlaybackSession;
+                                    var fSource = pageControl.FFmpegSource;
+                                    if (fSource != null)
+                                    {
+                                        await fSource.OpenWithMediaPlayerAsync(mp);
+                                        fSource.PlaybackSession = mp.PlaybackSession;
+                                    }
 
                                     mp.IsLoopingEnabled = true;
                                 }

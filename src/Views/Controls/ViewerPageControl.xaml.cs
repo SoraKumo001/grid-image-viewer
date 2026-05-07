@@ -32,6 +32,10 @@ namespace quick_image_viewer.Views.Controls
         private bool _isDraggingSlider = false;
         private readonly Interfaces.ISettingsManager _settings;
         private readonly System.Threading.SemaphoreSlim _loadingSemaphore = new(1, 1);
+        private static readonly System.Threading.SemaphoreSlim _globalVideoInitSemaphore = new(1, 1);
+        private Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource? _currentSoftwareSource;
+
+        public static System.Threading.SemaphoreSlim GetGlobalInitSemaphore() => _globalVideoInitSemaphore;
 
         // Frame Server Mode
         private Windows.Graphics.Imaging.SoftwareBitmap? _frameBitmap;
@@ -41,13 +45,23 @@ namespace quick_image_viewer.Views.Controls
         public bool IsVideoContent { get; set; } = false;
         public bool IsMediaReady { get; set; } = false;
 
+        public void UpdateSoftwareSource(Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource source)
+        {
+            if (_currentSoftwareSource != null) _currentSoftwareSource.Dispose();
+            _currentSoftwareSource = source;
+            PageImage.Source = source;
+        }
+
         public FFmpegMediaSource? FFmpegSource
         {
             get => _ffmpegSource;
             set
             {
-                _ffmpegSource?.Dispose();
-                _ffmpegSource = value;
+                if (_ffmpegSource != value)
+                {
+                    _ffmpegSource?.Dispose();
+                    _ffmpegSource = value;
+                }
             }
         }
 
@@ -88,11 +102,11 @@ namespace quick_image_viewer.Views.Controls
                 UpdateVideoVisualSize(_pendingWidth, _pendingHeight);
             };
 
-            // 繧ｹ繝ｩ繧､繝 繝ｼ縺ｮ謫堺ｽ懆幕蟋九→邨ゆｺｒ遒ｺ螳溘↓讀懷繧
+
             TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
             TimelineSlider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
 
-            // 蛻 蜑ｲ繝｢繝ｼ繝牙ｯｾ蠢: 閾ｪ蛻 縺ｮ繧ｨ繝ｪ繧｢蜀 縺ｧ縺ｮ繝槭え繧ｹ遘ｻ蜍輔□縺代ｒ逶｣隕悶☆繧
+
             InternalRootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(InternalRootGrid_PointerMoved), true);
 
             this.SizeChanged += ViewerPageControl_SizeChanged;
@@ -203,8 +217,7 @@ namespace quick_image_viewer.Views.Controls
                 InternalMediaPlayer.SetMediaPlayer(mp);
             }
 
-            // WinUI 3縺ｮ蛻ｶ邏 : CopyFrameToSoftwareBitmap 縺御ｸ榊ｮ壽 縺ｪ蝣ｴ蜷医′縺ゅｋ縺溘ａ縲
-            // 繝ヵ繧ｩ繝ｫ繝医〒縺ｯ逶ｴ謗･謠冗判繧剃ｽｿ逕ｨ縺吶ｋ縲
+
             mp.IsVideoFrameServerEnabled = false;
 
             InternalMediaPlayer.Visibility = Visibility.Visible;
@@ -243,7 +256,7 @@ namespace quick_image_viewer.Views.Controls
                     dynamic dSender = sender;
                     dSender.CopyFrameToSoftwareBitmap(_frameBitmap);
 
-                    // SoftwareBitmap縺九ｉSKBitmap縺ｸ霆｢騾
+
                     UpdateSKFrameBitmap();
                 }
 
@@ -273,12 +286,12 @@ namespace quick_image_viewer.Views.Controls
 
                 if (inputStride == outputStride && inputStride == widthInBytes)
                 {
-                    // 譛 驕ｩ蛹: 繧ｹ繝医Λ繧､繝峨′荳 閾ｴ縺励ヱ繝繝ぅ繝ｳ繧ｰ縺檎┌縺ｴ蜷医荳 諡ｬ繧ｳ繝斐ｼ
+
                     System.Buffer.MemoryCopy(dataIn, dataOut, capacity, (uint)(outputStride * height));
                 }
                 else
                 {
-                    // 陦後＃縺ｨ縺ｫ繧ｳ繝斐ｼ繧ｹ繝医Λ繧､繝蛾考諷ｮ
+
                     for (int y = 0; y < height; y++)
                     {
                         System.Buffer.MemoryCopy(
@@ -318,7 +331,7 @@ namespace quick_image_viewer.Views.Controls
             InternalPageImage.VerticalAlignment = v;
             InternalMediaPlayer.HorizontalAlignment = h;
             InternalMediaPlayer.VerticalAlignment = v;
-            // VideoVisualHost (蟶ｽ驥陦ｨ遉ｺ逕ｨ) 繧ょ酔譛
+
             VideoVisualHost.HorizontalAlignment = h;
             VideoVisualHost.VerticalAlignment = v;
 
@@ -391,7 +404,7 @@ namespace quick_image_viewer.Views.Controls
             double targetW = videoW * scale;
             double targetH = videoH * scale;
 
-            // 蟷 縺ｨ鬮倥＆繧呈 遉ｺ逧 縺ｫ險ｭ螳壹☆繧九％縺ｨ縺ｧ縲繧ｻ繝ｫ縺ｮ螟悶∈縺ｮ縺ｯ縺ｿ蜃ｺ縺励ｒ髦ｲ縺
+
             InternalMediaPlayer.Width = targetW;
             InternalMediaPlayer.Height = targetH;
             InternalMediaPlayer.Margin = new Thickness(0);
@@ -433,7 +446,7 @@ namespace quick_image_viewer.Views.Controls
                 var session = player.PlaybackSession;
                 if (session == null) return;
 
-                // 隱ｭ縺ｿ霎ｼ縺ｿ荳 繧 繧ｨ繝ｩ繝ｼ譎ゅ繧ｹ繧ｭ繝繝
+
                 if (session.PlaybackState == MediaPlaybackState.Opening ||
                     session.PlaybackState == MediaPlaybackState.None) return;
 
@@ -449,7 +462,7 @@ namespace quick_image_viewer.Views.Controls
             }
             catch (System.Exception)
             {
-                // 縺薙％縺ｯ鬘ｵ郢 縺ｫ蜻ｼ縺ｰ繧後ｋ縺ｮ縺ｧ縲∫音螳壹COMException縺ｪ縺ｩ縺ｯ辟｡隕悶＠縺ｦ繧り憶縺
+
             }
         }
 
@@ -475,7 +488,7 @@ namespace quick_image_viewer.Views.Controls
 
         private void InternalRootGrid_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            // 繝槭え繧ｹ縺後げ繝ｪ繝ラ螟悶↓蜃ｺ縺溘ｉ蜊ｳ蠎ｧ縺ｫ髱櫁ｨｨ遉ｺ
+
             _hideTimer.Stop();
 
             bool hadFocus = false;
@@ -513,7 +526,7 @@ namespace quick_image_viewer.Views.Controls
 
         private void TimelineSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
-            // 繝峨Λ繝ｰ荳 縺ｮ縺ｿ縲蜀 逕滓凾鄂ｮ繧貞酔譛 縺輔○繧具ｼ医ち繧､繝槭譖ｴ譁 縺ｨ縺ｮ遶蜷医ｒ髦ｲ縺撰ｼ
+
             var player = InternalMediaPlayer.MediaPlayer;
             if (_isDraggingSlider && player != null)
             {
@@ -541,14 +554,15 @@ namespace quick_image_viewer.Views.Controls
                 var mp = InternalMediaPlayer.MediaPlayer;
                 if (mp != null)
                 {
-                    // 蜀 逕溘ｒ遒ｺ螳溘↓蛛懈ｭ｢縺励 繝ｪ繧ｽ繝ｼ繧ｹ繧定ｧ｣謾ｾ縺吶ｋ
+
                     try { mp.Pause(); } catch { }
 
-                    // 繧､繝吶Φ繝育ｧ｣髯､繧貞縺ｫ陦後≧
+                    // イベント解除
                     mp.MediaOpened -= _onMediaOpenedHandler;
                     mp.MediaFailed -= _onMediaFailedHandler;
                     mp.VideoFrameAvailable -= OnVideoFrameAvailable;
 
+                    // ソースの解除（明示的にnullをセット）
                     InternalMediaPlayer.Source = null;
                     mp.Source = null;
                 }
@@ -569,6 +583,11 @@ namespace quick_image_viewer.Views.Controls
                     _ffmpegSource = null;
                 }
 
+                if (_currentSoftwareSource != null)
+                {
+                    _currentSoftwareSource.Dispose();
+                    _currentSoftwareSource = null;
+                }
                 PageImage.Source = null;
                 PageImage.Opacity = 1.0;
                 InternalMediaPlayer.Width = double.NaN;
@@ -598,6 +617,9 @@ namespace quick_image_viewer.Views.Controls
                 _sliderUpdateTimer.Stop();
                 _hideTimer.Stop();
                 _resizeDebounceTimer.Stop();
+
+                // クールダウン
+                await Task.Delay(20);
             }
             catch (System.Exception)
             {
