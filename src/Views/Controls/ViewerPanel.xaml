@@ -20,11 +20,11 @@
         <Grid x:Name="RootContainer"
               Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
               Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
-              Background="Transparent"
+              Background="Black"
               IsTabStop="False">
 
             <!-- Buffer 1 -->
-            <Grid x:Name="PagesGrid1" Opacity="1" IsTabStop="False" Background="Black">
+            <Grid x:Name="PagesGrid1" Opacity="1" IsTabStop="False" Background="Transparent">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="B1_Col0" />
                     <ColumnDefinition Width="*" x:Name="B1_Col1" />
@@ -43,7 +43,7 @@
             </Grid>
 
             <!-- Buffer 2 -->
-            <Grid x:Name="PagesGrid2" Opacity="0" IsTabStop="False" Background="Black">
+            <Grid x:Name="PagesGrid2" Opacity="0" IsTabStop="False" Background="Transparent">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="B2_Col0" />
                     <ColumnDefinition Width="*" x:Name="B2_Col1" />

@@ -46,15 +46,36 @@ jobs:
       shell: pwsh
       run: |
         $tag = "${{ github.ref_name }}"
+        Write-Host "Extracting changelog for tag: $tag"
+        
+        if (-not (Test-Path CHANGELOG.md)) {
+            Write-Host "CHANGELOG.md not found."
+            "found=false" | Add-Content -Path $env:GITHUB_OUTPUT
+            return
+        }
+
         $changelog = Get-Content CHANGELOG.md -Raw
+        # Normalize line endings
         $changelog = $changelog -replace "`r`n", "`n"
-        $pattern = "(?ms)^## $tag.*?\n(.*?)(?=\n## v|$)"
+        
+        # Escape tag for regex and match the section
+        $tagEscaped = [regex]::Escape($tag)
+        # Pattern matches: ## [tag] [anything] \n [content] [lookahead for next header or end]
+        $pattern = "(?ms)^##\s+" + $tagEscaped + ".*?\n(.*?)(?=\n##\s+v|$)"
+        
         if ($changelog -match $pattern) {
             $content = $matches[1].Trim()
-            $content | Out-File -FilePath RELEASE_BODY.md -Encoding utf8
-            Write-Output "found=true" >> $env:GITHUB_OUTPUT
+            if ($content) {
+                Write-Host "Found changelog section for $tag"
+                $content | Out-File -FilePath RELEASE_BODY.md -Encoding utf8
+                "found=true" | Add-Content -Path $env:GITHUB_OUTPUT
+            } else {
+                Write-Host "Changelog section for $tag is empty."
+                "found=false" | Add-Content -Path $env:GITHUB_OUTPUT
+            }
         } else {
-            Write-Output "found=false" >> $env:GITHUB_OUTPUT
+            Write-Host "Changelog section for $tag not found in CHANGELOG.md"
+            "found=false" | Add-Content -Path $env:GITHUB_OUTPUT
         }
 
     - name: Create Release
