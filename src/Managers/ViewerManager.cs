@@ -433,6 +433,32 @@ namespace quick_image_viewer.Managers
             }
         }
 
+        public void PauseAllVideo()
+        {
+            if (_window.ViewerControl == null) return;
+            for (int b = 0; b < 2; b++)
+            {
+                var controls = _window.ViewerControl.PageControlsBuffer[b];
+                for (int i = 0; i < 4; i++)
+                {
+                    controls[i].PauseVideo();
+                }
+            }
+        }
+
+        public void ResumeAllVideo()
+        {
+            if (_window.ViewerControl == null) return;
+            for (int b = 0; b < 2; b++)
+            {
+                var controls = _window.ViewerControl.PageControlsBuffer[b];
+                for (int i = 0; i < 4; i++)
+                {
+                    controls[i].ResumeVideo();
+                }
+            }
+        }
+
         public void InvalidatePage(int index) => _pageControls[index].PageCanvas.Invalidate();
 
         public void UpdateStretch()

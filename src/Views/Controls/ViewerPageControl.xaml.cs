@@ -111,6 +111,30 @@ namespace quick_image_viewer.Views.Controls
             }
         }
 
+        private bool _wasPlayingBeforeTransition = false;
+
+        public void PauseVideo()
+        {
+            if (InternalMediaPlayer.MediaPlayer != null)
+            {
+                var session = InternalMediaPlayer.MediaPlayer.PlaybackSession;
+                _wasPlayingBeforeTransition = (session.PlaybackState == MediaPlaybackState.Playing);
+                if (_wasPlayingBeforeTransition)
+                {
+                    InternalMediaPlayer.MediaPlayer.Pause();
+                }
+            }
+        }
+
+        public void ResumeVideo()
+        {
+            if (InternalMediaPlayer.MediaPlayer != null && _wasPlayingBeforeTransition)
+            {
+                InternalMediaPlayer.MediaPlayer.Play();
+                _wasPlayingBeforeTransition = false;
+            }
+        }
+
         private void UpdateVideoVisualSize() { }
 
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)

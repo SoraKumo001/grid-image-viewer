@@ -175,6 +175,10 @@ namespace quick_image_viewer
                 if (_isFullscreen != value)
                 {
                     _isFullscreen = value;
+
+                    // GPUハングアップ対策: 全画面切り替え時の負荷軽減のため一時的に動画を停止する
+                    ViewerManager?.PauseAllVideo();
+
                     var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
                     var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
@@ -188,6 +192,13 @@ namespace quick_image_viewer
                         appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
                         AppTitleBar.Visibility = Visibility.Visible;
                     }
+
+                    // 切り替え完了後に再生を再開する
+                    DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        await Task.Delay(300);
+                        ViewerManager?.ResumeAllVideo();
+                    });
                 }
             }
         }

@@ -21,6 +21,8 @@ namespace quick_image_viewer.Interfaces
         ViewerPageControl[] PageControls { get; }
         void StopAnimation();
         void UpdateVolume();
+        void PauseAllVideo();
+        void ResumeAllVideo();
         void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e);
     }
 }
