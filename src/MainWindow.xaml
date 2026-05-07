@@ -202,7 +202,7 @@
                                        RemoveBookmarkClick="MenuBookmarkRemove_Click" />
         
         <!-- Folder Searching Overlay -->
-        <controls:FolderSearchingOverlayControl x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1"
+        <controls:FolderSearchingOverlayControl x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Canvas.ZIndex="500"
                                                 Visibility="{x:Bind GetSearchingOverlayVisibility(ViewModel.IsSearchingFolder, ViewModel.IsSlideshowRunning), Mode=OneWay}" />
 
             <!-- Notification Overlay -->

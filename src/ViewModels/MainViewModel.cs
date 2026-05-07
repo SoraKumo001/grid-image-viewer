@@ -100,8 +100,11 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty]
         public partial double SlideshowCrossfadeDuration { get; set; }
 
-        [ObservableProperty]
-        public partial bool IsSearchingFolder { get; set; }
+        public bool IsSearchingFolder
+        {
+            get => State.IsSearchingFolder;
+            set => State.IsSearchingFolder = value;
+        }
 
         public bool IsGridMode
         {
@@ -174,7 +177,8 @@ namespace quick_image_viewer.ViewModels
                     if (e.PropertyName == nameof(State.Playlist) ||
                         e.PropertyName == nameof(State.CurrentIndex) ||
                         e.PropertyName == nameof(State.IsGridMode) ||
-                        e.PropertyName == nameof(State.CurrentDirectory))
+                        e.PropertyName == nameof(State.CurrentDirectory) ||
+                        e.PropertyName == nameof(State.IsSearchingFolder))
                     {
                         if (e.PropertyName == nameof(State.Playlist)) RecalculateStats();
                         if (e.PropertyName == nameof(State.CurrentIndex)) _overrideDisplayIndex = null;

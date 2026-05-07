@@ -184,6 +184,7 @@ namespace quick_image_viewer.Managers
             if (string.IsNullOrEmpty(currentDir)) return;
 
             var allowedExtensions = _settings.EnabledExtensions;
+            _state.IsSearchingFolder = true;
 
             _ = Task.Run(() =>
             {
@@ -196,7 +197,9 @@ namespace quick_image_viewer.Managers
                     }
                     else
                     {
+                        _state.IsSearchingFolder = false;
                         _notification.Show(_settings.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
+                        WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
                 });
             });
