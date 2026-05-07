@@ -21,14 +21,16 @@ namespace quick_image_viewer.Managers
         private readonly IViewerStateService _state;
         private readonly ISettingsManager _settings;
         private readonly INotificationService _notification;
+        private readonly IViewerCacheManager _cacheManager;
         private readonly DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _loadCts;
 
-        public PlaylistManager(IViewerStateService state, ISettingsManager settings, INotificationService notification)
+        public PlaylistManager(IViewerStateService state, ISettingsManager settings, INotificationService notification, IViewerCacheManager cacheManager)
         {
             _state = state;
             _settings = settings;
             _notification = notification;
+            _cacheManager = cacheManager;
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
             WeakReferenceMessenger.Default.Register<NavigationMessage>(this);
@@ -182,6 +184,13 @@ namespace quick_image_viewer.Managers
         {
             string currentDir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(currentDir)) return;
+
+            var (preloadedPath, preloadedPlaylist) = _cacheManager.GetPreloadedFolderData(offset);
+            if (!string.IsNullOrEmpty(preloadedPath) && preloadedPlaylist != null && preloadedPlaylist.Count > 0)
+            {
+                LoadDirectory(preloadedPath, string.Empty, false, false, preloadedPlaylist);
+                return;
+            }
 
             var allowedExtensions = _settings.EnabledExtensions;
             _state.IsSearchingFolder = true;

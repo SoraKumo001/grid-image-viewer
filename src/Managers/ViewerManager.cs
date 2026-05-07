@@ -45,13 +45,13 @@ namespace quick_image_viewer.Managers
         private double _lastResizeHeight;
         private readonly ResourceLoader _resourceLoader = new();
 
-        public ViewerManager(IMainView window, ISettingsManager settings)
+        public ViewerManager(IMainView window, ISettingsManager settings, IViewerCacheManager cacheManager)
         {
             _window = window;
             _settings = settings;
             _layoutManager = new ViewerLayoutManager(settings);
             _imageLoader = new ViewerImageLoader(window, settings);
-            _cacheManager = new ViewerCacheManager(window.State, settings);
+            _cacheManager = cacheManager;
 
             // Do NOT initialize buffer references here as UI might not be ready
             // They will be initialized on first use in UpdateDisplayAsync or other methods

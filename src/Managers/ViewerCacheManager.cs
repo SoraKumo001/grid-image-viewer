@@ -275,6 +275,13 @@ namespace quick_image_viewer.Managers
             catch { }
         }
 
+        public (string? Path, List<string>? Playlist) GetPreloadedFolderData(int offset)
+        {
+            if (offset > 0) return (_cachedNextFolder, _cachedNextPlaylist);
+            if (offset < 0) return (_cachedPrevFolder, _cachedPrevPlaylist);
+            return (null, null);
+        }
+
         public void CancelPreloads()
         {
             _folderPreloadCts?.Cancel();

@@ -11,6 +11,7 @@ namespace quick_image_viewer.Interfaces
         Task PreloadPathsAsync(List<string> paths, CancellationToken token);
         Task PreloadAroundAsync(int currentIndex, List<string> playlist, int splitCount);
         Task PreloadFoldersAsync(string currentDir);
+        (string? Path, List<string>? Playlist) GetPreloadedFolderData(int offset);
         void CancelPreloads();
         void ClearCache();
     }
