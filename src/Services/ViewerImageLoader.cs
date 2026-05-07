@@ -111,7 +111,7 @@ namespace quick_image_viewer.Services
             if (cachedThumb != null)
             {
                 var softwareSource = new SoftwareBitmapSource();
-                _window.DispatcherQueue.TryEnqueue(async () =>
+                bool enqueued = _window.DispatcherQueue.TryEnqueue(async () =>
                 {
                     try
                     {
@@ -125,6 +125,7 @@ namespace quick_image_viewer.Services
                     }
                     catch { softwareSource.Dispose(); }
                 });
+                if (!enqueued) softwareSource.Dispose();
             }
             else
             {
@@ -339,16 +340,27 @@ namespace quick_image_viewer.Services
             if (cachedSoftwareBitmap != null)
             {
                 var softwareSource = new SoftwareBitmapSource();
-                try { await softwareSource.SetBitmapAsync(cachedSoftwareBitmap); }
-                catch { if (token.IsCancellationRequested) return; }
+                try
+                {
+                    await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
+                }
+                catch
+                {
+                    softwareSource.Dispose();
+                    return;
+                }
 
-                if (token.IsCancellationRequested) return;
+                if (token.IsCancellationRequested)
+                {
+                    softwareSource.Dispose();
+                    return;
+                }
 
                 renderer.Reset();
                 renderer.CurrentFilePath = filePath;
                 pageControl.PageCanvas.Visibility = Visibility.Collapsed;
                 pageControl.PageImage.Visibility = Visibility.Visible;
-                pageControl.PageImage.Source = softwareSource;
+                pageControl.UpdateSoftwareSource(softwareSource);
             }
             else
             {

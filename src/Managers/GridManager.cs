@@ -294,10 +294,25 @@ namespace quick_image_viewer.Managers
                     {
                         _window.DispatcherQueue.TryEnqueue(async () =>
                         {
-                            if (token.IsCancellationRequested) return;
-                            var source = new SoftwareBitmapSource();
-                            await source.SetBitmapAsync(softwareBitmap);
-                            item.Thumbnail = source;
+                            using (softwareBitmap)
+                            {
+                                if (token.IsCancellationRequested) return;
+                                var source = new SoftwareBitmapSource();
+                                try
+                                {
+                                    await source.SetBitmapAsync(softwareBitmap);
+                                    if (token.IsCancellationRequested)
+                                    {
+                                        source.Dispose();
+                                        return;
+                                    }
+                                    item.Thumbnail = source;
+                                }
+                                catch
+                                {
+                                    source.Dispose();
+                                }
+                            }
                         });
                     }
                 }
@@ -567,6 +582,8 @@ namespace quick_image_viewer.Managers
 
             if (GridItems.Count == _window.ViewModel.Playlist.Count && !forceFullUpdate) return;
             if (_window.ViewModel.Playlist.Count > 1000 && !_window.IsGridMode) return;
+
+            foreach (var item in GridItems) item.DisposeCodec();
 
             var newList = new ObservableCollection<ImageItem>();
             foreach (var f in _window.ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });

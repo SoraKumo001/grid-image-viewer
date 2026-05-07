@@ -139,7 +139,11 @@ namespace quick_image_viewer.Managers
 
         private void AddSoftwareBitmapToCache(string path, SoftwareBitmap bitmap)
         {
-            if (_softwareBitmapCache.Count >= Constants.MAX_BITMAP_CACHE_SIZE)
+            if (_softwareBitmapCache.TryGetValue(path, out var existing))
+            {
+                existing.Dispose();
+            }
+            else if (_softwareBitmapCache.Count >= Constants.MAX_BITMAP_CACHE_SIZE)
             {
                 var firstKey = _softwareBitmapCache.Keys.First();
                 _softwareBitmapCache[firstKey].Dispose();

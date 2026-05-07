@@ -164,6 +164,12 @@ namespace quick_image_viewer.Models
                 _animationBuffer = null;
                 _cachedWb = null;
                 _priorFrameIndex = -1;
+
+                if (Thumbnail is SoftwareBitmapSource sbs)
+                {
+                    sbs.Dispose();
+                }
+                Thumbnail = null;
             }
         }
 
