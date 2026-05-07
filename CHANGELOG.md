@@ -2,7 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.4.2 (Current) - 2026-05-06
+## v1.4.3 (Current) - 2026-05-07
+
+- **Video Playback & Settings**:
+  - [Feature] Added a **Video Master Volume** slider in the General Settings (Display tab), allowing global control over video playback volume.
+  - [Improvement] Video volume settings are now applied in real-time to currently playing videos.
+  - [Stability] Optimized GPU resource management for video playback by streamlining `SetSurfaceSize` calls and improving resource cleanup during content switching.
+  - [Fix] Implemented temporary video pausing during Fullscreen transitions to prevent GPU hangs on certain hardware configurations.
+- **UI & Navigation**:
+  - [Fix] Resolved an issue where the "Searching for images..." overlay was not correctly displayed during folder navigation or background discovery.
+  - [Improvement] Enhanced the layout and visibility of the folder searching overlay for better user feedback.
+  - [Fix] Synchronized searching state across the ViewModel and core services to ensure consistent UI behavior.
+- **Bug Fixes**:
+  - [Fix] Corrected a compilation error in `ViewerPageControl` related to missing dependency injection namespaces.
+
+## v1.4.2 - 2026-05-06
 
 - **Bug Fixes & Stability**:
   - [Fix] Resolved a critical issue where both ZIP and Installer versions failed to launch due to an incorrect file layout in the distribution package.
