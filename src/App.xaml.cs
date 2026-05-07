@@ -82,7 +82,14 @@ namespace quick_image_viewer
                     if (fileArgs != null && fileArgs.Files.Count > 0)
                     {
                         string filePath = fileArgs.Files[0].Path;
-                        _window.LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
+                        if (ArchiveManager.IsArchive(filePath))
+                        {
+                            _window.LoadDirectory(filePath);
+                        }
+                        else
+                        {
+                            _window.LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
+                        }
                         fileLoaded = true;
                     }
                 }

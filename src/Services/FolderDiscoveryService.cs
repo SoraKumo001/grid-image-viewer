@@ -19,12 +19,14 @@ namespace quick_image_viewer.Services
         public static bool IsSupportedExtension(string extension, IEnumerable<string>? allowedExtensions = null)
         {
             string ext = extension.ToLowerInvariant();
+            bool isImageOrVideo = SupportedExtensions.Contains(ext);
+
             if (allowedExtensions != null)
             {
-                return allowedExtensions.Contains(ext);
+                // allowedExtensions might contain archive extensions, but we only want images/videos here
+                return isImageOrVideo && allowedExtensions.Contains(ext);
             }
-            // Fallback for cases where allowedExtensions is not provided (should be avoided)
-            return SupportedExtensions.Contains(ext) || ArchiveManager.ArchiveExtensions.Contains(ext);
+            return isImageOrVideo;
         }
 
         public static async Task DiscoverFilesAsync(
