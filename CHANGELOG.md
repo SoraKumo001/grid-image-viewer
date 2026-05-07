@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.4.1 (Current) - 2026-05-06
+## v1.4.2 (Current) - 2026-05-06
+
+- **Bug Fixes & Stability**:
+  - [Fix] Resolved a critical issue where both ZIP and Installer versions failed to launch due to an incorrect file layout in the distribution package.
+  - [Fix] Fixed a compilation error in the Inno Setup script caused by an invalid flag, which prevented successful GitHub Actions runs.
+  - [Improvement] Restored standard build output paths to ensure reliable WinUI 3 unpackaged application bootstrapping.
+
+## v1.4.1 - 2026-05-06
 
 - **Deployment & Distribution**:
   - [Feature] Added support for **Inno Setup** to generate a non-packaged installer (`.exe`) for easier installation.
