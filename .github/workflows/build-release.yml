@@ -49,11 +49,12 @@ jobs:
       shell: pwsh
       run: |
         $tag = "${{ github.ref_name }}"
-        Write-Host "Extracting changelog for tag: $tag"
+        $eventName = "${{ github.event_name }}"
+        Write-Host "Extracting changelog for tag: $tag (Event: $eventName)"
         
         if (-not (Test-Path CHANGELOG.md)) {
             Write-Host "CHANGELOG.md not found."
-            "found=false" | Add-Content -Path $env:GITHUB_OUTPUT
+            [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "found=false`n")
             return
         }
 
@@ -61,24 +62,36 @@ jobs:
         # Normalize line endings
         $changelog = $changelog -replace "`r`n", "`n"
         
-        # Escape tag for regex and match the section
+        $content = ""
+        
+        # 1. Try exact tag match
         $tagEscaped = [regex]::Escape($tag)
-        # Pattern matches: ## [tag] [anything] \n [content] [lookahead for next header or end]
-        $pattern = "(?ms)^##\s+" + $tagEscaped + ".*?\n(.*?)(?=\n##\s+v|$)"
+        # Note: We use \s* after tag to handle potential trailing spaces or content like "(Current)"
+        $pattern = "(?ms)^##\s+" + $tagEscaped + "\s*.*?\n(.*?)(?=\n##\s+v|$)"
         
         if ($changelog -match $pattern) {
+            Write-Host "Match found for tag $tag"
             $content = $matches[1].Trim()
-            if ($content) {
-                Write-Host "Found changelog section for $tag"
-                $content | Out-File -FilePath RELEASE_BODY.md -Encoding utf8
-                "found=true" | Add-Content -Path $env:GITHUB_OUTPUT
-            } else {
-                Write-Host "Changelog section for $tag is empty."
-                "found=false" | Add-Content -Path $env:GITHUB_OUTPUT
+        } 
+        
+        # 2. Fallback for manual dispatch or branch pushes
+        if (-not $content -and ($tag -eq "main" -or $tag -eq "master" -or $eventName -eq "workflow_dispatch")) {
+            Write-Host "Tag match failed or not a tag push. Falling back to the first version section."
+            $fallbackPattern = "(?ms)^##\s+v\d+\.\d+\.\d+.*?\n(.*?)(?=\n##\s+v|$)"
+            if ($changelog -match $fallbackPattern) {
+                Write-Host "Found first version section as fallback."
+                $content = $matches[1].Trim()
             }
+        }
+
+        if ($content) {
+            Write-Host "Content extracted (Length: $($content.Length)). Writing to RELEASE_BODY.md"
+            # Ensure UTF8 without BOM (standard in pwsh)
+            $content | Set-Content -Path RELEASE_BODY.md -Encoding utf8
+            [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "found=true`n")
         } else {
-            Write-Host "Changelog section for $tag not found in CHANGELOG.md"
-            "found=false" | Add-Content -Path $env:GITHUB_OUTPUT
+            Write-Host "FAILED: No matching changelog section found for '$tag'."
+            [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "found=false`n")
         }
 
     - name: Create Release
