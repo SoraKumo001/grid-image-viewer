@@ -101,7 +101,7 @@ namespace quick_image_viewer
         CheckBox IMainView.SlideshowCrossfade => SlideshowCrossfade;
         NumberBox IMainView.SlideshowInterval => SlideshowInterval;
         NumberBox IMainView.SlideshowCrossfadeDuration => SlideshowCrossfadeDuration;
-        UIElement IMainView.Content => (UIElement)this.Content;
+        UIElement IMainView.Content => this.Content;
         GridView IMainView.ImageGridView => GridControlInternal.GridView;
         void IMainView.ShowNotification(string message) => ShowNotification(message);
         void IMainView.StopAnimation() => ViewerManager?.StopAnimation();
@@ -152,7 +152,7 @@ namespace quick_image_viewer
         // === UI Helpers ===
         public ViewerPanel ViewerControl => ViewerControlInternal;
         public Grid PagesGrid => ViewerControlInternal.CurrentBuffer;
-        public IList<ImageItem> GridItems => (IList<ImageItem>?)GridManager?.GridItems ?? Array.Empty<ImageItem>();
+        public IList<ImageItem> GridItems => GridManager?.GridItems ?? Array.Empty<ImageItem>();
         public GridView ImageGridView => GridControlInternal.GridView;
         public ScrollViewer ImageScrollViewer => ViewerControlInternal.ScrollViewer;
 
@@ -177,9 +177,6 @@ namespace quick_image_viewer
                 {
                     _isFullscreen = value;
 
-                    // GPUハングアップ対策: 全画面切り替え時の負荷軽減のため一時的に動画を停止する
-                    ViewerManager?.PauseAllVideo();
-
                     var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
                     var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
@@ -193,13 +190,6 @@ namespace quick_image_viewer
                         appWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
                         AppTitleBar.Visibility = Visibility.Visible;
                     }
-
-                    // 切り替え完了後に再生を再開する
-                    DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        await Task.Delay(300);
-                        ViewerManager?.ResumeAllVideo();
-                    });
                 }
             }
         }
@@ -507,9 +497,9 @@ namespace quick_image_viewer
 
         public List<FrameworkElement> GetPageGrids() => [PageGrid1, PageGrid2, PageGrid3, PageGrid4];
 
-        public static Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
-        public static Visibility BoolToVisInverse(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
-        public static Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
+        public Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility BoolToVisInverse(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
             => (isSearching && !isSlideshowRunning) ? Visibility.Visible : Visibility.Collapsed;
 
         public string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;
