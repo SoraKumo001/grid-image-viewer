@@ -2,7 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.4.3 (Current) - 2026-05-07
+## v1.4.4 (Current) - 2026-05-07
+
+- **Video Stability & GPU Hardening**:
+  - [Stability] Introduced asynchronous reset processing (`ResetPlaybackAsync`) and `SemaphoreSlim`-based mutual exclusion to prevent resource contention during rapid page switching.
+  - [Stability] Implemented a **Global Initialization Lock** to serialize video decoder startups across the application, significantly reducing GPU driver hangs and crashes.
+  - [Stability] Added a short "cooldown" delay during resource disposal, allowing the OS and drivers sufficient time to safely release hardware handles.
+  - [Fix] Explicitly implemented `Dispose()` for WinRT resources such as `SoftwareBitmapSource` to prevent memory leaks and GPU memory exhaustion.
+- **UI & UX Improvements**:
+  - [Fix] Resolved an issue where the playback transport panel would incorrectly appear on non-video files (e.g., WebP, GIF, or edited images) during mouse movement.
+  - [Improvement] Eliminated the visual "jumping" effect of video position and size by forcing synchronous layout updates immediately after a video is opened.
+  - [Improvement] Enhanced playback transitions by controlling opacity during the loading phase, preventing incomplete or uninitialized frames from being visible to the user.
+- **Visual & Rendering Fixes**:
+  - [Visual] Unified the background color of page containers and buffer grids to **Black**, eliminating the "gray borders" previously visible in the margins or during content loading.
+  - [Fix] Fixed a race condition where thumbnails could remain visible behind an active video, preventing ghosting or "afterimage" effects.
+- **Performance Optimization**:
+  - [Optimization] Reduced the layout recalculation debounce timer from 150ms to **30ms**, dramatically improving responsiveness during window resizing operations.
+  - [Optimization] Streamlined the video source assignment process to reduce main thread overhead during simultaneous multi-video loading.
+
+## v1.4.3 - 2026-05-07
 
 - **Video Playback & Settings**:
   - [Feature] Added a **Video Master Volume** slider in the General Settings (Display tab), allowing global control over video playback volume.
