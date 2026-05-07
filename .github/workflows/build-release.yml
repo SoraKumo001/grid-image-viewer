@@ -41,13 +41,30 @@ jobs:
         $buildDir = "publish"
         iscc /dMyAppVersion=$version /dBuildDir=$buildDir installer.iss
 
+    - name: Extract Changelog Section
+      id: extract_changelog
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $changelog = Get-Content CHANGELOG.md -Raw
+        $changelog = $changelog -replace "`r`n", "`n"
+        $pattern = "(?ms)^## $tag.*?\n(.*?)(?=\n## v|$)"
+        if ($changelog -match $pattern) {
+            $content = $matches[1].Trim()
+            $content | Out-File -FilePath RELEASE_BODY.md -Encoding utf8
+            Write-Output "found=true" >> $env:GITHUB_OUTPUT
+        } else {
+            Write-Output "found=false" >> $env:GITHUB_OUTPUT
+        }
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
+        body_path: ${{ steps.extract_changelog.outputs.found == 'true' && 'RELEASE_BODY.md' || '' }}
+        generate_release_notes: ${{ steps.extract_changelog.outputs.found != 'true' }}
         files: |
           quick-image-viewer-win-x64.zip
           quick-image-viewer-setup.exe
-        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
