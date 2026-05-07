@@ -15,7 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace quick_image_viewer.Managers
 {
-    internal class ViewerManager : IViewerManager, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
+    public partial class ViewerManager : IViewerManager, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
@@ -24,11 +24,11 @@ namespace quick_image_viewer.Managers
         private readonly IViewerCacheManager _cacheManager;
 
         // Double-buffered PageRenderers to support Skia crossfade
-        private PageRenderer[][] _pagesBuffer = new PageRenderer[][]
-        {
-            new PageRenderer[] { new PageRenderer(), new PageRenderer(), new PageRenderer(), new PageRenderer() },
-            new PageRenderer[] { new PageRenderer(), new PageRenderer(), new PageRenderer(), new PageRenderer() }
-        };
+        private readonly PageRenderer[][] _pagesBuffer =
+        [
+            [new(), new(), new(), new()],
+            [new(), new(), new(), new()]
+        ];
 
         // These arrays will point to the CURRENT buffer's elements for general logic
         private Microsoft.UI.Xaml.FrameworkElement[] _pageGrids = Array.Empty<Microsoft.UI.Xaml.FrameworkElement>();
@@ -40,7 +40,7 @@ namespace quick_image_viewer.Managers
         private int _lastMangaSplitCount = -1;
         private int _lastEffectiveSplitCount = -1;
         private int _lastCachedQuadLayout = -1;
-        private ResourceLoader _resourceLoader = new ResourceLoader();
+        private readonly ResourceLoader _resourceLoader = new();
 
         public ViewerManager(IMainView window, ISettingsManager settings)
         {
@@ -57,12 +57,35 @@ namespace quick_image_viewer.Managers
             WeakReferenceMessenger.Default.Register<ToggleMetadataMessage>(this);
         }
 
+        private bool _eventsSubscribed = false;
         private void UpdateBufferReferences()
         {
             if (_window.ViewerControl == null) return;
             int idx = _window.ViewerControl.CurrentBufferIndex;
+
             _pageGrids = _window.ViewerControl.PageControlsBuffer[idx];
             _pageControls = _window.ViewerControl.PageControlsBuffer[idx];
+
+            if (!_eventsSubscribed)
+            {
+                for (int b = 0; b < 2; b++)
+                {
+                    foreach (var pc in _window.ViewerControl.PageControlsBuffer[b])
+                    {
+                        pc.VideoSizeChanged += OnVideoSizeChanged;
+                    }
+                }
+                _eventsSubscribed = true;
+            }
+        }
+
+        private void OnVideoSizeChanged(object? sender, Windows.Foundation.Size e)
+        {
+            if (_settings.MangaSplitCount == 4 && _settings.QuadLayoutMode == 0)
+            {
+                // Re-calculate layout if in auto-quad mode
+                _window.DispatcherQueue.TryEnqueue(async () => await UpdateDisplayAsync());
+            }
         }
 
 
@@ -105,7 +128,15 @@ namespace quick_image_viewer.Managers
                 return;
             }
 
-            if (_window.ViewerControl == null) return;
+            if (_window.ViewerControl == null)
+            {
+                // UIがまだ初期化されていない場合は少し待機してリトライを試みる
+                await Task.Delay(100);
+                if (_window.ViewerControl == null)
+                {
+                    return;
+                }
+            }
             UpdateBufferReferences();
 
 
@@ -370,11 +401,7 @@ namespace quick_image_viewer.Managers
                             string path = _window.Playlist[indexToLoad];
                             currentFiles.Add(path);
 
-                            // Only load if path changed
-                            if (targetPages[i].CurrentFilePath != path)
-                            {
-                                loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(path, targetControls[i], targetPages[i], i, token, _cacheManager));
-                            }
+                            loadTasks.Add(_imageLoader.LoadPageIntoBufferAsync(path, targetControls[i], targetPages[i], i, token, _cacheManager));
                         }
                     }
 
@@ -563,6 +590,13 @@ namespace quick_image_viewer.Managers
             {
                 renderer.Paint(canvas, e.Info, hAlign, vAlign);
             }
+
+            // 動画フレームがあれば重ねて描画
+            var controls = _window.ViewerControl?.PageControlsBuffer[bufferIndex];
+            if (controls != null && pageIndex < controls.Length)
+            {
+                controls[pageIndex].PaintVideoFrame(canvas, e.Info, hAlign, vAlign);
+            }
         }
 
         public void ToggleMetadataPanel(bool cycle = false) => _window.MetadataDisplayService.ToggleMetadataPanel(cycle);
@@ -585,6 +619,7 @@ namespace quick_image_viewer.Managers
             }
             foreach (var p in _pagesBuffer[0]) p.Reset();
             foreach (var p in _pagesBuffer[1]) p.Reset();
+            GC.SuppressFinalize(this);
         }
     }
 }

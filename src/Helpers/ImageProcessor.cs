@@ -397,7 +397,18 @@ namespace quick_image_viewer.Helpers
                     string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
                     if (videoExtensions.Contains(ext))
                     {
-                        // 動画の場合はとりあえず 0,0 を返して詳細は後で取得（またはデフォルト値）
+                        try
+                        {
+                            var task = Task.Run(async () =>
+                            {
+                                var file = await StorageFile.GetFileFromPathAsync(sourcePath);
+                                var props = await file.Properties.GetVideoPropertiesAsync();
+                                return ((int)props.Width, (int)props.Height);
+                            });
+                            var videoSize = task.GetAwaiter().GetResult();
+                            if (videoSize.Item1 > 0) return videoSize;
+                        }
+                        catch { }
                         return (1920, 1080);
                     }
 

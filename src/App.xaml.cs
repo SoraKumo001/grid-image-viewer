@@ -34,7 +34,7 @@ namespace quick_image_viewer
 
         public void SetMainView(IMainView view) => MainView = view;
 
-        private static IServiceProvider ConfigureServices()
+        private static ServiceProvider ConfigureServices()
         {
             var services = new ServiceCollection();
 
@@ -76,21 +76,25 @@ namespace quick_image_viewer
             try
             {
                 var appArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
-                if (appArgs.Kind == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.File)
+                if (appArgs.Data is Windows.ApplicationModel.Activation.IFileActivatedEventArgs fileArgs && fileArgs.Files.Count > 0)
                 {
-                    var fileArgs = appArgs.Data as Windows.ApplicationModel.Activation.IFileActivatedEventArgs;
-                    if (fileArgs != null && fileArgs.Files.Count > 0)
+                    string filePath = fileArgs.Files[0].Path;
+                    LoadFile(filePath);
+                    fileLoaded = true;
+                }
+                else if (appArgs.Kind == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.Launch)
+                {
+                    // Fallback: Check command line arguments for file path
+                    var args_list = Environment.GetCommandLineArgs();
+                    if (args_list.Length > 1)
                     {
-                        string filePath = fileArgs.Files[0].Path;
-                        if (ArchiveManager.IsArchive(filePath))
+                        string filePath = args_list[1];
+                        // If it's a file path and not just an option
+                        if (System.IO.File.Exists(filePath) || System.IO.Directory.Exists(filePath))
                         {
-                            _window.LoadDirectory(filePath);
+                            LoadFile(filePath);
+                            fileLoaded = true;
                         }
-                        else
-                        {
-                            _window.LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
-                        }
-                        fileLoaded = true;
                     }
                 }
             }
@@ -137,6 +141,19 @@ namespace quick_image_viewer
                         _window.LoadDirectory(lastDirectoryPath);
                     }
                 }
+            }
+        }
+        private void LoadFile(string filePath)
+        {
+            if (_window == null) return;
+
+            if (ArchiveManager.IsArchive(filePath))
+            {
+                _window.LoadDirectory(filePath);
+            }
+            else
+            {
+                _window.LoadDirectory(System.IO.Path.GetDirectoryName(filePath) ?? "", filePath);
             }
         }
     }

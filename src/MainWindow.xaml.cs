@@ -161,9 +161,10 @@ namespace quick_image_viewer
         public FrameworkElement PageGrid3 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][2];
         public FrameworkElement PageGrid4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
-        private DispatcherTimer _resizeTimer;
+        private readonly DispatcherTimer _resizeTimer;
         private bool _isDialogOpen;
         public bool IsDialogOpen { get => _isDialogOpen; set { _isDialogOpen = value; ViewModel.IsDialogOpen = value; } }
+        private bool _isFirstLoad = true;
         public bool IsSearchingFolder { get => ViewModel.IsSearchingFolder; set => ViewModel.IsSearchingFolder = value; }
 
         private bool _isFullscreen;
@@ -279,9 +280,17 @@ namespace quick_image_viewer
             ShowNotification(_settings.GetString(IsFullscreen ? "Notification_FullscreenOn" : "Notification_FullscreenOff"));
         }
 
-        public void Receive(PlaylistUpdatedMessage message)
+        public async void Receive(PlaylistUpdatedMessage message)
         {
             UpdateGridItems(message.ForceFullGridUpdate);
+
+            if (_isFirstLoad)
+            {
+                _isFirstLoad = false;
+                // 起動直後はUIのレイアウトが完了するまで少し待機する
+                await Task.Delay(200);
+            }
+
             _ = UpdateDisplayAsync();
         }
 
@@ -496,11 +505,11 @@ namespace quick_image_viewer
 
         public void UpdatePageIndicator() => ViewModel.UpdatePageIndicator();
 
-        public List<FrameworkElement> GetPageGrids() => new List<FrameworkElement> { PageGrid1, PageGrid2, PageGrid3, PageGrid4 };
+        public List<FrameworkElement> GetPageGrids() => [PageGrid1, PageGrid2, PageGrid3, PageGrid4];
 
-        public Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility BoolToVisInverse(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
+        public static Visibility BoolToVis(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility BoolToVisInverse(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+        public static Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
             => (isSearching && !isSlideshowRunning) ? Visibility.Visible : Visibility.Collapsed;
 
         public string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;

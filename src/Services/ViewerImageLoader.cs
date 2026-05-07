@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using FFmpegInteropX;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using quick_image_viewer.Helpers;
@@ -12,19 +13,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
-using Windows.Media.Core;
 namespace quick_image_viewer.Services
 {
-    internal class ViewerImageLoader : IViewerImageLoader
+    internal class ViewerImageLoader(IMainView window, ISettingsManager settings) : IViewerImageLoader
     {
-        private readonly IMainView _window;
-        private readonly ISettingsManager _settings;
-
-        public ViewerImageLoader(IMainView window, ISettingsManager settings)
-        {
-            _window = window;
-            _settings = settings;
-        }
+        private readonly IMainView _window = window;
+        private readonly ISettingsManager _settings = settings;
 
         public async Task LoadPageIntoBufferAsync(
             string filePath,
@@ -49,7 +43,7 @@ namespace quick_image_viewer.Services
 
             renderer.CurrentFilePath = filePath;
             var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
+            string[] videoExtensions = [".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv"];
             bool isVideo = videoExtensions.Contains(ext);
 
             _window.DispatcherQueue.TryEnqueue(() =>
@@ -58,6 +52,7 @@ namespace quick_image_viewer.Services
                 pageControl.ResetPlayback();
                 if (isVideo)
                 {
+                    pageControl.IsVideoContent = true;
                     pageControl.LoadingRing.IsActive = true;
                     pageControl.PageCanvas.Visibility = Visibility.Collapsed;
 
@@ -117,136 +112,120 @@ namespace quick_image_viewer.Services
                 if (isVideo)
                 {
                     // メディアソースの生成をバックグラウンドで行う
-                    await Task.Run(() =>
+                    await Task.Run(async () =>
                     {
                         try
                         {
                             if (token.IsCancellationRequested) return;
 
-                            MediaSource? source = null;
-                            if (ArchiveManager.IsArchivePath(filePath))
+                            pageControl.DispatcherQueue.TryEnqueue(async () =>
                             {
-                                var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
-                                var stream = ArchiveManager.GetEntryStream(arc, entry);
-                                if (token.IsCancellationRequested) { stream?.Dispose(); return; }
+                                var mp = pageControl.PagePlayer.MediaPlayer;
+                                if (mp == null || token.IsCancellationRequested) return;
 
-                                string mimeType = ext switch
+                                try
                                 {
-                                    ".mp4" => "video/mp4",
-                                    ".mkv" => "video/x-matroska",
-                                    ".mov" => "video/quicktime",
-                                    ".avi" => "video/x-msvideo",
-                                    ".wmv" => "video/x-ms-wmv",
-                                    ".flv" => "video/x-flv",
-                                    _ => "video/webm"
-                                };
-                                if (stream != null)
-                                {
-                                    source = MediaSource.CreateFromStream(stream.AsRandomAccessStream(), mimeType);
-                                }
-                            }
-                            else
-                            {
-                                source = MediaSource.CreateFromUri(new Uri(filePath));
-                            }
+                                    // FFmpegInteropX Configuration
+                                    var config = new MediaSourceConfig();
+                                    config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
+                                    config.Video.VideoOutputAllowBgra8 = true; // FrameServer (Skia) 互換性のためにBGRA8を許可
+                                    config.General.FastSeek = true;
 
-                            if (token.IsCancellationRequested) { source?.Dispose(); return; }
+                                    FFmpegMediaSource? ffmpegSource = null;
 
-                            if (source != null)
-                            {
-                                pageControl.DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    var mp = pageControl.PagePlayer.MediaPlayer;
-                                    if (mp == null || token.IsCancellationRequested) { source.Dispose(); return; }
+                                    if (ArchiveManager.IsArchivePath(filePath))
+                                    {
+                                        var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                                        var stream = ArchiveManager.GetEntryStream(arc, entry);
+                                        if (stream != null)
+                                        {
+                                            ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                                        var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
+                                        ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
+                                    }
 
+                                    if (ffmpegSource == null || token.IsCancellationRequested)
+                                    {
+                                        ffmpegSource?.Dispose();
+                                        pageControl.LoadingRing.IsActive = false;
+                                        return;
+                                    }
+
+                                    // ViewerPageControl にソースを保持させる (Dispose管理のため)
+                                    pageControl.FFmpegSource = ffmpegSource;
+
+                                    // イベントハンドラの定義
+                                    void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
+                                    {
+                                        sender.MediaOpened -= OnMediaOpened;
+                                        pageControl.DispatcherQueue.TryEnqueue(() =>
+                                        {
+                                            if (token.IsCancellationRequested) return;
+                                            pageControl.LoadingRing.IsActive = false;
+                                            pageControl.PageImage.Visibility = Visibility.Collapsed;
+                                            pageControl.PageImage.Opacity = 1.0;
+                                            pageControl.PagePlayer.Opacity = 1.0; // 映像を表示するためにOpacityを1に戻す (FrameServerを使用しない場合用)
+                                            pageControl.PagePlayer.Visibility = Visibility.Visible;
+
+                                            sender.Play();
+
+                                            try
+                                            {
+                                                var size = new Windows.Foundation.Size(sender.PlaybackSession.NaturalVideoWidth, sender.PlaybackSession.NaturalVideoHeight);
+                                                (pageControl as ViewerPageControl)?.InvokeVideoSizeChanged(size);
+                                            }
+                                            catch { }
+                                            WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                                        });
+                                    }
+
+                                    void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
+                                    {
+                                        sender.MediaFailed -= OnMediaFailed;
+                                        pageControl.DispatcherQueue.TryEnqueue(() =>
+                                        {
+                                            if (token.IsCancellationRequested) return;
+                                            pageControl.LoadingRing.IsActive = false;
+                                            _window.ShowNotification($"Video Error: {args.Error}");
+                                            WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                                        });
+                                    }
+
+                                    // イベント購読
+                                    mp.MediaOpened += OnMediaOpened;
+                                    mp.MediaFailed += OnMediaFailed;
+
+                                    // デコード解像度の最適化 (FFmpegInteropXでもMediaPlayerのSurfaceSizeが有効)
+                                    double scale = 1.0;
                                     try
                                     {
-                                        // デコード解像度の最適化: 表示サイズに合わせてサーフェスサイズを制限
-                                        double scale = 1.0;
-                                        try
-                                        {
-                                            // XamlRoot access can throw if the element is not yet in the visual tree
-                                            if (pageControl.IsLoaded && pageControl.XamlRoot != null)
-                                            {
-                                                scale = pageControl.XamlRoot.RasterizationScale;
-                                            }
-                                        }
-                                        catch { }
-
-                                        uint width = (uint)Math.Max(1, pageControl.ActualWidth * scale);
-                                        uint height = (uint)Math.Max(1, pageControl.ActualHeight * scale);
-                                        // GPU負荷軽減のため、不要なSetSurfaceSizeの呼び出しを避ける
-                                        // try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
-
-                                        // ソースのセット
-                                        var playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);
-                                        var playbackList = new Windows.Media.Playback.MediaPlaybackList();
-                                        playbackList.AutoRepeatEnabled = true;
-                                        playbackList.Items.Add(playbackItem);
-
-                                        // 前の再生を確実に停止させてからソースをセット
-                                        mp.Source = null;
-                                        mp.Source = playbackList;
-                                        mp.IsLoopingEnabled = true; // Safety redundancy
-
-                                        // 準備完了時にローディングを消す
-                                        void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
-                                        {
-                                            sender.MediaOpened -= OnMediaOpened;
-
-                                            pageControl.DispatcherQueue.TryEnqueue(() =>
-                                            {
-                                                if (token.IsCancellationRequested) return;
-                                                pageControl.LoadingRing.IsActive = false;
-                                                pageControl.PageImage.Visibility = Visibility.Collapsed;
-                                                pageControl.PageImage.Opacity = 1.0;
-
-                                                // Ensure playback starts
-                                                sender.Play();
-
-                                                // 動画読み込み完了後にフォーカスをRootGridに戻す
-                                                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
-                                            });
-                                        }
-                                        mp.MediaOpened += OnMediaOpened;
-
-                                        // エラー時も消す
-                                        void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
-                                        {
-                                            sender.MediaFailed -= OnMediaFailed;
-                                            string errorMsg = args.Error switch
-                                            {
-                                                Windows.Media.Playback.MediaPlayerError.Aborted => "Playback aborted",
-                                                Windows.Media.Playback.MediaPlayerError.NetworkError => "Network error",
-                                                Windows.Media.Playback.MediaPlayerError.DecodingError => "Decoding error (Missing Codec?)",
-                                                Windows.Media.Playback.MediaPlayerError.SourceNotSupported => "Source format not supported",
-                                                _ => "Unknown playback error"
-                                            };
-
-                                            pageControl.DispatcherQueue.TryEnqueue(() =>
-                                            {
-                                                if (token.IsCancellationRequested) return;
-                                                pageControl.LoadingRing.IsActive = false;
-                                                _window.ShowNotification($"Video Error: {errorMsg}");
-                                                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
-                                            });
-                                        }
-                                        mp.MediaFailed += OnMediaFailed;
+                                        if (pageControl.IsLoaded && pageControl.XamlRoot != null)
+                                            scale = pageControl.XamlRoot.RasterizationScale;
                                     }
-                                    catch (Exception)
-                                    {
-                                        pageControl.LoadingRing.IsActive = false;
-                                    }
-                                });
-                            }
-                            else
-                            {
-                                pageControl.DispatcherQueue.TryEnqueue(() =>
+                                    catch { }
+
+                                    uint width = (uint)Math.Max(1, pageControl.ActualWidth * scale);
+                                    uint height = (uint)Math.Max(1, pageControl.ActualHeight * scale);
+                                    try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
+
+                                    // MediaPlayer にセット
+                                    mp.Source = null;
+                                    await ffmpegSource.OpenWithMediaPlayerAsync(mp);
+                                    ffmpegSource.PlaybackSession = mp.PlaybackSession;
+
+                                    mp.IsLoopingEnabled = true;
+                                }
+                                catch (Exception ex)
                                 {
-                                    if (token.IsCancellationRequested) return;
                                     pageControl.LoadingRing.IsActive = false;
-                                });
-                            }
+                                    _window.ShowNotification($"FFmpeg Error: {ex.Message}");
+                                }
+                            });
                         }
                         catch (Exception)
                         {

@@ -28,8 +28,7 @@ namespace quick_image_viewer.Managers
 
             for (int i = 0; i < 4; i++)
             {
-                pageGrids[i].PageImage.HorizontalAlignment = HorizontalAlignment.Center;
-                pageGrids[i].PageImage.VerticalAlignment = VerticalAlignment.Center;
+                pageGrids[i].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
             }
 
             if (effectiveSplitCount == 1)
@@ -64,8 +63,8 @@ namespace quick_image_viewer.Managers
 
                 if (!uniformToFill)
                 {
-                    pageGrids[0].PageImage.HorizontalAlignment = HorizontalAlignment.Left;
-                    pageGrids[1].PageImage.HorizontalAlignment = HorizontalAlignment.Right;
+                    pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
+                    pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
                 }
             }
             else if (effectiveSplitCount == 3)
@@ -92,9 +91,9 @@ namespace quick_image_viewer.Managers
 
                     if (!uniformToFill)
                     {
-                        pageGrids[0].PageImage.VerticalAlignment = VerticalAlignment.Bottom;
-                        pageGrids[1].PageImage.HorizontalAlignment = HorizontalAlignment.Left; pageGrids[1].PageImage.VerticalAlignment = VerticalAlignment.Top;
-                        pageGrids[2].PageImage.HorizontalAlignment = HorizontalAlignment.Right; pageGrids[2].PageImage.VerticalAlignment = VerticalAlignment.Top;
+                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Bottom);
+                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Top);
+                        pageGrids[2].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Top);
                     }
                 }
                 else
@@ -108,6 +107,14 @@ namespace quick_image_viewer.Managers
                     Grid.SetColumn(pageGrids[0], 2); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
                     Grid.SetColumn(pageGrids[1], 1); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
                     Grid.SetColumn(pageGrids[2], 0); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
+
+                    if (!uniformToFill)
+                    {
+                        // 3分割横並び: 0(右端)と1(中央)をくっつける
+                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
+                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[2].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
+                    }
                 }
             }
             else
@@ -129,6 +136,15 @@ namespace quick_image_viewer.Managers
                     Grid.SetColumn(pageGrids[1], 2); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
                     Grid.SetColumn(pageGrids[2], 1); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
                     Grid.SetColumn(pageGrids[3], 0); Grid.SetRow(pageGrids[3], 0); Grid.SetRowSpan(pageGrids[3], 2); Grid.SetColumnSpan(pageGrids[3], 1);
+
+                    if (!uniformToFill)
+                    {
+                        // 4分割横並び: [3|2] [1|0] のように2ペア作る
+                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
+                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[2].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
+                        pageGrids[3].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
+                    }
                 }
                 else
                 {
@@ -145,10 +161,10 @@ namespace quick_image_viewer.Managers
 
                     if (!uniformToFill)
                     {
-                        pageGrids[0].PageImage.HorizontalAlignment = HorizontalAlignment.Left; pageGrids[0].PageImage.VerticalAlignment = VerticalAlignment.Bottom;
-                        pageGrids[1].PageImage.HorizontalAlignment = HorizontalAlignment.Right; pageGrids[1].PageImage.VerticalAlignment = VerticalAlignment.Bottom;
-                        pageGrids[2].PageImage.HorizontalAlignment = HorizontalAlignment.Left; pageGrids[2].PageImage.VerticalAlignment = VerticalAlignment.Top;
-                        pageGrids[3].PageImage.HorizontalAlignment = HorizontalAlignment.Right; pageGrids[3].PageImage.VerticalAlignment = VerticalAlignment.Top;
+                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Bottom);
+                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Bottom);
+                        pageGrids[2].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Top);
+                        pageGrids[3].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Top);
                     }
                 }
             }
