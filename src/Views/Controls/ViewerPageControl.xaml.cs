@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using quick_image_viewer.ViewModels;
 using System;
+using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using Windows.Media.Playback;
 
@@ -30,6 +31,7 @@ namespace quick_image_viewer.Views.Controls
         private double _pendingHeight;
         private bool _isDraggingSlider = false;
         private readonly Interfaces.ISettingsManager _settings;
+        private readonly System.Threading.SemaphoreSlim _loadingSemaphore = new(1, 1);
 
         // Frame Server Mode
         private Windows.Graphics.Imaging.SoftwareBitmap? _frameBitmap;
@@ -530,15 +532,16 @@ namespace quick_image_viewer.Views.Controls
             _isDraggingSlider = false;
         }
 
-        public void ResetPlayback()
+        public async Task ResetPlaybackAsync()
         {
+            await _loadingSemaphore.WaitAsync();
             try
             {
                 var mp = InternalMediaPlayer.MediaPlayer;
                 if (mp != null)
                 {
                     // 再生を確実に停止し、リソースを解放する
-                    mp.Pause();
+                    try { mp.Pause(); } catch { }
 
                     // イベント解除を先に行う
                     mp.MediaOpened -= _onMediaOpenedHandler;
@@ -548,49 +551,63 @@ namespace quick_image_viewer.Views.Controls
                     InternalMediaPlayer.Source = null;
                     mp.Source = null;
                 }
+
+                lock (_frameLock)
+                {
+                    _frameBitmap?.Dispose();
+                    _frameBitmap = null;
+                    _skFrameBitmap?.Dispose();
+                    _skFrameBitmap = null;
+                }
+
+                IsVideoContent = false;
+                if (_ffmpegSource != null)
+                {
+                    _ffmpegSource.Dispose();
+                    _ffmpegSource = null;
+                }
+
+                PageImage.Opacity = 1.0;
+                InternalMediaPlayer.Width = double.NaN;
+                InternalMediaPlayer.Height = double.NaN;
+                InternalMediaPlayer.Margin = new Thickness(0);
+                VideoVisualHost.Visibility = Visibility.Collapsed;
+                InternalMediaPlayer.Visibility = Visibility.Collapsed;
+                InternalPageCanvas.Visibility = Visibility.Collapsed;
+
+                bool hadFocus = false;
+                try
+                {
+                    var focused = (this.IsLoaded && this.XamlRoot != null ? Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot) : null);
+                    if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
+                    {
+                        hadFocus = true;
+                    }
+                }
+                catch { }
+
+                CustomTransportPanel.Visibility = Visibility.Collapsed;
+                if (hadFocus)
+                {
+                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                }
+
+                _sliderUpdateTimer.Stop();
+                _hideTimer.Stop();
+                _resizeDebounceTimer.Stop();
             }
             catch (System.Exception)
             {
             }
-
-            lock (_frameLock)
+            finally
             {
-                _frameBitmap?.Dispose();
-                _frameBitmap = null;
-                _skFrameBitmap?.Dispose();
-                _skFrameBitmap = null;
+                _loadingSemaphore.Release();
             }
+        }
 
-            IsVideoContent = false;
-            FFmpegSource = null; // Dispose the old one
-            PageImage.Opacity = 1.0;
-            InternalMediaPlayer.Width = double.NaN;
-            InternalMediaPlayer.Height = double.NaN;
-            InternalMediaPlayer.Margin = new Thickness(0);
-            VideoVisualHost.Visibility = Visibility.Collapsed;
-            InternalMediaPlayer.Visibility = Visibility.Collapsed;
-            InternalPageCanvas.Visibility = Visibility.Collapsed;
-
-            bool hadFocus = false;
-            try
-            {
-                var focused = (this.IsLoaded && this.XamlRoot != null ? Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(this.XamlRoot) : null);
-                if (focused is DependencyObject dep && IsChildOf(dep, CustomTransportPanel))
-                {
-                    hadFocus = true;
-                }
-            }
-            catch { }
-
-            CustomTransportPanel.Visibility = Visibility.Collapsed;
-            if (hadFocus)
-            {
-                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
-            }
-
-            _sliderUpdateTimer.Stop();
-            _hideTimer.Stop();
-            _resizeDebounceTimer.Stop();
+        public void ResetPlayback()
+        {
+            _ = ResetPlaybackAsync();
         }
 
         private Windows.Foundation.TypedEventHandler<MediaPlayer, object>? _onMediaOpenedHandler;

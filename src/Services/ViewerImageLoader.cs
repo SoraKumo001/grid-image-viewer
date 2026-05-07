@@ -46,10 +46,12 @@ namespace quick_image_viewer.Services
             string[] videoExtensions = [".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv"];
             bool isVideo = videoExtensions.Contains(ext);
 
+            // 排他制御：前の読み込みや破棄が完了するのを待つ
+            await pageControl.ResetPlaybackAsync();
+
             _window.DispatcherQueue.TryEnqueue(() =>
             {
                 if (token.IsCancellationRequested) return;
-                pageControl.ResetPlayback();
                 if (isVideo)
                 {
                     pageControl.IsVideoContent = true;
@@ -127,10 +129,13 @@ namespace quick_image_viewer.Services
                                 {
                                     // FFmpegInteropX Configuration
                                     var config = new MediaSourceConfig();
+                                    // GPUクラッシュ対策: デコーダモードを自動に設定しつつ、安定性重視のオプションを付与
                                     config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
-                                    // 通常表示時はBGRA8への変換を無効化することで安定性を向上させる (一部のGPU環境でのデコードエラー対策)
                                     config.Video.VideoOutputAllowBgra8 = false;
                                     config.General.FastSeek = true;
+
+                                    // 読み込みバッファを調整してカクつきやハングを抑制
+                                    config.General.ReadAheadBufferDuration = TimeSpan.FromSeconds(1);
 
                                     FFmpegMediaSource? ffmpegSource = null;
 
