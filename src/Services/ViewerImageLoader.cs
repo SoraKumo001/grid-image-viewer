@@ -128,25 +128,34 @@ namespace quick_image_viewer.Services
                                     // FFmpegInteropX Configuration
                                     var config = new MediaSourceConfig();
                                     config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
-                                    config.Video.VideoOutputAllowBgra8 = true; // FrameServer (Skia) 互換性のためにBGRA8を許可
+                                    // 通常表示時はBGRA8への変換を無効化することで安定性を向上させる (一部のGPU環境でのデコードエラー対策)
+                                    config.Video.VideoOutputAllowBgra8 = false;
                                     config.General.FastSeek = true;
 
                                     FFmpegMediaSource? ffmpegSource = null;
 
-                                    if (ArchiveManager.IsArchivePath(filePath))
+                                    try
                                     {
-                                        var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
-                                        var stream = ArchiveManager.GetEntryStream(arc, entry);
-                                        if (stream != null)
+                                        if (ArchiveManager.IsArchivePath(filePath))
                                         {
-                                            ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
+                                            var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                                            var stream = ArchiveManager.GetEntryStream(arc, entry);
+                                            if (stream != null)
+                                            {
+                                                ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                                            var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
+                                            ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
                                         }
                                     }
-                                    else
+                                    catch (Exception)
                                     {
-                                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                                        var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
-                                        ffmpegSource = await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
+                                        pageControl.LoadingRing.IsActive = false;
+                                        throw;
                                     }
 
                                     if (ffmpegSource == null || token.IsCancellationRequested)
@@ -162,14 +171,13 @@ namespace quick_image_viewer.Services
                                     // イベントハンドラの定義
                                     void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
                                     {
-                                        sender.MediaOpened -= OnMediaOpened;
                                         pageControl.DispatcherQueue.TryEnqueue(() =>
                                         {
                                             if (token.IsCancellationRequested) return;
                                             pageControl.LoadingRing.IsActive = false;
                                             pageControl.PageImage.Visibility = Visibility.Collapsed;
                                             pageControl.PageImage.Opacity = 1.0;
-                                            pageControl.PagePlayer.Opacity = 1.0; // 映像を表示するためにOpacityを1に戻す (FrameServerを使用しない場合用)
+                                            pageControl.PagePlayer.Opacity = 1.0;
                                             pageControl.PagePlayer.Visibility = Visibility.Visible;
 
                                             sender.Play();
@@ -177,7 +185,7 @@ namespace quick_image_viewer.Services
                                             try
                                             {
                                                 var size = new Windows.Foundation.Size(sender.PlaybackSession.NaturalVideoWidth, sender.PlaybackSession.NaturalVideoHeight);
-                                                (pageControl as ViewerPageControl)?.InvokeVideoSizeChanged(size);
+                                                pageControl.InvokeVideoSizeChanged(size);
                                             }
                                             catch { }
                                             WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
@@ -186,7 +194,6 @@ namespace quick_image_viewer.Services
 
                                     void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
                                     {
-                                        sender.MediaFailed -= OnMediaFailed;
                                         pageControl.DispatcherQueue.TryEnqueue(() =>
                                         {
                                             if (token.IsCancellationRequested) return;
@@ -196,9 +203,8 @@ namespace quick_image_viewer.Services
                                         });
                                     }
 
-                                    // イベント購読
-                                    mp.MediaOpened += OnMediaOpened;
-                                    mp.MediaFailed += OnMediaFailed;
+                                    // ViewerPageControlを通じてイベントを購読（管理と解除のため）
+                                    pageControl.SetMediaHandlers(OnMediaOpened, OnMediaFailed);
 
                                     // デコード解像度の最適化 (FFmpegInteropXでもMediaPlayerのSurfaceSizeが有効)
                                     double scale = 1.0;

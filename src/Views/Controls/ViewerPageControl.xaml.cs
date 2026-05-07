@@ -4,10 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using quick_image_viewer.ViewModels;
 using System;
 using Windows.Graphics.Imaging;
 using Windows.Media.Playback;
+
 namespace quick_image_viewer.Views.Controls
 {
     public sealed partial class ViewerPageControl : UserControl
@@ -23,6 +25,9 @@ namespace quick_image_viewer.Views.Controls
 
         private readonly Microsoft.UI.Xaml.DispatcherTimer _hideTimer;
         private readonly Microsoft.UI.Xaml.DispatcherTimer _sliderUpdateTimer;
+        private readonly Microsoft.UI.Xaml.DispatcherTimer _resizeDebounceTimer;
+        private double _pendingWidth;
+        private double _pendingHeight;
         private bool _isDraggingSlider = false;
         private readonly Interfaces.ISettingsManager _settings;
 
@@ -73,6 +78,13 @@ namespace quick_image_viewer.Views.Controls
             _sliderUpdateTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(100) };
             _sliderUpdateTimer.Tick += (s, e) => UpdateSlider();
 
+            _resizeDebounceTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(150) };
+            _resizeDebounceTimer.Tick += (s, e) =>
+            {
+                _resizeDebounceTimer.Stop();
+                UpdateVideoVisualSize(_pendingWidth, _pendingHeight);
+            };
+
             // スライダーの操作開始と終了を確実に検知する
             TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
             TimelineSlider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
@@ -85,6 +97,13 @@ namespace quick_image_viewer.Views.Controls
 
         private void ViewerPageControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            _pendingWidth = e.NewSize.Width;
+            _pendingHeight = e.NewSize.Height;
+            _resizeDebounceTimer.Stop();
+            _resizeDebounceTimer.Start();
+
+            UpdateClip(_pendingWidth, _pendingHeight);
+
             var mp = InternalMediaPlayer.MediaPlayer;
             if (mp != null && mp.PlaybackSession.PlaybackState != MediaPlaybackState.None)
             {
@@ -102,6 +121,21 @@ namespace quick_image_viewer.Views.Controls
             }
         }
 
+        private void UpdateClip(double w, double h)
+        {
+            if (w > 0 && h > 0)
+            {
+                InternalRootGrid.Clip = new RectangleGeometry
+                {
+                    Rect = new Windows.Foundation.Rect(0, 0, w, h)
+                };
+            }
+            else
+            {
+                InternalRootGrid.Clip = null;
+            }
+        }
+
         public void PaintVideoFrame(SkiaSharp.SKCanvas canvas, SkiaSharp.SKImageInfo info, int hAlign, int vAlign)
         {
             lock (_frameLock)
@@ -109,9 +143,9 @@ namespace quick_image_viewer.Views.Controls
                 if (_skFrameBitmap != null)
                 {
                     float scale;
-                    if (InternalPageImage.Stretch == Microsoft.UI.Xaml.Media.Stretch.UniformToFill)
+                    if (InternalPageImage.Stretch == Stretch.UniformToFill)
                         scale = System.Math.Max((float)info.Width / _skFrameBitmap.Width, (float)info.Height / _skFrameBitmap.Height);
-                    else if (InternalPageImage.Stretch == Microsoft.UI.Xaml.Media.Stretch.Uniform)
+                    else if (InternalPageImage.Stretch == Stretch.Uniform)
                         scale = System.Math.Min((float)info.Width / _skFrameBitmap.Width, (float)info.Height / _skFrameBitmap.Height);
                     else
                         scale = 1.0f;
@@ -121,7 +155,7 @@ namespace quick_image_viewer.Views.Controls
                     float x = (info.Width - w) / 2f;
                     float y = (info.Height - h) / 2f;
 
-                    if (InternalPageImage.Stretch != Microsoft.UI.Xaml.Media.Stretch.UniformToFill)
+                    if (InternalPageImage.Stretch != Stretch.UniformToFill)
                     {
                         if (hAlign == 0) x = 0;
                         else if (hAlign == 2) x = info.Width - w;
@@ -133,8 +167,6 @@ namespace quick_image_viewer.Views.Controls
                 }
             }
         }
-
-
 
         [System.Runtime.InteropServices.ComImport]
         [System.Runtime.InteropServices.Guid("5B0D3235-4DB1-4A45-9100-2414344B004F")]
@@ -286,10 +318,13 @@ namespace quick_image_viewer.Views.Controls
             // VideoVisualHost (軽量表示用) も同期
             VideoVisualHost.HorizontalAlignment = h;
             VideoVisualHost.VerticalAlignment = v;
+
+            UpdateVideoVisualSize();
         }
 
         internal void InvokeVideoSizeChanged(Windows.Foundation.Size size)
         {
+            UpdateVideoVisualSize();
             VideoSizeChanged?.Invoke(this, size);
         }
 
@@ -317,7 +352,47 @@ namespace quick_image_viewer.Views.Controls
             }
         }
 
-        private void UpdateVideoVisualSize() { }
+        internal void UpdateVideoVisualSize(double overrideW = -1, double overrideH = -1)
+        {
+            var mp = InternalMediaPlayer.MediaPlayer;
+            if (mp == null || !IsVideoContent) return;
+
+            var session = mp.PlaybackSession;
+            if (session == null || session.NaturalVideoWidth == 0 || session.NaturalVideoHeight == 0) return;
+
+            double containerW = overrideW >= 0 ? overrideW : this.ActualWidth;
+            double containerH = overrideH >= 0 ? overrideH : this.ActualHeight;
+            if (containerW <= 0 || containerH <= 0) return;
+
+            double videoW = session.NaturalVideoWidth;
+            double videoH = session.NaturalVideoHeight;
+
+            if (InternalMediaPlayer.Stretch == Stretch.Fill)
+            {
+                InternalMediaPlayer.Width = double.NaN;
+                InternalMediaPlayer.Height = double.NaN;
+                InternalMediaPlayer.Margin = new Thickness(0);
+                return;
+            }
+
+            double scale = System.Math.Min(containerW / videoW, containerH / videoH);
+            if (InternalMediaPlayer.Stretch == Stretch.UniformToFill)
+            {
+                scale = System.Math.Max(containerW / videoW, containerH / videoH);
+            }
+            else if (InternalMediaPlayer.Stretch == Stretch.None)
+            {
+                scale = 1.0;
+            }
+
+            double targetW = videoW * scale;
+            double targetH = videoH * scale;
+
+            // 幅と高さを明示的に設定することで、セルの外へのはみ出しを防ぐ
+            InternalMediaPlayer.Width = targetW;
+            InternalMediaPlayer.Height = targetH;
+            InternalMediaPlayer.Margin = new Thickness(0);
+        }
 
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
@@ -384,11 +459,7 @@ namespace quick_image_viewer.Views.Controls
 
         public void ShowControls()
         {
-            var isVisible = IsVideoContent ||
-                            InternalMediaPlayer.Visibility == Visibility.Visible ||
-                            VideoVisualHost.Visibility == Visibility.Visible ||
-                            InternalPageCanvas.Visibility == Visibility.Visible; // FrameServer時はCanvasがVisible
-            if (isVisible)
+            if (IsVideoContent)
             {
                 CustomTransportPanel.Visibility = Visibility.Visible;
 
@@ -463,15 +534,19 @@ namespace quick_image_viewer.Views.Controls
         {
             try
             {
-                if (InternalMediaPlayer.MediaPlayer != null)
+                var mp = InternalMediaPlayer.MediaPlayer;
+                if (mp != null)
                 {
                     // 再生を確実に停止し、リソースを解放する
-                    InternalMediaPlayer.MediaPlayer.Pause();
-                    InternalMediaPlayer.Source = null;
-                    InternalMediaPlayer.MediaPlayer.Source = null;
+                    mp.Pause();
 
-                    // FrameServerイベント解除
-                    InternalMediaPlayer.MediaPlayer.VideoFrameAvailable -= OnVideoFrameAvailable;
+                    // イベント解除を先に行う
+                    mp.MediaOpened -= _onMediaOpenedHandler;
+                    mp.MediaFailed -= _onMediaFailedHandler;
+                    mp.VideoFrameAvailable -= OnVideoFrameAvailable;
+
+                    InternalMediaPlayer.Source = null;
+                    mp.Source = null;
                 }
             }
             catch (System.Exception)
@@ -489,6 +564,9 @@ namespace quick_image_viewer.Views.Controls
             IsVideoContent = false;
             FFmpegSource = null; // Dispose the old one
             PageImage.Opacity = 1.0;
+            InternalMediaPlayer.Width = double.NaN;
+            InternalMediaPlayer.Height = double.NaN;
+            InternalMediaPlayer.Margin = new Thickness(0);
             VideoVisualHost.Visibility = Visibility.Collapsed;
             InternalMediaPlayer.Visibility = Visibility.Collapsed;
             InternalPageCanvas.Visibility = Visibility.Collapsed;
@@ -512,6 +590,24 @@ namespace quick_image_viewer.Views.Controls
 
             _sliderUpdateTimer.Stop();
             _hideTimer.Stop();
+            _resizeDebounceTimer.Stop();
+        }
+
+        private Windows.Foundation.TypedEventHandler<MediaPlayer, object>? _onMediaOpenedHandler;
+        private Windows.Foundation.TypedEventHandler<MediaPlayer, MediaPlayerFailedEventArgs>? _onMediaFailedHandler;
+
+        public void SetMediaHandlers(Windows.Foundation.TypedEventHandler<MediaPlayer, object> opened, Windows.Foundation.TypedEventHandler<MediaPlayer, MediaPlayerFailedEventArgs> failed)
+        {
+            var mp = InternalMediaPlayer.MediaPlayer;
+            if (mp != null)
+            {
+                mp.MediaOpened -= _onMediaOpenedHandler;
+                mp.MediaFailed -= _onMediaFailedHandler;
+                _onMediaOpenedHandler = opened;
+                _onMediaFailedHandler = failed;
+                mp.MediaOpened += _onMediaOpenedHandler;
+                mp.MediaFailed += _onMediaFailedHandler;
+            }
         }
 
         private static bool IsChildOf(DependencyObject child, DependencyObject parent)

@@ -40,6 +40,9 @@ namespace quick_image_viewer.Managers
         private int _lastMangaSplitCount = -1;
         private int _lastEffectiveSplitCount = -1;
         private int _lastCachedQuadLayout = -1;
+        private Microsoft.UI.Xaml.DispatcherTimer? _resizeTimer;
+        private double _lastResizeWidth;
+        private double _lastResizeHeight;
         private readonly ResourceLoader _resourceLoader = new();
 
         public ViewerManager(IMainView window, ISettingsManager settings)
@@ -505,6 +508,8 @@ namespace quick_image_viewer.Managers
                     for (int i = 0; i < 4; i++)
                     {
                         controls[i].PageImage.Stretch = stretch;
+                        controls[i].PagePlayer.Stretch = stretch;
+                        controls[i].UpdateVideoVisualSize();
                         controls[i].PageCanvas.Invalidate();
                     }
                 }
@@ -523,33 +528,76 @@ namespace quick_image_viewer.Managers
         public void HandleWindowSizeChanged(double width, double height)
         {
             if (_window.Playlist.Count == 0 || _window.IsGridMode) return;
-            if (_settings.MangaSplitCount != 4 || _settings.QuadLayoutMode != 0) return;
 
-            // Run on background thread to avoid UI lag for metadata fetching (though sizes are usually cached)
-            _ = Task.Run(() =>
+            _lastResizeWidth = width;
+            _lastResizeHeight = height;
+
+            if (_resizeTimer == null)
             {
-                int newLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist, width, height);
-                if (newLayout != _cachedQuadLayout)
+                _resizeTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+                _resizeTimer.Tick += (s, e) =>
                 {
-                    _cachedQuadLayout = newLayout;
-                    _window.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        int currentBufferIdx = _window.ViewerControl.CurrentBufferIndex;
-                        int splitCount = _settings.MangaSplitCount;
-                        int effectiveSplitCount = _lastEffectiveSplitCount;
+                    _resizeTimer.Stop();
+                    ProcessDelayedResize(_lastResizeWidth, _lastResizeHeight);
+                };
+            }
 
-                        _layoutManager.UpdateLayoutGrid(
-                            _window.ViewerControl.ColsBuffer[currentBufferIdx],
-                            _window.ViewerControl.RowsBuffer[currentBufferIdx],
-                            _window.ViewerControl.PageControlsBuffer[currentBufferIdx],
-                            splitCount,
-                            effectiveSplitCount,
-                            _cachedQuadLayout,
-                            _window.State.IsSlideshowRunning);
-                        for (int i = 0; i < 4; i++) InvalidatePage(i);
-                    });
-                }
-            });
+            _resizeTimer.Stop();
+            _resizeTimer.Start();
+        }
+
+        private void ProcessDelayedResize(double width, double height)
+        {
+            if (_settings.MangaSplitCount == 4 && _settings.QuadLayoutMode == 0)
+            {
+                _ = Task.Run(() =>
+                {
+                    int newLayout = _layoutManager.GetEffectiveQuadLayout(_window.CurrentIndex, _window.Playlist, width, height);
+                    if (newLayout != _cachedQuadLayout)
+                    {
+                        _cachedQuadLayout = newLayout;
+                        _window.DispatcherQueue.TryEnqueue(() => ApplyCurrentLayout());
+                    }
+                    else
+                    {
+                        _window.DispatcherQueue.TryEnqueue(() => UpdateAllVideoVisualSizes());
+                    }
+                });
+            }
+            else
+            {
+                UpdateAllVideoVisualSizes();
+            }
+        }
+
+        private void ApplyCurrentLayout()
+        {
+            if (_window.ViewerControl == null) return;
+            int currentBufferIdx = _window.ViewerControl.CurrentBufferIndex;
+            int splitCount = _settings.MangaSplitCount;
+            int effectiveSplitCount = _lastEffectiveSplitCount;
+
+            _layoutManager.UpdateLayoutGrid(
+                _window.ViewerControl.ColsBuffer[currentBufferIdx],
+                _window.ViewerControl.RowsBuffer[currentBufferIdx],
+                _window.ViewerControl.PageControlsBuffer[currentBufferIdx],
+                splitCount,
+                effectiveSplitCount,
+                _cachedQuadLayout,
+                _window.State.IsSlideshowRunning);
+
+            UpdateAllVideoVisualSizes();
+            for (int i = 0; i < 4; i++) InvalidatePage(i);
+        }
+
+        private void UpdateAllVideoVisualSizes()
+        {
+            if (_window.ViewerControl == null) return;
+            var controls = _window.ViewerControl.PageControlsBuffer[_window.ViewerControl.CurrentBufferIndex];
+            foreach (var pc in controls)
+            {
+                pc.UpdateVideoVisualSize();
+            }
         }
 
 
