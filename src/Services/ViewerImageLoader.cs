@@ -175,13 +175,17 @@ namespace quick_image_viewer.Services
 
                                         uint width = (uint)Math.Max(1, pageControl.ActualWidth * scale);
                                         uint height = (uint)Math.Max(1, pageControl.ActualHeight * scale);
-                                        try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
+                                        // GPU負荷軽減のため、不要なSetSurfaceSizeの呼び出しを避ける
+                                        // try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
 
                                         // ソースのセット
                                         var playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source);
                                         var playbackList = new Windows.Media.Playback.MediaPlaybackList();
                                         playbackList.AutoRepeatEnabled = true;
                                         playbackList.Items.Add(playbackItem);
+
+                                        // 前の再生を確実に停止させてからソースをセット
+                                        mp.Source = null;
                                         mp.Source = playbackList;
                                         mp.IsLoopingEnabled = true; // Safety redundancy
 

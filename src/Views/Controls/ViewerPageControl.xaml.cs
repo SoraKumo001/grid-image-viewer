@@ -256,9 +256,10 @@ namespace quick_image_viewer.Views.Controls
             {
                 if (InternalMediaPlayer.MediaPlayer != null)
                 {
-                    // Source = null は重い場合があるが、リソース解放のために必要
+                    // 再生を確実に停止し、リソースを解放する
                     InternalMediaPlayer.MediaPlayer.Pause();
                     InternalMediaPlayer.Source = null;
+                    InternalMediaPlayer.MediaPlayer.Source = null;
                 }
             }
             catch (System.Exception)
