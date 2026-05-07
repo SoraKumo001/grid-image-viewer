@@ -9,7 +9,7 @@
 #define MyAppURL "https://github.com/oikawa/quick-image-viewer"
 #define MyAppExeName "quick-image-viewer.exe"
 #ifndef BuildDir
-#define BuildDir "src\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64"
+#define BuildDir "publish"
 #endif
 
 [Setup]
