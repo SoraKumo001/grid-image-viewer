@@ -446,6 +446,9 @@
   <data name="Settings_ShowPageIndicator.Content" xml:space="preserve">
     <value>Show Page Count</value>
   </data>
+  <data name="Settings_VideoVolume.Text" xml:space="preserve">
+    <value>Video Master Volume</value>
+  </data>
   <data name="Settings_Tab_Display.Header" xml:space="preserve">
     <value>Display</value>
   </data>

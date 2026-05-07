@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -19,10 +20,12 @@ namespace quick_image_viewer.Views.Controls
         private Microsoft.UI.Xaml.DispatcherTimer _hideTimer;
         private Microsoft.UI.Xaml.DispatcherTimer _sliderUpdateTimer;
         private bool _isDraggingSlider = false;
+        private readonly Interfaces.ISettingsManager _settings;
 
         public ViewerPageControl()
         {
             this.InitializeComponent();
+            _settings = ((App)Application.Current).Services.GetService<Interfaces.ISettingsManager>()!;
 
             _hideTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromSeconds(3) };
             _hideTimer.Tick += (s, e) =>
@@ -64,8 +67,11 @@ namespace quick_image_viewer.Views.Controls
             {
                 mp = new Windows.Media.Playback.MediaPlayer();
                 mp.IsLoopingEnabled = true;
-                mp.IsMuted = true;
                 mp.AutoPlay = true;
+
+                // Volume setup
+                mp.Volume = _settings.VideoVolume;
+                mp.IsMuted = _settings.VideoVolume <= 0;
 
                 // Ensure loop mode continues to work for successive videos loaded in the same player
                 mp.MediaOpened += (s, args) =>
@@ -90,8 +96,19 @@ namespace quick_image_viewer.Views.Controls
             {
                 InternalMediaPlayer.SetMediaPlayer(player);
             }
+            player.Volume = _settings.VideoVolume;
+            player.IsMuted = _settings.VideoVolume <= 0;
             InternalMediaPlayer.Visibility = Visibility.Visible;
             VideoVisualHost.Visibility = Visibility.Collapsed;
+        }
+
+        public void UpdateVolume()
+        {
+            if (InternalMediaPlayer.MediaPlayer != null)
+            {
+                InternalMediaPlayer.MediaPlayer.Volume = _settings.VideoVolume;
+                InternalMediaPlayer.MediaPlayer.IsMuted = _settings.VideoVolume <= 0;
+            }
         }
 
         private void UpdateVideoVisualSize() { }

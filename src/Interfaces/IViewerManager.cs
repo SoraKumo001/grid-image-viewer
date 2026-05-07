@@ -20,6 +20,7 @@ namespace quick_image_viewer.Interfaces
         PageRenderer[] Pages { get; }
         ViewerPageControl[] PageControls { get; }
         void StopAnimation();
+        void UpdateVolume();
         void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e);
     }
 }

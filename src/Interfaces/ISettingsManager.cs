@@ -20,6 +20,7 @@ namespace quick_image_viewer.Interfaces
         int BackgroundColorMode { get; set; }
         bool UseHighQualityScaling { get; set; }
         bool ShowPageIndicator { get; set; }
+        double VideoVolume { get; set; }
         int BoundaryAction { get; set; }
         int JpegQuality { get; set; }
         List<string> EnabledExtensions { get; set; }

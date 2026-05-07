@@ -61,6 +61,7 @@ namespace quick_image_viewer.Views.Controls
             ComboBackground.SelectedIndex = _settings.BackgroundColorMode >= 0 ? _settings.BackgroundColorMode : 0;
             CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
             CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
+            SliderVideoVolume.Value = (int)(_settings.VideoVolume * 100);
             ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
 
             InitializeKeyBindingData();
@@ -109,6 +110,12 @@ namespace quick_image_viewer.Views.Controls
             ApplyTemporarySettings();
         }
 
+        private void SliderVideoVolume_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        {
+            if (_isInitializing || _settings == null || _window == null) return;
+            ApplyTemporarySettings();
+        }
+
         private void ApplyTemporarySettings()
         {
             if (ComboBackground.SelectedIndex >= 0)
@@ -120,11 +127,14 @@ namespace quick_image_viewer.Views.Controls
             if (ComboBoundary.SelectedIndex >= 0)
                 _settings.BoundaryAction = ComboBoundary.SelectedIndex;
 
+            _settings.VideoVolume = SliderVideoVolume.Value / 100.0;
+
             _window.ViewModel.BoundaryAction = _settings.BoundaryAction;
             _window.ViewModel.ShowPageIndicator = _settings.ShowPageIndicator;
             _window.AppWindowManager.ApplyBackgroundSettings();
             _window.UpdatePageIndicator();
             _window.ViewerManager.UpdateStretch();
+            _window.ViewerManager.UpdateVolume();
         }
 
 
@@ -385,6 +395,7 @@ namespace quick_image_viewer.Views.Controls
                 ComboBackground.SelectedIndex = _settings.BackgroundColorMode >= 0 ? _settings.BackgroundColorMode : 0;
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
                 CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
+                SliderVideoVolume.Value = (int)(_settings.VideoVolume * 100);
                 ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
 
                 InitializeKeyBindingData();
@@ -424,6 +435,8 @@ namespace quick_image_viewer.Views.Controls
 
             if (ComboBoundary.SelectedIndex >= 0)
                 _settings.BoundaryAction = ComboBoundary.SelectedIndex;
+
+            _settings.VideoVolume = SliderVideoVolume.Value / 100.0;
 
             _settings.KeyNextImage = _tempNextImage;
             _settings.KeyPrevImage = _tempPrevImage;

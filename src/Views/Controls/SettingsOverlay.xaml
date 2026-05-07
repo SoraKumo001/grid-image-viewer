@@ -58,6 +58,18 @@
                                         <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" Click="SettingControl_Changed" />
                                     </StackPanel>
                                 </StackPanel>
+
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Settings_VideoVolume" Text="Video Master Volume" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold" />
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="32" />
+                                        </Grid.ColumnDefinitions>
+                                        <Slider x:Name="SliderVideoVolume" Minimum="0" Maximum="100" StepFrequency="1" VerticalAlignment="Center" ValueChanged="SliderVideoVolume_ValueChanged" />
+                                        <TextBlock Grid.Column="1" Text="{Binding ElementName=SliderVideoVolume, Path=Value}" VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </PivotItem>

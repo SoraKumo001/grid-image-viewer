@@ -446,6 +446,9 @@
   <data name="Settings_ShowPageIndicator.Content" xml:space="preserve">
     <value>ページ数を表示</value>
   </data>
+  <data name="Settings_VideoVolume.Text" xml:space="preserve">
+    <value>動画マスター音量</value>
+  </data>
   <data name="Settings_Tab_Display.Header" xml:space="preserve">
     <value>表示</value>
   </data>

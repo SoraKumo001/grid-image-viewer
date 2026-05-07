@@ -420,6 +420,19 @@ namespace quick_image_viewer.Managers
 
         public void StopAnimation() => _window.AnimationService.StopAnimation();
 
+        public void UpdateVolume()
+        {
+            if (_window.ViewerControl == null) return;
+            for (int b = 0; b < 2; b++)
+            {
+                var controls = _window.ViewerControl.PageControlsBuffer[b];
+                for (int i = 0; i < 4; i++)
+                {
+                    controls[i].UpdateVolume();
+                }
+            }
+        }
+
         public void InvalidatePage(int index) => _pageControls[index].PageCanvas.Invalidate();
 
         public void UpdateStretch()

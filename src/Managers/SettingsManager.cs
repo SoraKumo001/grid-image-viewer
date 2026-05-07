@@ -87,6 +87,7 @@ namespace quick_image_viewer.Managers
         public int BackgroundColorMode { get; set; } = 0; // 0: System (Mica), 1: Black, 2: White
         public bool UseHighQualityScaling { get; set; } = true;
         public bool ShowPageIndicator { get; set; } = true;
+        public double VideoVolume { get; set; } = 0.5;
 
         public int JpegQuality { get; set; } = 90;
 
@@ -148,6 +149,7 @@ namespace quick_image_viewer.Managers
         public int BackgroundColorMode { get => _data.BackgroundColorMode; set => _data.BackgroundColorMode = value; }
         public bool UseHighQualityScaling { get => _data.UseHighQualityScaling; set => _data.UseHighQualityScaling = value; }
         public bool ShowPageIndicator { get => _data.ShowPageIndicator; set => _data.ShowPageIndicator = value; }
+        public double VideoVolume { get => _data.VideoVolume; set => _data.VideoVolume = value; }
         public int BoundaryAction { get => _data.BoundaryAction; set => _data.BoundaryAction = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
