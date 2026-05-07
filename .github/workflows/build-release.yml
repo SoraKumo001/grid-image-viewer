@@ -67,7 +67,7 @@ jobs:
         # 1. Try exact tag match
         $tagEscaped = [regex]::Escape($tag)
         # Note: We use \s* after tag to handle potential trailing spaces or content like "(Current)"
-        $pattern = "(?ms)^##\s+" + $tagEscaped + "\s*.*?\n(.*?)(?=\n##\s+v|$)"
+        $pattern = "(?ms)^##\s+" + $tagEscaped + "\s*.*?\n(.*?)(?=\n##\s+v|\z)"
         
         if ($changelog -match $pattern) {
             Write-Host "Match found for tag $tag"
@@ -77,7 +77,7 @@ jobs:
         # 2. Fallback for manual dispatch or branch pushes
         if (-not $content -and ($tag -eq "main" -or $tag -eq "master" -or $eventName -eq "workflow_dispatch")) {
             Write-Host "Tag match failed or not a tag push. Falling back to the first version section."
-            $fallbackPattern = "(?ms)^##\s+v\d+\.\d+\.\d+.*?\n(.*?)(?=\n##\s+v|$)"
+            $fallbackPattern = "(?ms)^##\s+v\d+\.\d+\.\d+.*?\n(.*?)(?=\n##\s+v|\z)"
             if ($changelog -match $fallbackPattern) {
                 Write-Host "Found first version section as fallback."
                 $content = $matches[1].Trim()
