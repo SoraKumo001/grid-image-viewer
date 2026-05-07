@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
+using quick_image_viewer.Common;
 using quick_image_viewer.Interfaces;
 using System;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace quick_image_viewer.Services
             _settings = settings;
 
             _animationTimer = new DispatcherTimer();
-            _animationTimer.Interval = TimeSpan.FromMilliseconds(30);
+            _animationTimer.Interval = TimeSpan.FromMilliseconds(Constants.LAYOUT_DEBOUNCE_MS);
             _animationTimer.Tick += AnimationTimer_Tick;
         }
 

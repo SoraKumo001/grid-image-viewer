@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using quick_image_viewer.Common;
 using quick_image_viewer.ViewModels;
 using System;
 using System.Threading.Tasks;
@@ -95,7 +96,7 @@ namespace quick_image_viewer.Views.Controls
             _sliderUpdateTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(100) };
             _sliderUpdateTimer.Tick += (s, e) => UpdateSlider();
 
-            _resizeDebounceTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(30) };
+            _resizeDebounceTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(Constants.LAYOUT_DEBOUNCE_MS) };
             _resizeDebounceTimer.Tick += (s, e) =>
             {
                 _resizeDebounceTimer.Stop();

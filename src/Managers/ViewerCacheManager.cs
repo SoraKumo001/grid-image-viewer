@@ -1,3 +1,4 @@
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
@@ -8,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+
 namespace quick_image_viewer.Managers
 {
     internal class ViewerCacheManager : IViewerCacheManager
@@ -16,8 +18,6 @@ namespace quick_image_viewer.Managers
         private readonly ISettingsManager _settings;
         private readonly Dictionary<string, byte[]> _imageCache = new Dictionary<string, byte[]>();
         private readonly Dictionary<string, SoftwareBitmap> _softwareBitmapCache = new Dictionary<string, SoftwareBitmap>();
-        private const int MAX_CACHE_SIZE = 20;
-        private const int MAX_BITMAP_CACHE_SIZE = 5;
 
         private CancellationTokenSource? _folderPreloadCts;
         private string? _cachedNextFolder;
@@ -56,15 +56,12 @@ namespace quick_image_viewer.Managers
         {
             if (paths == null || paths.Count == 0) return;
 
-            string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
-
             foreach (var path in paths)
             {
                 if (token.IsCancellationRequested) break;
                 if (string.IsNullOrEmpty(path)) continue;
 
-                var ext = Path.GetExtension(path).ToLowerInvariant();
-                bool isVideo = videoExtensions.Contains(ext);
+                bool isVideo = MediaHelper.IsVideo(path);
 
                 if (isVideo)
                 {
@@ -100,7 +97,7 @@ namespace quick_image_viewer.Managers
                         var bytes = await File.ReadAllBytesAsync(path, token);
                         lock (_imageCache)
                         {
-                            if (_imageCache.Count >= MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
+                            if (_imageCache.Count >= Constants.MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
                             _imageCache[path] = bytes;
                         }
                     }
@@ -142,7 +139,7 @@ namespace quick_image_viewer.Managers
 
         private void AddSoftwareBitmapToCache(string path, SoftwareBitmap bitmap)
         {
-            if (_softwareBitmapCache.Count >= MAX_BITMAP_CACHE_SIZE)
+            if (_softwareBitmapCache.Count >= Constants.MAX_BITMAP_CACHE_SIZE)
             {
                 var firstKey = _softwareBitmapCache.Keys.First();
                 _softwareBitmapCache[firstKey].Dispose();
@@ -159,8 +156,6 @@ namespace quick_image_viewer.Managers
             _preloadCts?.Dispose();
             _preloadCts = new CancellationTokenSource();
             var token = _preloadCts.Token;
-
-            string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
 
             var indicesToPreload = new List<int>();
             for (int i = 0; i < 2 * splitCount; i++)
@@ -180,8 +175,7 @@ namespace quick_image_viewer.Managers
             {
                 if (token.IsCancellationRequested) break;
                 var path = playlist[idx];
-                var ext = Path.GetExtension(path).ToLowerInvariant();
-                bool isVideo = videoExtensions.Contains(ext);
+                bool isVideo = MediaHelper.IsVideo(path);
 
                 if (isVideo)
                 {
@@ -212,7 +206,7 @@ namespace quick_image_viewer.Managers
                         var bytes = await File.ReadAllBytesAsync(path, token);
                         lock (_imageCache)
                         {
-                            if (_imageCache.Count >= MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
+                            if (_imageCache.Count >= Constants.MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
                             _imageCache[path] = bytes;
                         }
                     }

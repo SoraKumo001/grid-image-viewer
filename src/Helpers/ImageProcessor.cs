@@ -393,9 +393,7 @@ namespace quick_image_viewer.Helpers
                 }
                 else
                 {
-                    var ext = Path.GetExtension(sourcePath).ToLowerInvariant();
-                    string[] videoExtensions = { ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
-                    if (videoExtensions.Contains(ext))
+                    if (MediaHelper.IsVideo(sourcePath))
                     {
                         try
                         {

@@ -203,8 +203,7 @@ namespace quick_image_viewer.Managers
 
                 var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
                 bool mightBeAnimated = ext == ".webp" || ext == ".gif" || ext == ".avis" || ext == ".webm";
-                string[] videoExtensions = { ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv" };
-                bool isVideo = videoExtensions.Contains(ext);
+                bool isVideo = MediaHelper.IsVideo(item.FilePath);
                 bool isArchive = ArchiveManager.IsArchive(item.FilePath);
 
                 if (mightBeAnimated)

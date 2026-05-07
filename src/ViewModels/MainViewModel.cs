@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using quick_image_viewer.Common;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
@@ -258,8 +259,8 @@ namespace quick_image_viewer.ViewModels
             });
 
             // Default values
-            SlideshowInterval = 5.0;
-            SlideshowCrossfadeDuration = 0.5;
+            SlideshowInterval = Constants.DEFAULT_SLIDESHOW_INTERVAL;
+            SlideshowCrossfadeDuration = Constants.DEFAULT_CROSSFADE_DURATION;
 
             // Initial stats
             RecalculateStats();

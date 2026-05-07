@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.Windows.ApplicationModel.Resources;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
@@ -524,7 +525,7 @@ namespace quick_image_viewer.Managers
 
             if (_resizeTimer == null)
             {
-                _resizeTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+                _resizeTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Constants.LAYOUT_DEBOUNCE_MS) };
                 _resizeTimer.Tick += (s, e) =>
                 {
                     _resizeTimer.Stop();
