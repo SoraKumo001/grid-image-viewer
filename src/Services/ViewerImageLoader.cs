@@ -57,6 +57,7 @@ namespace quick_image_viewer.Services
                     pageControl.IsVideoContent = true;
                     pageControl.LoadingRing.IsActive = true;
                     pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                    pageControl.PagePlayer.Opacity = 0; // ロード完了まで隠しておく
 
                     // サムネイルがあれば表示
                     var cachedThumb = cacheManager.GetCachedSoftwareBitmap(filePath);
@@ -71,13 +72,15 @@ namespace quick_image_viewer.Services
                                 if (token.IsCancellationRequested) return;
                                 await softwareSource.SetBitmapAsync(cachedThumb);
                                 if (token.IsCancellationRequested) return;
+
+                                // 動画の再生準備が既に整っている場合は、サムネイルを表示しない（レースコンディション対策）
+                                if (pageControl.IsMediaReady) return;
+
                                 pageControl.PageImage.Source = softwareSource;
                                 pageControl.PageImage.Visibility = Visibility.Visible;
-                                pageControl.PageImage.Opacity = 0.5; // 動画が重なるので少し薄くしておく
+                                pageControl.PageImage.Opacity = 0.5;
                             }
-                            catch (Exception)
-                            {
-                            }
+                            catch { }
                         });
                     }
                     else
@@ -179,20 +182,28 @@ namespace quick_image_viewer.Services
                                         pageControl.DispatcherQueue.TryEnqueue(() =>
                                         {
                                             if (token.IsCancellationRequested) return;
-                                            pageControl.LoadingRing.IsActive = false;
-                                            pageControl.PageImage.Visibility = Visibility.Collapsed;
-                                            pageControl.PageImage.Opacity = 1.0;
-                                            pageControl.PagePlayer.Opacity = 1.0;
-                                            pageControl.PagePlayer.Visibility = Visibility.Visible;
 
-                                            sender.Play();
+                                            pageControl.IsMediaReady = true;
 
+                                            // 1. まずサイズを確定させ、レイアウトを強制更新する
                                             try
                                             {
                                                 var size = new Windows.Foundation.Size(sender.PlaybackSession.NaturalVideoWidth, sender.PlaybackSession.NaturalVideoHeight);
                                                 pageControl.InvokeVideoSizeChanged(size);
+                                                pageControl.UpdateLayout(); // 同期的にレイアウトを確定させる
                                             }
                                             catch { }
+
+                                            pageControl.LoadingRing.IsActive = false;
+                                            pageControl.PageImage.Source = null; // サムネイルを明示的にクリア
+                                            pageControl.PageImage.Visibility = Visibility.Collapsed;
+                                            pageControl.PageImage.Opacity = 1.0;
+
+                                            // 2. レイアウト確定後に不透明度を戻して表示を開始
+                                            pageControl.PagePlayer.Opacity = 1.0;
+                                            pageControl.PagePlayer.Visibility = Visibility.Visible;
+
+                                            sender.Play();
                                             WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                                         });
                                     }
@@ -203,6 +214,8 @@ namespace quick_image_viewer.Services
                                         {
                                             if (token.IsCancellationRequested) return;
                                             pageControl.LoadingRing.IsActive = false;
+                                            pageControl.PageImage.Source = null; // 失敗時もクリアして残像を防ぐ
+                                            pageControl.PageImage.Visibility = Visibility.Collapsed;
                                             _window.ShowNotification($"Video Error: {args.Error}");
                                             WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                                         });

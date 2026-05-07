@@ -39,6 +39,7 @@ namespace quick_image_viewer.Views.Controls
         private readonly object _frameLock = new();
         private FFmpegMediaSource? _ffmpegSource;
         public bool IsVideoContent { get; set; } = false;
+        public bool IsMediaReady { get; set; } = false;
 
         public FFmpegMediaSource? FFmpegSource
         {
@@ -80,18 +81,18 @@ namespace quick_image_viewer.Views.Controls
             _sliderUpdateTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(100) };
             _sliderUpdateTimer.Tick += (s, e) => UpdateSlider();
 
-            _resizeDebounceTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(150) };
+            _resizeDebounceTimer = new Microsoft.UI.Xaml.DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(30) };
             _resizeDebounceTimer.Tick += (s, e) =>
             {
                 _resizeDebounceTimer.Stop();
                 UpdateVideoVisualSize(_pendingWidth, _pendingHeight);
             };
 
-            // スライダーの操作開始と終了を確実に検知する
+            // 繧ｹ繝ｩ繧､繝 繝ｼ縺ｮ謫堺ｽ懆幕蟋九→邨ゆｺｒ遒ｺ螳溘↓讀懷繧
             TimelineSlider.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(TimelineSlider_PointerPressed), true);
             TimelineSlider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(TimelineSlider_PointerReleased), true);
 
-            // 分割モード対応: 自分のエリア内でのマウス移動だけを監視する
+            // 蛻 蜑ｲ繝｢繝ｼ繝牙ｯｾ蠢: 閾ｪ蛻 縺ｮ繧ｨ繝ｪ繧｢蜀 縺ｧ縺ｮ繝槭え繧ｹ遘ｻ蜍輔□縺代ｒ逶｣隕悶☆繧
             InternalRootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(InternalRootGrid_PointerMoved), true);
 
             this.SizeChanged += ViewerPageControl_SizeChanged;
@@ -202,8 +203,8 @@ namespace quick_image_viewer.Views.Controls
                 InternalMediaPlayer.SetMediaPlayer(mp);
             }
 
-            // WinUI 3の制約: CopyFrameToSoftwareBitmap が不安定な場合があるため、
-            // デフォルトでは直接描画を使用する。
+            // WinUI 3縺ｮ蛻ｶ邏 : CopyFrameToSoftwareBitmap 縺御ｸ榊ｮ壽 縺ｪ蝣ｴ蜷医′縺ゅｋ縺溘ａ縲
+            // 繝ヵ繧ｩ繝ｫ繝医〒縺ｯ逶ｴ謗･謠冗判繧剃ｽｿ逕ｨ縺吶ｋ縲
             mp.IsVideoFrameServerEnabled = false;
 
             InternalMediaPlayer.Visibility = Visibility.Visible;
@@ -242,7 +243,7 @@ namespace quick_image_viewer.Views.Controls
                     dynamic dSender = sender;
                     dSender.CopyFrameToSoftwareBitmap(_frameBitmap);
 
-                    // SoftwareBitmapからSKBitmapへ転送
+                    // SoftwareBitmap縺九ｉSKBitmap縺ｸ霆｢騾
                     UpdateSKFrameBitmap();
                 }
 
@@ -272,12 +273,12 @@ namespace quick_image_viewer.Views.Controls
 
                 if (inputStride == outputStride && inputStride == widthInBytes)
                 {
-                    // 最適化: ストライドが一致しパディングがない場合は一括コピー
+                    // 譛 驕ｩ蛹: 繧ｹ繝医Λ繧､繝峨′荳 閾ｴ縺励ヱ繝繝ぅ繝ｳ繧ｰ縺檎┌縺ｴ蜷医荳 諡ｬ繧ｳ繝斐ｼ
                     System.Buffer.MemoryCopy(dataIn, dataOut, capacity, (uint)(outputStride * height));
                 }
                 else
                 {
-                    // 行ごとにコピー（ストライド考慮）
+                    // 陦後＃縺ｨ縺ｫ繧ｳ繝斐ｼ繧ｹ繝医Λ繧､繝蛾考諷ｮ
                     for (int y = 0; y < height; y++)
                     {
                         System.Buffer.MemoryCopy(
@@ -317,7 +318,7 @@ namespace quick_image_viewer.Views.Controls
             InternalPageImage.VerticalAlignment = v;
             InternalMediaPlayer.HorizontalAlignment = h;
             InternalMediaPlayer.VerticalAlignment = v;
-            // VideoVisualHost (軽量表示用) も同期
+            // VideoVisualHost (蟶ｽ驥陦ｨ遉ｺ逕ｨ) 繧ょ酔譛
             VideoVisualHost.HorizontalAlignment = h;
             VideoVisualHost.VerticalAlignment = v;
 
@@ -390,7 +391,7 @@ namespace quick_image_viewer.Views.Controls
             double targetW = videoW * scale;
             double targetH = videoH * scale;
 
-            // 幅と高さを明示的に設定することで、セルの外へのはみ出しを防ぐ
+            // 蟷 縺ｨ鬮倥＆繧呈 遉ｺ逧 縺ｫ險ｭ螳壹☆繧九％縺ｨ縺ｧ縲繧ｻ繝ｫ縺ｮ螟悶∈縺ｮ縺ｯ縺ｿ蜃ｺ縺励ｒ髦ｲ縺
             InternalMediaPlayer.Width = targetW;
             InternalMediaPlayer.Height = targetH;
             InternalMediaPlayer.Margin = new Thickness(0);
@@ -432,7 +433,7 @@ namespace quick_image_viewer.Views.Controls
                 var session = player.PlaybackSession;
                 if (session == null) return;
 
-                // 読み込み中やエラー時はスキップ
+                // 隱ｭ縺ｿ霎ｼ縺ｿ荳 繧 繧ｨ繝ｩ繝ｼ譎ゅ繧ｹ繧ｭ繝繝
                 if (session.PlaybackState == MediaPlaybackState.Opening ||
                     session.PlaybackState == MediaPlaybackState.None) return;
 
@@ -442,13 +443,13 @@ namespace quick_image_viewer.Views.Controls
                     TimelineSlider.Value = session.Position.TotalSeconds;
                     TimeText.Text = $"{FormatTime(session.Position)} / {FormatTime(session.NaturalDuration)}";
 
-                    // 再生アイコンの更新
+                    // 蜀 逕溘い繧､繧ｳ繝ｳ縺ｮ譖ｴ譁
                     UpdatePlayPauseIcon(session.PlaybackState);
                 }
             }
             catch (System.Exception)
             {
-                // ここは頻繁に呼ばれるので、特定のCOMExceptionなどは無視しても良い
+                // 縺薙％縺ｯ鬘ｵ郢 縺ｫ蜻ｼ縺ｰ繧後ｋ縺ｮ縺ｧ縲∫音螳壹COMException縺ｪ縺ｩ縺ｯ辟｡隕悶＠縺ｦ繧り憶縺
             }
         }
 
@@ -474,7 +475,7 @@ namespace quick_image_viewer.Views.Controls
 
         private void InternalRootGrid_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            // マウスがグリッド外に出たら即座に非表示
+            // 繝槭え繧ｹ縺後げ繝ｪ繝ラ螟悶↓蜃ｺ縺溘ｉ蜊ｳ蠎ｧ縺ｫ髱櫁ｨｨ遉ｺ
             _hideTimer.Stop();
 
             bool hadFocus = false;
@@ -512,7 +513,7 @@ namespace quick_image_viewer.Views.Controls
 
         private void TimelineSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
-            // ドラッグ中のみ、再生位置を同期させる（タイマー更新との競合を防ぐ）
+            // 繝峨Λ繝ｰ荳 縺ｮ縺ｿ縲蜀 逕滓凾鄂ｮ繧貞酔譛 縺輔○繧具ｼ医ち繧､繝槭譖ｴ譁 縺ｨ縺ｮ遶蜷医ｒ髦ｲ縺撰ｼ
             var player = InternalMediaPlayer.MediaPlayer;
             if (_isDraggingSlider && player != null)
             {
@@ -540,10 +541,10 @@ namespace quick_image_viewer.Views.Controls
                 var mp = InternalMediaPlayer.MediaPlayer;
                 if (mp != null)
                 {
-                    // 再生を確実に停止し、リソースを解放する
+                    // 蜀 逕溘ｒ遒ｺ螳溘↓蛛懈ｭ｢縺励 繝ｪ繧ｽ繝ｼ繧ｹ繧定ｧ｣謾ｾ縺吶ｋ
                     try { mp.Pause(); } catch { }
 
-                    // イベント解除を先に行う
+                    // 繧､繝吶Φ繝育ｧ｣髯､繧貞縺ｫ陦後≧
                     mp.MediaOpened -= _onMediaOpenedHandler;
                     mp.MediaFailed -= _onMediaFailedHandler;
                     mp.VideoFrameAvailable -= OnVideoFrameAvailable;
@@ -561,12 +562,14 @@ namespace quick_image_viewer.Views.Controls
                 }
 
                 IsVideoContent = false;
+                IsMediaReady = false;
                 if (_ffmpegSource != null)
                 {
                     _ffmpegSource.Dispose();
                     _ffmpegSource = null;
                 }
 
+                PageImage.Source = null;
                 PageImage.Opacity = 1.0;
                 InternalMediaPlayer.Width = double.NaN;
                 InternalMediaPlayer.Height = double.NaN;

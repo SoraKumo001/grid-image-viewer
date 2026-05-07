@@ -24,7 +24,7 @@
               IsTabStop="False">
 
             <!-- Buffer 1 -->
-            <Grid x:Name="PagesGrid1" Opacity="1" IsTabStop="False">
+            <Grid x:Name="PagesGrid1" Opacity="1" IsTabStop="False" Background="Black">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="B1_Col0" />
                     <ColumnDefinition Width="*" x:Name="B1_Col1" />
@@ -43,7 +43,7 @@
             </Grid>
 
             <!-- Buffer 2 -->
-            <Grid x:Name="PagesGrid2" Opacity="0" IsTabStop="False">
+            <Grid x:Name="PagesGrid2" Opacity="0" IsTabStop="False" Background="Black">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" x:Name="B2_Col0" />
                     <ColumnDefinition Width="*" x:Name="B2_Col1" />
