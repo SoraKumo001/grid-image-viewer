@@ -561,7 +561,6 @@ namespace quick_image_viewer.Views.Controls
                 var mp = InternalMediaPlayer.MediaPlayer;
                 if (mp != null)
                 {
-
                     try { mp.Pause(); } catch { }
 
                     // イベント解除
@@ -570,8 +569,11 @@ namespace quick_image_viewer.Views.Controls
                     mp.VideoFrameAvailable -= OnVideoFrameAvailable;
 
                     // ソースの解除（明示的にnullをセット）
-                    InternalMediaPlayer.Source = null;
                     mp.Source = null;
+                    InternalMediaPlayer.Source = null;
+
+                    // プレイヤーがソースを解放するまで少し待機
+                    await Task.Delay(10);
                 }
 
                 lock (_frameLock)
@@ -586,6 +588,7 @@ namespace quick_image_viewer.Views.Controls
                 IsMediaReady = false;
                 if (_ffmpegSource != null)
                 {
+                    try { _ffmpegSource.PlaybackSession = null; } catch { }
                     _ffmpegSource.Dispose();
                     _ffmpegSource = null;
                 }
@@ -624,6 +627,9 @@ namespace quick_image_viewer.Views.Controls
                 _sliderUpdateTimer.Stop();
                 _hideTimer.Stop();
                 _resizeDebounceTimer.Stop();
+
+                // 重いリソース（FFmpeg）を解放したので、可能であればGCを促す
+                System.GC.Collect(1, System.GCCollectionMode.Optimized, false);
 
                 // クールダウン
                 await Task.Delay(20);

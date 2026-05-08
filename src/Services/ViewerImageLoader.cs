@@ -198,15 +198,17 @@ namespace quick_image_viewer.Services
                                 ViewerPageControl.GetGlobalInitSemaphore().Release();
                             }
 
+                            if (token.IsCancellationRequested) return;
+
                             ConfigureMediaPlayer(mp, pageControl, token);
 
                             var fSource = pageControl.FFmpegSource;
-                            if (fSource != null)
+                            if (fSource != null && !token.IsCancellationRequested)
                             {
                                 await fSource.OpenWithMediaPlayerAsync(mp);
-                                fSource.PlaybackSession = mp.PlaybackSession;
+                                try { fSource.PlaybackSession = mp.PlaybackSession; } catch { }
+                                mp.IsLoopingEnabled = true;
                             }
-                            mp.IsLoopingEnabled = true;
                         }
                         catch (Exception ex)
                         {
@@ -243,14 +245,31 @@ namespace quick_image_viewer.Services
                     var stream = ArchiveManager.GetEntryStream(arc, entry);
                     if (stream != null)
                     {
-                        return await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
+                        var ras = stream.AsRandomAccessStream();
+                        try
+                        {
+                            return await FFmpegMediaSource.CreateFromStreamAsync(ras, config);
+                        }
+                        catch
+                        {
+                            ras.Dispose();
+                            throw;
+                        }
                     }
                 }
                 else
                 {
                     var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
                     var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
-                    return await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
+                    try
+                    {
+                        return await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
+                    }
+                    catch
+                    {
+                        stream.Dispose();
+                        throw;
+                    }
                 }
             }
             catch { }
