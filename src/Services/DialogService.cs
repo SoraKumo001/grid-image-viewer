@@ -18,6 +18,8 @@ namespace quick_image_viewer.Services
 
         public void Show(FrameworkElement overlay, int rowSpan = 2)
         {
+            if (_window.IsDialogOpen) return;
+
             if (!string.IsNullOrEmpty(overlay.Name))
             {
                 Close(overlay.Name);

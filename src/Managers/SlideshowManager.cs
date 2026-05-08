@@ -49,6 +49,8 @@ namespace quick_image_viewer.Managers
 
         public async void OpenSlideshowDialogAsync()
         {
+            if (ViewModel.IsDialogOpen) return;
+
             if (ViewModel.IsSlideshowRunning)
             {
                 StopSlideshow();
