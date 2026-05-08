@@ -393,12 +393,24 @@ namespace quick_image_viewer.Managers
 
                 var prevBuffer = _window.ViewerControl.CurrentBuffer;
                 var nextBuffer = _window.ViewerControl.InactiveBuffer;
+                int prevBufferIdx = _window.ViewerControl.CurrentBufferIndex;
 
                 if (isSlideshowRunning && _settings.SlideshowCrossfade)
                 {
                     _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
                     UpdateBufferReferences();
                     _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
+
+                    var prevControls = _window.ViewerControl.PageControlsBuffer[prevBufferIdx];
+                    _ = Task.Run(async () =>
+                    {
+                        double duration = _settings.SlideshowCrossfadeDuration > 0 ? _settings.SlideshowCrossfadeDuration : 0.5;
+                        await Task.Delay((int)(duration * 1000) + 100);
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            foreach (var pc in prevControls) pc.ResetPlayback();
+                        });
+                    });
                 }
                 else
                 {
@@ -409,6 +421,8 @@ namespace quick_image_viewer.Managers
                     // Hide the old buffer
                     prevBuffer.Opacity = 0;
                     prevBuffer.Visibility = Visibility.Collapsed;
+
+                    foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx]) pc.ResetPlayback();
 
                     _window.MetadataDisplayService.UpdateMetadataPanel();
                 }

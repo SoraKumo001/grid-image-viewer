@@ -165,14 +165,13 @@ namespace quick_image_viewer.Services
                 {
                     if (token.IsCancellationRequested) return;
 
-                    var tcs = new TaskCompletionSource();
-                    bool enqueued = pageControl.DispatcherQueue.TryEnqueue(async () =>
+                    pageControl.DispatcherQueue.TryEnqueue(async () =>
                     {
+                        var mp = pageControl.PagePlayer.MediaPlayer;
+                        if (mp == null || token.IsCancellationRequested) return;
+
                         try
                         {
-                            var mp = pageControl.PagePlayer.MediaPlayer;
-                            if (mp == null || token.IsCancellationRequested) return;
-
                             await ViewerPageControl.GetGlobalInitSemaphore().WaitAsync(token);
                             try
                             {
@@ -218,22 +217,10 @@ namespace quick_image_viewer.Services
                                 _window.ShowNotification($"FFmpeg Error: {ex.Message}");
                             }
                         }
-                        finally
-                        {
-                            tcs.TrySetResult();
-                        }
                     });
-
-                    if (!enqueued)
-                    {
-                        tcs.TrySetResult();
-                    }
-
-                    await tcs.Task;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    if (ex is OperationCanceledException || ex is TaskCanceledException) return;
                     pageControl.DispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
