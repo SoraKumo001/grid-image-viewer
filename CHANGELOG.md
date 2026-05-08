@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.5 - 2026-05-08
+
+- **Core Architecture & Refactoring**:
+  - [Refactor] Significant overhaul of the application core, initializing a robust architecture with centralized `MainWindow`, `ViewModels`, and specialized managers.
+  - [Refactor] Re-implemented playlist, viewer, and cache management systems to improve navigation speed and directory loading performance.
+- **Slideshow System**:
+  - [Feature] Introduced `SlideshowManager` to handle the entire slideshow lifecycle, including configuration persistence and state synchronization with the main viewer.
+  - [Fix] Resolved video playback issues during slideshow transitions.
+- **Media Rendering & Performance**:
+  - [Feature] Implemented `ViewerPageControl` for enhanced media playback and high-performance rendering support.
+  - [Feature] Introduced `GridManager` for the thumbnail panel, featuring smooth layout animations and optimized scroll tracking.
+  - [Feature] Re-engineered the image and video loading architecture with native FFmpeg integration and advanced cache management.
+- **Video Stability**:
+  - [Fix] Fixed video playback bugs in both normal and slideshow modes to ensure consistent behavior across all view states.
+- **CI/CD**:
+  - [Feature] Added a new GitHub Actions workflow for automated Windows builds and release management.
+
 ## v1.4.4 (Current) - 2026-05-07
 
 - **Video Stability & GPU Hardening**:
