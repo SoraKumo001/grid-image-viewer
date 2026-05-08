@@ -55,6 +55,8 @@ namespace quick_image_viewer.Managers
                 return;
             }
 
+            _mainWindow.ViewerManager.PauseAllVideo();
+
             // Load settings into ViewModel
             ViewModel.SlideshowMangaSplitCount = _settings.SlideshowMangaSplitCount;
             ViewModel.SlideshowFullscreen = _settings.SlideshowFullscreen;
@@ -130,6 +132,8 @@ namespace quick_image_viewer.Managers
         public void StartSlideshow()
         {
             if (IsSlideshowRunning) return;
+
+            _mainWindow.ViewerManager.PauseAllVideo();
 
             SetSlideshowControlsEnabled(false);
 
