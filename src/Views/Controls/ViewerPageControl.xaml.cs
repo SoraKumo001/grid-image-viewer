@@ -20,7 +20,9 @@ namespace quick_image_viewer.Views.Controls
         public Grid RootGrid => InternalRootGrid;
         public Image PageImage => InternalPageImage;
         public SkiaSharp.Views.Windows.SKXamlCanvas PageCanvas => InternalPageCanvas;
-        public MediaPlayerElement PagePlayer => InternalMediaPlayer;
+
+        private MediaPlayerElement? _internalMediaPlayer;
+        public MediaPlayerElement PagePlayer => _internalMediaPlayer ?? throw new InvalidOperationException("MediaPlayerElement not initialized");
 
         public ProgressRing LoadingRing => InternalLoadingRing;
         public Border FocusBorder => InternalFocusBorder;
@@ -39,12 +41,50 @@ namespace quick_image_viewer.Views.Controls
 
         public static System.Threading.SemaphoreSlim GetGlobalInitSemaphore() => _globalVideoInitSemaphore;
 
+        public void RecreateMediaPlayerElement()
+        {
+            if (_internalMediaPlayer != null)
+            {
+                try
+                {
+                    var oldPlayer = _internalMediaPlayer.MediaPlayer;
+                    if (oldPlayer != null)
+                    {
+                        oldPlayer.Pause();
+                        oldPlayer.Source = null;
+                    }
+                    _internalMediaPlayer.Source = null;
+                }
+                catch { }
+                MediaPlayerContainer.Children.Remove(_internalMediaPlayer);
+                _internalMediaPlayer = null;
+            }
+
+            _internalMediaPlayer = new MediaPlayerElement
+            {
+                AutoPlay = false,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                AreTransportControlsEnabled = false,
+                IsHitTestVisible = false,
+                IsTabStop = false,
+                AllowFocusOnInteraction = false,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                FocusVisualPrimaryThickness = new Thickness(0),
+                FocusVisualSecondaryThickness = new Thickness(0),
+                Visibility = Visibility.Collapsed
+            };
+
+            MediaPlayerContainer.Children.Add(_internalMediaPlayer);
+        }
+
         public Windows.Media.Playback.MediaPlayer CreateNewMediaPlayer()
         {
+            RecreateMediaPlayerElement();
             var mp = new Windows.Media.Playback.MediaPlayer();
             // デフォルトではフレームサーバーは無効（標準表示）
             mp.IsVideoFrameServerEnabled = false;
-            InternalMediaPlayer.SetMediaPlayer(mp);
+            _internalMediaPlayer!.SetMediaPlayer(mp);
             return mp;
         }
 
@@ -131,6 +171,7 @@ namespace quick_image_viewer.Views.Controls
             InternalRootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(InternalRootGrid_PointerMoved), true);
 
             this.SizeChanged += ViewerPageControl_SizeChanged;
+            RecreateMediaPlayerElement();
         }
 
         private void ViewerPageControl_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -142,7 +183,7 @@ namespace quick_image_viewer.Views.Controls
 
             UpdateClip(_pendingWidth, _pendingHeight);
 
-            var mp = InternalMediaPlayer.MediaPlayer;
+            var mp = _internalMediaPlayer?.MediaPlayer;
             if (mp != null && mp.PlaybackSession.PlaybackState != MediaPlaybackState.None)
             {
                 double scale = 1.0;
@@ -216,9 +257,10 @@ namespace quick_image_viewer.Views.Controls
 
         public MediaPlayer GetOrCreateMediaPlayer()
         {
-            var mp = InternalMediaPlayer.MediaPlayer;
+            var mp = _internalMediaPlayer?.MediaPlayer;
             if (mp == null)
             {
+                RecreateMediaPlayerElement();
                 mp = new MediaPlayer
                 {
                     IsLoopingEnabled = true,
@@ -235,14 +277,15 @@ namespace quick_image_viewer.Views.Controls
                         player.IsLoopingEnabled = true;
                     }
                 };
-                InternalMediaPlayer.SetMediaPlayer(mp);
+                _internalMediaPlayer!.SetMediaPlayer(mp);
             }
 
 
             mp.IsVideoFrameServerEnabled = false;
 
-            InternalMediaPlayer.Visibility = Visibility.Visible;
-            InternalMediaPlayer.Opacity = 1.0;
+            _internalMediaPlayer!.Visibility = Visibility.Visible;
+            _internalMediaPlayer!.Opacity = 1.0;
+            MediaPlayerContainer.Visibility = Visibility.Visible;
 
             InternalPageCanvas.Visibility = Visibility.Collapsed;
             VideoVisualHost.Visibility = Visibility.Collapsed;
@@ -337,22 +380,25 @@ namespace quick_image_viewer.Views.Controls
 
         public void SetupPlayer(MediaPlayer player)
         {
-            if (InternalMediaPlayer.MediaPlayer != player)
+            if (_internalMediaPlayer == null) RecreateMediaPlayerElement();
+            if (_internalMediaPlayer!.MediaPlayer != player)
             {
-                InternalMediaPlayer.SetMediaPlayer(player);
+                _internalMediaPlayer.SetMediaPlayer(player);
             }
             player.Volume = _settings.VideoVolume;
             player.IsMuted = _settings.VideoVolume <= 0;
-            InternalMediaPlayer.Visibility = Visibility.Visible;
+            _internalMediaPlayer.Visibility = Visibility.Visible;
+            MediaPlayerContainer.Visibility = Visibility.Visible;
             VideoVisualHost.Visibility = Visibility.Collapsed;
         }
 
         public void UpdateVolume()
         {
-            if (InternalMediaPlayer.MediaPlayer != null)
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            if (mp != null)
             {
-                InternalMediaPlayer.MediaPlayer.Volume = _settings.VideoVolume;
-                InternalMediaPlayer.MediaPlayer.IsMuted = _settings.VideoVolume <= 0;
+                mp.Volume = _settings.VideoVolume;
+                mp.IsMuted = _settings.VideoVolume <= 0;
             }
         }
 
@@ -360,8 +406,11 @@ namespace quick_image_viewer.Views.Controls
         {
             InternalPageImage.HorizontalAlignment = h;
             InternalPageImage.VerticalAlignment = v;
-            InternalMediaPlayer.HorizontalAlignment = h;
-            InternalMediaPlayer.VerticalAlignment = v;
+            if (_internalMediaPlayer != null)
+            {
+                _internalMediaPlayer.HorizontalAlignment = h;
+                _internalMediaPlayer.VerticalAlignment = v;
+            }
 
             VideoVisualHost.HorizontalAlignment = h;
             VideoVisualHost.VerticalAlignment = v;
@@ -379,30 +428,32 @@ namespace quick_image_viewer.Views.Controls
 
         public void PauseVideo()
         {
-            if (InternalMediaPlayer.MediaPlayer != null)
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            if (mp != null)
             {
-                var session = InternalMediaPlayer.MediaPlayer.PlaybackSession;
+                var session = mp.PlaybackSession;
                 _wasPlayingBeforeTransition = (session.PlaybackState == MediaPlaybackState.Playing);
                 if (_wasPlayingBeforeTransition)
                 {
-                    InternalMediaPlayer.MediaPlayer.Pause();
+                    mp.Pause();
                 }
             }
         }
 
         public void ResumeVideo()
         {
-            if (InternalMediaPlayer.MediaPlayer != null && _wasPlayingBeforeTransition)
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            if (mp != null && _wasPlayingBeforeTransition)
             {
-                InternalMediaPlayer.MediaPlayer.Play();
+                mp.Play();
                 _wasPlayingBeforeTransition = false;
             }
         }
 
         internal void UpdateVideoVisualSize(double overrideW = -1, double overrideH = -1)
         {
-            var mp = InternalMediaPlayer.MediaPlayer;
-            if (mp == null || !IsVideoContent) return;
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            if (mp == null || !IsVideoContent || _internalMediaPlayer == null) return;
 
             var session = mp.PlaybackSession;
             if (session == null) return;
@@ -438,20 +489,20 @@ namespace quick_image_viewer.Views.Controls
             double videoW = currentW;
             double videoH = currentH;
 
-            if (InternalMediaPlayer.Stretch == Stretch.Fill)
+            if (_internalMediaPlayer.Stretch == Stretch.Fill)
             {
-                InternalMediaPlayer.Width = double.NaN;
-                InternalMediaPlayer.Height = double.NaN;
-                InternalMediaPlayer.Margin = new Thickness(0);
+                _internalMediaPlayer.Width = double.NaN;
+                _internalMediaPlayer.Height = double.NaN;
+                _internalMediaPlayer.Margin = new Thickness(0);
                 return;
             }
 
             double scale = System.Math.Min(containerW / videoW, containerH / videoH);
-            if (InternalMediaPlayer.Stretch == Stretch.UniformToFill)
+            if (_internalMediaPlayer.Stretch == Stretch.UniformToFill)
             {
                 scale = System.Math.Max(containerW / videoW, containerH / videoH);
             }
-            else if (InternalMediaPlayer.Stretch == Stretch.None)
+            else if (_internalMediaPlayer.Stretch == Stretch.None)
             {
                 scale = 1.0;
             }
@@ -460,9 +511,9 @@ namespace quick_image_viewer.Views.Controls
             double targetH = videoH * scale;
 
 
-            InternalMediaPlayer.Width = targetW;
-            InternalMediaPlayer.Height = targetH;
-            InternalMediaPlayer.Margin = new Thickness(0);
+            _internalMediaPlayer.Width = targetW;
+            _internalMediaPlayer.Height = targetH;
+            _internalMediaPlayer.Margin = new Thickness(0);
         }
 
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -481,9 +532,10 @@ namespace quick_image_viewer.Views.Controls
             _isDraggingSlider = false;
             try
             {
-                if (InternalMediaPlayer.MediaPlayer != null)
+                var mp = _internalMediaPlayer?.MediaPlayer;
+                if (mp != null)
                 {
-                    InternalMediaPlayer.MediaPlayer.PlaybackSession.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
+                    mp.PlaybackSession.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
                 }
             }
             catch (System.Exception)
@@ -493,7 +545,7 @@ namespace quick_image_viewer.Views.Controls
 
         private void UpdateSlider()
         {
-            var player = InternalMediaPlayer.MediaPlayer;
+            var player = _internalMediaPlayer?.MediaPlayer;
             if (_isDraggingSlider || player == null) return;
 
             try
@@ -572,7 +624,7 @@ namespace quick_image_viewer.Views.Controls
 
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
         {
-            var player = InternalMediaPlayer.MediaPlayer;
+            var player = _internalMediaPlayer?.MediaPlayer;
             if (player == null) return;
 
             var session = player.PlaybackSession;
@@ -588,7 +640,7 @@ namespace quick_image_viewer.Views.Controls
         private void TimelineSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
 
-            var player = InternalMediaPlayer.MediaPlayer;
+            var player = _internalMediaPlayer?.MediaPlayer;
             if (_isDraggingSlider && player != null)
             {
                 try
@@ -617,7 +669,7 @@ namespace quick_image_viewer.Views.Controls
             await _loadingSemaphore.WaitAsync();
             try
             {
-                var mp = InternalMediaPlayer.MediaPlayer;
+                var mp = _internalMediaPlayer?.MediaPlayer;
                 if (mp != null)
                 {
                     try { mp.Pause(); } catch { }
@@ -629,7 +681,7 @@ namespace quick_image_viewer.Views.Controls
 
                     // ソースの解除（明示的にnullをセット）
                     try { mp.Source = null; } catch { }
-                    try { InternalMediaPlayer.Source = null; } catch { }
+                    try { _internalMediaPlayer?.Source = null; } catch { }
 
                     // プレイヤーがソースを解放するまで少し待機
                     await Task.Delay(20);
@@ -661,11 +713,15 @@ namespace quick_image_viewer.Views.Controls
                 }
                 PageImage.Source = null;
                 PageImage.Opacity = 1.0;
-                InternalMediaPlayer.Width = double.NaN;
-                InternalMediaPlayer.Height = double.NaN;
-                InternalMediaPlayer.Margin = new Thickness(0);
+                if (_internalMediaPlayer != null)
+                {
+                    _internalMediaPlayer.Width = double.NaN;
+                    _internalMediaPlayer.Height = double.NaN;
+                    _internalMediaPlayer.Margin = new Thickness(0);
+                    _internalMediaPlayer.Visibility = Visibility.Collapsed;
+                }
                 VideoVisualHost.Visibility = Visibility.Collapsed;
-                InternalMediaPlayer.Visibility = Visibility.Collapsed;
+                MediaPlayerContainer.Visibility = Visibility.Collapsed;
                 InternalPageCanvas.Visibility = Visibility.Collapsed;
 
                 bool hadFocus = false;
@@ -715,7 +771,7 @@ namespace quick_image_viewer.Views.Controls
 
         public void SetMediaHandlers(Windows.Foundation.TypedEventHandler<MediaPlayer, object> opened, Windows.Foundation.TypedEventHandler<MediaPlayer, MediaPlayerFailedEventArgs> failed)
         {
-            var mp = InternalMediaPlayer.MediaPlayer;
+            var mp = _internalMediaPlayer?.MediaPlayer;
             if (mp != null)
             {
                 mp.MediaOpened -= _onMediaOpenedHandler;

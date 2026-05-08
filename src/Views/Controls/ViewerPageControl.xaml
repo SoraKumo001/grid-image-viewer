@@ -16,18 +16,13 @@
         <!-- 軽量表示用のホスト -->
         <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsTabStop="False" />
         
-        <MediaPlayerElement x:Name="InternalMediaPlayer" 
-                            Visibility="Collapsed" 
-                            AutoPlay="False" 
-                            HorizontalAlignment="Stretch" 
-                            VerticalAlignment="Stretch" 
-                            AreTransportControlsEnabled="False" 
-                            IsHitTestVisible="False" 
-                            IsTabStop="False" 
-                            AllowFocusOnInteraction="False" 
-                            Background="Transparent"
-                            FocusVisualPrimaryThickness="0"
-                            FocusVisualSecondaryThickness="0" />
+        <Grid x:Name="MediaPlayerContainer" 
+              Visibility="Collapsed" 
+              HorizontalAlignment="Stretch" 
+              VerticalAlignment="Stretch" 
+              IsHitTestVisible="False" 
+              IsTabStop="False" 
+              Background="Transparent" />
         
         <!-- 独自再生コントロール -->
         <Border x:Name="CustomTransportPanel" 
