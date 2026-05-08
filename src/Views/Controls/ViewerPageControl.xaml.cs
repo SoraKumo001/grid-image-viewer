@@ -478,6 +478,12 @@ namespace quick_image_viewer.Views.Controls
         {
             if (IsVideoContent)
             {
+                var mainView = ((App)Application.Current).MainView;
+                if (mainView?.SlideshowManager?.IsSlideshowRunning == true)
+                {
+                    CustomTransportPanel.Visibility = Visibility.Collapsed;
+                    return;
+                }
                 CustomTransportPanel.Visibility = Visibility.Visible;
 
                 _hideTimer.Stop();
