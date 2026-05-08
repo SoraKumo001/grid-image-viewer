@@ -221,6 +221,15 @@
                        PrimaryButtonClick="SlideshowDialog_PrimaryButtonClick"
                        Opened="SlideshowDialog_Opened">
             <StackPanel Spacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock x:Uid="SlideshowMangaSplitCountLabel" Text="分割モード：" VerticalAlignment="Center" Width="100"/>
+                    <ComboBox x:Name="SlideshowMangaSplitCount" x:FieldModifier="internal" SelectedIndex="{x:Bind ViewModel.SlideshowMangaSplitCount, Mode=TwoWay}" Width="240">
+                        <ComboBoxItem x:Uid="SlideshowMangaSplitCount_Keep" Content="現在の設定を維持"/>
+                        <ComboBoxItem x:Uid="SlideshowMangaSplitCount_1" Content="1枚表示"/>
+                        <ComboBoxItem x:Uid="SlideshowMangaSplitCount_2" Content="2枚表示"/>
+                        <ComboBoxItem x:Uid="SlideshowMangaSplitCount_4" Content="4枚表示"/>
+                    </ComboBox>
+                </StackPanel>
                 <CheckBox x:Name="SlideshowFullscreen" x:FieldModifier="internal" x:Uid="SlideshowFullscreen" Content="全画面表示(_F)" AccessKey="F" IsChecked="{x:Bind ViewModel.SlideshowFullscreen, Mode=TwoWay}"/>
                 <CheckBox x:Name="SlideshowRandom" x:FieldModifier="internal" x:Uid="SlideshowRandom" Content="ランダムな並び順(_R)" AccessKey="R" IsChecked="{x:Bind ViewModel.SlideshowRandom, Mode=TwoWay}"/>
                 <CheckBox x:Name="SlideshowLoop" x:FieldModifier="internal" x:Uid="SlideshowLoop" Content="ループする(_L)" AccessKey="L" IsChecked="{x:Bind ViewModel.SlideshowLoop, Mode=TwoWay}"/>

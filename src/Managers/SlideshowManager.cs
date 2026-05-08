@@ -14,6 +14,7 @@ namespace quick_image_viewer.Managers
         private ISettingsManager _settings;
         private ISlideshowService _slideshowService;
         private IViewerStateService _state;
+        private int _originalMangaSplitCount = 1;
 
         public bool IsSlideshowRunning { get => _state.IsSlideshowRunning; }
         public int[] SlideshowRandomIndices { get => _slideshowService.CurrentRandomIndices; }
@@ -55,6 +56,7 @@ namespace quick_image_viewer.Managers
             }
 
             // Load settings into ViewModel
+            ViewModel.SlideshowMangaSplitCount = _settings.SlideshowMangaSplitCount;
             ViewModel.SlideshowFullscreen = _settings.SlideshowFullscreen;
             ViewModel.SlideshowRandom = _settings.SlideshowRandom;
             ViewModel.SlideshowLoop = _settings.SlideshowLoop;
@@ -93,6 +95,7 @@ namespace quick_image_viewer.Managers
 
         private void SetSlideshowControlsEnabled(bool enabled)
         {
+            _mainWindow.SlideshowMangaSplitCount.IsEnabled = enabled;
             _mainWindow.SlideshowFullscreen.IsEnabled = enabled;
             _mainWindow.SlideshowRandom.IsEnabled = enabled;
             _mainWindow.SlideshowLoop.IsEnabled = enabled;
@@ -108,6 +111,7 @@ namespace quick_image_viewer.Managers
         public void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
             // Sync ViewModel to Settings
+            _settings.SlideshowMangaSplitCount = ViewModel.SlideshowMangaSplitCount;
             _settings.SlideshowFullscreen = ViewModel.SlideshowFullscreen;
             _settings.SlideshowRandom = ViewModel.SlideshowRandom;
             _settings.SlideshowLoop = ViewModel.SlideshowLoop;
@@ -128,6 +132,15 @@ namespace quick_image_viewer.Managers
             if (IsSlideshowRunning) return;
 
             SetSlideshowControlsEnabled(false);
+
+            _originalMangaSplitCount = _settings.MangaSplitCount;
+            if (_settings.SlideshowMangaSplitCount > 0)
+            {
+                int split = _settings.SlideshowMangaSplitCount;
+                if (split == 3) split = 4;
+                _settings.MangaSplitCount = split;
+                ViewModel.MangaSplitCount = split;
+            }
 
             if (_settings.SlideshowFullscreen)
             {
@@ -190,6 +203,12 @@ namespace quick_image_viewer.Managers
             if (_settings.SlideshowFullscreen)
             {
                 _mainWindow.IsFullscreen = false;
+            }
+
+            if (_settings.SlideshowMangaSplitCount > 0)
+            {
+                _settings.MangaSplitCount = _originalMangaSplitCount;
+                ViewModel.MangaSplitCount = _originalMangaSplitCount;
             }
 
             if (_wasExpanded)

@@ -172,6 +172,21 @@
   <data name="SlideshowDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="SlideshowMangaSplitCountLabel.Text" xml:space="preserve">
+    <value>Split Mode:</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_Keep.Content" xml:space="preserve">
+    <value>Keep Current</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_1.Content" xml:space="preserve">
+    <value>Single Page</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_2.Content" xml:space="preserve">
+    <value>Two Pages</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_4.Content" xml:space="preserve">
+    <value>Four Pages</value>
+  </data>
   <data name="SlideshowFullscreen.Content" xml:space="preserve">
     <value>Fullscreen(_F)</value>
   </data>

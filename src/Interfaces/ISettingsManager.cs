@@ -6,6 +6,7 @@ namespace quick_image_viewer.Interfaces
     {
         int MangaSplitCount { get; set; }
         int QuadLayoutMode { get; set; }
+        int SlideshowMangaSplitCount { get; set; }
         bool SlideshowFullscreen { get; set; }
         bool SlideshowRandom { get; set; }
         bool SlideshowLoop { get; set; }

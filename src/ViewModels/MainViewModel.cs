@@ -72,6 +72,9 @@ namespace quick_image_viewer.ViewModels
         }
 
         [ObservableProperty]
+        public partial int SlideshowMangaSplitCount { get; set; }
+
+        [ObservableProperty]
         public partial bool SlideshowFullscreen { get; set; }
 
         [ObservableProperty]

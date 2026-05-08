@@ -80,6 +80,7 @@ namespace quick_image_viewer.Interfaces
 
         // UI elements for Slideshow
         ContentDialog SlideshowDialog { get; }
+        ComboBox SlideshowMangaSplitCount { get; }
         CheckBox SlideshowFullscreen { get; }
         CheckBox SlideshowRandom { get; }
         CheckBox SlideshowLoop { get; }

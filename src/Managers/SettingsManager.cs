@@ -73,6 +73,7 @@ namespace quick_image_viewer.Managers
 
         public int MangaSplitCount { get; set; } = 1; // 1, 2, or 4
         public int QuadLayoutMode { get; set; } = 0; // 0: Auto, 1: Horizontal, 2: 2x2 Grid
+        public int SlideshowMangaSplitCount { get; set; } = 0; // 0: Keep current, 1: 1 page, 2: 2 pages, 3: 4 pages
         public bool SlideshowFullscreen { get; set; } = false;
         public bool SlideshowRandom { get; set; } = true;
         public bool SlideshowLoop { get; set; } = true;
@@ -134,6 +135,7 @@ namespace quick_image_viewer.Managers
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
+        public int SlideshowMangaSplitCount { get => _data.SlideshowMangaSplitCount; set => _data.SlideshowMangaSplitCount = value; }
 
         public bool SlideshowFullscreen { get => _data.SlideshowFullscreen; set => _data.SlideshowFullscreen = value; }
         public bool SlideshowRandom { get => _data.SlideshowRandom; set => _data.SlideshowRandom = value; }

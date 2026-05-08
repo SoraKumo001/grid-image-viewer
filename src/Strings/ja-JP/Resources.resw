@@ -172,6 +172,21 @@
   <data name="SlideshowDialog.CloseButtonText" xml:space="preserve">
     <value>キャンセル</value>
   </data>
+  <data name="SlideshowMangaSplitCountLabel.Text" xml:space="preserve">
+    <value>分割モード：</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_Keep.Content" xml:space="preserve">
+    <value>現在の設定を維持</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_1.Content" xml:space="preserve">
+    <value>1枚表示</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_2.Content" xml:space="preserve">
+    <value>2枚表示</value>
+  </data>
+  <data name="SlideshowMangaSplitCount_4.Content" xml:space="preserve">
+    <value>4枚表示</value>
+  </data>
   <data name="SlideshowFullscreen.Content" xml:space="preserve">
     <value>全画面表示(_F)</value>
   </data>

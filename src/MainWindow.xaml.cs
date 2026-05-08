@@ -91,6 +91,7 @@ namespace quick_image_viewer
         MenuFlyoutSubItem IMainView.MenuBookmarkList => MenuBookmarkList;
 
         ContentDialog IMainView.SlideshowDialog => SlideshowDialog;
+        ComboBox IMainView.SlideshowMangaSplitCount => SlideshowMangaSplitCount;
         CheckBox IMainView.SlideshowFullscreen => SlideshowFullscreen;
         CheckBox IMainView.SlideshowRandom => SlideshowRandom;
         CheckBox IMainView.SlideshowLoop => SlideshowLoop;
