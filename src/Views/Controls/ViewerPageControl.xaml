@@ -18,7 +18,7 @@
         
         <MediaPlayerElement x:Name="InternalMediaPlayer" 
                             Visibility="Collapsed" 
-                            AutoPlay="True" 
+                            AutoPlay="False" 
                             HorizontalAlignment="Stretch" 
                             VerticalAlignment="Stretch" 
                             AreTransportControlsEnabled="False" 

@@ -6,6 +6,7 @@ using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
 using quick_image_viewer.ViewModels;
 using System;
+using System.Threading.Tasks;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -25,9 +26,21 @@ namespace quick_image_viewer
             this.UnhandledException += (s, e) =>
             {
                 System.Diagnostics.Debug.WriteLine($"[App] Unhandled Exception: {e.Message}");
-                System.Diagnostics.Debug.WriteLine($"[App] Exception StackTrace: {e.Exception?.StackTrace}");
-                // e.Handled = true; // 必要に応じて継続させる場合はこれを有効にする
+                System.Diagnostics.Debug.WriteLine($"[App] Exception Detail: {e.Exception}");
+                // e.Handled = true;
             };
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Unobserved Task Exception: {e.Exception}");
+                e.SetObserved();
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] AppDomain Exception: {e.ExceptionObject}");
+            };
+
             Services = ConfigureServices();
             InitializeComponent();
         }

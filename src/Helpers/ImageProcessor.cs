@@ -410,9 +410,31 @@ namespace quick_image_viewer.Helpers
                         return (1920, 1080);
                     }
 
-                    using var stream = File.OpenRead(sourcePath);
-                    using var codec = SKCodec.Create(stream);
-                    if (codec != null) result = (codec.Info.Width, codec.Info.Height);
+                    // WinUI 3 (Packaged) 安全な読み込み
+                    try
+                    {
+                        var task = Task.Run(async () =>
+                        {
+                            var file = await StorageFile.GetFileFromPathAsync(sourcePath);
+                            using var ras = await file.OpenReadAsync();
+                            using var stream = ras.AsStreamForRead();
+                            using var codec = SKCodec.Create(stream);
+                            if (codec != null) return (codec.Info.Width, codec.Info.Height);
+                            return (0, 0);
+                        });
+                        result = task.GetAwaiter().GetResult();
+                    }
+                    catch
+                    {
+                        // Fallback to legacy if possible
+                        try
+                        {
+                            using var stream = File.OpenRead(sourcePath);
+                            using var codec = SKCodec.Create(stream);
+                            if (codec != null) result = (codec.Info.Width, codec.Info.Height);
+                        }
+                        catch { }
+                    }
                 }
 
                 if (result.width > 0)
@@ -432,12 +454,21 @@ namespace quick_image_viewer.Helpers
                 if (ArchiveManager.IsArchivePath(filePath)) return null; // アーカイブ内は別途検討
 
                 var file = await StorageFile.GetFileFromPathAsync(filePath);
+                if (file == null) return null;
+
                 using var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.VideosView, maxDim, ThumbnailOptions.UseCurrentScale);
 
-                if (thumbnail != null)
+                if (thumbnail != null && thumbnail.Size > 0)
                 {
-                    var decoder = await BitmapDecoder.CreateAsync(thumbnail);
-                    return await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                    try
+                    {
+                        var decoder = await BitmapDecoder.CreateAsync(thumbnail);
+                        return await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ImageProcessor] Thumbnail decode error: {ex.Message}");
+                    }
                 }
             }
             catch { }

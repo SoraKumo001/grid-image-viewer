@@ -17,7 +17,7 @@ namespace quick_image_viewer.Services
 {
     internal class ViewerImageLoader(IMainView window, ISettingsManager settings) : IViewerImageLoader
     {
-        private readonly IMainView _window = window;
+        private readonly IMainView _window = window ?? throw new ArgumentNullException(nameof(window));
         private readonly ISettingsManager _settings = settings;
 
         public async Task LoadPageIntoBufferAsync(
@@ -28,6 +28,7 @@ namespace quick_image_viewer.Services
             CancellationToken token,
             IViewerCacheManager cacheManager)
         {
+            System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Loading: {filePath}");
             filePath = EnsureValidFilePath(filePath);
             if (string.IsNullOrEmpty(filePath)) return;
 
@@ -45,16 +46,20 @@ namespace quick_image_viewer.Services
 
                 if (isVideo)
                 {
+                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading as Video");
                     await LoadVideoAsync(filePath, pageControl, renderer, token);
                 }
                 else if (IsSkiaSupported(filePath))
                 {
+                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading as Skia");
                     await LoadSkiaImageAsync(filePath, pageControl, renderer, token);
                 }
                 else
                 {
+                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading as Normal Image");
                     await LoadNormalImageAsync(filePath, pageControl, renderer, token, cacheManager);
                 }
+                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Load Completed: {filePath}");
             }
             catch (Exception)
             {
@@ -64,7 +69,8 @@ namespace quick_image_viewer.Services
             {
                 if (!isVideo)
                 {
-                    _window.DispatcherQueue.TryEnqueue(() =>
+                    var dispatcher = pageControl.DispatcherQueue ?? _window?.DispatcherQueue;
+                    dispatcher?.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
                         pageControl.LoadingRing.IsActive = false;
@@ -85,9 +91,16 @@ namespace quick_image_viewer.Services
 
         private void PrepareUIForLoading(string filePath, ViewerPageControl pageControl, bool isVideo, CancellationToken token, IViewerCacheManager cacheManager)
         {
-            _window.DispatcherQueue.TryEnqueue(() =>
+            var dispatcher = pageControl.DispatcherQueue ?? _window?.DispatcherQueue;
+            if (dispatcher == null) return;
+
+            dispatcher.TryEnqueue(() =>
             {
                 if (token.IsCancellationRequested) return;
+
+                bool isSlideshowRunning = false;
+                try { isSlideshowRunning = _window?.SlideshowManager?.IsSlideshowRunning ?? false; } catch { }
+
                 if (isVideo)
                 {
                     pageControl.IsVideoContent = true;
@@ -95,12 +108,22 @@ namespace quick_image_viewer.Services
                     pageControl.PageCanvas.Visibility = Visibility.Collapsed;
                     pageControl.PagePlayer.Opacity = 0;
 
-                    ShowVideoThumbnailIfAvailable(filePath, pageControl, token, cacheManager);
-                    pageControl.GetOrCreateMediaPlayer();
+                    // 自動再生（スライドショー）中でない場合のみサムネイルを表示
+                    if (!isSlideshowRunning)
+                    {
+                        ShowVideoThumbnailIfAvailable(filePath, pageControl, token, cacheManager);
+                    }
+                    else
+                    {
+                        // サムネイルを表示しない場合は非表示にする
+                        pageControl.PageImage.Visibility = Visibility.Collapsed;
+                    }
+
+                    try { pageControl.GetOrCreateMediaPlayer(); } catch { }
                 }
                 else
                 {
-                    pageControl.LoadingRing.IsActive = !_window.SlideshowManager.IsSlideshowRunning;
+                    pageControl.LoadingRing.IsActive = !isSlideshowRunning;
                 }
             });
         }
@@ -111,7 +134,8 @@ namespace quick_image_viewer.Services
             if (cachedThumb != null)
             {
                 var softwareSource = new SoftwareBitmapSource();
-                bool enqueued = _window.DispatcherQueue.TryEnqueue(async () =>
+                var dispatcher = pageControl.DispatcherQueue ?? _window?.DispatcherQueue;
+                bool enqueued = dispatcher?.TryEnqueue(async () =>
                 {
                     try
                     {
@@ -124,7 +148,7 @@ namespace quick_image_viewer.Services
                         pageControl.PageImage.Opacity = 0.5;
                     }
                     catch { softwareSource.Dispose(); }
-                });
+                }) ?? false;
                 if (!enqueued) softwareSource.Dispose();
             }
             else
@@ -135,7 +159,7 @@ namespace quick_image_viewer.Services
 
         private bool TryLoadFromEditSession(string filePath, ViewerPageControl pageControl, PageRenderer renderer)
         {
-            var session = _window.ImageEditService.GetSession(filePath);
+            var session = _window?.ImageEditService?.GetSession(filePath);
             if (session != null)
             {
                 renderer.Reset();
@@ -159,23 +183,30 @@ namespace quick_image_viewer.Services
 
         private async Task LoadVideoAsync(string filePath, ViewerPageControl pageControl, PageRenderer renderer, CancellationToken token)
         {
+            var uiToken = pageControl.GetNewLoadToken();
+            var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(token, uiToken);
+            var combinedToken = combinedCts.Token;
+
             await Task.Run(async () =>
             {
                 try
                 {
-                    if (token.IsCancellationRequested) return;
+                    if (combinedToken.IsCancellationRequested) return;
 
+                    // UIスレッドでプレイヤーの準備
                     pageControl.DispatcherQueue.TryEnqueue(async () =>
                     {
-                        var mp = pageControl.PagePlayer.MediaPlayer;
-                        if (mp == null || token.IsCancellationRequested) return;
+                        if (combinedToken.IsCancellationRequested) return;
+
+                        // 既存のプレイヤーを破棄し、新しい MediaPlayer インスタンスを作成
+                        var mp = pageControl.CreateNewMediaPlayer();
 
                         try
                         {
-                            await ViewerPageControl.GetGlobalInitSemaphore().WaitAsync(token);
+                            await ViewerPageControl.GetGlobalInitSemaphore().WaitAsync(combinedToken);
                             try
                             {
-                                if (token.IsCancellationRequested) return;
+                                if (combinedToken.IsCancellationRequested) return;
 
                                 var config = new MediaSourceConfig();
                                 config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
@@ -184,7 +215,7 @@ namespace quick_image_viewer.Services
 
                                 FFmpegMediaSource? ffmpegSource = await CreateFFmpegMediaSourceAsync(filePath, config);
 
-                                if (ffmpegSource == null || token.IsCancellationRequested)
+                                if (ffmpegSource == null || combinedToken.IsCancellationRequested)
                                 {
                                     ffmpegSource?.Dispose();
                                     pageControl.LoadingRing.IsActive = false;
@@ -198,16 +229,31 @@ namespace quick_image_viewer.Services
                                 ViewerPageControl.GetGlobalInitSemaphore().Release();
                             }
 
-                            if (token.IsCancellationRequested) return;
+                            if (combinedToken.IsCancellationRequested) return;
 
-                            ConfigureMediaPlayer(mp, pageControl, token);
+                            ConfigureMediaPlayer(mp, pageControl, combinedToken);
 
                             var fSource = pageControl.FFmpegSource;
-                            if (fSource != null && !token.IsCancellationRequested)
+                            if (fSource != null && !combinedToken.IsCancellationRequested)
                             {
-                                await fSource.OpenWithMediaPlayerAsync(mp);
-                                try { fSource.PlaybackSession = mp.PlaybackSession; } catch { }
-                                mp.IsLoopingEnabled = true;
+                                System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Creating MediaPlaybackItem");
+
+                                // CreateMediaPlaybackItem() を使用することで、OpenWithMediaPlayerAsync 内部で発生する
+                                // MediaPlayer との競合（COMException）を回避できる場合があります
+                                var playbackItem = fSource.CreateMediaPlaybackItem();
+
+                                if (!combinedToken.IsCancellationRequested)
+                                {
+                                    try
+                                    {
+                                        mp.IsLoopingEnabled = true;
+                                        mp.Source = playbackItem;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Failed to set source: {ex.Message}");
+                                    }
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -215,21 +261,23 @@ namespace quick_image_viewer.Services
                             if (ex is OperationCanceledException || ex is TaskCanceledException) { }
                             else
                             {
+                                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Video Load Error: {ex.Message}");
                                 pageControl.LoadingRing.IsActive = false;
-                                _window.ShowNotification($"FFmpeg Error: {ex.Message}");
+                                _window?.ShowNotification($"FFmpeg Error: {ex.Message}");
                             }
                         }
                     });
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Task.Run Error: {ex.Message}");
                     pageControl.DispatcherQueue.TryEnqueue(() =>
                     {
-                        if (token.IsCancellationRequested) return;
+                        if (combinedToken.IsCancellationRequested) return;
                         pageControl.LoadingRing.IsActive = false;
                     });
                 }
-            }, token);
+            }, combinedToken);
 
             renderer.Reset();
             renderer.CurrentFilePath = filePath;
@@ -260,7 +308,7 @@ namespace quick_image_viewer.Services
                 else
                 {
                     var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                    var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
+                    var stream = await file.OpenReadAsync();
                     try
                     {
                         return await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
@@ -272,7 +320,10 @@ namespace quick_image_viewer.Services
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] CreateFFmpegMediaSourceAsync Error: {ex.Message}");
+            }
             return null;
         }
 
@@ -280,54 +331,83 @@ namespace quick_image_viewer.Services
         {
             void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
             {
+                if (token.IsCancellationRequested) return;
+
                 pageControl.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (token.IsCancellationRequested) return;
-                    pageControl.IsMediaReady = true;
-
                     try
                     {
-                        var size = new Windows.Foundation.Size(sender.PlaybackSession.NaturalVideoWidth, sender.PlaybackSession.NaturalVideoHeight);
-                        pageControl.InvokeVideoSizeChanged(size);
-                        pageControl.UpdateLayout();
+                        if (token.IsCancellationRequested) return;
+                        System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Media Opened");
+                        pageControl.IsMediaReady = true;
+
+                        try
+                        {
+                            var session = sender.PlaybackSession;
+                            if (session != null)
+                            {
+                                uint w = 0, h = 0;
+                                try { w = session.NaturalVideoWidth; } catch { }
+                                try { h = session.NaturalVideoHeight; } catch { }
+
+                                if (w > 0 && h > 0)
+                                {
+                                    var size = new Windows.Foundation.Size(w, h);
+                                    pageControl.InvokeVideoSizeChanged(size);
+                                    pageControl.UpdateLayout();
+                                }
+                            }
+                        }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Session error: {ex.Message}"); }
+
+                        pageControl.LoadingRing.IsActive = false;
+                        pageControl.PageImage.Source = null;
+                        pageControl.PageImage.Visibility = Visibility.Collapsed;
+                        pageControl.PageImage.Opacity = 1.0;
+
+                        pageControl.PagePlayer.Opacity = 1.0;
+                        pageControl.PagePlayer.Visibility = Visibility.Visible;
+
+                        if (!token.IsCancellationRequested)
+                        {
+                            try { sender.Play(); } catch { }
+                        }
+                        WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
-                    catch { }
-
-                    pageControl.LoadingRing.IsActive = false;
-                    pageControl.PageImage.Source = null;
-                    pageControl.PageImage.Visibility = Visibility.Collapsed;
-                    pageControl.PageImage.Opacity = 1.0;
-
-                    pageControl.PagePlayer.Opacity = 1.0;
-                    pageControl.PagePlayer.Visibility = Visibility.Visible;
-
-                    sender.Play();
-                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] OnMediaOpened Error: {ex.Message}");
+                    }
                 });
             }
 
             void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, Windows.Media.Playback.MediaPlayerFailedEventArgs args)
             {
+                if (token.IsCancellationRequested) return;
+
                 pageControl.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (token.IsCancellationRequested) return;
-                    pageControl.LoadingRing.IsActive = false;
-                    pageControl.PageImage.Source = null;
-                    pageControl.PageImage.Visibility = Visibility.Collapsed;
-                    _window.ShowNotification($"Video Error: {args.Error}");
-                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                    try
+                    {
+                        if (token.IsCancellationRequested) return;
+                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Media Failed: {args.Error} - {args.ErrorMessage}");
+                        pageControl.LoadingRing.IsActive = false;
+                        pageControl.PageImage.Source = null;
+                        pageControl.PageImage.Visibility = Visibility.Collapsed;
+                        _window?.ShowNotification($"Video Error: {args.Error}");
+                        WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] OnMediaFailed Error: {ex.Message}");
+                    }
                 });
             }
 
             pageControl.SetMediaHandlers(OnMediaOpened, OnMediaFailed);
 
-            double scale = 1.0;
-            try { if (pageControl.IsLoaded && pageControl.XamlRoot != null) scale = pageControl.XamlRoot.RasterizationScale; } catch { }
-
-            uint width = (uint)Math.Max(1, pageControl.ActualWidth * scale);
-            uint height = (uint)Math.Max(1, pageControl.ActualHeight * scale);
-            try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
-            mp.Source = null;
+            // 以前のソースをクリアし、MediaPlayerをクリーンな状態にする
+            try { mp.Source = null; } catch { }
         }
 
         private async Task LoadSkiaImageAsync(string filePath, ViewerPageControl pageControl, PageRenderer renderer, CancellationToken token)
@@ -358,56 +438,68 @@ namespace quick_image_viewer.Services
 
         private async Task LoadNormalImageAsync(string filePath, ViewerPageControl pageControl, PageRenderer renderer, CancellationToken token, IViewerCacheManager cacheManager)
         {
-            SoftwareBitmap? cachedSoftwareBitmap = cacheManager.GetCachedSoftwareBitmap(filePath);
-
-            if (cachedSoftwareBitmap != null)
+            try
             {
-                var softwareSource = new SoftwareBitmapSource();
-                try
-                {
-                    await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
-                }
-                catch
-                {
-                    softwareSource.Dispose();
-                    return;
-                }
+                SoftwareBitmap? cachedSoftwareBitmap = cacheManager.GetCachedSoftwareBitmap(filePath);
 
-                if (token.IsCancellationRequested)
+                if (cachedSoftwareBitmap != null)
                 {
-                    softwareSource.Dispose();
-                    return;
-                }
+                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Using cached software bitmap");
+                    var softwareSource = new SoftwareBitmapSource();
+                    try
+                    {
+                        await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] SetBitmapAsync Error: {ex.Message}");
+                        softwareSource.Dispose();
+                        return;
+                    }
 
-                renderer.Reset();
-                renderer.CurrentFilePath = filePath;
-                pageControl.PageCanvas.Visibility = Visibility.Collapsed;
-                pageControl.PageImage.Visibility = Visibility.Visible;
-                pageControl.UpdateSoftwareSource(softwareSource);
-            }
-            else
-            {
-                BitmapImage? bitmapImage = null;
-                byte[]? cachedBytes = cacheManager.GetCachedBytes(filePath);
+                    if (token.IsCancellationRequested)
+                    {
+                        softwareSource.Dispose();
+                        return;
+                    }
 
-                if (cachedBytes != null)
-                {
-                    using var ms = new MemoryStream(cachedBytes);
-                    bitmapImage = new BitmapImage();
-                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
+                    renderer.Reset();
+                    renderer.CurrentFilePath = filePath;
+                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                    pageControl.PageImage.Visibility = Visibility.Visible;
+                    pageControl.UpdateSoftwareSource(softwareSource);
                 }
                 else
                 {
-                    bitmapImage = await LoadBitmapImageFromFileAsync(filePath);
+                    BitmapImage? bitmapImage = null;
+                    byte[]? cachedBytes = cacheManager.GetCachedBytes(filePath);
+
+                    if (cachedBytes != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Using cached bytes");
+                        using var ms = new MemoryStream(cachedBytes);
+                        bitmapImage = new BitmapImage();
+                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading from file");
+                        bitmapImage = await LoadBitmapImageFromFileAsync(filePath);
+                    }
+
+                    if (token.IsCancellationRequested) return;
+
+                    renderer.Reset();
+                    renderer.CurrentFilePath = filePath;
+                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                    pageControl.PageImage.Visibility = Visibility.Visible;
+                    pageControl.PageImage.Source = bitmapImage;
                 }
-
-                if (token.IsCancellationRequested) return;
-
-                renderer.Reset();
-                renderer.CurrentFilePath = filePath;
-                pageControl.PageCanvas.Visibility = Visibility.Collapsed;
-                pageControl.PageImage.Visibility = Visibility.Visible;
-                pageControl.PageImage.Source = bitmapImage;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] LoadNormalImageAsync Error: {ex.Message}");
+                throw; // Rethrow to let global handler catch it if it's critical
             }
         }
 
@@ -415,21 +507,31 @@ namespace quick_image_viewer.Services
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] StorageFile.GetFileFromPathAsync: {filePath}");
                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
                 using var stream = await file.OpenReadAsync();
                 var bitmapImage = new BitmapImage();
                 await bitmapImage.SetSourceAsync(stream).AsTask();
                 return bitmapImage;
             }
-            catch
+            catch (Exception ex)
             {
-                var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
-                if (bmpBytes != null)
+                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] StorageFile method failed: {ex.Message}");
+                try
                 {
-                    var bitmapImage = new BitmapImage();
-                    using var ms = new MemoryStream(bmpBytes);
-                    await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
-                    return bitmapImage;
+                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Trying fallback ImageProcessor.DecodeToBmpBytes");
+                    var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
+                    if (bmpBytes != null)
+                    {
+                        var bitmapImage = new BitmapImage();
+                        using var ms = new MemoryStream(bmpBytes);
+                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
+                        return bitmapImage;
+                    }
+                }
+                catch (Exception ex2)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Fallback failed: {ex2.Message}");
                 }
             }
             return null;

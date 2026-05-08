@@ -51,12 +51,21 @@ namespace quick_image_viewer.Services
                 }
                 else
                 {
-                    if (!File.Exists(filePath)) return info;
+                    // WinUI 3 (Packaged) 安全な読み込み
+                    var task = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                        var props = await file.GetBasicPropertiesAsync();
 
-                    var fileInfo = new FileInfo(filePath);
-                    info.FileName = fileInfo.Name;
-                    info.FileSize = FormatBytes(fileInfo.Length);
-                    directories = ImageMetadataReader.ReadMetadata(filePath);
+                        using var stream = await file.OpenReadAsync();
+                        using var netStream = stream.AsStreamForRead();
+                        return (directories: ImageMetadataReader.ReadMetadata(netStream), fileName: file.Name, fileSize: (long)props.Size);
+                    });
+
+                    var result = task.GetAwaiter().GetResult();
+                    directories = result.directories;
+                    info.FileName = result.fileName;
+                    info.FileSize = FormatBytes(result.fileSize);
                 }
 
                 // 1. Get basic resolution (Prioritized across directories since tags vary)

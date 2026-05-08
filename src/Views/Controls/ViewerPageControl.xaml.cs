@@ -35,8 +35,18 @@ namespace quick_image_viewer.Views.Controls
         private readonly System.Threading.SemaphoreSlim _loadingSemaphore = new(1, 1);
         private static readonly System.Threading.SemaphoreSlim _globalVideoInitSemaphore = new(1, 1);
         private Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource? _currentSoftwareSource;
+        private System.Threading.CancellationTokenSource? _activeLoadCts;
 
         public static System.Threading.SemaphoreSlim GetGlobalInitSemaphore() => _globalVideoInitSemaphore;
+
+        public Windows.Media.Playback.MediaPlayer CreateNewMediaPlayer()
+        {
+            var mp = new Windows.Media.Playback.MediaPlayer();
+            // デフォルトではフレームサーバーは無効（標準表示）
+            mp.IsVideoFrameServerEnabled = false;
+            InternalMediaPlayer.SetMediaPlayer(mp);
+            return mp;
+        }
 
         // Frame Server Mode
         private Windows.Graphics.Imaging.SoftwareBitmap? _frameBitmap;
@@ -45,12 +55,22 @@ namespace quick_image_viewer.Views.Controls
         private FFmpegMediaSource? _ffmpegSource;
         public bool IsVideoContent { get; set; } = false;
         public bool IsMediaReady { get; set; } = false;
+        private uint _lastNaturalWidth = 0;
+        private uint _lastNaturalHeight = 0;
 
         public void UpdateSoftwareSource(Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource source)
         {
             if (_currentSoftwareSource != null) _currentSoftwareSource.Dispose();
             _currentSoftwareSource = source;
             PageImage.Source = source;
+        }
+
+        public System.Threading.CancellationToken GetNewLoadToken()
+        {
+            _activeLoadCts?.Cancel();
+            _activeLoadCts?.Dispose();
+            _activeLoadCts = new System.Threading.CancellationTokenSource();
+            return _activeLoadCts.Token;
         }
 
         public FFmpegMediaSource? FFmpegSource
@@ -233,8 +253,18 @@ namespace quick_image_viewer.Views.Controls
         {
             try
             {
-                uint width = sender.PlaybackSession.NaturalVideoWidth;
-                uint height = sender.PlaybackSession.NaturalVideoHeight;
+                var session = sender.PlaybackSession;
+                if (session == null) return;
+
+                uint width = 0;
+                uint height = 0;
+                try
+                {
+                    width = session.NaturalVideoWidth;
+                    height = session.NaturalVideoHeight;
+                }
+                catch { return; }
+
                 if (width == 0 || height == 0) return;
 
                 lock (_frameLock)
@@ -375,14 +405,38 @@ namespace quick_image_viewer.Views.Controls
             if (mp == null || !IsVideoContent) return;
 
             var session = mp.PlaybackSession;
-            if (session == null || session.NaturalVideoWidth == 0 || session.NaturalVideoHeight == 0) return;
+            if (session == null) return;
+
+            uint currentW = 0;
+            uint currentH = 0;
+
+            try
+            {
+                // Accessing session properties can throw COMException during transitions
+                currentW = session.NaturalVideoWidth;
+                currentH = session.NaturalVideoHeight;
+
+                if (currentW > 0 && currentH > 0)
+                {
+                    _lastNaturalWidth = currentW;
+                    _lastNaturalHeight = currentH;
+                }
+            }
+            catch
+            {
+                // Fallback to last known size if current access fails
+                currentW = _lastNaturalWidth;
+                currentH = _lastNaturalHeight;
+            }
+
+            if (currentW == 0 || currentH == 0) return;
 
             double containerW = overrideW >= 0 ? overrideW : this.ActualWidth;
             double containerH = overrideH >= 0 ? overrideH : this.ActualHeight;
             if (containerW <= 0 || containerH <= 0) return;
 
-            double videoW = session.NaturalVideoWidth;
-            double videoH = session.NaturalVideoHeight;
+            double videoW = currentW;
+            double videoH = currentH;
 
             if (InternalMediaPlayer.Stretch == Stretch.Fill)
             {
@@ -555,6 +609,11 @@ namespace quick_image_viewer.Views.Controls
 
         public async Task ResetPlaybackAsync()
         {
+            // 実行中のロードタスクがあればキャンセル
+            _activeLoadCts?.Cancel();
+            _activeLoadCts?.Dispose();
+            _activeLoadCts = null;
+
             await _loadingSemaphore.WaitAsync();
             try
             {
@@ -569,11 +628,11 @@ namespace quick_image_viewer.Views.Controls
                     mp.VideoFrameAvailable -= OnVideoFrameAvailable;
 
                     // ソースの解除（明示的にnullをセット）
-                    mp.Source = null;
-                    InternalMediaPlayer.Source = null;
+                    try { mp.Source = null; } catch { }
+                    try { InternalMediaPlayer.Source = null; } catch { }
 
                     // プレイヤーがソースを解放するまで少し待機
-                    await Task.Delay(10);
+                    await Task.Delay(20);
                 }
 
                 lock (_frameLock)
@@ -586,6 +645,8 @@ namespace quick_image_viewer.Views.Controls
 
                 IsVideoContent = false;
                 IsMediaReady = false;
+                _lastNaturalWidth = 0;
+                _lastNaturalHeight = 0;
                 if (_ffmpegSource != null)
                 {
                     try { _ffmpegSource.PlaybackSession = null; } catch { }
@@ -628,14 +689,15 @@ namespace quick_image_viewer.Views.Controls
                 _hideTimer.Stop();
                 _resizeDebounceTimer.Stop();
 
-                // 重いリソース（FFmpeg）を解放したので、可能であればGCを促す
+                // 重いリソース（FFmpeg）を解放
                 System.GC.Collect(1, System.GCCollectionMode.Optimized, false);
 
                 // クールダウン
                 await Task.Delay(20);
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] ResetPlaybackAsync Error: {ex.Message}");
             }
             finally
             {

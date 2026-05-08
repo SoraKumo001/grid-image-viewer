@@ -94,11 +94,29 @@ namespace quick_image_viewer.Managers
                 {
                     try
                     {
-                        var bytes = await File.ReadAllBytesAsync(path, token);
-                        lock (_imageCache)
+                        byte[] bytes;
+                        if (ArchiveManager.IsArchivePath(path))
                         {
-                            if (_imageCache.Count >= Constants.MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
-                            _imageCache[path] = bytes;
+                            var (arc, ent) = ArchiveManager.SplitArchivePath(path);
+                            bytes = ArchiveManager.GetEntryBytes(arc, ent) ?? Array.Empty<byte>();
+                        }
+                        else
+                        {
+                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+                            using var ras = await file.OpenReadAsync();
+                            using var stream = ras.AsStreamForRead();
+                            using var ms = new MemoryStream();
+                            await stream.CopyToAsync(ms, token);
+                            bytes = ms.ToArray();
+                        }
+
+                        if (bytes.Length > 0)
+                        {
+                            lock (_imageCache)
+                            {
+                                if (_imageCache.Count >= Constants.MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
+                                _imageCache[path] = bytes;
+                            }
                         }
                     }
                     catch { continue; }
@@ -207,11 +225,29 @@ namespace quick_image_viewer.Managers
                 {
                     try
                     {
-                        var bytes = await File.ReadAllBytesAsync(path, token);
-                        lock (_imageCache)
+                        byte[] bytes;
+                        if (ArchiveManager.IsArchivePath(path))
                         {
-                            if (_imageCache.Count >= Constants.MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
-                            _imageCache[path] = bytes;
+                            var (arc, ent) = ArchiveManager.SplitArchivePath(path);
+                            bytes = ArchiveManager.GetEntryBytes(arc, ent) ?? Array.Empty<byte>();
+                        }
+                        else
+                        {
+                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+                            using var ras = await file.OpenReadAsync();
+                            using var stream = ras.AsStreamForRead();
+                            using var ms = new MemoryStream();
+                            await stream.CopyToAsync(ms, token);
+                            bytes = ms.ToArray();
+                        }
+
+                        if (bytes.Length > 0)
+                        {
+                            lock (_imageCache)
+                            {
+                                if (_imageCache.Count >= Constants.MAX_CACHE_SIZE) _imageCache.Remove(_imageCache.Keys.First());
+                                _imageCache[path] = bytes;
+                            }
                         }
                     }
                     catch { continue; }

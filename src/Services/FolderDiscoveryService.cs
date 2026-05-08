@@ -23,7 +23,6 @@ namespace quick_image_viewer.Services
 
             if (allowedExtensions != null)
             {
-                // allowedExtensions might contain archive extensions, but we only want images/videos here
                 return isImageOrVideo && allowedExtensions.Contains(ext);
             }
             return isImageOrVideo;
@@ -49,19 +48,34 @@ namespace quick_image_viewer.Services
                     {
                         try
                         {
-                            foreach (var d in Directory.EnumerateDirectories(parent))
+                            // フォルダ列挙
+                            var dirEnum = Directory.EnumerateDirectories(parent).GetEnumerator();
+                            while (true)
                             {
-                                if (token.IsCancellationRequested) return;
-                                if (d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
+                                string? d = null;
+                                try { if (!dirEnum.MoveNext()) break; d = dirEnum.Current; }
+                                catch (UnauthorizedAccessException) { continue; }
+                                catch { break; }
+
+                                if (d != null && token.IsCancellationRequested) return;
+                                if (d != null && d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
                                 {
                                     targetDirs.Add(d);
                                 }
                             }
+
+                            // ファイル列挙
                             var siblingFiles = new List<string>();
-                            foreach (var f in Directory.EnumerateFiles(parent))
+                            var fileEnum = Directory.EnumerateFiles(parent).GetEnumerator();
+                            while (true)
                             {
-                                if (token.IsCancellationRequested) return;
-                                if (f != cleanPath && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
+                                string? f = null;
+                                try { if (!fileEnum.MoveNext()) break; f = fileEnum.Current; }
+                                catch (UnauthorizedAccessException) { continue; }
+                                catch { break; }
+
+                                if (f != null && token.IsCancellationRequested) return;
+                                if (f != null && f != cleanPath && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
                                 {
                                     siblingFiles.Add(f);
                                 }
@@ -74,42 +88,24 @@ namespace quick_image_viewer.Services
 
                 if (includeSubfolders)
                 {
-                    // For the primary path, if we are doing recursive search, we might need to explore its subfolders.
-                    // However, LoadDirectory already loaded the top-level files.
-                    // LoadAdditionalFilesAsync logic in original code seemed to only add sibling directories' contents.
-                    // Wait, if includeSubfolders is true, GetFilesFromDirectory(dir, true) is called for each sibling.
-                    // What about subfolders of the ORIGINAL path?
-                    // The original code:
-                    // if (!ArchiveManager.IsArchive(path) && (includeSiblings || includeSubfolders))
-                    // {
-                    //     _ = Task.Run(() => LoadAdditionalFilesAsync(path, initialFile, includeSiblings, includeSubfolders, token));
-                    // }
-                    // LoadAdditionalFilesAsync:
-                    // foreach (var dir in targetDirs) { GetFilesFromDirectory(dir, includeSubfolders) }
-                    // It doesn't seem to recursively search the ORIGINAL path if siblings are not included?
-                    // Actually, if includeSubfolders is true but includeSiblings is false, targetDirs is empty.
-
-                    // Let's add the original path to targetDirs if includeSubfolders is true, 
-                    // but we should avoid re-adding the files already found.
-                    // Actually, the original GetFilesFromDirectory(path, false) was used for initial load.
-                    // So if includeSubfolders is true, we should search subfolders of 'path'.
-
-                    if (includeSubfolders)
+                    try
                     {
-                        // Add subfolders of the original path
-                        try
+                        if (Directory.Exists(path))
                         {
-                            if (Directory.Exists(path))
+                            var dirEnum = Directory.EnumerateDirectories(path).GetEnumerator();
+                            while (true)
                             {
-                                foreach (var d in Directory.EnumerateDirectories(path))
-                                {
-                                    if (token.IsCancellationRequested) return;
-                                    targetDirs.Add(d);
-                                }
+                                string? d = null;
+                                try { if (!dirEnum.MoveNext()) break; d = dirEnum.Current; }
+                                catch (UnauthorizedAccessException) { continue; }
+                                catch { break; }
+
+                                if (d != null && token.IsCancellationRequested) return;
+                                if (d != null) targetDirs.Add(d);
                             }
                         }
-                        catch { }
                     }
+                    catch { }
                 }
 
                 if (targetDirs.Count == 0) return;
@@ -138,18 +134,45 @@ namespace quick_image_viewer.Services
             try
             {
                 if (!Directory.Exists(dir)) return files;
+                EnumerateFilesSafe(dir, recursive, files, allowedExtensions);
+            }
+            catch { }
+            return files;
+        }
 
-                var options = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                foreach (var f in Directory.EnumerateFiles(dir, "*", options))
+        private static void EnumerateFilesSafe(string dir, bool recursive, List<string> files, IEnumerable<string>? allowedExtensions)
+        {
+            try
+            {
+                var fileEnum = Directory.EnumerateFiles(dir).GetEnumerator();
+                while (true)
                 {
-                    if (IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
+                    string? f = null;
+                    try { if (!fileEnum.MoveNext()) break; f = fileEnum.Current; }
+                    catch (UnauthorizedAccessException) { continue; }
+                    catch { break; }
+
+                    if (f != null && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
                     {
                         files.Add(f);
                     }
                 }
+
+                if (recursive)
+                {
+                    var dirEnum = Directory.EnumerateDirectories(dir).GetEnumerator();
+                    while (true)
+                    {
+                        string? d = null;
+                        try { if (!dirEnum.MoveNext()) break; d = dirEnum.Current; }
+                        catch (UnauthorizedAccessException) { continue; }
+                        catch { break; }
+
+                        if (d != null) EnumerateFilesSafe(d, true, files, allowedExtensions);
+                    }
+                }
             }
             catch { }
-            return files;
         }
 
         public static List<string> GetInitialPlaylist(string path, IEnumerable<string>? allowedExtensions = null)
