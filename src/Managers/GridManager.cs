@@ -42,6 +42,7 @@ namespace quick_image_viewer.Managers
                 {
                     _window.ImageGridView.Loaded += (s, e) => SetupScrollListener();
                     _window.ImageGridView.ContainerContentChanging += GridView_ContainerContentChanging;
+                    _window.ImageGridView.SelectionChanged += GridView_SelectionChanged;
                 }
             });
 
@@ -54,6 +55,17 @@ namespace quick_image_viewer.Managers
                     UpdateGridLayout();
                 }
             };
+        }
+
+        private void GridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_window.IsGridMode) return;
+            int idx = _window.ImageGridView.SelectedIndex;
+            if (idx >= 0 && idx < _window.Playlist.Count && idx != _window.CurrentIndex)
+            {
+                _window.CurrentIndex = idx;
+                _window.UpdatePageIndicator();
+            }
         }
 
         private void GridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
@@ -512,13 +524,17 @@ namespace quick_image_viewer.Managers
             double bestArea = 0;
             int bestCols = 1;
 
+            // Use the actual playlist count for layout calculations if we are still loading,
+            // otherwise the layout will jump as items are added.
+            int layoutTargetCount = Math.Max(totalItems, _window.Playlist.Count);
+
             // Optimization: Limit the number of column possibilities to check.
             // For large collections, we won't be fitting them all on one screen anyway.
-            int maxColsToTest = Math.Min(totalItems, 100);
+            int maxColsToTest = Math.Min(layoutTargetCount, 100);
 
             for (int cols = 1; cols <= maxColsToTest; cols++)
             {
-                int rows = (int)Math.Ceiling((double)totalItems / cols);
+                int rows = (int)Math.Ceiling((double)layoutTargetCount / cols);
                 double cellW = W / cols;
                 double cellH = H / rows;
 
@@ -628,6 +644,12 @@ namespace quick_image_viewer.Managers
                         foreach (var item in batch)
                         {
                             GridItems.Add(item);
+                        }
+
+                        // Trigger layout update as soon as the first batch is added to avoid waiting for everything
+                        if (GridItems.Count == batch.Count)
+                        {
+                            UpdateGridLayout();
                         }
 
                         if (GridItems.Count == batch.Count || GridItems.Count % 500 == 0 || GridItems.Count == playlistSnapshot.Count)

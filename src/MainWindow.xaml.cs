@@ -549,7 +549,7 @@ namespace quick_image_viewer
 
         public void Receive(FocusRequestMessage message)
         {
-            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            DispatcherQueue.TryEnqueue(() =>
             {
                 if (IsGridMode)
                 {

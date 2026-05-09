@@ -284,6 +284,30 @@ namespace quick_image_viewer.Helpers
 
             if (_window.IsGridMode)
             {
+                if (IsMatch(_settings.KeyPrevImage, e.Key, isCtrl, isShift, isAlt))
+                {
+                    // In grid mode, we usually want to move item by item
+                    WeakReferenceMessenger.Default.Send(new NavigationMessage(-1, true));
+                    e.Handled = true;
+                    return;
+                }
+                if (IsMatch(_settings.KeyNextImage, e.Key, isCtrl, isShift, isAlt))
+                {
+                    WeakReferenceMessenger.Default.Send(new NavigationMessage(1, true));
+                    e.Handled = true;
+                    return;
+                }
+
+                // If navigation key bubbled up to RootGrid, focus might have been lost.
+                // Restore focus to grid so native navigation works.
+                if (e.Key == VirtualKey.Up || e.Key == VirtualKey.Down ||
+                    e.Key == VirtualKey.Left || e.Key == VirtualKey.Right ||
+                    e.Key == VirtualKey.PageUp || e.Key == VirtualKey.PageDown ||
+                    e.Key == VirtualKey.Home || e.Key == VirtualKey.End)
+                {
+                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                }
+
                 return; // Keyboard navigation inside grid is handled by GridImagePanel
             }
 

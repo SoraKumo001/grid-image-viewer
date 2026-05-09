@@ -31,24 +31,10 @@ namespace quick_image_viewer.Views.Controls
             ImageGridView.AddHandler(PointerWheelChangedEvent, new PointerEventHandler(ImageGridView_PointerWheelChanged), true);
         }
 
-        private DateTime _lastBoundaryKeyPress = DateTime.MinValue;
-        private VirtualKey _lastBoundaryKey = VirtualKey.None;
+
 
         private void ImageGridView_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == VirtualKey.PageUp)
-            {
-                WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(-1));
-                e.Handled = true;
-                return;
-            }
-            if (e.Key == VirtualKey.PageDown)
-            {
-                WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(1));
-                e.Handled = true;
-                return;
-            }
-
             if (e.Key == VirtualKey.Left || e.Key == VirtualKey.Right ||
                 e.Key == VirtualKey.Up || e.Key == VirtualKey.Down)
             {
@@ -73,30 +59,12 @@ namespace quick_image_viewer.Views.Controls
 
                 if (isAtBoundary)
                 {
-                    // Require double-tap or intentional press at boundary to navigate folder
-                    var now = DateTime.Now;
-                    if (_lastBoundaryKey == e.Key && (now - _lastBoundaryKeyPress).TotalMilliseconds < 500)
-                    {
-                        int offset = (e.Key == VirtualKey.Up || e.Key == VirtualKey.Left) ? -1 : 1;
-                        WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
-                        _lastBoundaryKey = VirtualKey.None;
-                    }
-                    else
-                    {
-                        _lastBoundaryKey = e.Key;
-                        _lastBoundaryKeyPress = now;
-
-                        // If at top/bottom row but not at first/last item, move to extreme
-                        if (e.Key == VirtualKey.Up && selectedIdx > 0) ImageGridView.SelectedIndex = 0;
-                        else if (e.Key == VirtualKey.Down && selectedIdx < ImageGridView.Items.Count - 1) ImageGridView.SelectedIndex = ImageGridView.Items.Count - 1;
-
-                        ImageGridView.ScrollIntoView(ImageGridView.SelectedItem);
-                    }
+                    // Navigate folder immediately on boundary key press (Option A)
+                    int offset = (e.Key == VirtualKey.Up || e.Key == VirtualKey.Left) ? -1 : 1;
+                    WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(offset));
                     e.Handled = true;
                     return;
                 }
-
-                _lastBoundaryKey = VirtualKey.None;
 
                 // Handle case where Down is pressed on second-to-last row but no item is directly below
                 if (e.Key == VirtualKey.Down && currentRow == totalRows - 2)

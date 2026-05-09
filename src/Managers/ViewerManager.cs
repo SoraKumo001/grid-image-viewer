@@ -158,7 +158,7 @@ namespace quick_image_viewer.Managers
 
             if (_window.IsGridMode)
             {
-                _window.UpdateGridItems(true);
+                _window.UpdateGridItems(false);
                 _window.ImageScrollViewer.Visibility = Visibility.Collapsed;
                 _window.ImageGridView.Visibility = Visibility.Visible;
                 _window.AnimationService.StopAnimation();
