@@ -668,4 +668,22 @@
   <data name="Settings_Extensions_Archives.Text" xml:space="preserve">
     <value>Archives (Compression)</value>
   </data>
+  <data name="TopPanel_PrevFolder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Previous Folder (Up)</value>
+  </data>
+  <data name="TopPanel_NextFolder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Next Folder (Down)</value>
+  </data>
+  <data name="TopPanel_OpenFolder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open Folder</value>
+  </data>
+  <data name="TopPanel_GridMode.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Grid Mode (Enter)</value>
+  </data>
+  <data name="TopPanel_Slideshow.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Slideshow (A)</value>
+  </data>
+  <data name="TopPanel_Settings.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Settings</value>
+  </data>
 </root>

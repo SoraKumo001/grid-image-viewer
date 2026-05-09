@@ -668,4 +668,22 @@
   <data name="Settings_Extensions_Archives.Text" xml:space="preserve">
     <value>アーカイブ (圧縮ファイル)</value>
   </data>
+  <data name="TopPanel_PrevFolder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>前のフォルダ (↑)</value>
+  </data>
+  <data name="TopPanel_NextFolder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>次のフォルダ (↓)</value>
+  </data>
+  <data name="TopPanel_OpenFolder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>フォルダを開く</value>
+  </data>
+  <data name="TopPanel_GridMode.ToolTipService.ToolTip" xml:space="preserve">
+    <value>グリッドモード (Enter)</value>
+  </data>
+  <data name="TopPanel_Slideshow.ToolTipService.ToolTip" xml:space="preserve">
+    <value>自動再生 (A)</value>
+  </data>
+  <data name="TopPanel_Settings.ToolTipService.ToolTip" xml:space="preserve">
+    <value>設定</value>
+  </data>
 </root>

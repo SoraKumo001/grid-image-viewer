@@ -335,9 +335,6 @@ namespace quick_image_viewer.Services
                             try { sender.Play(); } catch { }
                         }
 
-                        // 動画開始時にコントロールを一時的に表示する
-                        pageControl.VideoPlayer.ShowControls();
-
                         WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
                     catch (Exception ex)

@@ -25,18 +25,27 @@
             VerticalAlignment="Top"
             PointerEntered="Border_PointerEntered" PointerExited="Border_PointerExited">
         <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Open Folder" Click="OpenFolderButton_Click">
+            <Button x:Uid="TopPanel_OpenFolder" Style="{ThemeResource SubtleButtonStyle}" Click="OpenFolderButton_Click">
                 <FontIcon Glyph="&#xE838;" />
             </Button>
             <Border Width="1" Background="#333333" Margin="4,4,4,4" />
-            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Grid Mode" Command="{x:Bind ViewModel.ToggleGridCommand}" IsEnabled="{x:Bind ViewModel.HasImages, Mode=OneWay}">
+            
+            <Button x:Uid="TopPanel_PrevFolder" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.NavigatePrevFolderCommand}">
+                <FontIcon Glyph="&#xE110;" />
+            </Button>
+            <Button x:Uid="TopPanel_NextFolder" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.NavigateNextFolderCommand}">
+                <FontIcon Glyph="&#xE1FD;" />
+            </Button>
+            
+            <Border Width="1" Background="#333333" Margin="4,4,4,4" />
+            <Button x:Uid="TopPanel_GridMode" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.ToggleGridCommand}" IsEnabled="{x:Bind ViewModel.HasImages, Mode=OneWay}">
                 <FontIcon Glyph="&#xE80A;" />
             </Button>
-            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}">
+            <Button x:Uid="TopPanel_Slideshow" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.OpenSlideshowCommand}">
                 <FontIcon Glyph="&#xE786;" />
             </Button>
             <Border Width="1" Background="#333333" Margin="4,4,4,4" />
-            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Settings" Command="{x:Bind ViewModel.SettingsCommand}">
+            <Button x:Uid="TopPanel_Settings" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.SettingsCommand}">
                 <FontIcon Glyph="&#xE713;" />
             </Button>
         </StackPanel>
