@@ -575,6 +575,21 @@
   <data name="MenuOpenFolder.Text" xml:space="preserve">
     <value>フォルダを開く...</value>
   </data>
+  <data name="MenuRefreshThumbnails.Text" xml:space="preserve">
+    <value>サムネイルを更新</value>
+  </data>
+  <data name="MenuSort.Text" xml:space="preserve">
+    <value>並び替え</value>
+  </data>
+  <data name="MenuSort_Name.Text" xml:space="preserve">
+    <value>名前順</value>
+  </data>
+  <data name="MenuSort_Date.Text" xml:space="preserve">
+    <value>日付順</value>
+  </data>
+  <data name="MenuSort_Size.Text" xml:space="preserve">
+    <value>サイズ順</value>
+  </data>
   <data name="Settings_Extensions.Text" xml:space="preserve">
     <value>表示対象の拡張子</value>
   </data>

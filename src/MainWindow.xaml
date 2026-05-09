@@ -32,6 +32,44 @@
         Background="#1A1A1A"
         RequestedTheme="Dark">
         
+        <Grid.Resources>
+            <MenuFlyout x:Key="GridMenuFlyout" x:Name="GridMenuFlyout">
+                <MenuFlyout.MenuFlyoutPresenterStyle>
+                    <Style TargetType="MenuFlyoutPresenter">
+                        <Setter Property="Transitions">
+                            <Setter.Value>
+                                <TransitionCollection />
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </MenuFlyout.MenuFlyoutPresenterStyle>
+                <MenuFlyoutItem x:Name="GridMenuOpenFolder" x:Uid="MenuOpenFolder" Text="Open Folder..." Click="OpenFolderButton_Click" />
+                <MenuFlyoutItem x:Name="GridMenuRefresh" x:Uid="MenuRefreshThumbnails" Text="Refresh Thumbnails" Click="MenuThumbnailRefresh_Click" />
+                <MenuFlyoutSeparator />
+                <MenuFlyoutSubItem x:Name="GridMenuSort" x:Uid="MenuSort" Text="Sort By">
+                    <MenuFlyoutItem x:Uid="MenuSort_Name" Text="Name" Click="MenuSort_Click" Tag="Name" />
+                    <MenuFlyoutItem x:Uid="MenuSort_Date" Text="Date" Click="MenuSort_Click" Tag="Date" />
+                    <MenuFlyoutItem x:Uid="MenuSort_Size" Text="Size" Click="MenuSort_Click" Tag="Size" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem x:Name="GridMenuSlideshow" x:Uid="MenuSlideshow" Text="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}" />
+                <MenuFlyoutSubItem x:Name="GridMenuBookmarksSub" x:Uid="MenuBookmarksSub" Text="Bookmarks">
+                    <MenuFlyoutItem x:Name="GridMenuBookmark" x:Uid="MenuBookmark" Text="{x:Bind ViewModel.BookmarkMenuText, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleBookmarkCommand}" />
+                    <ToggleMenuFlyoutItem x:Name="GridMenuBookmarksToggle" x:Uid="MenuBookmarksToggle" Text="Show Bookmark Panel" Click="MenuBookmarksToggle_Click" IsChecked="{x:Bind ViewModel.IsBookmarkPanelVisible, Mode=OneWay}" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutSubItem x:Name="GridMenuBookmarkList" x:Uid="MenuBookmarkList" Text="Bookmark List">
+                        <!-- Dynamically populated -->
+                    </MenuFlyoutSubItem>
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutSubItem x:Name="GridMenuSettingsSub" x:Uid="MenuSettingsSub" Text="Settings">
+                    <MenuFlyoutItem x:Name="GridMenuSettings" x:Uid="MenuSettings" Text="General Settings..." Command="{x:Bind ViewModel.SettingsCommand}" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem x:Name="GridMenuSupport" x:Uid="MenuSupport" Text="Support" Command="{x:Bind ViewModel.SupportCommand}" />
+                </MenuFlyoutSubItem>
+            </MenuFlyout>
+        </Grid.Resources>
+
         <Grid.ContextFlyout>
             <MenuFlyout x:Name="EditMenuFlyout" Opening="EditMenuFlyout_Opening">
                 <MenuFlyout.MenuFlyoutPresenterStyle>

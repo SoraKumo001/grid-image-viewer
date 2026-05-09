@@ -326,6 +326,7 @@ namespace quick_image_viewer.Managers
                                         return;
                                     }
                                     item.Thumbnail = source;
+                                    SetMetadata(item);
                                 }
                                 catch
                                 {
@@ -345,6 +346,7 @@ namespace quick_image_viewer.Managers
                         {
                             using var skBitmapToDispose = decoded;
                             ProcessDecodedBitmap(decoded, item, decodeSize, token);
+                            _window.DispatcherQueue.TryEnqueue(() => SetMetadata(item));
                         }
                     }
                 }
@@ -356,6 +358,7 @@ namespace quick_image_viewer.Managers
                     if (token.IsCancellationRequested) return;
 
                     ProcessDecodedBitmap(decoded, item, decodeSize, token);
+                    _window.DispatcherQueue.TryEnqueue(() => SetMetadata(item));
                 }
             }
             catch { }
@@ -476,6 +479,36 @@ namespace quick_image_viewer.Managers
                     }
                 }
             }
+        }
+
+        private void SetMetadata(ImageItem item)
+        {
+            try
+            {
+                var (w, h) = ImageProcessor.GetImageSize(item.FilePath);
+                string sizeStr = "";
+                try
+                {
+                    var fileInfo = new System.IO.FileInfo(item.FilePath);
+                    sizeStr = FormatFileSize(fileInfo.Length);
+                }
+                catch { }
+                item.Metadata = w > 0 ? $"{w}x{h} ({sizeStr})" : sizeStr;
+            }
+            catch { }
+        }
+
+        private static string FormatFileSize(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int counter = 0;
+            decimal number = bytes;
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number /= 1024;
+                counter++;
+            }
+            return string.Format("{0:n1}{1}", number, suffixes[counter]);
         }
 
         public void ImageGridView_ItemClick(object sender, ItemClickEventArgs e)

@@ -107,5 +107,6 @@ namespace quick_image_viewer.Interfaces
         void SetTitleBar(UIElement titleBar);
         UIElement AppTitleBar { get; }
         string CurrentImagePath { get; }
+        void UpdateContextFlyout();
     }
 }

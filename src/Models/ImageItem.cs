@@ -14,6 +14,20 @@ namespace quick_image_viewer.Models
         public string FileName => System.IO.Path.GetFileName(FilePath);
         public bool IsVideo => quick_image_viewer.Helpers.MediaHelper.IsVideo(FilePath);
 
+        private string _metadata = string.Empty;
+        public string Metadata
+        {
+            get => _metadata;
+            set
+            {
+                if (_metadata != value)
+                {
+                    _metadata = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         // Image aspect ratio (Width / Height). 1.0 = Square, >1 = Landscape, <1 = Portrait
         public double AspectRatio { get; set; } = 1.0;
 

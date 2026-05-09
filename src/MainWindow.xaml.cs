@@ -160,6 +160,10 @@ namespace quick_image_viewer
         void IMainView.SetTitleBar(UIElement tb) => SetTitleBar(tb);
         UIElement IMainView.AppTitleBar => AppTitleBar;
         string IMainView.CurrentImagePath => CurrentImagePath;
+        void IMainView.UpdateContextFlyout()
+        {
+            RootGrid.ContextFlyout = IsGridMode ? GridMenuFlyout : EditMenuFlyout;
+        }
 
         // === UI Helpers ===
         public ViewerPanel ViewerControl => ViewerControlInternal;
@@ -254,6 +258,7 @@ namespace quick_image_viewer
 
             this.Closed += MainWindow_Closed;
             AppWindowManager.InitializeWindow();
+            ((IMainView)this).UpdateContextFlyout();
 
             RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
             RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
@@ -332,6 +337,7 @@ namespace quick_image_viewer
         public void Receive(ToggleGridMessage message)
         {
             IsGridMode = !IsGridMode;
+            ((IMainView)this).UpdateContextFlyout();
             ShowNotification(_settings.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
             _ = UpdateDisplayAsync();
         }
@@ -564,10 +570,18 @@ namespace quick_image_viewer
 
         private void UpdateBookmarkMenu()
         {
-            MenuBookmarkList.Items.Clear();
+            // Update both viewer and grid bookmark menus
+            UpdateBookmarkMenuList(MenuBookmarkList);
+            UpdateBookmarkMenuList(GridMenuBookmarkList);
+        }
+
+        private void UpdateBookmarkMenuList(MenuFlyoutSubItem menu)
+        {
+            if (menu == null) return;
+            menu.Items.Clear();
             if (_settings.Bookmarks.Count == 0)
             {
-                MenuBookmarkList.Items.Add(new MenuFlyoutItem { Text = _settings.GetString("Bookmark_Empty"), IsEnabled = false });
+                menu.Items.Add(new MenuFlyoutItem { Text = _settings.GetString("Bookmark_Empty"), IsEnabled = false });
             }
             else
             {
@@ -575,7 +589,7 @@ namespace quick_image_viewer
                 {
                     var bmItem = new MenuFlyoutItem { Text = bm.Name, Tag = bm.Path };
                     bmItem.Click += (s, e) => LoadDirectory(bm.Path);
-                    MenuBookmarkList.Items.Add(bmItem);
+                    menu.Items.Add(bmItem);
                 }
             }
         }
@@ -654,6 +668,14 @@ namespace quick_image_viewer
         private void MenuViewMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuLayoutMode_Click(sender, e);
         private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuStretchMode_Click(sender, e);
+        private void MenuSort_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is string sortType)
+            {
+                // TODO: Implement sorting logic in PlaylistManager
+                ShowNotification(_settings.GetString("MenuSort_" + sortType) + " (Not Implemented)");
+            }
+        }
         private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e) => BookmarkManager.BookmarkListView_ItemClick(sender, e);
         private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
