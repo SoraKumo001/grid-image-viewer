@@ -106,18 +106,8 @@ namespace quick_image_viewer.Services
                     pageControl.IsVideoContent = true;
                     pageControl.LoadingRing.IsActive = true;
                     pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                    pageControl.PageImage.Visibility = Visibility.Collapsed;
                     pageControl.PagePlayer.Opacity = 0;
-
-                    // 自動再生（スライドショー）中でない場合のみサムネイルを表示
-                    if (!isSlideshowRunning)
-                    {
-                        ShowVideoThumbnailIfAvailable(filePath, pageControl, token, cacheManager);
-                    }
-                    else
-                    {
-                        // サムネイルを表示しない場合は非表示にする
-                        pageControl.PageImage.Visibility = Visibility.Collapsed;
-                    }
 
                     try { pageControl.GetOrCreateMediaPlayer(); } catch { }
                 }
@@ -126,35 +116,6 @@ namespace quick_image_viewer.Services
                     pageControl.LoadingRing.IsActive = !isSlideshowRunning;
                 }
             });
-        }
-
-        private void ShowVideoThumbnailIfAvailable(string filePath, ViewerPageControl pageControl, CancellationToken token, IViewerCacheManager cacheManager)
-        {
-            var cachedThumb = cacheManager.GetCachedSoftwareBitmap(filePath);
-            if (cachedThumb != null)
-            {
-                var softwareSource = new SoftwareBitmapSource();
-                var dispatcher = pageControl.DispatcherQueue ?? _window?.DispatcherQueue;
-                bool enqueued = dispatcher?.TryEnqueue(async () =>
-                {
-                    try
-                    {
-                        if (token.IsCancellationRequested) { softwareSource.Dispose(); return; }
-                        await softwareSource.SetBitmapAsync(cachedThumb);
-                        if (token.IsCancellationRequested || pageControl.IsMediaReady) { softwareSource.Dispose(); return; }
-
-                        pageControl.UpdateSoftwareSource(softwareSource);
-                        pageControl.PageImage.Visibility = Visibility.Visible;
-                        pageControl.PageImage.Opacity = 0.5;
-                    }
-                    catch { softwareSource.Dispose(); }
-                }) ?? false;
-                if (!enqueued) softwareSource.Dispose();
-            }
-            else
-            {
-                pageControl.PageImage.Visibility = Visibility.Collapsed;
-            }
         }
 
         private bool TryLoadFromEditSession(string filePath, ViewerPageControl pageControl, PageRenderer renderer)

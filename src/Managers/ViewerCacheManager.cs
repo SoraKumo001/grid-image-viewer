@@ -65,24 +65,7 @@ namespace quick_image_viewer.Managers
 
                 if (isVideo)
                 {
-                    // 動画のサムネイルキャッシュ
-                    bool needsVideoThumb = false;
-                    lock (_softwareBitmapCache) { if (!_softwareBitmapCache.ContainsKey(path)) needsVideoThumb = true; }
-                    if (needsVideoThumb)
-                    {
-                        _ = Task.Run(async () =>
-                        {
-                            if (token.IsCancellationRequested) return;
-                            var thumb = await ImageProcessor.ExtractVideoThumbnailAsync(path);
-                            if (thumb != null)
-                            {
-                                lock (_softwareBitmapCache)
-                                {
-                                    AddSoftwareBitmapToCache(path, thumb);
-                                }
-                            }
-                        }, token);
-                    }
+                    // 動画のサムネイル表示機能を削除したため、ここではプリロードを行わない
                     continue;
                 }
 
@@ -201,20 +184,7 @@ namespace quick_image_viewer.Managers
 
                 if (isVideo)
                 {
-                    bool needsVideoThumb = false;
-                    lock (_softwareBitmapCache) { if (!_softwareBitmapCache.ContainsKey(path)) needsVideoThumb = true; }
-                    if (needsVideoThumb)
-                    {
-                        _ = Task.Run(async () =>
-                        {
-                            if (token.IsCancellationRequested) return;
-                            var thumb = await ImageProcessor.ExtractVideoThumbnailAsync(path);
-                            if (thumb != null)
-                            {
-                                lock (_softwareBitmapCache) { AddSoftwareBitmapToCache(path, thumb); }
-                            }
-                        }, token);
-                    }
+                    // 動画のサムネイル表示機能を削除したため、ここではプリロードを行わない
                     continue;
                 }
 
