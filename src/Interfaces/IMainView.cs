@@ -48,6 +48,7 @@ namespace quick_image_viewer.Interfaces
         void StopAnimation();
         void ClearCachedBitmap(string path);
         void Close();
+        void SetGridLoading(bool isLoading, bool isBackground = false);
 
         Microsoft.UI.Windowing.AppWindow AppWindow { get; }
         bool IsSearchingFolder { get; set; }

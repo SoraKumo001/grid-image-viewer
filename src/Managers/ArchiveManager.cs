@@ -66,6 +66,25 @@ namespace quick_image_viewer.Managers
             return images.OrderBy(f => f, new NaturalStringComparer()).ToList();
         }
 
+        public static bool HasArchiveImages(string archivePath, IEnumerable<string>? allowedExtensions = null)
+        {
+            try
+            {
+                using (var archive = OpenArchive(archivePath))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        if (entry != null && !entry.IsDirectory && FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(entry.Key) ?? "", allowedExtensions))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
         public static byte[]? GetEntryBytes(string archivePath, string entryName)
         {
             try

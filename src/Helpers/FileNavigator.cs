@@ -37,7 +37,7 @@ namespace quick_image_viewer.Helpers
                 {
                     if (ArchiveManager.IsArchive(node, allowedExtensions))
                     {
-                        if (ArchiveManager.GetArchiveImages(node, allowedExtensions).Any())
+                        if (ArchiveManager.HasArchiveImages(node, allowedExtensions))
                         {
                             return node;
                         }

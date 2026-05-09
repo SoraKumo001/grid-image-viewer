@@ -169,13 +169,21 @@ namespace quick_image_viewer.Managers
                 _window.UpdatePageIndicator();
                 _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
                 {
+                    // Ensure the GridView itself or an item has focus to enable keyboard navigation
                     if (_window.ImageGridView.SelectedItem != null)
                     {
                         var container = _window.ImageGridView.ContainerFromItem(_window.ImageGridView.SelectedItem) as Microsoft.UI.Xaml.Controls.GridViewItem;
                         if (container != null) container.Focus(FocusState.Programmatic);
                         else _window.ImageGridView.Focus(FocusState.Programmatic);
                     }
+                    else
+                    {
+                        _window.ImageGridView.Focus(FocusState.Programmatic);
+                    }
                 });
+
+                // Start preloading even in grid mode to make folder navigation snappy
+                _ = _cacheManager.PreloadFoldersAsync(_window.CurrentDirectory);
                 return;
             }
             else

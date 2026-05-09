@@ -123,6 +123,14 @@ namespace quick_image_viewer
         }
 
         void IMainView.Close() => Close();
+        void IMainView.SetGridLoading(bool isLoading, bool isBackground)
+        {
+            if (GridControlInternal != null)
+            {
+                if (isBackground) GridControlInternal.SetBackgroundLoading(isLoading);
+                else GridControlInternal.SetLoading(isLoading);
+            }
+        }
         Microsoft.UI.Windowing.AppWindow IMainView.AppWindow => AppWindow;
         System.Collections.ObjectModel.ObservableCollection<string> IMainView.Playlist => ViewModel.Playlist;
         int IMainView.CurrentIndex { get => ViewModel.CurrentIndex; set => ViewModel.CurrentIndex = value; }
@@ -543,7 +551,14 @@ namespace quick_image_viewer
         {
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
-                RootGrid.Focus(FocusState.Programmatic);
+                if (IsGridMode)
+                {
+                    ImageGridView.Focus(FocusState.Programmatic);
+                }
+                else
+                {
+                    RootGrid.Focus(FocusState.Programmatic);
+                }
             });
         }
 

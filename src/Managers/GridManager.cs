@@ -568,6 +568,8 @@ namespace quick_image_viewer.Managers
         System.Collections.Generic.IList<ImageItem> IGridManager.GridItems => GridItems;
 
 
+        private CancellationTokenSource? _gridItemsLoadCts;
+
         public void UpdateGridItems(bool forceFullUpdate)
         {
             if (!_window.IsGridMode && !forceFullUpdate)
@@ -583,15 +585,66 @@ namespace quick_image_viewer.Managers
             if (GridItems.Count == _window.ViewModel.Playlist.Count && !forceFullUpdate) return;
             if (_window.ViewModel.Playlist.Count > 1000 && !_window.IsGridMode) return;
 
+            _gridItemsLoadCts?.Cancel();
+            _gridItemsLoadCts?.Dispose();
+            _gridItemsLoadCts = new CancellationTokenSource();
+            var token = _gridItemsLoadCts.Token;
+
             foreach (var item in GridItems) item.DisposeCodec();
+            GridItems.Clear();
 
-            var newList = new ObservableCollection<ImageItem>();
-            foreach (var f in _window.ViewModel.Playlist) newList.Add(new ImageItem { FilePath = f, IsLoading = true });
-
-            GridItems = newList;
             _window.ImageGridView.ItemsSource = GridItems;
-            RefreshThumbnails();
-            _window.DispatcherQueue.TryEnqueue(() => UpdatePageIndicatorFromScroll());
+            _window.SetGridLoading(true);
+            _window.SetGridLoading(true, true); // Show background progress bar
+
+            var playlistSnapshot = _window.ViewModel.Playlist.ToList();
+
+            _ = Task.Run(async () =>
+            {
+                const int batchSize = 100;
+                for (int i = 0; i < playlistSnapshot.Count; i += batchSize)
+                {
+                    if (token.IsCancellationRequested)
+                    {
+                        _window.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            _window.SetGridLoading(false);
+                            _window.SetGridLoading(false, true);
+                        });
+                        return;
+                    }
+
+                    var batch = playlistSnapshot.Skip(i).Take(batchSize).Select(f => new ImageItem { FilePath = f, IsLoading = true }).ToList();
+
+                    await Task.Delay(1);
+
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+
+                        // Hide the central loading overlay as soon as the first batch is ready
+                        if (GridItems.Count == 0) _window.SetGridLoading(false);
+
+                        foreach (var item in batch)
+                        {
+                            GridItems.Add(item);
+                        }
+
+                        if (GridItems.Count == batch.Count || GridItems.Count % 500 == 0 || GridItems.Count == playlistSnapshot.Count)
+                        {
+                            RefreshThumbnails();
+                        }
+                    });
+                }
+
+                _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    _window.SetGridLoading(false);
+                    _window.SetGridLoading(false, true); // Hide background progress bar
+                    UpdatePageIndicatorFromScroll();
+                });
+            });
         }
 
         public void RefreshThumbnails()

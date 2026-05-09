@@ -9,33 +9,49 @@
     mc:Ignorable="d"
     IsTabStop="False">
 
-    <GridView x:Name="ImageGridView"
-              SelectionMode="Single"
-              IsItemClickEnabled="True"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch"
-              Margin="10">
-        <GridView.ItemContainerStyle>
-            <Style TargetType="GridViewItem">
-                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="VerticalContentAlignment" Value="Stretch" />
-            </Style>
-        </GridView.ItemContainerStyle>
-        <GridView.ItemsPanel>
-            <ItemsPanelTemplate>
-                <ItemsWrapGrid Orientation="Horizontal" HorizontalAlignment="Center" />
-            </ItemsPanelTemplate>
-        </GridView.ItemsPanel>
-        <GridView.ItemTemplate>
-            <DataTemplate x:DataType="models:ImageItem">
-                <Grid Margin="5" CornerRadius="4" Background="#333333" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                    <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="Uniform" />
-                    <Border VerticalAlignment="Bottom" Background="#88000000" Padding="4">
-                        <TextBlock Text="{x:Bind FileName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FileName}" />
-                    </Border>
-                    <ProgressRing IsActive="{x:Bind IsLoading, Mode=OneWay}" Width="32" Height="32" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,60" />
-                </Grid>
-            </DataTemplate>
-        </GridView.ItemTemplate>
-    </GridView>
+    <Grid>
+        <GridView x:Name="ImageGridView"
+                  SelectionMode="Single"
+                  IsItemClickEnabled="True"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Margin="10">
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                </Style>
+            </GridView.ItemContainerStyle>
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal" HorizontalAlignment="Center" />
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="models:ImageItem">
+                    <Grid Margin="5" CornerRadius="4" Background="#333333" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="Uniform" />
+                        <Border VerticalAlignment="Bottom" Background="#88000000" Padding="4">
+                            <TextBlock Text="{x:Bind FileName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FileName}" />
+                        </Border>
+                        <ProgressRing IsActive="{x:Bind IsLoading, Mode=OneWay}" Width="32" Height="32" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,60" />
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+
+        <!-- Loading Overlay for the Grid itself -->
+        <Border x:Name="LoadingOverlay" x:FieldModifier="internal" 
+                Background="#AA1A1A1A" Visibility="Collapsed" IsHitTestVisible="False">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                <ProgressRing IsActive="True" Width="48" Height="48" Foreground="#00A2ED" />
+                <TextBlock x:Name="LoadingText" x:FieldModifier="internal" Text="Loading items..." Foreground="#888888" FontSize="16" />
+            </StackPanel>
+        </Border>
+
+        <!-- Progress bar for background loading -->
+        <ProgressBar x:Name="BackgroundProgressBar" x:FieldModifier="internal" 
+                     VerticalAlignment="Top" Height="3" IsIndeterminate="True" 
+                     Visibility="Collapsed" Foreground="#00A2ED" Background="Transparent" />
+    </Grid>
 </UserControl>

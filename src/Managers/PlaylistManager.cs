@@ -7,6 +7,7 @@ using quick_image_viewer.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -184,6 +185,10 @@ namespace quick_image_viewer.Managers
         {
             string currentDir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(currentDir)) return;
+
+            // Normalize path to ensure consistency in FileNavigator (remove trailing slashes)
+            currentDir = currentDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (currentDir.Length == 2 && currentDir[1] == ':') currentDir += Path.DirectorySeparatorChar; // Handle C: -> C:\
 
             var (preloadedPath, preloadedPlaylist) = _cacheManager.GetPreloadedFolderData(offset);
             if (!string.IsNullOrEmpty(preloadedPath) && preloadedPlaylist != null && preloadedPlaylist.Count > 0)
