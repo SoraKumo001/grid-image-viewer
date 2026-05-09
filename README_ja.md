@@ -4,7 +4,11 @@ Windows 向けの高速・軽量な画像ビューアアプリです。フォル
 
 ## Download
 
-https://github.com/SoraKumo001/quick-image-viewer/releases
+- Microsoft Store
+  https://apps.microsoft.com/detail/9ns97p3lfqws
+
+- GitHub
+  https://github.com/SoraKumo001/quick-image-viewer/releases
 
 ## 主な機能
 

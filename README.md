@@ -6,7 +6,11 @@ A fast and lightweight image viewer application for Windows. It allows you to qu
 
 ## Download
 
-https://github.com/SoraKumo001/quick-image-viewer/releases
+- Microsoft Store
+  https://apps.microsoft.com/detail/9ns97p3lfqws
+
+- GitHub
+  https://github.com/SoraKumo001/quick-image-viewer/releases
 
 ## Key Features
 
