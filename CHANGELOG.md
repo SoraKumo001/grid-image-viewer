@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.7 - 2026-05-09
+
+- **Grid Mode Enhancements**:
+  - [Feature] Implemented a dedicated context menu (right-click) for Grid Mode.
+  - [Improvement] Tailored the grid context menu to exclude irrelevant image editing items (e.g., Crop) and include grid-specific actions like "Refresh Thumbnails" and "Sort By".
+  - [Improvement] Optimized keyboard focus management specifically for Grid Mode.
+- **File Management Features**:
+  - [Feature] Added "Rename" functionality for files (available via context menu and keyboard shortcuts).
+  - [Feature] Added "Move to Folder" functionality to relocate files to a different directory.
+  - [Improvement] Enhanced the Delete confirmation dialog to display the target filename, preventing accidental deletions.
+  - [Security] Implemented guards to disable file modification operations (Delete, Rename, Move) for files within archives.
+- **Security & Stability**:
+  - [Security] Updated `SharpCompress` library to v0.48.0 to resolve known vulnerabilities.
+  - [Fix] Corrected XAML configuration issues that caused build failures.
+  - [Improvement] Refactored bookmark menu synchronization to ensure consistent state across both Viewer and Grid mode menus.
+
 ## v1.4.6 - 2026-05-09
 
 - **Stability & Crash Fixes**:
