@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using quick_image_viewer.Interfaces;
-using quick_image_viewer.Managers;
 using quick_image_viewer.Models;
 using quick_image_viewer.Services;
 using quick_image_viewer.ViewModels;
@@ -69,6 +68,7 @@ namespace quick_image_viewer
         public IMetadataDisplayService MetadataDisplayService { get; private set; }
         public IImageEditService ImageEditService { get; private set; }
         public IInputHandler InputHandler { get; private set; }
+        public IFileOperationService FileOperationService { get; private set; }
 
         IMetadataDisplayService IMainView.MetadataDisplayService => MetadataDisplayService;
         IImageEditService IMainView.ImageEditService => ImageEditService;
@@ -241,6 +241,7 @@ namespace quick_image_viewer
             this.NotificationService = services.GetRequiredService<INotificationService>();
             this.MetadataDisplayService = services.GetRequiredService<IMetadataDisplayService>();
             ImageEditService = services.GetRequiredService<IImageEditService>();
+            FileOperationService = services.GetRequiredService<IFileOperationService>();
 
             InputHandler = services.GetRequiredService<IInputHandler>();
 
@@ -385,133 +386,17 @@ namespace quick_image_viewer
 
         public async Task HandleDeleteFileAsync(string path)
         {
-            if (string.IsNullOrEmpty(path) || ArchiveManager.IsArchivePath(path)) return;
-
-            var dialog = new ContentDialog
-            {
-                Title = _settings.GetString("DeleteDialog_Title"),
-                Content = string.Format(_settings.GetString("DeleteDialog_Content"), System.IO.Path.GetFileName(path)),
-                PrimaryButtonText = _settings.GetString("DeleteDialog_Primary"),
-                CloseButtonText = _settings.GetString("DeleteDialog_Close"),
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.Content?.XamlRoot
-            };
-
-            IsDialogOpen = true;
-            var result = await dialog.ShowAsync();
-            IsDialogOpen = false;
-
-            if (result == ContentDialogResult.Primary)
-            {
-                try
-                {
-                    if (System.IO.File.Exists(path))
-                    {
-                        System.IO.File.Delete(path);
-                        PlaylistManager.RemoveFromPlaylist(path);
-                        ShowNotification(_settings.GetString("Notification_FileDeleted"));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ShowNotification("Error: " + ex.Message);
-                }
-            }
+            await FileOperationService.HandleDeleteFileAsync(path);
         }
 
         public void Receive(RenameFileMessage message)
         {
-            _ = HandleRenameFileAsync(message.Path);
-        }
-
-        private async Task HandleRenameFileAsync(string path)
-        {
-            if (string.IsNullOrEmpty(path) || ArchiveManager.IsArchivePath(path)) return;
-
-            var textBox = new TextBox
-            {
-                Text = System.IO.Path.GetFileNameWithoutExtension(path),
-                Header = _settings.GetString("RenameDialog_Label"),
-                SelectionStart = 0,
-                SelectionLength = System.IO.Path.GetFileNameWithoutExtension(path).Length
-            };
-
-            var dialog = new ContentDialog
-            {
-                Title = _settings.GetString("RenameDialog_Title"),
-                Content = textBox,
-                PrimaryButtonText = _settings.GetString("RenameDialog_PrimaryButton"),
-                CloseButtonText = _settings.GetString("RenameDialog_CloseButton"),
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.Content?.XamlRoot
-            };
-
-            IsDialogOpen = true;
-            var result = await dialog.ShowAsync();
-            IsDialogOpen = false;
-
-            if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(textBox.Text))
-            {
-                try
-                {
-                    string oldName = System.IO.Path.GetFileName(path);
-                    string newName = textBox.Text + System.IO.Path.GetExtension(path);
-                    if (oldName == newName) return;
-
-                    string directory = System.IO.Path.GetDirectoryName(path)!;
-                    string newPath = System.IO.Path.Combine(directory, newName);
-
-                    if (System.IO.File.Exists(path))
-                    {
-                        System.IO.File.Move(path, newPath);
-                        ImageEditService.RenameSession(path, newPath);
-                        ViewerManager.ReplacePath(path, newPath);
-                        PlaylistManager.ReplaceInPlaylist(path, newPath);
-                        ShowNotification(_settings.GetString("Notification_Renamed"));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ShowNotification("Error: " + ex.Message);
-                }
-            }
+            _ = FileOperationService.HandleRenameFileAsync(message.Path);
         }
 
         public void Receive(MoveFileMessage message)
         {
-            _ = HandleMoveFileAsync(message.Path);
-        }
-
-        private async Task HandleMoveFileAsync(string path)
-        {
-            if (string.IsNullOrEmpty(path) || ArchiveManager.IsArchivePath(path)) return;
-
-            var picker = new Windows.Storage.Pickers.FolderPicker();
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-            picker.FileTypeFilter.Add("*");
-            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
-
-            var folder = await picker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                try
-                {
-                    string fileName = System.IO.Path.GetFileName(path);
-                    string destPath = System.IO.Path.Combine(folder.Path, fileName);
-
-                    if (System.IO.File.Exists(path))
-                    {
-                        System.IO.File.Move(path, destPath);
-                        PlaylistManager.RemoveFromPlaylist(path);
-                        ShowNotification(_settings.GetString("Notification_Moved"));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ShowNotification("Error: " + ex.Message);
-                }
-            }
+            _ = FileOperationService.HandleMoveFileAsync(message.Path);
         }
 
         public void Receive(ShellActionMessage message)

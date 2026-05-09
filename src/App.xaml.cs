@@ -76,6 +76,7 @@ namespace quick_image_viewer
             services.AddSingleton<IMetadataDisplayService, MetadataDisplayService>();
             services.AddSingleton<IImageEditService, ImageEditService>();
             services.AddSingleton<IInputHandler, InputHandler>();
+            services.AddSingleton<IFileOperationService, FileOperationService>();
 
             return services.BuildServiceProvider();
         }
