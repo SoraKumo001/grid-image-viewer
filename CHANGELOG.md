@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.8 - 2026-05-09
+
+- **Slideshow Enhancements**:
+  - [Feature] Added "Stretch Mode" selection to the slideshow setup dialog, allowing users to choose a specific display size (Keep Current, Contain, Cover, or Original Size) for slideshow playback.
+  - [Stability] Fixed a `XamlParseException` related to resource ID mapping in the slideshow dialog.
+  - [Stability] Fixed a `NullReferenceException` caused by unsafe type unboxing in the slideshow stretch mode selection.
+
 ## v1.4.7 - 2026-05-09
 
 - **Grid Mode Enhancements**:

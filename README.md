@@ -57,6 +57,7 @@ A fast and lightweight image viewer application for Windows. It allows you to qu
 
 - Automatically transition images at specified intervals (in seconds)
 - **Crossfade**: Apply smooth fade effects during image transitions
+- **Stretch Mode Selection**: Ability to automatically switch to a specific display size (Contain, Cover, or Original Size) only during slideshow playback
 - **Flexible Search Scope**: Supports options to include the next folder, sibling folders, and subfolders automatically, in addition to loop and random playback
 - Auto-transition to full screen option included
 - Press `A` to display the settings dialog and start
@@ -126,6 +127,9 @@ A fast and lightweight image viewer application for Windows. It allows you to qu
 
 ### 🖱️ Context Menu
 
+The menu items automatically switch based on the mode (Viewer or Grid) to provide the most relevant actions.
+
+#### General / Viewer Mode Items
 - **Save As**: Save in the specified format (JPEG, PNG, WebP, BMP)
 - **Overwrite**: Overwrite and save
 - **Print**: Print images fitted to paper size
@@ -137,8 +141,16 @@ A fast and lightweight image viewer application for Windows. It allows you to qu
 - **Undo/Redo**: Undo and redo editing operations
 - **Show Metadata**: Detailed display of EXIF info, etc. (Cycle with `I` key)
 - **Bookmark**: Add/remove current folder from bookmarks
+- **File Management**: Rename or move files to another folder
 - **Open in Explorer**: Open file location in Explorer
 - **Settings**: Change keybindings and display settings
+
+#### Dedicated Grid Mode Items
+- **Refresh Thumbnails**: Forcefully regenerate thumbnails
+- **Sort By**: Sort by name, date, or size (UI in progress)
+- **Slideshow**: Start a slideshow from the current folder
+- **Bookmarks**: Folder registration, panel display, and list access
+- **General Settings**: Open the settings dialog immediately
 
 ## Requirements
 
