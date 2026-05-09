@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
@@ -21,8 +22,9 @@ namespace quick_image_viewer.Helpers
         private Windows.Foundation.Point _lastPointerPoint;
         private bool _isPanning = false;
         private Windows.Foundation.Point _startPointerPoint;
-        private double _startHorizontalOffset;
-        private double _startVerticalOffset;
+
+        private double _startTranslateX;
+        private double _startTranslateY;
 
         public InputHandler(IMainView window, ISettingsManager settings)
         {
@@ -42,11 +44,22 @@ namespace quick_image_viewer.Helpers
             {
                 _isPanning = true;
                 _startPointerPoint = ptr.Position;
-                _startHorizontalOffset = _window.ImageScrollViewer.HorizontalOffset;
-                _startVerticalOffset = _window.ImageScrollViewer.VerticalOffset;
+
+                var transform = GetTransform(_window.PagesGrid);
+                _startTranslateX = transform.TranslateX;
+                _startTranslateY = transform.TranslateY;
+
                 ((UIElement)sender).CapturePointer(e.Pointer);
                 e.Handled = true;
             }
+        }
+
+        private CompositeTransform GetTransform(UIElement element)
+        {
+            if (element.RenderTransform is CompositeTransform ct) return ct;
+            var newCt = new CompositeTransform();
+            element.RenderTransform = newCt;
+            return newCt;
         }
 
         public void HandlePointerMoved(object sender, PointerRoutedEventArgs e)
@@ -63,9 +76,15 @@ namespace quick_image_viewer.Helpers
                 double deltaX = currentPoint.X - _startPointerPoint.X;
                 double deltaY = currentPoint.Y - _startPointerPoint.Y;
 
-                // ChangeView requires offsets in pixels. 
-                // Note: We use the un-animated version for better responsiveness during drag.
-                _window.ImageScrollViewer.ChangeView(_startHorizontalOffset - deltaX, _startVerticalOffset - deltaY, null, true);
+                var transform = GetTransform(_window.PagesGrid);
+                float zoom = _window.ImageScrollViewer.ZoomFactor;
+
+                // ビューポート（画面）上での移動量を現在のズーム倍率で割ることで、
+                // コンテンツ（画像）座標系での移動量に変換します。
+                // これにより、ズーム状態に関わらずマウスの動きに追従して画像が動きます。
+                transform.TranslateX = _startTranslateX + (deltaX / zoom);
+                transform.TranslateY = _startTranslateY + (deltaY / zoom);
+
                 e.Handled = true;
             }
         }
@@ -112,7 +131,22 @@ namespace quick_image_viewer.Helpers
 
         private bool IsMatch(KeyBindingData binding, VirtualKey key, bool ctrl, bool shift, bool alt)
         {
-            return binding.Key == key && binding.Ctrl == ctrl && binding.Shift == shift && binding.Alt == alt;
+            if (binding.Ctrl != ctrl || binding.Shift != shift || binding.Alt != alt) return false;
+            if (binding.Key == key) return true;
+
+            // Handle Numpad/Number row equivalents for zoom reset
+            if (binding.Key == VirtualKey.Number0 && key == VirtualKey.NumberPad0) return true;
+            if (binding.Key == VirtualKey.NumberPad0 && key == VirtualKey.Number0) return true;
+
+            // Handle Zoom In equivalents (+ and =)
+            if (binding.Key == VirtualKey.Add && (int)key == 187) return true; // 187 is VK_OEM_PLUS
+            if ((int)binding.Key == 187 && key == VirtualKey.Add) return true;
+
+            // Handle Zoom Out equivalents (-)
+            if (binding.Key == VirtualKey.Subtract && (int)key == 189) return true; // 189 is VK_OEM_MINUS
+            if ((int)binding.Key == 189 && key == VirtualKey.Subtract) return true;
+
+            return false;
         }
 
         public void HandleKeyDown(object sender, KeyRoutedEventArgs e)

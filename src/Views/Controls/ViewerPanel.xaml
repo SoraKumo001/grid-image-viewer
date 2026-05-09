@@ -16,11 +16,12 @@
         ZoomMode="Enabled"
         MinZoomFactor="0.1"
         MaxZoomFactor="10.0"
+        Background="Transparent"
         IsTabStop="False">
         <Grid x:Name="RootContainer"
               Width="{Binding ElementName=ImageScrollViewer, Path=ViewportWidth}"
               Height="{Binding ElementName=ImageScrollViewer, Path=ViewportHeight}"
-              Background="Black"
+              Background="Transparent"
               IsTabStop="False">
 
             <!-- Buffer 1 -->

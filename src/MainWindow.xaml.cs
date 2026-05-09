@@ -153,13 +153,13 @@ namespace quick_image_viewer
         TextBlock IMainView.TxtMetaLens => TxtMetaLens;
         TextBlock IMainView.TxtMetaSettings => TxtMetaSettings;
         TextBlock IMainView.TxtMetaDate => TxtMetaDate;
-        Grid IMainView.PagesGrid => ViewerControlInternal.CurrentBuffer;
+        Grid IMainView.PagesGrid => ViewerControlInternal.RootPagesContainer;
         Grid IMainView.RootGrid => RootGrid;
         bool IMainView.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
         IntPtr IMainView.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
         bool IMainView.ExtendsContentIntoTitleBar { get => ExtendsContentIntoTitleBar; set => ExtendsContentIntoTitleBar = value; }
         void IMainView.SetTitleBar(UIElement tb) => SetTitleBar(tb);
-        UIElement IMainView.AppTitleBar => AppTitleBar;
+        Border IMainView.AppTitleBar => AppTitleBar;
         string IMainView.CurrentImagePath => CurrentImagePath;
         void IMainView.UpdateContextFlyout()
         {
@@ -378,7 +378,7 @@ namespace quick_image_viewer
             int next = current == 2 ? 3 : (current == 3 ? 0 : 2);
             _settings.ImageStretchMode = next;
             _settings.SaveSettings();
-            ViewerManager.UpdateStretch();
+            ViewerManager.UpdateStretch(true);
 
             var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
             string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");

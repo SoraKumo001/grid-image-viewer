@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.ApplicationModel.Resources;
 using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
@@ -98,7 +99,25 @@ namespace quick_image_viewer.Managers
         {
             if (message.Factor == 0)
             {
-                _window.ImageScrollViewer.ChangeView(null, null, 1.0f);
+                // Reset zoom and scroll offsets (immediate)
+                if (_window.ImageScrollViewer != null)
+                {
+                    _window.ImageScrollViewer.ChangeView(0, 0, 1.0f, true);
+                }
+
+                // Reset custom translation on the container
+                if (_window.PagesGrid?.RenderTransform is CompositeTransform ct)
+                {
+                    ct.TranslateX = 0;
+                    ct.TranslateY = 0;
+                }
+
+                // Also reset transform on the active buffer to ensure full reset
+                if (_window.ViewerControl?.CurrentBuffer?.RenderTransform is CompositeTransform bct)
+                {
+                    bct.TranslateX = 0;
+                    bct.TranslateY = 0;
+                }
             }
             else
             {
@@ -371,6 +390,8 @@ namespace quick_image_viewer.Managers
             _window.ViewerControl.PagesGrids[targetBufferIdx].Opacity = 1;
             _window.ViewerControl.PagesGrids[targetBufferIdx].Visibility = Visibility.Visible;
 
+            // 移動位置の自動リセットを廃止（ユーザーがズームリセット等を行うまで位置を維持）
+
             var currentFiles = new List<string>();
             var loadTasks = new List<Task>();
 
@@ -541,9 +562,17 @@ namespace quick_image_viewer.Managers
 
         public void InvalidatePage(int index) => _pageControls[index].PageCanvas.Invalidate();
 
-        public void UpdateStretch()
+        public void UpdateStretch(bool resetPosition = false)
         {
             if (_window.ViewerControl == null) return;
+
+            // Reset translation only when explicitly requested (e.g. manual stretch change)
+            if (resetPosition && _window.ViewerControl.RootPagesContainer.RenderTransform is CompositeTransform ct)
+            {
+                ct.TranslateX = 0;
+                ct.TranslateY = 0;
+            }
+
             try
             {
                 var stretch = (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;

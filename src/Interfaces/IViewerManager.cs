@@ -8,7 +8,7 @@ namespace quick_image_viewer.Interfaces
     public interface IViewerManager : IDisposable
     {
         Task UpdateDisplayAsync();
-        void UpdateStretch();
+        void UpdateStretch(bool resetPosition = false);
         void HandleWindowSizeChanged(double width, double height);
         void PaintCanvas(int bufferIndex, int pageIndex, SKPaintSurfaceEventArgs e);
         string? GetPathForPage(int index);

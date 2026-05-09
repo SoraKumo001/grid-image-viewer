@@ -9,7 +9,7 @@
     mc:Ignorable="d"
     IsTabStop="False">
 
-    <Grid x:Name="InternalRootGrid" Background="Black" IsTabStop="False">
+    <Grid x:Name="InternalRootGrid" Background="Transparent" IsTabStop="False">
         <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
         <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
         

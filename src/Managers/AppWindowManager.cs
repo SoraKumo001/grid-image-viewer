@@ -60,9 +60,33 @@ namespace quick_image_viewer.Managers
         public void ApplyBackgroundSettings()
         {
             int mode = _settings.BackgroundColorMode;
-            if (mode == 1) _window.RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 0, 0));
-            else if (mode == 2) _window.RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
-            else _window.RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+            var theme = mode == 2 ? Microsoft.UI.Xaml.ElementTheme.Light : Microsoft.UI.Xaml.ElementTheme.Dark;
+            _window.RootGrid.RequestedTheme = theme;
+
+            if (mode == 1) // Black
+            {
+                _window.RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 0, 0));
+            }
+            else if (mode == 2) // White
+            {
+                _window.RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
+            }
+            else // System (Mica)
+            {
+                _window.RootGrid.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+            }
+
+            // Apply to TitleBar
+            if (theme == Microsoft.UI.Xaml.ElementTheme.Light)
+            {
+                _window.AppTitleBar.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 243, 243, 243));
+                _window.AppTitleBar.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 215, 215, 215));
+            }
+            else
+            {
+                _window.AppTitleBar.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 36, 36, 36));
+                _window.AppTitleBar.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 51, 51));
+            }
         }
 
         public void SaveWindowState()

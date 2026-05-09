@@ -106,7 +106,7 @@ namespace quick_image_viewer.Interfaces
         System.IntPtr WindowHandle { get; }
         bool ExtendsContentIntoTitleBar { get; set; }
         void SetTitleBar(UIElement titleBar);
-        UIElement AppTitleBar { get; }
+        Border AppTitleBar { get; }
         string CurrentImagePath { get; }
         void UpdateContextFlyout();
     }

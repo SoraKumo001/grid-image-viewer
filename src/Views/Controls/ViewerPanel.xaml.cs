@@ -20,7 +20,8 @@ namespace quick_image_viewer.Views.Controls
         public Grid InactiveBuffer => PagesGrids[InactiveBufferIndex];
 
         public ScrollViewer ScrollViewer => ImageScrollViewer;
-        public Grid RootPagesGrid => PagesGrid1; // Keep for backward compatibility if needed, but we should use CurrentBuffer
+        public Grid RootPagesGrid => PagesGrid1;
+        public Grid RootPagesContainer => RootContainer;
         public Grid Overlay => OverlayGrid;
 
         public ViewerPanel()

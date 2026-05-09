@@ -367,7 +367,7 @@ namespace quick_image_viewer.Managers
             {
                 _settings.ImageStretchMode = mode;
                 _settings.SaveSettings();
-                _viewerManager.UpdateStretch();
+                _viewerManager.UpdateStretch(true);
                 UpdateMenuStates();
             }
         }
