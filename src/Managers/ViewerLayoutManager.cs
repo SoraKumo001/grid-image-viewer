@@ -23,7 +23,7 @@ namespace quick_image_viewer.Managers
             int currentQuadLayout,
             bool isSlideshowRunning)
         {
-            bool uniformToFill = (isSlideshowRunning && _settings.SlideshowUniformToFill);
+            bool uniformToFill = (isSlideshowRunning && (_settings.SlideshowUniformToFill || _settings.ImageStretchMode == 3));
 
 
             for (int i = 0; i < 4; i++)
@@ -177,6 +177,9 @@ namespace quick_image_viewer.Managers
 
             double avgRatio = 0;
             int validCount = 0;
+            int landscapeCount = 0;
+            int portraitCount = 0;
+
             for (int i = 0; i < 4; i++)
             {
                 int indexToLoad = -1;
@@ -192,20 +195,25 @@ namespace quick_image_viewer.Managers
                         {
                             avgRatio += (double)w / h;
                             validCount++;
+
+                            if (w > h) landscapeCount++;
+                            else portraitCount++;
                         }
                     }
                     catch { }
                 }
             }
 
-            double a = validCount > 0 ? avgRatio / validCount : 0.75; // Default to portrait ratio if no valid images
+            // Priority 1: Majority rule
+            if (landscapeCount > portraitCount) return 2; // Grid (2x2) is better for wide images
+            if (portraitCount > landscapeCount) return 1; // Horizontal (1x4) is often preferred for tall images
+
+            // Priority 2: Fallback to mathematical best fit if tied or no valid counts
+            double a = validCount > 0 ? avgRatio / validCount : 0.75; // Default to portrait ratio
             if (windowHeight <= 0) windowHeight = 1;
             if (windowWidth <= 0) windowWidth = 1;
 
-            // Calculate scaled dimension for Horizontal (1)
             double s1 = System.Math.Min(windowWidth / (4 * a), windowHeight);
-
-            // Calculate scaled dimension for 2x2 Grid (2)
             double s2 = System.Math.Min(windowWidth / (2 * a), windowHeight / 2);
 
             return s1 > s2 ? 1 : 2;

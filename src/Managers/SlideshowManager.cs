@@ -177,7 +177,11 @@ namespace quick_image_viewer.Managers
             }
 
             _originalStretchMode = _settings.ImageStretchMode;
-            if (_settings.SlideshowStretchMode >= 0)
+            if (_settings.SlideshowUniformToFill)
+            {
+                _settings.ImageStretchMode = 3; // UniformToFill
+            }
+            else if (_settings.SlideshowStretchMode >= 0)
             {
                 _settings.ImageStretchMode = _settings.SlideshowStretchMode;
             }
@@ -251,7 +255,7 @@ namespace quick_image_viewer.Managers
                 ViewModel.MangaSplitCount = _originalMangaSplitCount;
             }
 
-            if (_settings.SlideshowStretchMode >= 0)
+            if (_settings.SlideshowUniformToFill || _settings.SlideshowStretchMode >= 0)
             {
                 _settings.ImageStretchMode = _originalStretchMode;
             }

@@ -510,10 +510,25 @@ namespace quick_image_viewer.Views.Controls
             double targetW = videoW * scale;
             double targetH = videoH * scale;
 
-
             _internalMediaPlayer.Width = targetW;
             _internalMediaPlayer.Height = targetH;
-            _internalMediaPlayer.Margin = new Thickness(0);
+
+            // 4分割レイアウトなどでコンテンツの端を揃えるための位置調整
+            // 位置の参照元には、書き換えの発生しない InternalPageImage のアライメントを使用する
+            double left = 0;
+            double top = 0;
+            var hAlign = InternalPageImage.HorizontalAlignment;
+            var vAlign = InternalPageImage.VerticalAlignment;
+
+            if (hAlign == HorizontalAlignment.Center) left = (containerW - targetW) / 2;
+            else if (hAlign == HorizontalAlignment.Right) left = containerW - targetW;
+
+            if (vAlign == VerticalAlignment.Center) top = (containerH - targetH) / 2;
+            else if (vAlign == VerticalAlignment.Bottom) top = containerH - targetH;
+
+            _internalMediaPlayer.Margin = new Thickness(left, top, 0, 0);
+            _internalMediaPlayer.HorizontalAlignment = HorizontalAlignment.Left;
+            _internalMediaPlayer.VerticalAlignment = VerticalAlignment.Top;
         }
 
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)

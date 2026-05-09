@@ -146,11 +146,17 @@ namespace quick_image_viewer.Managers
 
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count)
             {
-                // Clear display if playlist is empty
-                for (int b = 0; b < 2; b++)
+                // プレイリストが空の場合、またはインデックスが範囲外の場合は画面をクリアする。
+                // ただし、スライドショー停止直後のディレクトリ再読み込み中などは、
+                // 完全に真っ暗になるのを防ぐため、以前の表示を維持する場合がある。
+                bool isLoading = _window.Playlist.Count == 0;
+                if (!isLoading)
                 {
-                    _window.ViewerControl.PagesGrids[b].Opacity = 0;
-                    _window.ViewerControl.PagesGrids[b].Visibility = Visibility.Collapsed;
+                    for (int b = 0; b < 2; b++)
+                    {
+                        _window.ViewerControl.PagesGrids[b].Opacity = 0;
+                        _window.ViewerControl.PagesGrids[b].Visibility = Visibility.Collapsed;
+                    }
                 }
                 _window.UpdatePageIndicator();
                 return;
@@ -274,14 +280,10 @@ namespace quick_image_viewer.Managers
             bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
             bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || _cachedQuadLayout != _lastCachedQuadLayout;
 
-            _lastIsSlideshowRunning = isSlideshowRunning;
-            _lastMangaSplitCount = splitCount;
-            _lastEffectiveSplitCount = effectiveSplitCount;
-            _lastCachedQuadLayout = _cachedQuadLayout;
-
             if (!stateChanged && !splitChanged && currentPaths.SequenceEqual(nextPaths))
             {
-                // Ensure current buffer is visible and inactive is hidden
+                // 内容に変更がない場合は早期復帰する。
+                // 確実に現在のバッファが表示されていることを保証する。
                 _window.ViewerControl.CurrentBuffer.Opacity = 1;
                 _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
                 _window.ViewerControl.InactiveBuffer.Opacity = 0;
@@ -383,14 +385,17 @@ namespace quick_image_viewer.Managers
                 // We only wait here to decide when to hide the PREVIOUS buffer.
                 try
                 {
-                    if (isSlideshowRunning)
+                    // スライドショー中、またはモード切り替え時（スライドショー停止直後など）は、
+                    // 表示の乱れを防ぐためすべての画像がロードされるのを待機する。
+                    if (isSlideshowRunning || stateChanged || splitChanged)
                     {
                         await Task.WhenAll(loadTasks);
+                        // ContinueWith 内での UI スレッドへの Enqueue が完了するのをわずかに待機
+                        await Task.Delay(50);
                     }
                     else
                     {
-                        // Wait for images to load, but at most 500ms to keep it snappy.
-                        // Ready images are already visible, this just handles the cleanup of the old buffer.
+                        // 通常のナビゲーション時は、レスポンスを優先して最大500ms待機とする。
                         await Task.WhenAny(Task.Delay(500), Task.WhenAll(loadTasks));
                     }
                 }
@@ -447,6 +452,13 @@ namespace quick_image_viewer.Managers
                         _window.DispatcherQueue.TryEnqueue(() => _window.AnimationService.StartAnimation());
                     });
                 }
+
+                // すべての処理が成功裏に完了（またはタイムアウト等で次のバッファが表示開始）
+                // した時点で、最後に表示した状態を記録する。
+                _lastIsSlideshowRunning = isSlideshowRunning;
+                _lastMangaSplitCount = splitCount;
+                _lastEffectiveSplitCount = effectiveSplitCount;
+                _lastCachedQuadLayout = _cachedQuadLayout;
             }
             finally
             {
@@ -509,9 +521,7 @@ namespace quick_image_viewer.Managers
             if (_window.ViewerControl == null) return;
             try
             {
-                var stretch = (_window.SlideshowManager.IsSlideshowRunning && _settings.SlideshowUniformToFill)
-                    ? Microsoft.UI.Xaml.Media.Stretch.UniformToFill
-                    : (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
+                var stretch = (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
 
                 int stretchMode = (int)stretch;
 
