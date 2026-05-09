@@ -1,0 +1,44 @@
+<UserControl
+    x:Class="quick_image_viewer.Views.Controls.TopOperationPanelControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:quick_image_viewer.Views.Controls"
+    xmlns:viewmodels="using:quick_image_viewer.ViewModels"
+    x:DataType="local:TopOperationPanelControl"
+    mc:Ignorable="d">
+
+    <UserControl.Transitions>
+        <TransitionCollection>
+            <EdgeUIThemeTransition Edge="Top" />
+        </TransitionCollection>
+    </UserControl.Transitions>
+
+    <Border Background="#CC1A1A1A" 
+            BorderBrush="#333333" 
+            BorderThickness="1" 
+            CornerRadius="8" 
+            Padding="8"
+            Margin="0,8,0,0"
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Top"
+            PointerEntered="Border_PointerEntered" PointerExited="Border_PointerExited">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Open Folder" Click="OpenFolderButton_Click">
+                <FontIcon Glyph="&#xE838;" />
+            </Button>
+            <Border Width="1" Background="#333333" Margin="4,4,4,4" />
+            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Grid Mode" Command="{x:Bind ViewModel.ToggleGridCommand}" IsEnabled="{x:Bind ViewModel.HasImages, Mode=OneWay}">
+                <FontIcon Glyph="&#xE80A;" />
+            </Button>
+            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}">
+                <FontIcon Glyph="&#xE786;" />
+            </Button>
+            <Border Width="1" Background="#333333" Margin="4,4,4,4" />
+            <Button Style="{ThemeResource SubtleButtonStyle}" ToolTipService.ToolTip="Settings" Command="{x:Bind ViewModel.SettingsCommand}">
+                <FontIcon Glyph="&#xE713;" />
+            </Button>
+        </StackPanel>
+    </Border>
+</UserControl>

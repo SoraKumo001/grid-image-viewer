@@ -1,11 +1,15 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using quick_image_viewer.ViewModels;
+using System;
 
 namespace quick_image_viewer.Views.Controls
 {
     public sealed partial class BookmarkPanelControl : UserControl
     {
+        public event EventHandler? PanelHoverStarted;
+        public event EventHandler? PanelHoverEnded;
+
         public MainViewModel ViewModel
         {
             get => (MainViewModel)GetValue(ViewModelProperty);
@@ -39,6 +43,16 @@ namespace quick_image_viewer.Views.Controls
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e)
         {
             RemoveBookmarkClick?.Invoke(sender, e);
+        }
+
+        private void Border_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            PanelHoverStarted?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void Border_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            PanelHoverEnded?.Invoke(this, EventArgs.Empty);
         }
     }
 }

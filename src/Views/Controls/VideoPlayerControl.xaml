@@ -7,7 +7,12 @@
     mc:Ignorable="d"
     IsTabStop="False">
 
-    <Grid x:Name="InternalRootGrid" PointerExited="InternalRootGrid_PointerExited" PointerMoved="InternalRootGrid_PointerMoved" IsTabStop="False">
+    <Grid x:Name="InternalRootGrid" 
+          Background="Transparent"
+          PointerExited="InternalRootGrid_PointerExited" 
+          PointerMoved="InternalRootGrid_PointerMoved" 
+          PointerPressed="InternalRootGrid_PointerPressed"
+          IsTabStop="False">
         <!-- 軽量表示用のホスト -->
         <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsTabStop="False" />
         
@@ -29,6 +34,9 @@
                 CornerRadius="10" 
                 Visibility="Collapsed" 
                 IsHitTestVisible="True"
+                PointerMoved="InternalRootGrid_PointerMoved"
+                PointerEntered="CustomTransportPanel_PointerEntered"
+                PointerExited="CustomTransportPanel_PointerExited"
                 IsTabStop="False">
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>

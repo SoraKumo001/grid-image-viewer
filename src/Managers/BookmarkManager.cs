@@ -70,8 +70,8 @@ namespace quick_image_viewer.Managers
             {
                 _playlist.LoadDirectory(item.Path);
                 // We might want a message to close the panel if needed, but for now we can rely on ViewModel
-                // Or just send the toggle message again to close it
-                WeakReferenceMessenger.Default.Send(new ToggleBookmarkPanelMessage());
+                // Explicitly close the panel (unpin if pinned)
+                WeakReferenceMessenger.Default.Send(new ToggleBookmarkPanelMessage(false));
             }
         }
 

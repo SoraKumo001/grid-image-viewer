@@ -139,6 +139,14 @@ namespace quick_image_viewer.Views.Controls
             };
 
             this.SizeChanged += VideoPlayerControl_SizeChanged;
+            this.Unloaded += (s, e) =>
+            {
+                var mainView = ((App)Application.Current).MainView;
+                if (mainView?.ViewModel != null)
+                {
+                    mainView.ViewModel.IsVideoTransportHovered = false;
+                }
+            };
             RecreateMediaPlayerElement();
         }
 
@@ -503,6 +511,29 @@ namespace quick_image_viewer.Views.Controls
             ShowControls();
         }
 
+        private void InternalRootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            ShowControls();
+        }
+
+        private void CustomTransportPanel_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            var mainView = ((App)Application.Current).MainView;
+            if (mainView?.ViewModel != null)
+            {
+                mainView.ViewModel.IsVideoTransportHovered = true;
+            }
+        }
+
+        private void CustomTransportPanel_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            var mainView = ((App)Application.Current).MainView;
+            if (mainView?.ViewModel != null)
+            {
+                mainView.ViewModel.IsVideoTransportHovered = false;
+            }
+        }
+
         private void TimelineSlider_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
             _isDraggingSlider = true;
@@ -701,6 +732,12 @@ namespace quick_image_viewer.Views.Controls
             _sliderUpdateTimer.Stop();
             _hideTimer.Stop();
             _resizeDebounceTimer.Stop();
+
+            var mainView = ((App)Application.Current).MainView;
+            if (mainView?.ViewModel != null)
+            {
+                mainView.ViewModel.IsVideoTransportHovered = false;
+            }
         }
 
         public void ResetPlayback()

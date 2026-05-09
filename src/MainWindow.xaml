@@ -230,16 +230,27 @@
                 </Border>
             </Grid>
 
+            <!-- Top Operation Panel -->
+            <controls:TopOperationPanelControl x:Name="TopOperationPanel" x:FieldModifier="internal"
+                                               Canvas.ZIndex="200"
+                                               Visibility="{x:Bind BoolToVis(ViewModel.IsTopPanelVisible), Mode=OneWay}"
+                                               ViewModel="{x:Bind ViewModel, Mode=OneWay}"
+                                               OpenFolderRequested="OpenFolderButton_Click"
+                                               PanelHoverStarted="TopPanel_PanelHoverStarted"
+                                               PanelHoverEnded="TopPanel_PanelHoverEnded" />
+
         </Grid>
 
         <!-- Bookmark Panel (Overlay) -->
         <controls:BookmarkPanelControl x:Name="BookmarkPanel" x:FieldModifier="internal"
                                        Grid.Row="1" HorizontalAlignment="Left" Width="280"
-                                       Visibility="{x:Bind BoolToVis(ViewModel.IsBookmarkPanelVisible), Mode=OneWay}" Canvas.ZIndex="100"
+                                       Visibility="{x:Bind BoolToVis(ViewModel.IsBookmarkPanelActuallyVisible), Mode=OneWay}" Canvas.ZIndex="100"
                                        ViewModel="{x:Bind ViewModel, Mode=OneWay}"
                                        BookmarkItemClick="BookmarkListView_ItemClick"
                                        DragItemsCompleted="BookmarkListView_DragItemsCompleted"
-                                       RemoveBookmarkClick="MenuBookmarkRemove_Click" />
+                                       RemoveBookmarkClick="MenuBookmarkRemove_Click"
+                                       PanelHoverStarted="BookmarkPanel_PanelHoverStarted"
+                                       PanelHoverEnded="BookmarkPanel_PanelHoverEnded" />
         
         <!-- Folder Searching Overlay -->
         <controls:FolderSearchingOverlayControl x:Name="FolderSearchingOverlay" x:FieldModifier="internal" Grid.Row="1" Canvas.ZIndex="500"

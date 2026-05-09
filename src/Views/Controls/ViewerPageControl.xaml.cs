@@ -44,7 +44,11 @@ namespace quick_image_viewer.Views.Controls
         {
             this.InitializeComponent();
             InternalVideoPlayer.InvalidateCanvasRequested += () => DispatcherQueue.TryEnqueue(() => InternalPageCanvas.Invalidate());
-            InternalVideoPlayer.VideoSizeChanged += (s, size) => InvokeVideoSizeChanged(size);
+
+            // VideoPlayerControl 側からのサイズ変更通知を ViewerPageControl のイベントとして転送する。
+            // 以前は InvokeVideoSizeChanged(size) を呼んでいたが、それが VideoPlayer 側を再度呼び出し
+            // 無限ループ (StackOverflow) になっていたため、イベントの直接発火のみを行う。
+            InternalVideoPlayer.VideoSizeChanged += (s, size) => VideoSizeChanged?.Invoke(this, size);
         }
 
         public void UpdateSoftwareSource(Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource source)
@@ -95,6 +99,7 @@ namespace quick_image_viewer.Views.Controls
             await _loadingSemaphore.WaitAsync();
             try
             {
+                IsVideoContent = false;
                 await VideoPlayer.ResetPlaybackAsync();
 
                 if (_currentSoftwareSource != null)

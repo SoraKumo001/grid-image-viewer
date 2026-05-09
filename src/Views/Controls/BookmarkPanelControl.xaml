@@ -8,7 +8,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Border Background="#EE1F1F1F" BorderBrush="#333333" BorderThickness="0,0,1,0">
+    <Border Background="#EE1F1F1F" BorderBrush="#333333" BorderThickness="0,0,1,0"
+        PointerEntered="Border_PointerEntered" PointerExited="Border_PointerExited">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

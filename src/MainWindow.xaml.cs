@@ -179,6 +179,8 @@ namespace quick_image_viewer
         public FrameworkElement PageGrid4 => ViewerControlInternal.PageControlsBuffer[ViewerControlInternal.CurrentBufferIndex][3];
 
         private readonly DispatcherTimer _resizeTimer;
+        private readonly DispatcherTimer _topHoverTimer;
+        private readonly DispatcherTimer _leftHoverTimer;
         private bool _isDialogOpen;
         public bool IsDialogOpen { get => _isDialogOpen; set { _isDialogOpen = value; ViewModel.IsDialogOpen = value; } }
         private bool _isFirstLoad = true;
@@ -247,6 +249,17 @@ namespace quick_image_viewer
 
             _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
             _resizeTimer.Tick += (s, e) => { _resizeTimer.Stop(); _ = UpdateDisplayAsync(); };
+
+            _topHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _topHoverTimer.Tick += (s, e) => { _topHoverTimer.Stop(); ViewModel.IsTopPanelVisible = false; };
+
+            _leftHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _leftHoverTimer.Tick += (s, e) =>
+            {
+                _leftHoverTimer.Stop();
+                _leftHoverTimer.Interval = TimeSpan.FromMilliseconds(300); // 1秒ディレイなどから復帰させる
+                ViewModel.IsBookmarkPanelHovered = false;
+            };
 
             // Setup Controls
             ViewerControlInternal.PaintSurfaceRequested += (s, e) => ViewerManager.PaintCanvas(e.bufferIndex, e.pageIndex, e.args);
@@ -531,7 +544,52 @@ namespace quick_image_viewer
             _resizeTimer.Start();
         }
 
-        private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerMoved(sender, e);
+        private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            InputHandler.HandlePointerMoved(sender, e);
+
+            var point = e.GetCurrentPoint(RootGrid).Position;
+            bool isTopEdge = point.Y <= 60;
+            bool isLeftEdge = point.X <= 60;
+
+            // パネル自体にマウスが乗っている場合も表示を維持する
+            bool isOverTopPanel = point.Y <= 80 && ViewModel.IsTopPanelVisible;
+            bool isOverBookmarkPanel = point.X <= 280 && ViewModel.IsBookmarkPanelHovered;
+
+            if (isTopEdge || isOverTopPanel)
+            {
+                ViewModel.IsTopPanelVisible = true;
+                _topHoverTimer.Stop(); // 非表示タイマーをリセット
+            }
+            else
+            {
+                if (ViewModel.IsTopPanelVisible) _topHoverTimer.Start();
+            }
+
+            if (isLeftEdge || isOverBookmarkPanel)
+            {
+                // 動画の再生パネル（トランスポートコントロール）の上にマウスがある場合は、
+                // ブックマークリストを表示する判定をスキップする。
+                if (ViewModel.IsVideoTransportHovered && !isOverBookmarkPanel)
+                {
+                    if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
+                    return;
+                }
+
+                // クリック直後（1秒ディレイ中）は再表示を抑制する
+                if (_leftHoverTimer.IsEnabled && _leftHoverTimer.Interval >= TimeSpan.FromMilliseconds(500))
+                {
+                    return;
+                }
+
+                ViewModel.IsBookmarkPanelHovered = true;
+                _leftHoverTimer.Stop(); // 非表示タイマーをリセット
+            }
+            else
+            {
+                if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
+            }
+        }
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 
@@ -562,7 +620,21 @@ namespace quick_image_viewer
                 ShowNotification(_settings.GetString("MenuSort_" + sortType) + " (Not Implemented)");
             }
         }
-        private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e) => BookmarkManager.BookmarkListView_ItemClick(sender, e);
+        private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            BookmarkManager.BookmarkListView_ItemClick(sender, e);
+
+            // ブックマーク選択後はホバー状態を解除する。
+            // 読み込みが速い場合、この直後のマウスポインター判定で再度パネルが開いてしまうのを防ぐため、
+            // 少し長めのディレイ（1秒）を設定して閉じる。
+            _leftHoverTimer.Stop();
+            _leftHoverTimer.Interval = TimeSpan.FromSeconds(1);
+            _leftHoverTimer.Start();
+
+            // 重要：タイマーの Interval を元に戻すため、一回限りのリセットフラグや
+            // Tick内でのリセット処理を検討するが、ここでは単純に閉じる。
+            ViewModel.IsBookmarkPanelHovered = false;
+        }
         private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
         private void SlideshowDialog_Opened(ContentDialog sender, ContentDialogOpenedEventArgs args) => SlideshowManager.SlideshowDialog_Opened(sender, args);
@@ -580,5 +652,10 @@ namespace quick_image_viewer
                 LoadDirectory(folder.Path);
             }
         }
+
+        private void TopPanel_PanelHoverStarted(object? sender, EventArgs e) => _topHoverTimer.Stop();
+        private void TopPanel_PanelHoverEnded(object? sender, EventArgs e) => _topHoverTimer.Start();
+        private void BookmarkPanel_PanelHoverStarted(object? sender, EventArgs e) => _leftHoverTimer.Stop();
+        private void BookmarkPanel_PanelHoverEnded(object? sender, EventArgs e) => _leftHoverTimer.Start();
     }
 }

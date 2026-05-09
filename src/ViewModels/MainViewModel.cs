@@ -30,6 +30,7 @@ namespace quick_image_viewer.ViewModels
         public ICommand SettingsCommand { get; }
         public ICommand KeyBindingsCommand { get; }
         public ICommand SupportCommand { get; }
+        public ICommand ToggleGridCommand { get; }
 
         public EditorViewModel Editor { get; } = new EditorViewModel();
         public ViewerViewModel Viewer { get; } = new ViewerViewModel();
@@ -131,6 +132,15 @@ namespace quick_image_viewer.ViewModels
         public partial bool IsDialogOpen { get; set; }
 
         [ObservableProperty] public partial bool IsBookmarkPanelVisible { get; set; }
+        [ObservableProperty] public partial bool IsBookmarkPanelHovered { get; set; }
+        public bool IsBookmarkPanelActuallyVisible => IsBookmarkPanelVisible || IsBookmarkPanelHovered;
+
+        partial void OnIsBookmarkPanelVisibleChanged(bool value) => OnPropertyChanged(nameof(IsBookmarkPanelActuallyVisible));
+        partial void OnIsBookmarkPanelHoveredChanged(bool value) => OnPropertyChanged(nameof(IsBookmarkPanelActuallyVisible));
+
+        [ObservableProperty] public partial bool IsTopPanelVisible { get; set; }
+        [ObservableProperty] public partial bool IsVideoTransportHovered { get; set; }
+
         [ObservableProperty] public partial string BookmarkMenuText { get; set; } = "Bookmark this folder";
 
         private ObservableCollection<quick_image_viewer.Managers.BookmarkItem> _bookmarks = new();
@@ -216,6 +226,7 @@ namespace quick_image_viewer.ViewModels
             OpenSlideshowCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<OpenSlideshowMessage>());
             ToggleBookmarkCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkMessage>());
             ToggleBookmarkPanelCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleBookmarkPanelMessage>());
+            ToggleGridCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send<ToggleGridMessage>());
 
             SettingsCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("Settings")));
             KeyBindingsCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShellActionMessage("KeyBindings")));
@@ -234,7 +245,8 @@ namespace quick_image_viewer.ViewModels
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
-                    IsBookmarkPanelVisible = !IsBookmarkPanelVisible;
+                    if (m.IsVisible.HasValue) IsBookmarkPanelVisible = m.IsVisible.Value;
+                    else IsBookmarkPanelVisible = !IsBookmarkPanelVisible;
                 });
             });
 
@@ -394,7 +406,11 @@ namespace quick_image_viewer.ViewModels
     public record ToggleMangaMessage();
     public record ToggleStretchMessage();
     public record ToggleBookmarkMessage();
-    public record ToggleBookmarkPanelMessage();
+    public record ToggleBookmarkPanelMessage()
+    {
+        public bool? IsVisible { get; init; } = null;
+        public ToggleBookmarkPanelMessage(bool isVisible) : this() { IsVisible = isVisible; }
+    }
     public record TogglePageIndicatorMessage();
     public record CopyPathMessage(string Path);
     public record DeleteFileMessage(string Path);
