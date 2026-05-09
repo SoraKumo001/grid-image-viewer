@@ -96,6 +96,12 @@ namespace quick_image_viewer.ViewModels
         public partial bool SlideshowUniformToFill { get; set; }
 
         [ObservableProperty]
+        public partial int SlideshowStretchMode { get; set; }
+
+        [ObservableProperty]
+        public partial int SlideshowStretchModeIndex { get; set; }
+
+        [ObservableProperty]
         public partial bool SlideshowCrossfade { get; set; }
 
         [ObservableProperty]

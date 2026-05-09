@@ -83,6 +83,7 @@ namespace quick_image_viewer.Managers
         public bool SlideshowIncludeSiblings { get; set; } = false;
         public bool SlideshowCurrentFolderOnly { get; set; } = false;
         public bool SlideshowUniformToFill { get; set; } = false;
+        public int SlideshowStretchMode { get; set; } = -1; // -1: Keep current, 0: None, 2: Uniform, 3: UniformToFill
         public double SlideshowInterval { get; set; } = 2.0;
         public bool SlideshowCrossfade { get; set; } = true;
         public double SlideshowCrossfadeDuration { get; set; } = 0.4;
@@ -148,6 +149,7 @@ namespace quick_image_viewer.Managers
         public bool SlideshowIncludeSiblings { get => _data.SlideshowIncludeSiblings; set => _data.SlideshowIncludeSiblings = value; }
         public bool SlideshowCurrentFolderOnly { get => _data.SlideshowCurrentFolderOnly; set => _data.SlideshowCurrentFolderOnly = value; }
         public bool SlideshowUniformToFill { get => _data.SlideshowUniformToFill; set => _data.SlideshowUniformToFill = value; }
+        public int SlideshowStretchMode { get => _data.SlideshowStretchMode; set => _data.SlideshowStretchMode = value; }
         public double SlideshowInterval { get => _data.SlideshowInterval; set => _data.SlideshowInterval = value; }
         public bool SlideshowCrossfade { get => _data.SlideshowCrossfade; set => _data.SlideshowCrossfade = value; }
         public double SlideshowCrossfadeDuration { get => _data.SlideshowCrossfadeDuration; set => _data.SlideshowCrossfadeDuration = value; }

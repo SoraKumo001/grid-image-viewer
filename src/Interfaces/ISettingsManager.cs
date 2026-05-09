@@ -14,6 +14,7 @@ namespace quick_image_viewer.Interfaces
         bool SlideshowIncludeSiblings { get; set; }
         bool SlideshowCurrentFolderOnly { get; set; }
         bool SlideshowUniformToFill { get; set; }
+        int SlideshowStretchMode { get; set; }
         double SlideshowInterval { get; set; }
         bool SlideshowCrossfade { get; set; }
         double SlideshowCrossfadeDuration { get; set; }

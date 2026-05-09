@@ -229,6 +229,21 @@
   <data name="SlideshowUniformToFill.AccessKey" xml:space="preserve">
     <value>C</value>
   </data>
+  <data name="SlideshowStretchModeLabel.Text" xml:space="preserve">
+    <value>表示サイズ：</value>
+  </data>
+  <data name="SlideshowStretchMode_Keep.Content" xml:space="preserve">
+    <value>現在の設定を維持</value>
+  </data>
+  <data name="SlideshowStretchContain.Content" xml:space="preserve">
+    <value>全体を表示</value>
+  </data>
+  <data name="SlideshowStretchCover.Content" xml:space="preserve">
+    <value>全体を埋める</value>
+  </data>
+  <data name="SlideshowStretchOriginal.Content" xml:space="preserve">
+    <value>実寸表示</value>
+  </data>
   <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
     <value>時間(_T)：</value>
   </data>

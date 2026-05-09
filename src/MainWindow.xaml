@@ -277,6 +277,15 @@
                 <CheckBox x:Name="SlideshowIncludeSiblings" x:FieldModifier="internal" x:Uid="SlideshowIncludeSiblings" Content="兄弟フォルダも含める(_S)" AccessKey="S" IsChecked="{x:Bind ViewModel.SlideshowIncludeSiblings, Mode=TwoWay}"/>
                 <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="下位フォルダも含める(_B)" AccessKey="B" IsChecked="{x:Bind ViewModel.SlideshowCurrentFolderOnly, Mode=TwoWay}"/>
                 <CheckBox x:Name="SlideshowUniformToFill" x:FieldModifier="internal" x:Uid="SlideshowUniformToFill" Content="拡大して全体を埋める(_C)" AccessKey="C" IsChecked="{x:Bind ViewModel.SlideshowUniformToFill, Mode=TwoWay}"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock x:Uid="SlideshowStretchModeLabel" Text="表示サイズ：" VerticalAlignment="Center" Width="100"/>
+                    <ComboBox x:Name="SlideshowStretchMode" x:FieldModifier="internal" SelectedIndex="{x:Bind ViewModel.SlideshowStretchModeIndex, Mode=TwoWay}" Width="240">
+                        <ComboBoxItem x:Uid="SlideshowStretchMode_Keep" Content="現在の設定を維持" />
+                        <ComboBoxItem x:Uid="SlideshowStretchContain" Content="全体を表示" />
+                        <ComboBoxItem x:Uid="SlideshowStretchCover" Content="全体を埋める" />
+                        <ComboBoxItem x:Uid="SlideshowStretchOriginal" Content="実寸表示" />
+                    </ComboBox>
+                </StackPanel>
                 <CheckBox x:Name="SlideshowCrossfade" x:FieldModifier="internal" x:Uid="SlideshowCrossfade" Content="クロスフェードを有効にする" IsChecked="{x:Bind ViewModel.SlideshowCrossfade, Mode=TwoWay}"/>
                 <StackPanel Spacing="8" Margin="0,8,0,0">
                     <Grid>

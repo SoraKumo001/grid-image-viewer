@@ -102,6 +102,7 @@ namespace quick_image_viewer
         CheckBox IMainView.SlideshowIncludeSiblings => SlideshowIncludeSiblings;
         CheckBox IMainView.SlideshowCurrentFolderOnly => SlideshowCurrentFolderOnly;
         CheckBox IMainView.SlideshowUniformToFill => SlideshowUniformToFill;
+        ComboBox IMainView.SlideshowStretchMode => SlideshowStretchMode;
         CheckBox IMainView.SlideshowCrossfade => SlideshowCrossfade;
         NumberBox IMainView.SlideshowInterval => SlideshowInterval;
         NumberBox IMainView.SlideshowCrossfadeDuration => SlideshowCrossfadeDuration;

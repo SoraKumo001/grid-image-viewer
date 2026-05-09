@@ -15,6 +15,7 @@ namespace quick_image_viewer.Managers
         private ISlideshowService _slideshowService;
         private IViewerStateService _state;
         private int _originalMangaSplitCount = 1;
+        private int _originalStretchMode = 2;
 
         public bool IsSlideshowRunning { get => _state.IsSlideshowRunning; }
         public int[] SlideshowRandomIndices { get => _slideshowService.CurrentRandomIndices; }
@@ -68,6 +69,8 @@ namespace quick_image_viewer.Managers
             ViewModel.SlideshowIncludeSiblings = _settings.SlideshowIncludeSiblings;
             ViewModel.SlideshowCurrentFolderOnly = _settings.SlideshowCurrentFolderOnly;
             ViewModel.SlideshowUniformToFill = _settings.SlideshowUniformToFill;
+            ViewModel.SlideshowStretchMode = _settings.SlideshowStretchMode;
+            ViewModel.SlideshowStretchModeIndex = MapStretchModeToIndex(_settings.SlideshowStretchMode);
             ViewModel.SlideshowInterval = _settings.SlideshowInterval;
             ViewModel.SlideshowCrossfade = _settings.SlideshowCrossfade;
             ViewModel.SlideshowCrossfadeDuration = _settings.SlideshowCrossfadeDuration;
@@ -107,9 +110,32 @@ namespace quick_image_viewer.Managers
             _mainWindow.SlideshowIncludeSiblings.IsEnabled = enabled;
             _mainWindow.SlideshowCurrentFolderOnly.IsEnabled = enabled;
             _mainWindow.SlideshowUniformToFill.IsEnabled = enabled;
+            _mainWindow.SlideshowStretchMode.IsEnabled = enabled;
             _mainWindow.SlideshowInterval.IsEnabled = enabled;
             _mainWindow.SlideshowCrossfade.IsEnabled = enabled;
             _mainWindow.SlideshowCrossfadeDuration.IsEnabled = enabled;
+        }
+
+        private int MapStretchModeToIndex(int mode)
+        {
+            return mode switch
+            {
+                2 => 1, // Contain
+                3 => 2, // Cover
+                0 => 3, // Original
+                _ => 0  // Keep (-1)
+            };
+        }
+
+        private int MapIndexToStretchMode(int index)
+        {
+            return index switch
+            {
+                1 => 2, // Contain
+                2 => 3, // Cover
+                3 => 0, // Original
+                _ => -1 // Keep
+            };
         }
 
         public void SlideshowDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -123,6 +149,8 @@ namespace quick_image_viewer.Managers
             _settings.SlideshowIncludeSiblings = ViewModel.SlideshowIncludeSiblings;
             _settings.SlideshowCurrentFolderOnly = ViewModel.SlideshowCurrentFolderOnly;
             _settings.SlideshowUniformToFill = ViewModel.SlideshowUniformToFill;
+            ViewModel.SlideshowStretchMode = MapIndexToStretchMode(ViewModel.SlideshowStretchModeIndex);
+            _settings.SlideshowStretchMode = ViewModel.SlideshowStretchMode;
             _settings.SlideshowInterval = ViewModel.SlideshowInterval;
             _settings.SlideshowCrossfade = ViewModel.SlideshowCrossfade;
             _settings.SlideshowCrossfadeDuration = ViewModel.SlideshowCrossfadeDuration;
@@ -146,6 +174,12 @@ namespace quick_image_viewer.Managers
                 if (split == 3) split = 4;
                 _settings.MangaSplitCount = split;
                 ViewModel.MangaSplitCount = split;
+            }
+
+            _originalStretchMode = _settings.ImageStretchMode;
+            if (_settings.SlideshowStretchMode >= 0)
+            {
+                _settings.ImageStretchMode = _settings.SlideshowStretchMode;
             }
 
             if (_settings.SlideshowFullscreen)
@@ -215,6 +249,11 @@ namespace quick_image_viewer.Managers
             {
                 _settings.MangaSplitCount = _originalMangaSplitCount;
                 ViewModel.MangaSplitCount = _originalMangaSplitCount;
+            }
+
+            if (_settings.SlideshowStretchMode >= 0)
+            {
+                _settings.ImageStretchMode = _originalStretchMode;
             }
 
             if (_wasExpanded)

@@ -223,6 +223,21 @@
   <data name="SlideshowUniformToFill.AccessKey" xml:space="preserve">
     <value>C</value>
   </data>
+  <data name="SlideshowStretchModeLabel.Text" xml:space="preserve">
+    <value>Stretch Mode:</value>
+  </data>
+  <data name="SlideshowStretchMode_Keep.Content" xml:space="preserve">
+    <value>Keep Current</value>
+  </data>
+  <data name="SlideshowStretchContain.Content" xml:space="preserve">
+    <value>Contain (Uniform)</value>
+  </data>
+  <data name="SlideshowStretchCover.Content" xml:space="preserve">
+    <value>Cover (UniformToFill)</value>
+  </data>
+  <data name="SlideshowStretchOriginal.Content" xml:space="preserve">
+    <value>Original Size</value>
+  </data>
   <data name="SlideshowIntervalLabel.Text" xml:space="preserve">
     <value>Interval(_T):</value>
   </data>
