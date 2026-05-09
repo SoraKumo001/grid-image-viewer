@@ -132,18 +132,42 @@ namespace quick_image_viewer.Managers
                 return;
             }
 
+            if (!await EnsureUIReadyAsync()) return;
+
+            if (HandleEmptyPlaylist()) return;
+
+            if (_window.IsGridMode)
+            {
+                HandleGridMode();
+                return;
+            }
+
+            PrepareViewerMode();
+
+            var layoutInfo = await CalculateLayoutAndIndicesAsync();
+
+            if (TryEarlyReturnIfUnchanged(layoutInfo)) return;
+
+            var loadContext = PrepareAndLoadBuffer(layoutInfo);
+            if (loadContext.Token.IsCancellationRequested) return;
+
+            await WaitForLoadingAndSwapBuffersAsync(loadContext);
+        }
+
+        private async Task<bool> EnsureUIReadyAsync()
+        {
             if (_window.ViewerControl == null)
             {
                 // UIがまだ初期化されていない場合は少し待機してリトライを試みる
                 await Task.Delay(100);
-                if (_window.ViewerControl == null)
-                {
-                    return;
-                }
+                if (_window.ViewerControl == null) return false;
             }
             UpdateBufferReferences();
+            return true;
+        }
 
-
+        private bool HandleEmptyPlaylist()
+        {
             if (_window.Playlist.Count == 0 || _window.CurrentIndex < 0 || _window.CurrentIndex >= _window.Playlist.Count)
             {
                 // プレイリストが空の場合、またはインデックスが範囲外の場合は画面をクリアする。
@@ -159,51 +183,70 @@ namespace quick_image_viewer.Managers
                     }
                 }
                 _window.UpdatePageIndicator();
-                return;
+                return true;
             }
+            return false;
+        }
 
-            if (_window.IsGridMode)
+        private void HandleGridMode()
+        {
+            _window.UpdateGridItems(false);
+            _window.ImageScrollViewer.Visibility = Visibility.Collapsed;
+            _window.ImageGridView.Visibility = Visibility.Visible;
+            _window.AnimationService.StopAnimation();
+            _window.GridManager.StartGridAnimation();
+
+            _window.ImageGridView.SelectedIndex = _window.CurrentIndex;
+            _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
+            _window.UpdatePageIndicator();
+            _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
-                _window.UpdateGridItems(false);
-                _window.ImageScrollViewer.Visibility = Visibility.Collapsed;
-                _window.ImageGridView.Visibility = Visibility.Visible;
-                _window.AnimationService.StopAnimation();
-                _window.GridManager.StartGridAnimation();
-
-                _window.ImageGridView.SelectedIndex = _window.CurrentIndex;
-                _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
-                _window.UpdatePageIndicator();
-                _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                if (_window.ImageGridView.SelectedItem != null)
                 {
-                    // Ensure the GridView itself or an item has focus to enable keyboard navigation
-                    if (_window.ImageGridView.SelectedItem != null)
+                    if (_window.ImageGridView.ContainerFromItem(_window.ImageGridView.SelectedItem) is Microsoft.UI.Xaml.Controls.GridViewItem container)
                     {
-                        var container = _window.ImageGridView.ContainerFromItem(_window.ImageGridView.SelectedItem) as Microsoft.UI.Xaml.Controls.GridViewItem;
-                        if (container != null) container.Focus(FocusState.Programmatic);
-                        else _window.ImageGridView.Focus(FocusState.Programmatic);
+                        container.Focus(FocusState.Programmatic);
                     }
                     else
                     {
                         _window.ImageGridView.Focus(FocusState.Programmatic);
                     }
-                });
+                }
+                else
+                {
+                    _window.ImageGridView.Focus(FocusState.Programmatic);
+                }
+            });
 
-                // Start preloading even in grid mode to make folder navigation snappy
-                _ = _cacheManager.PreloadFoldersAsync(_window.CurrentDirectory);
-                return;
-            }
-            else
-            {
-                _window.ImageScrollViewer.Visibility = Visibility.Visible;
-                _window.ImageGridView.Visibility = Visibility.Collapsed;
-                _window.GridManager.StopGridAnimation();
-                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
-            }
+            _ = _cacheManager.PreloadFoldersAsync(_window.CurrentDirectory);
+        }
+
+        private void PrepareViewerMode()
+        {
+            _window.ImageScrollViewer.Visibility = Visibility.Visible;
+            _window.ImageGridView.Visibility = Visibility.Collapsed;
+            _window.GridManager.StopGridAnimation();
+            WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
 
             try { _window.AnimationService.StopAnimation(); } catch { }
             try { _window.AnimationService.StopCrossfade(); } catch { }
             UpdateStretch();
+        }
 
+        private record LayoutInfo(
+            int SplitCount,
+            int EffectiveSplitCount,
+            int GridStartIndex,
+            int CachedQuadLayout,
+            bool IsSlideshowRunning,
+            List<string> NextPaths,
+            bool StateChanged,
+            bool SplitChanged,
+            List<string> CurrentPaths
+        );
+
+        private async Task<LayoutInfo> CalculateLayoutAndIndicesAsync()
+        {
             int splitCount = _settings.MangaSplitCount;
             int gridStartIndex = _window.CurrentIndex;
             int effectiveSplitCount = GetEffectiveSplitCount();
@@ -211,7 +254,6 @@ namespace quick_image_viewer.Managers
             // Align to end of folder to ensure a full grid if possible (only for normal images)
             if (splitCount > 1 && effectiveSplitCount < splitCount && _window.Playlist.Count >= splitCount && gridStartIndex + splitCount > _window.Playlist.Count)
             {
-                // Only align if we are not on an archive and not breaking an archive unit
                 int potentialStart = _window.Playlist.Count - splitCount;
                 bool containsArchive = false;
                 for (int i = 0; i < splitCount; i++)
@@ -230,24 +272,26 @@ namespace quick_image_viewer.Managers
                 }
             }
 
-            // Recalculate layout for quad mode if needed
-            if (splitCount == 4 && _settings.QuadLayoutMode == 0)
+            int cachedQuadLayout = 1;
+            if (splitCount == 4)
             {
-                _cachedQuadLayout = _layoutManager.GetEffectiveQuadLayout(gridStartIndex, _window.Playlist, _window.RootGrid.ActualWidth, _window.RootGrid.ActualHeight);
+                if (_settings.QuadLayoutMode == 0)
+                {
+                    var playlistSnapshot = _window.Playlist.ToList();
+                    double windowWidth = _window.Bounds.Width;
+                    double windowHeight = _window.Bounds.Height;
+                    cachedQuadLayout = await Task.Run(() => _layoutManager.GetEffectiveQuadLayout(gridStartIndex, playlistSnapshot, windowWidth, windowHeight));
+                }
+                else
+                {
+                    cachedQuadLayout = _settings.QuadLayoutMode;
+                }
             }
-            else if (splitCount == 4)
-            {
-                _cachedQuadLayout = _settings.QuadLayoutMode;
-            }
-            else
-            {
-                _cachedQuadLayout = 1; // Default to horizontal for others
-            }
+            _cachedQuadLayout = cachedQuadLayout;
 
-            // Check if the content has changed (to prevent flickering)
             var currentPaths = _pagesBuffer[_window.ViewerControl.CurrentBufferIndex]
                 .Take(effectiveSplitCount)
-                .Select(p => p.CurrentFilePath)
+                .Select(p => p.CurrentFilePath ?? string.Empty)
                 .ToList();
 
             var nextPaths = new List<string>();
@@ -256,15 +300,9 @@ namespace quick_image_viewer.Managers
 
             for (int i = 0; i < effectiveSplitCount; i++)
             {
-                int targetIndex = -1;
-                if (isSlideshowRunning && _settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
-                {
-                    targetIndex = _window.SlideshowManager.SlideshowRandomIndices[i];
-                }
-                else
-                {
-                    targetIndex = gridStartIndex + i;
-                }
+                int targetIndex = (isSlideshowRunning && _settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                    ? _window.SlideshowManager.SlideshowRandomIndices[i]
+                    : gridStartIndex + i;
 
                 if (targetIndex >= 0 && targetIndex < _window.Playlist.Count)
                 {
@@ -278,12 +316,15 @@ namespace quick_image_viewer.Managers
             _window.ViewModel.OverrideDisplayIndex = maxIndexInView + 1;
 
             bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
-            bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || _cachedQuadLayout != _lastCachedQuadLayout;
+            bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || cachedQuadLayout != _lastCachedQuadLayout;
 
-            if (!stateChanged && !splitChanged && currentPaths.SequenceEqual(nextPaths))
+            return new LayoutInfo(splitCount, effectiveSplitCount, gridStartIndex, cachedQuadLayout, isSlideshowRunning, nextPaths, stateChanged, splitChanged, currentPaths);
+        }
+
+        private bool TryEarlyReturnIfUnchanged(LayoutInfo info)
+        {
+            if (!info.StateChanged && !info.SplitChanged && info.CurrentPaths.SequenceEqual(info.NextPaths))
             {
-                // 内容に変更がない場合は早期復帰する。
-                // 確実に現在のバッファが表示されていることを保証する。
                 _window.ViewerControl.CurrentBuffer.Opacity = 1;
                 _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
                 _window.ViewerControl.InactiveBuffer.Opacity = 0;
@@ -292,177 +333,161 @@ namespace quick_image_viewer.Managers
                 _window.UpdatePageIndicator();
                 _window.MetadataDisplayService.UpdateMetadataPanel();
                 _window.AnimationService.StartAnimation();
-                return;
+                return true;
             }
+            return false;
+        }
 
+        private record BufferLoadContext(
+            CancellationToken Token,
+            LayoutInfo LayoutInfo,
+            int TargetBufferIdx,
+            List<Task> LoadTasks,
+            List<string> CurrentFiles
+        );
+
+        private BufferLoadContext PrepareAndLoadBuffer(LayoutInfo info)
+        {
             _displayCts?.Cancel();
             _displayCts?.Dispose();
             _displayCts = new CancellationTokenSource();
             var token = _displayCts.Token;
 
+            int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
+            _layoutManager.UpdateLayoutGrid(
+                _window.ViewerControl.ColsBuffer[targetBufferIdx],
+                _window.ViewerControl.RowsBuffer[targetBufferIdx],
+                _window.ViewerControl.PageControlsBuffer[targetBufferIdx],
+                info.SplitCount,
+                info.EffectiveSplitCount,
+                info.CachedQuadLayout,
+                info.IsSlideshowRunning);
+
+            var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
+            var targetPages = _pagesBuffer[targetBufferIdx];
+
+            for (int i = 0; i < 4; i++) targetControls[i].Visibility = Visibility.Collapsed;
+
+            _window.ViewerControl.PagesGrids[targetBufferIdx].Opacity = 1;
+            _window.ViewerControl.PagesGrids[targetBufferIdx].Visibility = Visibility.Visible;
+
+            var currentFiles = new List<string>();
+            var loadTasks = new List<Task>();
+
+            for (int i = 0; i < info.EffectiveSplitCount; i++)
+            {
+                int indexToLoad = (info.IsSlideshowRunning && _settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
+                    ? _window.SlideshowManager.SlideshowRandomIndices[i]
+                    : info.GridStartIndex + i;
+
+                if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
+                {
+                    string path = _window.Playlist[indexToLoad];
+                    currentFiles.Add(path);
+                    int cellIndex = i;
+                    var loadTask = _imageLoader.LoadPageIntoBufferAsync(path, targetControls[cellIndex], targetPages[cellIndex], cellIndex, token, _cacheManager)
+                        .ContinueWith(t =>
+                        {
+                            if (!token.IsCancellationRequested)
+                            {
+                                _window.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    targetControls[cellIndex].Visibility = Visibility.Visible;
+                                });
+                            }
+                        });
+                    loadTasks.Add(loadTask);
+                }
+            }
+
+            for (int i = info.EffectiveSplitCount; i < 4; i++)
+            {
+                targetControls[i].PageImage.Source = null;
+                targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                targetControls[i].ResetPlayback();
+                targetControls[i].LoadingRing.IsActive = false;
+                targetPages[i].Reset();
+            }
+
+            _window.ImageEditService.CleanupSessions(currentFiles);
+            _window.MetadataDisplayService.UpdateMetadataPanel();
+            _window.UpdatePageIndicator();
+
+            return new BufferLoadContext(token, info, targetBufferIdx, loadTasks, currentFiles);
+        }
+
+        private async Task WaitForLoadingAndSwapBuffersAsync(BufferLoadContext context)
+        {
+            var info = context.LayoutInfo;
+            var token = context.Token;
+            var loadTasks = context.LoadTasks;
+
             try
             {
-                int currentIndex = _window.CurrentIndex;
-                var playlistSnapshot = _window.Playlist.ToList();
-
-                double windowWidth = _window.Bounds.Width;
-                double windowHeight = _window.Bounds.Height;
-                _cachedQuadLayout = await Task.Run(() => _layoutManager.GetEffectiveQuadLayout(currentIndex, playlistSnapshot, windowWidth, windowHeight));
-
-                // Always use double-buffering for smooth transitions
-                int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
-                _layoutManager.UpdateLayoutGrid(
-                    _window.ViewerControl.ColsBuffer[targetBufferIdx],
-                    _window.ViewerControl.RowsBuffer[targetBufferIdx],
-                    _window.ViewerControl.PageControlsBuffer[targetBufferIdx],
-                    splitCount,
-                    effectiveSplitCount,
-                    _cachedQuadLayout,
-                    isSlideshowRunning);
-
-                var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
-                var targetPages = _pagesBuffer[targetBufferIdx];
-
-                // Initially hide all controls in the target buffer before loading
-                // This allows us to show them one by one as they load.
-                for (int i = 0; i < 4; i++) targetControls[i].Visibility = Visibility.Collapsed;
-
-                // Make the target buffer visible but transparent (container-wise)
-                _window.ViewerControl.PagesGrids[targetBufferIdx].Opacity = 1;
-                _window.ViewerControl.PagesGrids[targetBufferIdx].Visibility = Visibility.Visible;
-
-                var currentFiles = new List<string>();
-                var loadTasks = new List<Task>();
-                for (int i = 0; i < effectiveSplitCount; i++)
+                if (info.IsSlideshowRunning || info.StateChanged || info.SplitChanged)
                 {
-                    int indexToLoad = -1;
-                    if (isSlideshowRunning && _settings.SlideshowRandom && _window.SlideshowManager.SlideshowRandomIndices[i] != -1)
-                    {
-                        indexToLoad = _window.SlideshowManager.SlideshowRandomIndices[i];
-                    }
-                    else
-                    {
-                        indexToLoad = gridStartIndex + i;
-                    }
-
-                    if (indexToLoad >= 0 && indexToLoad < _window.Playlist.Count)
-                    {
-                        string path = _window.Playlist[indexToLoad];
-                        currentFiles.Add(path);
-                        int cellIndex = i; // capture
-                        var loadTask = _imageLoader.LoadPageIntoBufferAsync(path, targetControls[cellIndex], targetPages[cellIndex], cellIndex, token, _cacheManager)
-                            .ContinueWith(t =>
-                            {
-                                if (!token.IsCancellationRequested)
-                                {
-                                    _window.DispatcherQueue.TryEnqueue(() =>
-                                    {
-                                        targetControls[cellIndex].Visibility = Visibility.Visible;
-                                    });
-                                }
-                            });
-                        loadTasks.Add(loadTask);
-                    }
-                }
-
-                for (int i = effectiveSplitCount; i < 4; i++)
-                {
-                    targetControls[i].PageImage.Source = null;
-                    targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
-                    targetControls[i].ResetPlayback();
-                    targetControls[i].LoadingRing.IsActive = false;
-                    targetPages[i].Reset();
-                }
-
-                _window.ImageEditService.CleanupSessions(currentFiles);
-
-                // Update metadata and indicator immediately for responsiveness
-                _window.MetadataDisplayService.UpdateMetadataPanel();
-                _window.UpdatePageIndicator();
-
-                // Wait for the content to be ready before switching buffers to avoid flicker.
-                // In normal mode, images will appear one by one as they load due to ContinueWith above.
-                // We only wait here to decide when to hide the PREVIOUS buffer.
-                try
-                {
-                    // スライドショー中、またはモード切り替え時（スライドショー停止直後など）は、
-                    // 表示の乱れを防ぐためすべての画像がロードされるのを待機する。
-                    if (isSlideshowRunning || stateChanged || splitChanged)
-                    {
-                        await Task.WhenAll(loadTasks);
-                        // ContinueWith 内での UI スレッドへの Enqueue が完了するのをわずかに待機
-                        await Task.Delay(50);
-                    }
-                    else
-                    {
-                        // 通常のナビゲーション時は、レスポンスを優先して最大500ms待機とする。
-                        await Task.WhenAny(Task.Delay(500), Task.WhenAll(loadTasks));
-                    }
-                }
-                catch (OperationCanceledException) { return; }
-                catch (Exception) { }
-
-                if (token.IsCancellationRequested) return;
-
-                var prevBuffer = _window.ViewerControl.CurrentBuffer;
-                var nextBuffer = _window.ViewerControl.InactiveBuffer;
-                int prevBufferIdx = _window.ViewerControl.CurrentBufferIndex;
-
-                if (isSlideshowRunning && _settings.SlideshowCrossfade)
-                {
-                    _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
-                    UpdateBufferReferences();
-                    _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
-
-                    var prevControls = _window.ViewerControl.PageControlsBuffer[prevBufferIdx];
-                    _ = Task.Run(async () =>
-                    {
-                        double duration = _settings.SlideshowCrossfadeDuration > 0 ? _settings.SlideshowCrossfadeDuration : 0.5;
-                        await Task.Delay((int)(duration * 1000) + 100);
-                        _window.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            foreach (var pc in prevControls) pc.ResetPlayback();
-                        });
-                    });
+                    await Task.WhenAll(loadTasks);
+                    await Task.Delay(50);
                 }
                 else
                 {
-                    // Finalize the swap
-                    _window.ViewerControl.CurrentBufferIndex = targetBufferIdx;
-                    UpdateBufferReferences();
-
-                    // Hide the old buffer
-                    prevBuffer.Opacity = 0;
-                    prevBuffer.Visibility = Visibility.Collapsed;
-
-                    foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx]) pc.ResetPlayback();
-
-                    _window.MetadataDisplayService.UpdateMetadataPanel();
+                    await Task.WhenAny(Task.Delay(500), Task.WhenAll(loadTasks));
                 }
-
-                _ = _cacheManager.PreloadAroundAsync(_window.CurrentIndex, _window.Playlist.ToList(), _settings.MangaSplitCount);
-                _ = _cacheManager.PreloadFoldersAsync(_window.CurrentDirectory);
-
-                // If loading is still ongoing (e.g. after timeout), ensure animation starts when finished
-                if (loadTasks.Count > 0)
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        try { await Task.WhenAll(loadTasks); } catch { }
-                        _window.DispatcherQueue.TryEnqueue(() => _window.AnimationService.StartAnimation());
-                    });
-                }
-
-                // すべての処理が成功裏に完了（またはタイムアウト等で次のバッファが表示開始）
-                // した時点で、最後に表示した状態を記録する。
-                _lastIsSlideshowRunning = isSlideshowRunning;
-                _lastMangaSplitCount = splitCount;
-                _lastEffectiveSplitCount = effectiveSplitCount;
-                _lastCachedQuadLayout = _cachedQuadLayout;
             }
-            finally
+            catch (OperationCanceledException) { return; }
+            catch (Exception) { }
+
+            if (token.IsCancellationRequested) return;
+
+            var prevBuffer = _window.ViewerControl.CurrentBuffer;
+            var nextBuffer = _window.ViewerControl.InactiveBuffer;
+            int prevBufferIdx = _window.ViewerControl.CurrentBufferIndex;
+
+            if (info.IsSlideshowRunning && _settings.SlideshowCrossfade)
             {
+                _window.ViewerControl.CurrentBufferIndex = context.TargetBufferIdx;
+                UpdateBufferReferences();
+                _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
+
+                var prevControls = _window.ViewerControl.PageControlsBuffer[prevBufferIdx];
+                _ = Task.Run(async () =>
+                {
+                    double duration = _settings.SlideshowCrossfadeDuration > 0 ? _settings.SlideshowCrossfadeDuration : 0.5;
+                    await Task.Delay((int)(duration * 1000) + 100);
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        foreach (var pc in prevControls) pc.ResetPlayback();
+                    });
+                });
             }
+            else
+            {
+                _window.ViewerControl.CurrentBufferIndex = context.TargetBufferIdx;
+                UpdateBufferReferences();
+
+                prevBuffer.Opacity = 0;
+                prevBuffer.Visibility = Visibility.Collapsed;
+
+                foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx]) pc.ResetPlayback();
+                _window.MetadataDisplayService.UpdateMetadataPanel();
+            }
+
+            _ = _cacheManager.PreloadAroundAsync(_window.CurrentIndex, _window.Playlist.ToList(), _settings.MangaSplitCount);
+            _ = _cacheManager.PreloadFoldersAsync(_window.CurrentDirectory);
+
+            if (loadTasks.Count > 0)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try { await Task.WhenAll(loadTasks); } catch { }
+                    _window.DispatcherQueue.TryEnqueue(() => _window.AnimationService.StartAnimation());
+                });
+            }
+
+            _lastIsSlideshowRunning = info.IsSlideshowRunning;
+            _lastMangaSplitCount = info.SplitCount;
+            _lastEffectiveSplitCount = info.EffectiveSplitCount;
+            _lastCachedQuadLayout = info.CachedQuadLayout;
 
             _window.AnimationService.StartAnimation();
             _window.UpdatePageIndicator();
