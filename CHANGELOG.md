@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.9 - 2026-05-09
+
+- **Architecture & Refactoring**:
+  - [Refactor] Extracted video playback logic and FFmpeg integration from `ViewerPageControl` into a dedicated `VideoPlayerControl` for better maintainability.
+  - [Refactor] Separated file management logic (Delete, Rename, Move) from `MainWindow` into a new `FileOperationService`.
+  - [Refactor] Refactored `ViewerManager` by splitting complex layout and buffer management methods into smaller, manageable asynchronous operations.
+- **Stability & Bug Fixes**:
+  - [Fix] Fixed an issue where images failed to load during fast backward navigation (Shift + Back) in split view due to `SoftwareBitmap` cache ownership conflicts.
+  - [Fix] Fixed an application crash (`RPC_E_WRONG_THREAD`) caused by background tasks attempting to read UI thread-bound properties.
+  - [Fix] Resolved a bug where the viewer would occasionally display a black screen after stopping a slideshow.
+
 ## v1.4.8 - 2026-05-09
 
 - **Slideshow Enhancements**:
