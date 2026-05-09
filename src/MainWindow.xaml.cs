@@ -275,7 +275,9 @@ namespace quick_image_viewer
             AppWindowManager.InitializeWindow();
             ((IMainView)this).UpdateContextFlyout();
 
+            RootGrid.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(RootGrid_PointerPressed), true);
             RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
+            RootGrid.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(RootGrid_PointerReleased), true);
             RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
             RootGrid.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(RootGrid_KeyDown), true);
 
@@ -544,9 +546,12 @@ namespace quick_image_viewer
             _resizeTimer.Start();
         }
 
+        private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerPressed(sender, e);
+
         private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
             InputHandler.HandlePointerMoved(sender, e);
+            if (e.Handled) return;
 
             var point = e.GetCurrentPoint(RootGrid).Position;
             bool isTopEdge = point.Y <= 60;
@@ -590,6 +595,9 @@ namespace quick_image_viewer
                 if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
             }
         }
+
+        private void RootGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerReleased(sender, e);
+
         private void RootGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) => InputHandler.HandleDoubleTapped(sender, e);
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e) => InputHandler.HandleKeyDown(sender, e);
 

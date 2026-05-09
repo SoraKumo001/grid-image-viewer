@@ -19,6 +19,10 @@ namespace quick_image_viewer.Helpers
         private readonly ISettingsManager _settings;
 
         private Windows.Foundation.Point _lastPointerPoint;
+        private bool _isPanning = false;
+        private Windows.Foundation.Point _startPointerPoint;
+        private double _startHorizontalOffset;
+        private double _startVerticalOffset;
 
         public InputHandler(IMainView window, ISettingsManager settings)
         {
@@ -26,10 +30,54 @@ namespace quick_image_viewer.Helpers
             _settings = settings;
         }
 
+        public void HandlePointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (_window.IsGridMode) return;
+
+            var ptr = e.GetCurrentPoint(_window.RootGrid);
+            var keyState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control);
+            bool isCtrl = keyState.HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+            if (isCtrl && ptr.Properties.IsLeftButtonPressed)
+            {
+                _isPanning = true;
+                _startPointerPoint = ptr.Position;
+                _startHorizontalOffset = _window.ImageScrollViewer.HorizontalOffset;
+                _startVerticalOffset = _window.ImageScrollViewer.VerticalOffset;
+                ((UIElement)sender).CapturePointer(e.Pointer);
+                e.Handled = true;
+            }
+        }
+
         public void HandlePointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            _lastPointerPoint = e.GetCurrentPoint(_window.PagesGrid).Position;
+            // Update last point for metadata etc.
+            try { _lastPointerPoint = e.GetCurrentPoint(_window.PagesGrid).Position; } catch { }
             _window.MetadataDisplayService.HandlePointerMoved(e);
+
+            if (_isPanning)
+            {
+                var ptr = e.GetCurrentPoint(_window.RootGrid);
+                var currentPoint = ptr.Position;
+
+                double deltaX = currentPoint.X - _startPointerPoint.X;
+                double deltaY = currentPoint.Y - _startPointerPoint.Y;
+
+                // ChangeView requires offsets in pixels. 
+                // Note: We use the un-animated version for better responsiveness during drag.
+                _window.ImageScrollViewer.ChangeView(_startHorizontalOffset - deltaX, _startVerticalOffset - deltaY, null, true);
+                e.Handled = true;
+            }
+        }
+
+        public void HandlePointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            if (_isPanning)
+            {
+                _isPanning = false;
+                ((UIElement)sender).ReleasePointerCapture(e.Pointer);
+                e.Handled = true;
+            }
         }
 
         private string GetPathAtPointer()

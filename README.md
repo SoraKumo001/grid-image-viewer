@@ -32,6 +32,7 @@ Developed with the goal of providing an experience similar to MassiGra.
 | **Fullscreen** | `F` (or Double Click) |
 | **Slideshow** | `A` (Opens settings) |
 | **Zoom In / Out** | `Ctrl + Wheel` or `Ctrl + +/-` |
+| **Move Image** | `Ctrl + Left Drag` |
 | **Toggle Bookmark Panel** | `B` |
 
 > [!TIP]
