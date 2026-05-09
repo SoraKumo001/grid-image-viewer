@@ -686,4 +686,7 @@
   <data name="TopPanel_Settings.ToolTipService.ToolTip" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="TopPanel_ZoomReset.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reset Pan &amp; Zoom (Ctrl+0)</value>
+  </data>
 </root>

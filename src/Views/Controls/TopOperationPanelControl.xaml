@@ -45,6 +45,9 @@
                 <FontIcon Glyph="&#xE786;" />
             </Button>
             <Border Width="1" Background="#333333" Margin="4,4,4,4" />
+            <Button x:Uid="TopPanel_ZoomReset" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.Viewer.ZoomResetCommand}" Visibility="{x:Bind ViewModel.IsViewerMode, Mode=OneWay}">
+                <FontIcon Glyph="&#xE777;" />
+            </Button>
             <Button x:Uid="TopPanel_Settings" Style="{ThemeResource SubtleButtonStyle}" Command="{x:Bind ViewModel.SettingsCommand}">
                 <FontIcon Glyph="&#xE713;" />
             </Button>

@@ -1,6 +1,6 @@
 # Quick Image Viewer
 
-A fast and lightweight image viewer for Windows, optimized for browsing large folders and reading manga/comics. 
+A fast and lightweight image viewer for Windows, optimized for browsing large folders and reading manga/comics.
 Developed with the goal of providing an experience similar to MassiGra.
 
 - [日本語のドキュメントはこちら](README_ja.md)
@@ -22,18 +22,19 @@ Developed with the goal of providing an experience similar to MassiGra.
 
 ## ⌨️ Essential Shortcuts
 
-| Action | Key |
-| :--- | :--- |
-| **Next / Previous Image** | `Space` / `BackSpace`, `←` / `→` (or Mouse Wheel) |
-| **Page Offset (Manga)** | `Shift + Navigation Keys` |
-| **Next / Previous Folder** | `↓` / `↑` |
-| **Switch View Modes** | `Ctrl + G` (Single → Manga → Quad) |
-| **Toggle Grid View** | `Enter` |
-| **Fullscreen** | `F` (or Double Click) |
-| **Slideshow** | `A` (Opens settings) |
-| **Zoom In / Out** | `Ctrl + Wheel` or `Ctrl + +/-` |
-| **Move Image** | `Ctrl + Left Drag` |
-| **Toggle Bookmark Panel** | `B` |
+| Action                     | Key                                               |
+| :------------------------- | :------------------------------------------------ |
+| **Next / Previous Image**  | `Space` / `BackSpace`, `←` / `→` (or Mouse Wheel) |
+| **Page Offset (Manga)**    | `Shift + Navigation Keys`                         |
+| **Next / Previous Folder** | `↓` / `↑`                                         |
+| **Switch View Modes**      | `Ctrl + G` (Single → Manga → Quad)                |
+| **Toggle Grid View**       | `Enter`                                           |
+| **Fullscreen**             | `F` (or Double Click)                             |
+| **Slideshow**              | `A` (Opens settings)                              |
+| **Zoom In / Out**          | `Ctrl + Wheel` or `Ctrl + +/-`                    |
+| **Move Image**             | `Ctrl + Left Drag`                                |
+| **Reset Pan & Zoom**       | `Ctrl + 0` (or top panel button)                  |
+| **Toggle Bookmark Panel**  | `B`                                               |
 
 > [!TIP]
 > All keybindings can be customized in the **General Settings** accessible via the right-click menu.
