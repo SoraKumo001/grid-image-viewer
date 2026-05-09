@@ -431,6 +431,12 @@
   <data name="KeyBinding_DeleteFile" xml:space="preserve">
     <value>ファイルを削除</value>
   </data>
+  <data name="KeyBinding_RenameFile" xml:space="preserve">
+    <value>名前変更</value>
+  </data>
+  <data name="KeyBinding_MoveFile" xml:space="preserve">
+    <value>ファイルを移動</value>
+  </data>
   <data name="KeyBinding_ZoomIn" xml:space="preserve">
     <value>拡大</value>
   </data>
@@ -592,6 +598,30 @@
   </data>
   <data name="MenuDeleteFile.Text" xml:space="preserve">
     <value>ファイルを削除</value>
+  </data>
+  <data name="MenuRename.Text" xml:space="preserve">
+    <value>名前変更</value>
+  </data>
+  <data name="MenuMoveToFolder.Text" xml:space="preserve">
+    <value>ファイルを移動...</value>
+  </data>
+  <data name="RenameDialog_Title" xml:space="preserve">
+    <value>名前変更</value>
+  </data>
+  <data name="RenameDialog_PrimaryButton" xml:space="preserve">
+    <value>変更</value>
+  </data>
+  <data name="RenameDialog_CloseButton" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="RenameDialog_Label" xml:space="preserve">
+    <value>新しい名前：</value>
+  </data>
+  <data name="Notification_Renamed" xml:space="preserve">
+    <value>ファイル名を変更しました</value>
+  </data>
+  <data name="Notification_Moved" xml:space="preserve">
+    <value>ファイルを移動しました</value>
   </data>
   <data name="Settings_Options.Text" xml:space="preserve">
     <value>オプション</value>

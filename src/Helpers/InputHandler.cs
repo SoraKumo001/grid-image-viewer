@@ -177,6 +177,20 @@ namespace quick_image_viewer.Helpers
                 return;
             }
 
+            if (IsMatch(_settings.KeyRenameFile, e.Key, isCtrl, isShift, isAlt))
+            {
+                WeakReferenceMessenger.Default.Send(new RenameFileMessage(GetPathAtPointer()));
+                e.Handled = true;
+                return;
+            }
+
+            if (IsMatch(_settings.KeyMoveFile, e.Key, isCtrl, isShift, isAlt))
+            {
+                WeakReferenceMessenger.Default.Send(new MoveFileMessage(GetPathAtPointer()));
+                e.Handled = true;
+                return;
+            }
+
             if (_window.SlideshowManager.IsSlideshowRunning && !IsMatch(_settings.KeySlideshow, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.SlideshowManager.StopSlideshow();

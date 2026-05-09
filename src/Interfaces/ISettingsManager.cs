@@ -48,6 +48,8 @@ namespace quick_image_viewer.Interfaces
         KeyBindingData KeyFlipHorizontal { get; set; }
         KeyBindingData KeyCopyPath { get; set; }
         KeyBindingData KeyDeleteFile { get; set; }
+        KeyBindingData KeyRenameFile { get; set; }
+        KeyBindingData KeyMoveFile { get; set; }
         KeyBindingData KeyZoomIn { get; set; }
         KeyBindingData KeyZoomOut { get; set; }
         KeyBindingData KeyZoomReset { get; set; }

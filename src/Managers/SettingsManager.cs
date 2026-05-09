@@ -56,6 +56,8 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyFlipHorizontal { get; set; } = new KeyBindingData(VirtualKey.H);
         public KeyBindingData KeyCopyPath { get; set; } = new KeyBindingData(VirtualKey.C, ctrl: true);
         public KeyBindingData KeyDeleteFile { get; set; } = new KeyBindingData(VirtualKey.Delete);
+        public KeyBindingData KeyRenameFile { get; set; } = new KeyBindingData(VirtualKey.F2);
+        public KeyBindingData KeyMoveFile { get; set; } = new KeyBindingData(VirtualKey.M);
         public KeyBindingData KeyZoomIn { get; set; } = new KeyBindingData(VirtualKey.Add, ctrl: true);
         public KeyBindingData KeyZoomOut { get; set; } = new KeyBindingData(VirtualKey.Subtract, ctrl: true);
         public KeyBindingData KeyZoomReset { get; set; } = new KeyBindingData(VirtualKey.Number0, ctrl: true);
@@ -128,6 +130,8 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyFlipHorizontal { get => _data.KeyFlipHorizontal; set => _data.KeyFlipHorizontal = value; }
         public KeyBindingData KeyCopyPath { get => _data.KeyCopyPath; set => _data.KeyCopyPath = value; }
         public KeyBindingData KeyDeleteFile { get => _data.KeyDeleteFile; set => _data.KeyDeleteFile = value; }
+        public KeyBindingData KeyRenameFile { get => _data.KeyRenameFile; set => _data.KeyRenameFile = value; }
+        public KeyBindingData KeyMoveFile { get => _data.KeyMoveFile; set => _data.KeyMoveFile = value; }
         public KeyBindingData KeyZoomIn { get => _data.KeyZoomIn; set => _data.KeyZoomIn = value; }
         public KeyBindingData KeyZoomOut { get => _data.KeyZoomOut; set => _data.KeyZoomOut = value; }
         public KeyBindingData KeyZoomReset { get => _data.KeyZoomReset; set => _data.KeyZoomReset = value; }

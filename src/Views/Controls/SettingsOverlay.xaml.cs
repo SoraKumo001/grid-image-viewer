@@ -45,6 +45,8 @@ namespace quick_image_viewer.Views.Controls
         private KeyBindingData _tempFlipHorizontal = null!;
         private KeyBindingData _tempCopyPath = null!;
         private KeyBindingData _tempDeleteFile = null!;
+        private KeyBindingData _tempRenameFile = null!;
+        private KeyBindingData _tempMoveFile = null!;
         private KeyBindingData _tempZoomIn = null!;
         private KeyBindingData _tempZoomOut = null!;
         private KeyBindingData _tempZoomReset = null!;
@@ -98,6 +100,8 @@ namespace quick_image_viewer.Views.Controls
             _tempFlipHorizontal = _settings.KeyFlipHorizontal.Clone();
             _tempCopyPath = _settings.KeyCopyPath.Clone();
             _tempDeleteFile = _settings.KeyDeleteFile.Clone();
+            _tempRenameFile = _settings.KeyRenameFile.Clone();
+            _tempMoveFile = _settings.KeyMoveFile.Clone();
             _tempZoomIn = _settings.KeyZoomIn.Clone();
             _tempZoomOut = _settings.KeyZoomOut.Clone();
             _tempZoomReset = _settings.KeyZoomReset.Clone();
@@ -253,6 +257,8 @@ namespace quick_image_viewer.Views.Controls
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_FlipHorizontal"), _tempFlipHorizontal));
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_CopyPath"), _tempCopyPath));
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_DeleteFile"), _tempDeleteFile));
+            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_RenameFile"), _tempRenameFile));
+            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_MoveFile"), _tempMoveFile));
 
             // Application
             BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_App")));
@@ -363,6 +369,8 @@ namespace quick_image_viewer.Views.Controls
             CopyKeyBinding(defaults.KeyFlipHorizontal, _tempFlipHorizontal);
             CopyKeyBinding(defaults.KeyCopyPath, _tempCopyPath);
             CopyKeyBinding(defaults.KeyDeleteFile, _tempDeleteFile);
+            CopyKeyBinding(defaults.KeyRenameFile, _tempRenameFile);
+            CopyKeyBinding(defaults.KeyMoveFile, _tempMoveFile);
             CopyKeyBinding(defaults.KeyZoomIn, _tempZoomIn);
             CopyKeyBinding(defaults.KeyZoomOut, _tempZoomOut);
             CopyKeyBinding(defaults.KeyZoomReset, _tempZoomReset);
@@ -456,6 +464,8 @@ namespace quick_image_viewer.Views.Controls
             _settings.KeyFlipHorizontal = _tempFlipHorizontal;
             _settings.KeyCopyPath = _tempCopyPath;
             _settings.KeyDeleteFile = _tempDeleteFile;
+            _settings.KeyRenameFile = _tempRenameFile;
+            _settings.KeyMoveFile = _tempMoveFile;
             _settings.KeyZoomIn = _tempZoomIn;
             _settings.KeyZoomOut = _tempZoomOut;
             _settings.KeyZoomReset = _tempZoomReset;

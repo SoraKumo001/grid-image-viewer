@@ -23,6 +23,8 @@ namespace quick_image_viewer.ViewModels
         public ICommand Rotate180Command { get; }
         public ICommand DeleteFileCommand { get; }
         public ICommand CopyPathCommand { get; }
+        public ICommand RenameFileCommand { get; }
+        public ICommand MoveFileCommand { get; }
         public ICommand OpenExplorerCommand { get; }
 
         [ObservableProperty] public partial bool CanUndo { get; set; }
@@ -49,6 +51,8 @@ namespace quick_image_viewer.ViewModels
             Rotate180Command = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new EditActionMessage("Rotate", path ?? string.Empty, 180)));
             DeleteFileCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new DeleteFileMessage(path ?? string.Empty)));
             CopyPathCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new CopyPathMessage(path ?? string.Empty)));
+            RenameFileCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new RenameFileMessage(path ?? string.Empty)));
+            MoveFileCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new MoveFileMessage(path ?? string.Empty)));
             OpenExplorerCommand = new RelayCommand<string>(path => WeakReferenceMessenger.Default.Send(new ShellActionMessage("OpenExplorer", path ?? string.Empty)));
         }
     }

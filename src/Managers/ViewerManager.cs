@@ -657,7 +657,19 @@ namespace quick_image_viewer.Managers
         public void Navigate(int offset, bool forceSingleStep) => _window.PlaylistManager.Navigate(offset, forceSingleStep);
         public void NavigateFolder(int offset) => _window.PlaylistManager.NavigateFolder(offset);
 
-
+        public void ReplacePath(string oldPath, string newPath)
+        {
+            for (int b = 0; b < 2; b++)
+            {
+                foreach (var renderer in _pagesBuffer[b])
+                {
+                    if (renderer.CurrentFilePath == oldPath)
+                    {
+                        renderer.CurrentFilePath = newPath;
+                    }
+                }
+            }
+        }
 
         public void Dispose()
         {

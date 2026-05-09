@@ -392,6 +392,8 @@ namespace quick_image_viewer.ViewModels
     public record TogglePageIndicatorMessage();
     public record CopyPathMessage(string Path);
     public record DeleteFileMessage(string Path);
+    public record RenameFileMessage(string Path);
+    public record MoveFileMessage(string Path);
     public record EditActionMessage(string Action, string Path, object? Value = null);
     public record ShellActionMessage(string Action, string Path = "");
     public record ViewActionMessage(string Action, int Value);

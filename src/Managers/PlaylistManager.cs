@@ -357,5 +357,15 @@ namespace quick_image_viewer.Managers
                 WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
             }
         }
+
+        public void ReplaceInPlaylist(string oldPath, string newPath)
+        {
+            int index = _state.Playlist.IndexOf(oldPath);
+            if (index != -1)
+            {
+                _state.Playlist[index] = newPath;
+                WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
+            }
+        }
     }
 }

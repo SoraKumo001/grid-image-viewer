@@ -7,6 +7,7 @@ namespace quick_image_viewer.Interfaces
     public interface IImageEditService
     {
         void AddPendingEdit(string path, SKBitmap bitmap);
+        void RenameSession(string oldPath, string newPath);
         void ClearEdits(string path);
         void ClearAll();
         void UndoEdit(string path);

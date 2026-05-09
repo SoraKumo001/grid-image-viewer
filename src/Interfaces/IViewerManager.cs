@@ -24,5 +24,6 @@ namespace quick_image_viewer.Interfaces
         void PauseAllVideo();
         void ResumeAllVideo();
         void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e);
+        void ReplacePath(string oldPath, string newPath);
     }
 }

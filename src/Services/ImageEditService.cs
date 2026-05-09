@@ -28,6 +28,15 @@ namespace quick_image_viewer.Services
             session.AddState(bitmap);
         }
 
+        public void RenameSession(string oldPath, string newPath)
+        {
+            if (_pendingEdits.TryGetValue(oldPath, out var session))
+            {
+                _pendingEdits.Remove(oldPath);
+                _pendingEdits[newPath] = session;
+            }
+        }
+
         public void ClearEdits(string path)
         {
             if (_pendingEdits.TryGetValue(path, out var session))
