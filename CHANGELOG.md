@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.4.6 - 2026-05-09
+
+- **Stability & Crash Fixes**:
+  - [Fix] Fixed an application crash (COMException 0x80000019) that occurred when attempting to open the Autoplay (slideshow) dialog via shortcut while it was already open.
+  - [Stability] Implemented a `MediaPlayerElement` re-creation strategy. Re-initializing the media player control for each new video ensures a clean state and reliable resource disposal, improving long-term stability.
+  - [Fix] Added global guards in `DialogService` to prevent multiple overlapping overlays from being displayed simultaneously.
+- **Performance Optimization**:
+  - [Optimization] Disabled redundant video thumbnail extraction in `ViewerCacheManager` during normal navigation and slideshow modes. This significantly reduces CPU and disk I/O when thumbnails are not required for display.
+  - [Optimization] Streamlined the video loading sequence in `ViewerImageLoader` by removing intermediate thumbnail rendering, resulting in faster and cleaner playback transitions.
+  - [Refactor] Refined asynchronous background image caching and decoding logic to improve memory efficiency and responsiveness.
+- **Media & UI Improvements**:
+  - [Feature] Enhanced `ViewerPageControl` with more robust media playback state handling and custom transport control synchronization.
+  - [Improvement] Improved the reliability of the core loading architecture to handle rapid page switching and mixed-media playlists more effectively.
+
 ## v1.4.5 - 2026-05-08
 
 - **Core Architecture & Refactoring**:
