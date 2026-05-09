@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.1 - 2026-05-09
+
+- **New Features & UI Improvements**:
+  - [Feature] Added a **"Reset Pan & Zoom"** button to the top operation panel, allowing for quick restoration of image scale and position.
+  - [Improvement] Enhanced **Zoom Reset (Ctrl + 0)** to support both the number row and Numpad 0.
+  - [Improvement] Improved keyboard compatibility for Zoom In/Out shortcuts, supporting various key combinations across different keyboard layouts.
+  - [Improvement] Integrated the **Top Operation Panel** into the main viewer for easier access to common navigation and viewing actions.
+- **Architecture & Refactoring**:
+  - [Refactor] Migrated to a **Modular Service Architecture**, extracting window management, view logic, and media loading into dedicated services (`AppWindowManager`, `ViewerImageLoader`, etc.).
+  - [Refactor] Centralized input processing into a new `InputHandler`, unifying pointer, mouse wheel, and keyboard event handling.
+- **Technical Fixes & Stability**:
+  - [Fix] Optimized Zoom Reset behavior to ensure both zoom factor and pan position are reset immediately without visual delay.
+  - [Fix] Resolved build errors related to interface type mismatches in `IMainView`.
+  - [Internal] Improved multi-language support and updated localized resources for new UI components.
+
 ## v1.5.0 - 2026-05-09
 
 - **UI & UX Enhancements**:
