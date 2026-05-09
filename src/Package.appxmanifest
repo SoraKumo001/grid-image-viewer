@@ -92,6 +92,8 @@
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
     <rescap:Capability Name="broadFileSystemAccess" />
+    <uap:Capability Name="picturesLibrary" />
+    <uap:Capability Name="videosLibrary" />
     <systemai:Capability Name="systemAIModels"/>
   </Capabilities>
 </Package>

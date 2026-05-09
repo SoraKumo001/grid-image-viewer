@@ -167,12 +167,12 @@ namespace quick_image_viewer.Managers
             _gridDecodeSize = decodeSize;
 
             var items = GridItems.ToList();
-            var semaphore = new SemaphoreSlim(Math.Max(1, Environment.ProcessorCount / 2));
+            var semaphore = new SemaphoreSlim(Math.Max(1, Environment.ProcessorCount / 4));
             var tasks = items.Select(item => Task.Run(async () =>
             {
                 if (token.IsCancellationRequested) return;
                 // Add a small initial delay to prioritize main image loading
-                await Task.Delay(100, token);
+                await Task.Delay(200, token);
                 await semaphore.WaitAsync(token);
                 try
                 {
@@ -218,6 +218,7 @@ namespace quick_image_viewer.Managers
                 bool isVideo = MediaHelper.IsVideo(item.FilePath);
                 bool isArchive = ArchiveManager.IsArchive(item.FilePath);
 
+                bool handledBySkia = false;
                 if (mightBeAnimated)
                 {
                     byte[]? bytes = null;
@@ -247,63 +248,69 @@ namespace quick_image_viewer.Managers
                         }
                     }
 
-                    if (bytes == null || token.IsCancellationRequested) return;
-
-                    var skData = SKData.CreateCopy(bytes);
-                    var codec = SKCodec.Create(skData);
-
-                    if (codec != null)
+                    if (bytes != null && !token.IsCancellationRequested)
                     {
-                        item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
-                    }
+                        var skData = SKData.CreateCopy(bytes);
+                        var codec = SKCodec.Create(skData);
 
-                    if (codec != null && codec.FrameCount > 1)
-                    {
-                        if (token.IsCancellationRequested) { codec.Dispose(); skData.Dispose(); return; }
-
-                        item.CodecData = skData;
-                        item.Codec = codec;
-                        item.FrameCount = codec.FrameCount;
-                        item.CurrentFrame = 0;
-                        _window.DispatcherQueue.TryEnqueue(() =>
+                        if (codec != null)
                         {
-                            if (!token.IsCancellationRequested)
-                                item.AdvanceFrame(decodeSize, _window.DispatcherQueue);
-                        });
-                        return;
-                    }
+                            item.AspectRatio = (double)codec.Info.Width / codec.Info.Height;
 
-                    if (codec != null)
-                    {
-                        float scale = Math.Min((float)decodeSize / codec.Info.Width, (float)decodeSize / codec.Info.Height);
-                        scale = Math.Min(scale, 1.0f);
-                        var supportedDim = codec.GetScaledDimensions(scale);
-                        var info = new SKImageInfo(supportedDim.Width, supportedDim.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
-                        var skBitmap = new SKBitmap(info);
-                        if (codec.GetPixels(info, skBitmap.GetPixels()) == SKCodecResult.Success)
-                        {
-                            codec.Dispose();
-                            skData.Dispose();
-                            using var skBitmapToDispose = skBitmap;
-                            ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
+                            if (codec.FrameCount > 1)
+                            {
+                                if (token.IsCancellationRequested) { codec.Dispose(); skData.Dispose(); return; }
+
+                                item.CodecData = skData;
+                                item.Codec = codec;
+                                item.FrameCount = codec.FrameCount;
+                                item.CurrentFrame = 0;
+                                _window.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (!token.IsCancellationRequested)
+                                        item.AdvanceFrame(decodeSize, _window.DispatcherQueue);
+                                });
+                                handledBySkia = true;
+                            }
+                            else
+                            {
+                                float scale = Math.Min((float)decodeSize / codec.Info.Width, (float)decodeSize / codec.Info.Height);
+                                scale = Math.Min(scale, 1.0f);
+                                var supportedDim = codec.GetScaledDimensions(scale);
+                                var info = new SKImageInfo(supportedDim.Width, supportedDim.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+                                var skBitmap = new SKBitmap(info);
+                                if (codec.GetPixels(info, skBitmap.GetPixels()) == SKCodecResult.Success)
+                                {
+                                    codec.Dispose();
+                                    skData.Dispose();
+                                    using var skBitmapToDispose = skBitmap;
+                                    ProcessDecodedBitmap(skBitmap, item, decodeSize, token);
+                                    handledBySkia = true;
+                                }
+                                else
+                                {
+                                    skBitmap.Dispose();
+                                    codec.Dispose();
+                                    skData.Dispose();
+                                }
+                            }
                         }
                         else
                         {
-                            skBitmap.Dispose();
-                            codec.Dispose();
                             skData.Dispose();
                         }
                     }
-                    else
-                    {
-                        skData.Dispose();
-                    }
                 }
-                else if (isVideo)
+
+                if (handledBySkia) return;
+
+                if (isVideo)
                 {
                     var softwareBitmap = await ImageProcessor.ExtractVideoThumbnailAsync(item.FilePath, (uint)decodeSize);
                     if (softwareBitmap != null)
                     {
+                        item.AspectRatio = (double)softwareBitmap.PixelWidth / softwareBitmap.PixelHeight;
+
                         _window.DispatcherQueue.TryEnqueue(async () =>
                         {
                             using (softwareBitmap)

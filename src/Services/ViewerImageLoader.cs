@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+using Windows.Storage;
 
 namespace quick_image_viewer.Services
 {
@@ -468,16 +469,43 @@ namespace quick_image_viewer.Services
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] StorageFile.GetFileFromPathAsync: {filePath}");
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                using var stream = await file.OpenReadAsync();
-                var bitmapImage = new BitmapImage();
-                await bitmapImage.SetSourceAsync(stream).AsTask();
-                return bitmapImage;
+                if (string.IsNullOrWhiteSpace(filePath) || filePath.Length > 32767)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Invalid path or too long: {filePath?.Length}");
+                    return null;
+                }
+
+                // Use simple FileStream fallback if the path might cause issues with StorageFile
+                // or if it's exceptionally long (though 49M is likely a corrupted string/memory)
+                StorageFile? file = null;
+                try
+                {
+                    file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] StorageFile.GetFileFromPathAsync failed: {ex.Message}");
+                }
+
+                if (file != null)
+                {
+                    using var stream = await file.OpenReadAsync();
+                    var bitmapImage = new BitmapImage();
+                    await bitmapImage.SetSourceAsync(stream).AsTask();
+                    return bitmapImage;
+                }
+                else
+                {
+                    // Fallback to direct FileStream for robustness
+                    using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    var bitmapImage = new BitmapImage();
+                    await bitmapImage.SetSourceAsync(fs.AsRandomAccessStream()).AsTask();
+                    return bitmapImage;
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] StorageFile method failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] LoadBitmapImageFromFileAsync method failed: {ex.Message}");
                 try
                 {
                     System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Trying fallback ImageProcessor.DecodeToBmpBytes");

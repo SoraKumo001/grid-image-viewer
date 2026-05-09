@@ -31,6 +31,16 @@
                 <DataTemplate x:DataType="models:ImageItem">
                     <Grid Margin="5" CornerRadius="4" Background="#333333" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                         <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="Uniform" />
+                        
+                        <!-- Video Indicator -->
+                        <Viewbox Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="4"
+                                 Visibility="{x:Bind IsVideo, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid>
+                                <Ellipse Fill="#AA000000" Width="24" Height="24" />
+                                <FontIcon Glyph="&#xE768;" FontSize="12" Foreground="White" FontFamily="{StaticResource SymbolThemeFontFamily}" Margin="2,0,0,0" />
+                            </Grid>
+                        </Viewbox>
+
                         <Border VerticalAlignment="Bottom" Background="#88000000" Padding="4">
                             <TextBlock Text="{x:Bind FileName}" Foreground="White" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FileName}" />
                         </Border>
