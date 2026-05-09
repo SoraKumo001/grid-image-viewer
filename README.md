@@ -17,7 +17,7 @@ A fast and lightweight image viewer application for Windows. It allows you to qu
 ### 🖼️ Image Viewing
 
 - **Supported Formats**: JPG, JPEG, PNG, BMP, GIF, WebP (animation supported), AVIF, HEIC, JPEG XL, SVG, PSD, ICO, DNG, NEF, CR2, ARW, TGA, PCX, etc.
-- **Video Playback**: Supports MP4, WebM, MKV, MOV, AVI, and WMV formats (Loop playback, Mute settings, Seek bar display).
+- **Video Playback**: Supports MP4, WebM, MKV, MOV, AVI, and WMV formats. Features include loop playback, volume control, and a responsive seek bar that appears automatically on load or mouse movement.
 - **Direct Archive Support**: View images directly inside ZIP, CBZ, RAR, CBR, and 7z archives without extraction.
 - **High-Quality Scaling**: Smooth and high-quality image scaling powered by SkiaSharp 3.x (can be enabled in settings).
 - **High-Quality Rendering**: Fast image drawing using SkiaSharp
@@ -27,8 +27,9 @@ A fast and lightweight image viewer application for Windows. It allows you to qu
 ### 🔖 Bookmark Feature
 
 - **Add to Favorites**: Save frequently viewed folders as bookmarks
-- **Quick Access**: Instantly switch folders from the side panel or context menu
+- **Quick Access**: Instantly switch folders from the side panel or context menu. The panel automatically closes after selection for a seamless transition.
 - **Reordering**: Intuitive reordering by drag & drop within the bookmark panel
+- **Smart Auto-Show**: Automatically suppresses the side panel display when hovering over video transport controls to prevent UI interference.
 
 ### 🖼️ View Modes
 

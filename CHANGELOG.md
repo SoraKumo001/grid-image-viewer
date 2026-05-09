@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.0 - 2026-05-09
+
+- **UI & UX Enhancements**:
+  - [Improvement] Refined Bookmark Panel behavior: the panel now automatically closes after selecting a bookmark to provide a cleaner transition to the new folder.
+  - [Improvement] Enhanced Bookmark Panel auto-show logic: automatic display is now suppressed when the mouse is hovering over video transport controls, preventing accidental UI overlapping.
+- **Video Playback Improvements**:
+  - [Fix] Improved Video Transport Controls reliability: controls now appear immediately upon video load and respond more consistently to mouse movement and clicks.
+  - [Fix] Fixed a rendering issue where video controls could fail to receive input events due to missing background hit-testing.
+- **Technical Refinement**:
+  - [Internal] Improved message-based state synchronization for the Bookmark Panel, allowing for explicit visibility control.
+
 ## v1.4.9 - 2026-05-09
 
 - **Architecture & Refactoring**:
