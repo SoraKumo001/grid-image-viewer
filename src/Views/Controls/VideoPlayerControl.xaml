@@ -1,0 +1,69 @@
+<UserControl
+    x:Class="quick_image_viewer.Views.Controls.VideoPlayerControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    IsTabStop="False">
+
+    <Grid x:Name="InternalRootGrid" PointerExited="InternalRootGrid_PointerExited" PointerMoved="InternalRootGrid_PointerMoved" IsTabStop="False">
+        <!-- 軽量表示用のホスト -->
+        <Canvas x:Name="VideoVisualHost" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsTabStop="False" />
+        
+        <Grid x:Name="MediaPlayerContainer" 
+              Visibility="Collapsed" 
+              HorizontalAlignment="Stretch" 
+              VerticalAlignment="Stretch" 
+              IsHitTestVisible="False" 
+              IsTabStop="False" 
+              Background="Transparent" />
+        
+        <!-- 独自再生コントロール -->
+        <Border x:Name="CustomTransportPanel" 
+                VerticalAlignment="Bottom" 
+                HorizontalAlignment="Stretch" 
+                Margin="20,0,20,12" 
+                Padding="16,6" 
+                Background="#CC1F1F1F" 
+                CornerRadius="10" 
+                Visibility="Collapsed" 
+                IsHitTestVisible="True"
+                IsTabStop="False">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="PlayPauseButton" 
+                        Style="{StaticResource SubtleButtonStyle}" 
+                        Padding="8" Click="PlayPauseButton_Click"
+                        IsTabStop="False" AllowFocusOnInteraction="False">
+                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="18" Foreground="White" />
+                </Button>
+
+                <Slider x:Name="TimelineSlider" 
+                        Grid.Column="1" 
+                        VerticalAlignment="Center" 
+                        Margin="0,0,0,0" 
+                        Minimum="0" 
+                        StepFrequency="0.01" 
+                        PointerCaptureLost="TimelineSlider_PointerCaptureLost" 
+                        ValueChanged="TimelineSlider_ValueChanged"
+                        PointerPressed="TimelineSlider_PointerPressed"
+                        PointerReleased="TimelineSlider_PointerReleased"
+                        IsTabStop="False" AllowFocusOnInteraction="False" />
+
+                <TextBlock x:Name="TimeText" 
+                           Grid.Column="2" 
+                           Text="00:00 / 00:00" 
+                           VerticalAlignment="Center" 
+                           Foreground="#888888" 
+                           FontSize="12" 
+                           FontFamily="Consolas" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -410,28 +410,33 @@ namespace quick_image_viewer.Services
                     var softwareSource = new SoftwareBitmapSource();
                     try
                     {
-                        await softwareSource.SetBitmapAsync(cachedSoftwareBitmap);
+                        var copy = Windows.Graphics.Imaging.SoftwareBitmap.Copy(cachedSoftwareBitmap);
+                        await softwareSource.SetBitmapAsync(copy);
                     }
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] SetBitmapAsync Error: {ex.Message}");
                         softwareSource.Dispose();
-                        return;
+                        cachedSoftwareBitmap = null; // フォールバックさせる
                     }
 
-                    if (token.IsCancellationRequested)
+                    if (cachedSoftwareBitmap != null)
                     {
-                        softwareSource.Dispose();
-                        return;
-                    }
+                        if (token.IsCancellationRequested)
+                        {
+                            softwareSource.Dispose();
+                            return;
+                        }
 
-                    renderer.Reset();
-                    renderer.CurrentFilePath = filePath;
-                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
-                    pageControl.PageImage.Visibility = Visibility.Visible;
-                    pageControl.UpdateSoftwareSource(softwareSource);
+                        renderer.Reset();
+                        renderer.CurrentFilePath = filePath;
+                        pageControl.PageCanvas.Visibility = Visibility.Collapsed;
+                        pageControl.PageImage.Visibility = Visibility.Visible;
+                        pageControl.UpdateSoftwareSource(softwareSource);
+                    }
                 }
-                else
+
+                if (cachedSoftwareBitmap == null)
                 {
                     BitmapImage? bitmapImage = null;
                     byte[]? cachedBytes = cacheManager.GetCachedBytes(filePath);
