@@ -8,7 +8,7 @@ using System;
 using System.Linq;
 namespace quick_image_viewer.Managers
 {
-    public class SlideshowManager : ISlideshowManager, IRecipient<OpenSlideshowMessage>
+    public class SlideshowManager : ISlideshowManager, IRecipient<OpenSlideshowMessage>, IRecipient<LoadDirectoryMessage>
     {
         private IMainView _mainWindow;
         private ISettingsManager _settings;
@@ -21,6 +21,7 @@ namespace quick_image_viewer.Managers
         public int[] SlideshowRandomIndices { get => _slideshowService.CurrentRandomIndices; }
 
         private bool _wasExpanded = false;
+        private bool _isInternalNavigation = false;
         private MainViewModel ViewModel => _mainWindow.ViewModel;
 
         public SlideshowManager(IMainView mainWindow, ISettingsManager settings, ISlideshowService slideshowService, IViewerStateService state)
@@ -43,8 +44,18 @@ namespace quick_image_viewer.Managers
             _mainWindow.SlideshowInterval.NumberFormatter = formatter;
 
             WeakReferenceMessenger.Default.Register<OpenSlideshowMessage>(this);
+            WeakReferenceMessenger.Default.Register<LoadDirectoryMessage>(this);
         }
 
+        public void Receive(LoadDirectoryMessage message)
+        {
+            // 外部からのフォルダ読み込み（ブックマークなど）が発生した場合は自動再生を停止する
+            // ただし、自分自身（SlideshowManager）が発行した拡張読み込みの場合は無視する
+            if (!_isInternalNavigation && IsSlideshowRunning)
+            {
+                StopSlideshow();
+            }
+        }
 
         public void Receive(OpenSlideshowMessage message) => OpenSlideshowDialogAsync();
 
@@ -197,8 +208,16 @@ namespace quick_image_viewer.Managers
             if (isExpanding)
             {
                 _wasExpanded = true;
-                string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
-                WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(_state.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly));
+                _isInternalNavigation = true;
+                try
+                {
+                    string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
+                    WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(_state.CurrentDirectory, currentPath, _settings.SlideshowIncludeSiblings, _settings.SlideshowCurrentFolderOnly));
+                }
+                finally
+                {
+                    _isInternalNavigation = false;
+                }
             }
 
             _slideshowService.Start();
@@ -263,8 +282,16 @@ namespace quick_image_viewer.Managers
             if (_wasExpanded)
             {
                 _wasExpanded = false;
-                string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
-                WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(_state.CurrentDirectory, currentPath, false, false));
+                _isInternalNavigation = true;
+                try
+                {
+                    string currentPath = _state.Playlist.ElementAtOrDefault(_state.CurrentIndex) ?? "";
+                    WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(_state.CurrentDirectory, currentPath, false, false));
+                }
+                finally
+                {
+                    _isInternalNavigation = false;
+                }
             }
             else
             {

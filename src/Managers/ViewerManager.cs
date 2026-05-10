@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.ApplicationModel.Resources;
@@ -520,7 +519,7 @@ namespace quick_image_viewer.Managers
 
                         // Small additional delay to ensure WinUI has finished rendering the first frame
                         // of the newly loaded images before we hide the background.
-                        await Task.Delay(32); 
+                        await Task.Delay(32);
 
                         if (token.IsCancellationRequested) return;
 
