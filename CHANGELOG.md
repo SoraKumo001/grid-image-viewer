@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.2 - 2026-05-10
+
+- **Core Architecture & Refactoring**:
+  - [Feature] Initialized WinUI 3 project configuration and integrated core dependencies for improved stability.
+  - [Feature] Established core interfaces, managers, and the main window structure to support a modular architecture.
+  - [Refactor] Overhauled `ViewerManager` and `SlideshowManager` to decouple display logic from slideshow state management.
+  - [Internal] Implemented a new core architecture for `ViewerManager` to handle page rendering, layout management, and buffer synchronization more efficiently.
+  - [Improvement] Refined the synchronization between display logic and layout transitions within the viewer.
+
 ## v1.5.1 - 2026-05-09
 
 - **New Features & UI Improvements**:
