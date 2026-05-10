@@ -601,42 +601,57 @@ namespace quick_image_viewer.Managers
 
         public void UpdateStretch(bool resetPosition = false)
         {
-            if (_window.ViewerControl == null) return;
-
-            // Reset translation only when explicitly requested (e.g. manual stretch change)
-            if (resetPosition && _window.ViewerControl.RootPagesContainer.RenderTransform is CompositeTransform ct)
+            _window.DispatcherQueue.TryEnqueue(() =>
             {
-                ct.TranslateX = 0;
-                ct.TranslateY = 0;
-            }
+                if (_window.ViewerControl == null) return;
 
-            try
-            {
-                var stretch = (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
-
-                int stretchMode = (int)stretch;
-
-                for (int b = 0; b < 2; b++)
+                // Reset translation and zoom only when explicitly requested (e.g. manual stretch change)
+                if (resetPosition)
                 {
-                    var controls = _window.ViewerControl.PageControlsBuffer[b];
-                    for (int i = 0; i < 4; i++)
+                    if (_window.ViewerControl.RootPagesContainer.RenderTransform is CompositeTransform ct)
                     {
-                        controls[i].PageImage.Stretch = stretch;
-                        controls[i].PagePlayer.Stretch = stretch;
-                        controls[i].UpdateVideoVisualSize();
-                        controls[i].PageCanvas.Invalidate();
+                        ct.TranslateX = 0;
+                        ct.TranslateY = 0;
+                    }
+                    _window.ImageScrollViewer.ChangeView(null, null, 1.0f);
+                }
+
+                try
+                {
+                    var stretch = (Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
+                    int stretchMode = (int)stretch;
+
+                    // Update renderer data first to ensure Skia uses the new mode during paint
+                    if (_pagesBuffer != null)
+                    {
+                        for (int b = 0; b < 2; b++)
+                        {
+                            for (int i = 0; i < 4; i++)
+                            {
+                                if (_pagesBuffer[b][i] != null)
+                                {
+                                    _pagesBuffer[b][i].StretchMode = stretchMode;
+                                    _pagesBuffer[b][i].UseHighQualityScaling = _settings.UseHighQualityScaling;
+                                }
+                            }
+                        }
+                    }
+
+                    // Then update UI control properties and invalidate
+                    for (int b = 0; b < 2; b++)
+                    {
+                        var controls = _window.ViewerControl.PageControlsBuffer[b];
+                        for (int i = 0; i < 4; i++)
+                        {
+                            controls[i].PageImage.Stretch = stretch;
+                            controls[i].PagePlayer.Stretch = stretch;
+                            controls[i].UpdateVideoVisualSize();
+                            controls[i].PageCanvas.Invalidate();
+                        }
                     }
                 }
-                for (int b = 0; b < 2; b++)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        _pagesBuffer[b][i].StretchMode = stretchMode;
-                        _pagesBuffer[b][i].UseHighQualityScaling = _settings.UseHighQualityScaling;
-                    }
-                }
-            }
-            catch { }
+                catch { }
+            });
         }
 
         public void HandleWindowSizeChanged(double width, double height)
