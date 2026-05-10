@@ -189,10 +189,10 @@ namespace quick_image_viewer.Managers
             var token = _navigateCts.Token;
 
             var (preloadedPath, preloadedPlaylist) = _cacheManager.GetPreloadedFolderData(offset);
-            
+
             // Only use preloaded data if it points to a DIFFERENT folder than the current one
-            if (!string.IsNullOrEmpty(preloadedPath) && 
-                !string.Equals(preloadedPath, currentDir, StringComparison.OrdinalIgnoreCase) && 
+            if (!string.IsNullOrEmpty(preloadedPath) &&
+                !string.Equals(preloadedPath, currentDir, StringComparison.OrdinalIgnoreCase) &&
                 preloadedPlaylist != null && preloadedPlaylist.Count > 0)
             {
                 LoadDirectory(preloadedPath, string.Empty, false, false, preloadedPlaylist);
@@ -207,7 +207,7 @@ namespace quick_image_viewer.Managers
                 try
                 {
                     string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset, allowedExtensions, token);
-                    
+
                     if (token.IsCancellationRequested) return;
 
                     _dispatcherQueue.TryEnqueue(() =>
@@ -243,11 +243,11 @@ namespace quick_image_viewer.Managers
             _loadCts?.Cancel();
             _loadCts = new CancellationTokenSource();
             var token = _loadCts.Token;
-            
+
             _state.CurrentDirectory = path;
             _state.IsSearchingFolder = true;
             _state.Playlist.Clear();
-            
+
             _ = Task.Run(() =>
             {
                 try
@@ -288,9 +288,11 @@ namespace quick_image_viewer.Managers
                 else
                 {
                     // For fast preloaded loads, give a tiny buffer for UI signals to propagate before hiding overlay
-                    _ = Task.Run(async () => {
-                        await Task.Delay(200); 
-                        _dispatcherQueue.TryEnqueue(() => {
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(200);
+                        _dispatcherQueue.TryEnqueue(() =>
+                        {
                             if (token.IsCancellationRequested) return;
                             _state.IsSearchingFolder = false;
                             WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
@@ -355,7 +357,7 @@ namespace quick_image_viewer.Managers
                     }
                 }, token, _settings.EnabledExtensions);
             }
-            catch {}
+            catch { }
             finally
             {
                 _dispatcherQueue.TryEnqueue(() =>
@@ -364,7 +366,7 @@ namespace quick_image_viewer.Managers
 
                     UpdatePlaylist(accumulatedFiles, _state.CurrentImagePath, true);
                     WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
-                    
+
                     _state.IsSearchingFolder = false;
                     WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                 });

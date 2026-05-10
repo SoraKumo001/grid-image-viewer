@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using System;
 using System.Collections.ObjectModel;
 namespace quick_image_viewer.Services
 {
@@ -32,7 +31,7 @@ namespace quick_image_viewer.Services
         [ObservableProperty]
         public partial bool IsSlideshowRunning { get; set; } = false;
 
-                private bool _isSearchingFolder = false;
+        private bool _isSearchingFolder = false;
         public bool IsSearchingFolder
         {
             get => _isSearchingFolder;
