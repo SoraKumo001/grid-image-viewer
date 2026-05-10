@@ -20,13 +20,16 @@ namespace quick_image_viewer.Managers
         private readonly Dictionary<string, SoftwareBitmap> _softwareBitmapCache = new Dictionary<string, SoftwareBitmap>();
 
         private CancellationTokenSource? _folderPreloadCts;
-        private string? _cachedNextFolder;
-        private string? _cachedPrevFolder;
-        private List<string>? _cachedNextPlaylist;
-        private List<string>? _cachedPrevPlaylist;
-        private string? _cachedFolderSourceDirectory;
+        private FolderPreloadCache? _folderPreloadCache;
         private string? _lastPreloadedDirectory;
         private CancellationTokenSource? _preloadCts;
+
+        private sealed record FolderPreloadCache(
+            string SourceDirectory,
+            string? NextFolder,
+            List<string>? NextPlaylist,
+            string? PrevFolder,
+            List<string>? PrevPlaylist);
 
         public ViewerCacheManager(IViewerStateService state, ISettingsManager settings)
         {
@@ -259,12 +262,16 @@ namespace quick_image_viewer.Managers
         public async Task PreloadFoldersAsync(string currentDir)
         {
             currentDir = NormalizeDirectoryPath(currentDir);
-            if (string.IsNullOrEmpty(currentDir) || currentDir == _lastPreloadedDirectory) return;
+            if (string.IsNullOrEmpty(currentDir) ||
+                (currentDir == _lastPreloadedDirectory && _folderPreloadCache?.SourceDirectory == currentDir))
+            {
+                return;
+            }
+
             _folderPreloadCts?.Cancel();
             _folderPreloadCts?.Dispose();
             _folderPreloadCts = new CancellationTokenSource();
             var token = _folderPreloadCts.Token;
-            _lastPreloadedDirectory = currentDir;
 
             var allowedExtensions = _settings.EnabledExtensions;
 
@@ -283,11 +290,8 @@ namespace quick_image_viewer.Managers
                     : null;
                 if (token.IsCancellationRequested) return;
 
-                _cachedFolderSourceDirectory = currentDir;
-                _cachedNextFolder = nextFolder;
-                _cachedNextPlaylist = nextPlaylist;
-                _cachedPrevFolder = prevFolder;
-                _cachedPrevPlaylist = prevPlaylist;
+                _folderPreloadCache = new FolderPreloadCache(currentDir, nextFolder, nextPlaylist, prevFolder, prevPlaylist);
+                _lastPreloadedDirectory = currentDir;
             }
             catch { }
         }
@@ -295,13 +299,15 @@ namespace quick_image_viewer.Managers
         public (string? Path, List<string>? Playlist) GetPreloadedFolderData(string currentDir, int offset)
         {
             currentDir = NormalizeDirectoryPath(currentDir);
-            if (!string.Equals(_cachedFolderSourceDirectory, currentDir, StringComparison.OrdinalIgnoreCase))
+            var cache = _folderPreloadCache;
+            if (cache == null ||
+                !string.Equals(cache.SourceDirectory, currentDir, StringComparison.OrdinalIgnoreCase))
             {
                 return (null, null);
             }
 
-            if (offset > 0) return (_cachedNextFolder, _cachedNextPlaylist);
-            if (offset < 0) return (_cachedPrevFolder, _cachedPrevPlaylist);
+            if (offset > 0) return (cache.NextFolder, cache.NextPlaylist);
+            if (offset < 0) return (cache.PrevFolder, cache.PrevPlaylist);
             return (null, null);
         }
 
