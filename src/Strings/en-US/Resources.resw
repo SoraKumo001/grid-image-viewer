@@ -134,16 +134,16 @@
     <value>Close</value>
   </data>
   <data name="MenuViewMode.Text" xml:space="preserve">
-    <value>View Mode</value>
+    <value>Split Mode</value>
   </data>
   <data name="MenuViewMode_Single.Text" xml:space="preserve">
-    <value>Single</value>
+    <value>Single Page</value>
   </data>
   <data name="MenuViewMode_Double.Text" xml:space="preserve">
-    <value>Manga (2-split)</value>
+    <value>Two Pages (Manga)</value>
   </data>
   <data name="MenuViewMode_Quad.Text" xml:space="preserve">
-    <value>Quad (4-split)</value>
+    <value>Four Pages</value>
   </data>
   <data name="MenuQuadLayout.Text" xml:space="preserve">
     <value>Quad Layout</value>
@@ -350,10 +350,10 @@
     <value>sec</value>
   </data>
   <data name="MenuStretchContain.Text" xml:space="preserve">
-    <value>Contain (Uniform)</value>
+    <value>Contain</value>
   </data>
   <data name="MenuStretchCover.Text" xml:space="preserve">
-    <value>Cover (UniformToFill)</value>
+    <value>Cover</value>
   </data>
   <data name="MenuStretchOriginal.Text" xml:space="preserve">
     <value>Original Size</value>

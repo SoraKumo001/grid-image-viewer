@@ -134,16 +134,16 @@
     <value>閉じる</value>
   </data>
   <data name="MenuViewMode.Text" xml:space="preserve">
-    <value>表示モード</value>
+    <value>分割モード</value>
   </data>
   <data name="MenuViewMode_Single.Text" xml:space="preserve">
-    <value>単一表示</value>
+    <value>1枚表示</value>
   </data>
   <data name="MenuViewMode_Double.Text" xml:space="preserve">
-    <value>2分割表示 (漫画)</value>
+    <value>2枚表示 (漫画)</value>
   </data>
   <data name="MenuViewMode_Quad.Text" xml:space="preserve">
-    <value>4分割表示</value>
+    <value>4枚表示</value>
   </data>
   <data name="MenuQuadLayout.Text" xml:space="preserve">
     <value>4分割レイアウト</value>
@@ -329,7 +329,7 @@
     <value>メタデータ表示切替</value>
   </data>
   <data name="KeyBinding_ToggleFullscreen" xml:space="preserve">
-    <value>フルスクリーン切替</value>
+    <value>全画面表示の切替</value>
   </data>
   <data name="KeyBinding_ToggleStretchMode" xml:space="preserve">
     <value>表示サイズ切替 (全体/一杯/実寸)</value>
@@ -350,13 +350,13 @@
     <value>秒</value>
   </data>
   <data name="MenuStretchContain.Text" xml:space="preserve">
-    <value>全体を表示 (Contain)</value>
+    <value>全体を表示</value>
   </data>
   <data name="MenuStretchCover.Text" xml:space="preserve">
-    <value>ウィンドウ一杯に広げる (Cover)</value>
+    <value>全体を埋める</value>
   </data>
   <data name="MenuStretchOriginal.Text" xml:space="preserve">
-    <value>オリジナルサイズ</value>
+    <value>実寸表示</value>
   </data>
   <data name="Metadata_Title" xml:space="preserve">
     <value>画像情報</value>
@@ -561,10 +561,10 @@
     <value>パスをクリップボードにコピーしました</value>
   </data>
   <data name="Notification_FullscreenOn" xml:space="preserve">
-    <value>フルスクリーン: ON</value>
+    <value>全画面表示: ON</value>
   </data>
   <data name="Notification_FullscreenOff" xml:space="preserve">
-    <value>フルスクリーン: OFF</value>
+    <value>全画面表示: OFF</value>
   </data>
   <data name="Notification_GridModeOn" xml:space="preserve">
     <value>グリッドモード: ON</value>
@@ -621,7 +621,7 @@
     <value>設定</value>
   </data>
   <data name="MenuStretchMode.Text" xml:space="preserve">
-    <value>表示サイズ (ストレッチ)</value>
+    <value>表示サイズ</value>
   </data>
   <data name="MenuCopyPath.Text" xml:space="preserve">
     <value>ファイルパスをコピー</value>
