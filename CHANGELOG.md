@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.3 - 2026-05-10
+
+- **Localization & App Identity**:
+  - [Feature] Added localized resource files for English (en-US) and Japanese (ja-JP) to support multi-language application environments (7d37f68).
+  - [Feature] Integrated `Package.appxmanifest` to formally define application identity, capabilities, and file type associations (b6a7593).
+- **Core Architecture**:
+  - [Feature] Introduced `ViewerManager` to centralize UI display logic and streamline buffer management, improving coordination between different view states (88503f5).
+
 ## v1.5.2 - 2026-05-10
 
 - **Core Architecture & Refactoring**:
