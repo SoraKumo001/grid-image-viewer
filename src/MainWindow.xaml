@@ -287,7 +287,6 @@
                 <CheckBox x:Name="SlideshowNextFolder" x:FieldModifier="internal" x:Uid="SlideshowNextFolder" Content="次のフォルダも表示(_N)" AccessKey="N" IsChecked="{x:Bind ViewModel.SlideshowNextFolder, Mode=TwoWay}"/>
                 <CheckBox x:Name="SlideshowIncludeSiblings" x:FieldModifier="internal" x:Uid="SlideshowIncludeSiblings" Content="兄弟フォルダも含める(_S)" AccessKey="S" IsChecked="{x:Bind ViewModel.SlideshowIncludeSiblings, Mode=TwoWay}"/>
                 <CheckBox x:Name="SlideshowCurrentFolderOnly" x:FieldModifier="internal" x:Uid="SlideshowCurrentFolderOnly" Content="下位フォルダも含める(_B)" AccessKey="B" IsChecked="{x:Bind ViewModel.SlideshowCurrentFolderOnly, Mode=TwoWay}"/>
-                <CheckBox x:Name="SlideshowUniformToFill" x:FieldModifier="internal" x:Uid="SlideshowUniformToFill" Content="拡大して全体を埋める(_C)" AccessKey="C" IsChecked="{x:Bind ViewModel.SlideshowUniformToFill, Mode=TwoWay}"/>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock x:Uid="SlideshowStretchModeLabel" Text="表示サイズ：" VerticalAlignment="Center" Width="100"/>
                     <ComboBox x:Name="SlideshowStretchMode" x:FieldModifier="internal" SelectedIndex="{x:Bind ViewModel.SlideshowStretchModeIndex, Mode=TwoWay}" Width="240">

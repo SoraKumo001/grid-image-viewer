@@ -88,7 +88,6 @@ namespace quick_image_viewer.Interfaces
         CheckBox SlideshowNextFolder { get; }
         CheckBox SlideshowIncludeSiblings { get; }
         CheckBox SlideshowCurrentFolderOnly { get; }
-        CheckBox SlideshowUniformToFill { get; }
         ComboBox SlideshowStretchMode { get; }
         CheckBox SlideshowCrossfade { get; }
         NumberBox SlideshowInterval { get; }

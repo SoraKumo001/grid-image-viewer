@@ -73,7 +73,7 @@ namespace quick_image_viewer.Managers
 
         public void Navigate(int offset, bool forceSingleStep)
         {
-            if (_state.Playlist.Count == 0) return;
+            if (_state.Playlist.Count == 0 || _state.IsDisplayUpdating) return;
 
             int step = _settings.MangaSplitCount;
             int newIndex = _state.CurrentIndex;
@@ -183,6 +183,7 @@ namespace quick_image_viewer.Managers
 
         public void NavigateFolder(int offset)
         {
+            if (_state.IsDisplayUpdating) return;
             string currentDir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(currentDir)) return;
 

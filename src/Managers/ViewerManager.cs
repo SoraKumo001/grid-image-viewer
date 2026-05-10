@@ -37,6 +37,7 @@ namespace quick_image_viewer.Managers
         private ViewerPageControl[] _pageControls = Array.Empty<ViewerPageControl>();
 
         private CancellationTokenSource? _displayCts;
+        public bool IsUpdatingDisplay => _window.State.IsDisplayUpdating;
         private int _cachedQuadLayout = 1;
         private bool _lastIsSlideshowRunning = false;
         private int _lastMangaSplitCount = -1;
@@ -145,32 +146,42 @@ namespace quick_image_viewer.Managers
 
         public async Task UpdateDisplayAsync()
         {
+            if (_window.State.IsDisplayUpdating) return;
+
             if (!_window.DispatcherQueue.HasThreadAccess)
             {
                 _window.DispatcherQueue.TryEnqueue(async () => await UpdateDisplayAsync());
                 return;
             }
 
-            if (!await EnsureUIReadyAsync()) return;
-
-            if (HandleEmptyPlaylist()) return;
-
-            if (_window.IsGridMode)
+            _window.State.IsDisplayUpdating = true;
+            try
             {
-                HandleGridMode();
-                return;
+                if (!await EnsureUIReadyAsync()) return;
+
+                if (HandleEmptyPlaylist()) return;
+
+                if (_window.IsGridMode)
+                {
+                    HandleGridMode();
+                    return;
+                }
+
+                PrepareViewerMode();
+
+                var layoutInfo = await CalculateLayoutAndIndicesAsync();
+
+                if (TryEarlyReturnIfUnchanged(layoutInfo)) return;
+
+                var loadContext = PrepareAndLoadBuffer(layoutInfo);
+                if (loadContext.Token.IsCancellationRequested) return;
+
+                await WaitForLoadingAndSwapBuffersAsync(loadContext);
             }
-
-            PrepareViewerMode();
-
-            var layoutInfo = await CalculateLayoutAndIndicesAsync();
-
-            if (TryEarlyReturnIfUnchanged(layoutInfo)) return;
-
-            var loadContext = PrepareAndLoadBuffer(layoutInfo);
-            if (loadContext.Token.IsCancellationRequested) return;
-
-            await WaitForLoadingAndSwapBuffersAsync(loadContext);
+            finally
+            {
+                _window.State.IsDisplayUpdating = false;
+            }
         }
 
         private async Task<bool> EnsureUIReadyAsync()
@@ -450,15 +461,14 @@ namespace quick_image_viewer.Managers
                 }
                 else
                 {
-                    // For manual navigation, we swap almost immediately (10ms).
-                    // The deferred hide logic below ensures the previous image remains visible
-                    // until the new one is actually rendered, preventing any black flash.
-                    await Task.WhenAny(Task.Delay(10), Task.WhenAll(loadTasks));
+                    // 連続移動時は、ダブルバッファを安定させるために全ロード完了を待つ
+                    await Task.WhenAll(loadTasks);
                 }
             }
             catch (OperationCanceledException) { return; }
             catch (Exception) { }
 
+            // 全タスク待機後にキャンセル状態を再確認
             if (token.IsCancellationRequested) return;
 
             var prevBuffer = _window.ViewerControl.CurrentBuffer;
@@ -494,45 +504,28 @@ namespace quick_image_viewer.Managers
             {
                 // Show the new buffer immediately.
                 // Since it is transparent until images load, we will still see the old buffer underneath.
+                Microsoft.UI.Xaml.Controls.Canvas.SetZIndex(nextBuffer, 10);
+                Microsoft.UI.Xaml.Controls.Canvas.SetZIndex(prevBuffer, 0);
                 nextBuffer.Opacity = 1;
                 nextBuffer.Visibility = Visibility.Visible;
 
                 _window.ViewerControl.CurrentBufferIndex = context.TargetBufferIdx;
                 UpdateBufferReferences();
 
-                // We defer hiding the previous buffer until the new one is ready.
-                // This is the definitive fix for the "black flash" problem.
-                _ = Task.Run(async () =>
+                // Small additional delay to ensure WinUI has finished rendering the first frame
+                // of the newly loaded images before we hide the background.
+                await Task.Delay(32);
+
+                if (token.IsCancellationRequested) return;
+
+                // Now it's safe to hide the old content.
+                prevBuffer.Opacity = 0;
+                prevBuffer.Visibility = Visibility.Collapsed;
+
+                foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx])
                 {
-                    try
-                    {
-                        // Wait for all images in the new buffer to load (with a safety timeout)
-                        await Task.WhenAny(Task.WhenAll(loadTasks), Task.Delay(2000, token));
-                    }
-                    catch { }
-
-                    if (token.IsCancellationRequested) return;
-
-                    _window.DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        if (token.IsCancellationRequested) return;
-
-                        // Small additional delay to ensure WinUI has finished rendering the first frame
-                        // of the newly loaded images before we hide the background.
-                        await Task.Delay(32);
-
-                        if (token.IsCancellationRequested) return;
-
-                        // Now it's safe to hide the old content.
-                        prevBuffer.Opacity = 0;
-                        prevBuffer.Visibility = Visibility.Collapsed;
-
-                        foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx])
-                        {
-                            pc.ResetPlayback();
-                        }
-                    });
-                });
+                    pc.ResetPlayback();
+                }
 
                 _window.MetadataDisplayService.UpdateMetadataPanel();
             }

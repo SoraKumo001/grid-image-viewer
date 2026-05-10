@@ -7,6 +7,7 @@ namespace quick_image_viewer.Interfaces
 {
     public interface IViewerManager : IDisposable
     {
+        bool IsUpdatingDisplay { get; }
         Task UpdateDisplayAsync();
         void UpdateStretch(bool resetPosition = false);
         void HandleWindowSizeChanged(double width, double height);

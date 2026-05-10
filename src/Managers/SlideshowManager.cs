@@ -79,7 +79,14 @@ namespace quick_image_viewer.Managers
             ViewModel.SlideshowNextFolder = _settings.SlideshowNextFolder;
             ViewModel.SlideshowIncludeSiblings = _settings.SlideshowIncludeSiblings;
             ViewModel.SlideshowCurrentFolderOnly = _settings.SlideshowCurrentFolderOnly;
-            ViewModel.SlideshowUniformToFill = _settings.SlideshowUniformToFill;
+
+            // Handle legacy UniformToFill setting by mapping it to Cover mode if enabled
+            if (_settings.SlideshowUniformToFill)
+            {
+                _settings.SlideshowStretchMode = 3; // Cover
+                _settings.SlideshowUniformToFill = false;
+            }
+
             ViewModel.SlideshowStretchMode = _settings.SlideshowStretchMode;
             ViewModel.SlideshowStretchModeIndex = MapStretchModeToIndex(_settings.SlideshowStretchMode);
             ViewModel.SlideshowInterval = _settings.SlideshowInterval;
@@ -120,7 +127,6 @@ namespace quick_image_viewer.Managers
             _mainWindow.SlideshowNextFolder.IsEnabled = enabled;
             _mainWindow.SlideshowIncludeSiblings.IsEnabled = enabled;
             _mainWindow.SlideshowCurrentFolderOnly.IsEnabled = enabled;
-            _mainWindow.SlideshowUniformToFill.IsEnabled = enabled;
             _mainWindow.SlideshowStretchMode.IsEnabled = enabled;
             _mainWindow.SlideshowInterval.IsEnabled = enabled;
             _mainWindow.SlideshowCrossfade.IsEnabled = enabled;
@@ -159,7 +165,6 @@ namespace quick_image_viewer.Managers
             _settings.SlideshowNextFolder = ViewModel.SlideshowNextFolder;
             _settings.SlideshowIncludeSiblings = ViewModel.SlideshowIncludeSiblings;
             _settings.SlideshowCurrentFolderOnly = ViewModel.SlideshowCurrentFolderOnly;
-            _settings.SlideshowUniformToFill = ViewModel.SlideshowUniformToFill;
             ViewModel.SlideshowStretchMode = MapIndexToStretchMode(ViewModel.SlideshowStretchModeIndex);
             _settings.SlideshowStretchMode = ViewModel.SlideshowStretchMode;
             _settings.SlideshowInterval = ViewModel.SlideshowInterval;
@@ -188,11 +193,7 @@ namespace quick_image_viewer.Managers
             }
 
             _originalStretchMode = _settings.ImageStretchMode;
-            if (_settings.SlideshowUniformToFill)
-            {
-                _settings.ImageStretchMode = 3; // UniformToFill
-            }
-            else if (_settings.SlideshowStretchMode >= 0)
+            if (_settings.SlideshowStretchMode >= 0)
             {
                 _settings.ImageStretchMode = _settings.SlideshowStretchMode;
             }
@@ -274,7 +275,7 @@ namespace quick_image_viewer.Managers
                 ViewModel.MangaSplitCount = _originalMangaSplitCount;
             }
 
-            if (_settings.SlideshowUniformToFill || _settings.SlideshowStretchMode >= 0)
+            if (_settings.SlideshowStretchMode >= 0)
             {
                 _settings.ImageStretchMode = _originalStretchMode;
             }
