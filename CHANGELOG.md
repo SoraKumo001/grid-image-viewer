@@ -1,6 +1,12 @@
-# Changelog
+$!header## v1.5.4 - 2026-05-10
 
-All notable changes to this project will be documented in this file.
+- **Settings & Localization**:
+  - [Feature] Implemented a modular settings overlay with localization support and various customization options (5869f0d).
+- **Performance & Caching**:
+  - [Feature] Introduced `ViewerCacheManager` for background image byte and `SoftwareBitmap` preloading, significantly improving navigation responsiveness (eb40bea).
+  - [Feature] Established a comprehensive image caching infrastructure and updated playlist navigation to leverage preloaded folder data (20446fa).
+- **State & Playlist Management**:
+  - [Feature] Implemented `PlaylistManager` and `ViewerStateService` to centralize management of navigation, folder switching, and application state tracking (fc624e3, dcb431e).
 
 ## v1.5.3 - 2026-05-10
 
