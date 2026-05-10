@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.ApplicationModel.Resources;
@@ -193,7 +194,7 @@ namespace quick_image_viewer.Managers
                 // ただし、スライドショー停止直後のディレクトリ再読み込み中などは、
                 // 完全に真っ暗になるのを防ぐため、以前の表示を維持する場合がある。
                 bool isLoading = _window.Playlist.Count == 0;
-                if (!isLoading)
+                if (!isLoading && _window.ViewerControl != null)
                 {
                     for (int b = 0; b < 2; b++)
                     {
@@ -344,10 +345,13 @@ namespace quick_image_viewer.Managers
         {
             if (!info.StateChanged && !info.SplitChanged && info.CurrentPaths.SequenceEqual(info.NextPaths))
             {
-                _window.ViewerControl.CurrentBuffer.Opacity = 1;
-                _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
-                _window.ViewerControl.InactiveBuffer.Opacity = 0;
-                _window.ViewerControl.InactiveBuffer.Visibility = Visibility.Collapsed;
+                if (_window.ViewerControl != null)
+                {
+                    _window.ViewerControl.CurrentBuffer.Opacity = 1;
+                    _window.ViewerControl.CurrentBuffer.Visibility = Visibility.Visible;
+                    _window.ViewerControl.InactiveBuffer.Opacity = 0;
+                    _window.ViewerControl.InactiveBuffer.Visibility = Visibility.Collapsed;
+                }
 
                 _window.UpdatePageIndicator();
                 _window.MetadataDisplayService.UpdateMetadataPanel();
@@ -385,12 +389,20 @@ namespace quick_image_viewer.Managers
             var targetControls = _window.ViewerControl.PageControlsBuffer[targetBufferIdx];
             var targetPages = _pagesBuffer[targetBufferIdx];
 
-            for (int i = 0; i < 4; i++) targetControls[i].Visibility = Visibility.Collapsed;
+            // Important: Keep target buffer HIDDEN during loading to prevent flickering
+            _window.ViewerControl.PagesGrids[targetBufferIdx].Opacity = 0;
+            _window.ViewerControl.PagesGrids[targetBufferIdx].Visibility = Visibility.Collapsed;
 
-            _window.ViewerControl.PagesGrids[targetBufferIdx].Opacity = 1;
-            _window.ViewerControl.PagesGrids[targetBufferIdx].Visibility = Visibility.Visible;
-
-            // 移動位置の自動リセットを廃止（ユーザーがズームリセット等を行うまで位置を維持）
+            // Clear ALL controls first to ensure a clean state
+            for (int i = 0; i < 4; i++)
+            {
+                targetControls[i].PageImage.Source = null;
+                targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
+                targetControls[i].ResetPlayback();
+                targetControls[i].LoadingRing.IsActive = false;
+                targetPages[i].Reset();
+                targetControls[i].Visibility = Visibility.Collapsed;
+            }
 
             var currentFiles = new List<string>();
             var loadTasks = new List<Task>();
@@ -406,28 +418,13 @@ namespace quick_image_viewer.Managers
                     string path = _window.Playlist[indexToLoad];
                     currentFiles.Add(path);
                     int cellIndex = i;
-                    var loadTask = _imageLoader.LoadPageIntoBufferAsync(path, targetControls[cellIndex], targetPages[cellIndex], cellIndex, token, _cacheManager)
-                        .ContinueWith(t =>
-                        {
-                            if (!token.IsCancellationRequested)
-                            {
-                                _window.DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    targetControls[cellIndex].Visibility = Visibility.Visible;
-                                });
-                            }
-                        });
+
+                    // Show the control container immediately so LoadingRing can be seen if needed
+                    targetControls[cellIndex].Visibility = Visibility.Visible;
+
+                    var loadTask = _imageLoader.LoadPageIntoBufferAsync(path, targetControls[cellIndex], targetPages[cellIndex], cellIndex, token, _cacheManager);
                     loadTasks.Add(loadTask);
                 }
-            }
-
-            for (int i = info.EffectiveSplitCount; i < 4; i++)
-            {
-                targetControls[i].PageImage.Source = null;
-                targetControls[i].PageCanvas.Visibility = Visibility.Collapsed;
-                targetControls[i].ResetPlayback();
-                targetControls[i].LoadingRing.IsActive = false;
-                targetPages[i].Reset();
             }
 
             _window.ImageEditService.CleanupSessions(currentFiles);
@@ -445,6 +442,8 @@ namespace quick_image_viewer.Managers
 
             try
             {
+                // Wait for either completion or a reasonable timeout for normal navigation
+                // Slideshow or structural changes should wait more strictly
                 if (info.IsSlideshowRunning || info.StateChanged || info.SplitChanged)
                 {
                     await Task.WhenAll(loadTasks);
@@ -452,7 +451,10 @@ namespace quick_image_viewer.Managers
                 }
                 else
                 {
-                    await Task.WhenAny(Task.Delay(500), Task.WhenAll(loadTasks));
+                    // For manual navigation, we swap almost immediately (10ms).
+                    // The deferred hide logic below ensures the previous image remains visible
+                    // until the new one is actually rendered, preventing any black flash.
+                    await Task.WhenAny(Task.Delay(10), Task.WhenAll(loadTasks));
                 }
             }
             catch (OperationCanceledException) { return; }
@@ -466,6 +468,10 @@ namespace quick_image_viewer.Managers
 
             if (info.IsSlideshowRunning && _settings.SlideshowCrossfade)
             {
+                // Prepare next buffer for crossfade
+                nextBuffer.Opacity = 0;
+                nextBuffer.Visibility = Visibility.Visible;
+
                 _window.ViewerControl.CurrentBufferIndex = context.TargetBufferIdx;
                 UpdateBufferReferences();
                 _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
@@ -477,19 +483,58 @@ namespace quick_image_viewer.Managers
                     await Task.Delay((int)(duration * 1000) + 100);
                     _window.DispatcherQueue.TryEnqueue(() =>
                     {
+                        if (token.IsCancellationRequested) return;
                         foreach (var pc in prevControls) pc.ResetPlayback();
+                        // Ensure previous buffer is fully hidden after crossfade
+                        prevBuffer.Visibility = Visibility.Collapsed;
+                        prevBuffer.Opacity = 0;
                     });
                 });
             }
             else
             {
+                // Show the new buffer immediately.
+                // Since it is transparent until images load, we will still see the old buffer underneath.
+                nextBuffer.Opacity = 1;
+                nextBuffer.Visibility = Visibility.Visible;
+
                 _window.ViewerControl.CurrentBufferIndex = context.TargetBufferIdx;
                 UpdateBufferReferences();
 
-                prevBuffer.Opacity = 0;
-                prevBuffer.Visibility = Visibility.Collapsed;
+                // We defer hiding the previous buffer until the new one is ready.
+                // This is the definitive fix for the "black flash" problem.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // Wait for all images in the new buffer to load (with a safety timeout)
+                        await Task.WhenAny(Task.WhenAll(loadTasks), Task.Delay(2000, token));
+                    }
+                    catch { }
 
-                foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx]) pc.ResetPlayback();
+                    if (token.IsCancellationRequested) return;
+
+                    _window.DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        if (token.IsCancellationRequested) return;
+
+                        // Small additional delay to ensure WinUI has finished rendering the first frame
+                        // of the newly loaded images before we hide the background.
+                        await Task.Delay(32); 
+
+                        if (token.IsCancellationRequested) return;
+
+                        // Now it's safe to hide the old content.
+                        prevBuffer.Opacity = 0;
+                        prevBuffer.Visibility = Visibility.Collapsed;
+
+                        foreach (var pc in _window.ViewerControl.PageControlsBuffer[prevBufferIdx])
+                        {
+                            pc.ResetPlayback();
+                        }
+                    });
+                });
+
                 _window.MetadataDisplayService.UpdateMetadataPanel();
             }
 
