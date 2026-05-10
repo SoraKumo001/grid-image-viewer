@@ -331,6 +331,9 @@
   <data name="KeyBinding_ResetAll" xml:space="preserve">
     <value>Reset to Defaults</value>
   </data>
+  <data name="KeyBinding_PressShortcut" xml:space="preserve">
+    <value>Press shortcut</value>
+  </data>
   <data name="KeyBinding_Clear" xml:space="preserve">
     <value>Clear binding</value>
   </data>

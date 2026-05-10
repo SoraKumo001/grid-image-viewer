@@ -43,17 +43,35 @@
                         </Setter>
                     </Style>
                 </MenuFlyout.MenuFlyoutPresenterStyle>
-                <MenuFlyoutItem x:Name="GridMenuOpenFolder" x:Uid="MenuOpenFolder" Text="Open Folder..." Click="OpenFolderButton_Click" />
-                <MenuFlyoutItem x:Name="GridMenuRefresh" x:Uid="MenuRefreshThumbnails" Text="Refresh Thumbnails" Click="MenuThumbnailRefresh_Click" />
+                <MenuFlyoutItem x:Name="GridMenuOpenFolder" x:Uid="MenuOpenFolder" Text="Open Folder..." Click="OpenFolderButton_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE8B7;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem x:Name="GridMenuRefresh" x:Uid="MenuRefreshThumbnails" Text="Refresh Thumbnails" Click="MenuThumbnailRefresh_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE72C;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
                 <MenuFlyoutSeparator />
                 <MenuFlyoutSubItem x:Name="GridMenuSort" x:Uid="MenuSort" Text="Sort By">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE8CB;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Uid="MenuSort_Name" Text="Name" Click="MenuSort_Click" Tag="Name" />
                     <MenuFlyoutItem x:Uid="MenuSort_Date" Text="Date" Click="MenuSort_Click" Tag="Date" />
                     <MenuFlyoutItem x:Uid="MenuSort_Size" Text="Size" Click="MenuSort_Click" Tag="Size" />
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
-                <MenuFlyoutItem x:Name="GridMenuSlideshow" x:Uid="MenuSlideshow" Text="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}" />
+                <MenuFlyoutItem x:Name="GridMenuSlideshow" x:Uid="MenuSlideshow" Text="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE768;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
                 <MenuFlyoutSubItem x:Name="GridMenuBookmarksSub" x:Uid="MenuBookmarksSub" Text="Bookmarks">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE734;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Name="GridMenuBookmark" x:Uid="MenuBookmark" Text="{x:Bind ViewModel.BookmarkMenuText, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleBookmarkCommand}" />
                     <ToggleMenuFlyoutItem x:Name="GridMenuBookmarksToggle" x:Uid="MenuBookmarksToggle" Text="Show Bookmark Panel" Click="MenuBookmarksToggle_Click" IsChecked="{x:Bind ViewModel.IsBookmarkPanelVisible, Mode=OneWay}" />
                     <MenuFlyoutSeparator />
@@ -63,6 +81,9 @@
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
                 <MenuFlyoutSubItem x:Name="GridMenuSettingsSub" x:Uid="MenuSettingsSub" Text="Settings">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Name="GridMenuSettings" x:Uid="MenuSettings" Text="General Settings..." Command="{x:Bind ViewModel.SettingsCommand}" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem x:Name="GridMenuSupport" x:Uid="MenuSupport" Text="Support" Command="{x:Bind ViewModel.SupportCommand}" />
@@ -81,13 +102,28 @@
                         </Setter>
                     </Style>
                 </MenuFlyout.MenuFlyoutPresenterStyle>
-                <MenuFlyoutItem x:Name="MenuUndo" x:FieldModifier="internal" x:Uid="MenuUndo" Text="Undo (Ctrl+Z)" Command="{x:Bind ViewModel.Editor.UndoCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.CanUndo, Mode=OneWay}" />
-                <MenuFlyoutItem x:Name="MenuRedo" x:FieldModifier="internal" x:Uid="MenuRedo" Text="Redo (Ctrl+Y)" Command="{x:Bind ViewModel.Editor.RedoCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.CanRedo, Mode=OneWay}" />
+                <MenuFlyoutItem x:Name="MenuUndo" x:FieldModifier="internal" x:Uid="MenuUndo" Text="Undo (Ctrl+Z)" Command="{x:Bind ViewModel.Editor.UndoCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.CanUndo, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE7A7;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem x:Name="MenuRedo" x:FieldModifier="internal" x:Uid="MenuRedo" Text="Redo (Ctrl+Y)" Command="{x:Bind ViewModel.Editor.RedoCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.CanRedo, Mode=OneWay}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE7A6;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
                 <MenuFlyoutSeparator />
 
-                <MenuFlyoutItem x:Name="MenuOpenFolder" x:FieldModifier="internal" x:Uid="MenuOpenFolder" Text="Open Folder..." Click="OpenFolderButton_Click" />
+                <MenuFlyoutItem x:Name="MenuOpenFolder" x:FieldModifier="internal" x:Uid="MenuOpenFolder" Text="Open Folder..." Click="OpenFolderButton_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE8B7;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
 
                 <MenuFlyoutSubItem x:Name="MenuFile" x:Uid="MenuFile" Text="File">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE7C3;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Name="MenuOpenExplorer" x:FieldModifier="internal" x:Uid="MenuOpenExplorer" Text="Open in Explorer" Command="{x:Bind ViewModel.Editor.OpenExplorerCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
                     <MenuFlyoutItem x:Name="MenuCopyPath" x:FieldModifier="internal" x:Uid="MenuCopyPath" Text="Copy File Path" Command="{x:Bind ViewModel.Editor.CopyPathCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" />
                     <MenuFlyoutItem x:Name="MenuPrint" x:FieldModifier="internal" x:Uid="MenuPrint" Text="Print" Command="{x:Bind ViewModel.Editor.PrintCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.HasValidPath, Mode=OneWay}" />
@@ -106,6 +142,9 @@
                 </MenuFlyoutSubItem>
 
                 <MenuFlyoutSubItem x:Name="MenuEdit" x:Uid="MenuEdit" Text="Edit">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE70F;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Name="MenuCrop" x:FieldModifier="internal" x:Uid="MenuCrop" Text="Crop (Selection)" Command="{x:Bind ViewModel.Editor.CropCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
                     <MenuFlyoutItem x:Name="MenuResize" x:FieldModifier="internal" x:Uid="MenuResize" Text="Resize" Command="{x:Bind ViewModel.Editor.ResizeCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
                     <MenuFlyoutSubItem x:Name="MenuRotate" x:FieldModifier="internal" x:Uid="MenuRotate" Text="Rotate" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}">
@@ -129,6 +168,9 @@
                 <MenuFlyoutSeparator />
 
                 <MenuFlyoutSubItem x:Name="MenuView" x:Uid="MenuView" Text="View">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE890;" />
+                    </MenuFlyoutSubItem.Icon>
                     <ToggleMenuFlyoutItem x:Name="MenuMetadata" x:FieldModifier="internal" x:Uid="MenuMetadata" Text="Show Image Information (I)" Click="MenuMetadata_Click" IsChecked="{x:Bind ViewModel.Viewer.IsMetadataVisible, Mode=OneWay}" />
 <MenuFlyoutSeparator />
                     <MenuFlyoutSubItem x:Name="MenuViewMode" x:FieldModifier="internal" x:Uid="MenuViewMode" Text="View Mode">
@@ -148,8 +190,15 @@
                     </MenuFlyoutSubItem>
                 </MenuFlyoutSubItem>
 
-                <MenuFlyoutItem x:Name="MenuSlideshow" x:FieldModifier="internal" x:Uid="MenuSlideshow" Text="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}" />
+                <MenuFlyoutItem x:Name="MenuSlideshow" x:FieldModifier="internal" x:Uid="MenuSlideshow" Text="Slideshow" Command="{x:Bind ViewModel.OpenSlideshowCommand}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE768;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
                 <MenuFlyoutSubItem x:Name="MenuBookmarksSub" x:FieldModifier="internal" x:Uid="MenuBookmarksSub" Text="Bookmarks">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE734;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Name="MenuBookmark" x:FieldModifier="internal" x:Uid="MenuBookmark" Text="{x:Bind ViewModel.BookmarkMenuText, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleBookmarkCommand}" />
                     <ToggleMenuFlyoutItem x:Name="MenuBookmarksToggle" x:FieldModifier="internal" x:Uid="MenuBookmarksToggle" Text="Show Bookmark Panel" Click="MenuBookmarksToggle_Click" IsChecked="{x:Bind ViewModel.IsBookmarkPanelVisible, Mode=OneWay}" />
                     <MenuFlyoutSeparator />
@@ -161,6 +210,9 @@
                 <MenuFlyoutSeparator />
 
                 <MenuFlyoutSubItem x:Name="MenuSettingsSub" x:Uid="MenuSettingsSub" Text="Settings">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem x:Name="MenuSettings" x:FieldModifier="internal" x:Uid="MenuSettings" Text="General Settings..." Command="{x:Bind ViewModel.SettingsCommand}" />
 <MenuFlyoutSeparator />
                     <MenuFlyoutItem x:Name="MenuSupport" x:FieldModifier="internal" x:Uid="MenuSupport" Text="Support" Command="{x:Bind ViewModel.SupportCommand}" />

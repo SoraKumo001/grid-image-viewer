@@ -337,6 +337,9 @@
   <data name="KeyBinding_ResetAll" xml:space="preserve">
     <value>デフォルトに戻す</value>
   </data>
+  <data name="KeyBinding_PressShortcut" xml:space="preserve">
+    <value>キーを押してください</value>
+  </data>
   <data name="KeyBinding_Clear" xml:space="preserve">
     <value>キー設定をクリア</value>
   </data>

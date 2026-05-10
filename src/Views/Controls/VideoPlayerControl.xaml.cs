@@ -19,7 +19,18 @@ namespace quick_image_viewer.Views.Controls
         public Action? InvalidateCanvasRequested;
 
         private MediaPlayerElement? _internalMediaPlayer;
-        public MediaPlayerElement PagePlayer => _internalMediaPlayer ?? throw new InvalidOperationException("MediaPlayerElement not initialized");
+        public MediaPlayerElement PagePlayer
+        {
+            get
+            {
+                if (_internalMediaPlayer == null)
+                {
+                    RecreateMediaPlayerElement();
+                }
+
+                return _internalMediaPlayer ?? throw new InvalidOperationException("MediaPlayerElement not initialized");
+            }
+        }
 
         private readonly Microsoft.UI.Xaml.DispatcherTimer _hideTimer;
         private readonly Microsoft.UI.Xaml.DispatcherTimer _sliderUpdateTimer;
@@ -34,6 +45,11 @@ namespace quick_image_viewer.Views.Controls
 
         public void RecreateMediaPlayerElement()
         {
+            if (MediaPlayerContainer == null)
+            {
+                return;
+            }
+
             if (_internalMediaPlayer != null)
             {
                 try
@@ -47,7 +63,7 @@ namespace quick_image_viewer.Views.Controls
                     _internalMediaPlayer.Source = null;
                 }
                 catch { }
-                MediaPlayerContainer.Children.Remove(_internalMediaPlayer);
+                try { MediaPlayerContainer.Children.Remove(_internalMediaPlayer); } catch { }
                 _internalMediaPlayer = null;
             }
 
@@ -72,9 +88,14 @@ namespace quick_image_viewer.Views.Controls
         public Windows.Media.Playback.MediaPlayer CreateNewMediaPlayer()
         {
             RecreateMediaPlayerElement();
+            if (_internalMediaPlayer == null)
+            {
+                throw new InvalidOperationException("MediaPlayerElement container is not ready");
+            }
+
             var mp = new Windows.Media.Playback.MediaPlayer();
             mp.IsVideoFrameServerEnabled = false;
-            _internalMediaPlayer!.SetMediaPlayer(mp);
+            _internalMediaPlayer.SetMediaPlayer(mp);
             return mp;
         }
 
@@ -139,6 +160,13 @@ namespace quick_image_viewer.Views.Controls
             };
 
             this.SizeChanged += VideoPlayerControl_SizeChanged;
+            this.Loaded += (s, e) =>
+            {
+                if (_internalMediaPlayer == null)
+                {
+                    RecreateMediaPlayerElement();
+                }
+            };
             this.Unloaded += (s, e) =>
             {
                 var mainView = ((App)Application.Current).MainView;
@@ -147,7 +175,6 @@ namespace quick_image_viewer.Views.Controls
                     mainView.ViewModel.IsVideoTransportHovered = false;
                 }
             };
-            RecreateMediaPlayerElement();
         }
 
         private void VideoPlayerControl_SizeChanged(object sender, SizeChangedEventArgs e)

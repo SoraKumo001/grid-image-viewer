@@ -16,8 +16,8 @@
             CornerRadius="12"
             BorderBrush="#FF404040"
             BorderThickness="1"
-            Width="420"
-            Height="540"
+            Width="560"
+            Height="640"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Padding="0">

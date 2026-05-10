@@ -108,9 +108,13 @@ namespace quick_image_viewer.Services
                     pageControl.LoadingRing.IsActive = true;
                     pageControl.PageCanvas.Visibility = Visibility.Collapsed;
                     pageControl.PageImage.Visibility = Visibility.Collapsed;
-                    pageControl.PagePlayer.Opacity = 0;
 
-                    try { pageControl.GetOrCreateMediaPlayer(); } catch { }
+                    try
+                    {
+                        pageControl.GetOrCreateMediaPlayer();
+                        pageControl.PagePlayer.Opacity = 0;
+                    }
+                    catch { }
                 }
                 else
                 {

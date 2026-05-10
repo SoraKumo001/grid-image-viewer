@@ -306,13 +306,13 @@ namespace quick_image_viewer.Views.Controls
 
             btn.Click += (s, e) =>
             {
-                btn.Content = "...";
+                btn.Content = GetString("KeyBinding_PressShortcut");
                 btn.Background = (SolidColorBrush)Application.Current.Resources["AccentFillColorDefaultBrush"];
             };
 
             btn.PreviewKeyDown += (s, e) =>
             {
-                if (btn.Content.ToString() == "...")
+                if (btn.Content.ToString() == GetString("KeyBinding_PressShortcut"))
                 {
                     e.Handled = true;
                     var key = e.Key;
