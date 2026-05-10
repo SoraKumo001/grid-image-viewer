@@ -188,7 +188,7 @@ namespace quick_image_viewer.Managers
             _navigateCts = new CancellationTokenSource();
             var token = _navigateCts.Token;
 
-            var (preloadedPath, preloadedPlaylist) = _cacheManager.GetPreloadedFolderData(offset);
+            var (preloadedPath, preloadedPlaylist) = _cacheManager.GetPreloadedFolderData(currentDir, offset);
 
             // Only use preloaded data if it points to a DIFFERENT folder than the current one
             if (!string.IsNullOrEmpty(preloadedPath) &&

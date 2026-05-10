@@ -24,6 +24,7 @@ namespace quick_image_viewer.Managers
         private string? _cachedPrevFolder;
         private List<string>? _cachedNextPlaylist;
         private List<string>? _cachedPrevPlaylist;
+        private string? _cachedFolderSourceDirectory;
         private string? _lastPreloadedDirectory;
         private CancellationTokenSource? _preloadCts;
 
@@ -257,6 +258,7 @@ namespace quick_image_viewer.Managers
 
         public async Task PreloadFoldersAsync(string currentDir)
         {
+            currentDir = NormalizeDirectoryPath(currentDir);
             if (string.IsNullOrEmpty(currentDir) || currentDir == _lastPreloadedDirectory) return;
             _folderPreloadCts?.Cancel();
             _folderPreloadCts?.Dispose();
@@ -268,22 +270,48 @@ namespace quick_image_viewer.Managers
 
             try
             {
-                _cachedNextFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, 1, allowedExtensions, token), token);
+                string? nextFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, 1, allowedExtensions, token), token);
                 if (token.IsCancellationRequested) return;
-                if (!string.IsNullOrEmpty(_cachedNextFolder)) _cachedNextPlaylist = await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(_cachedNextFolder, allowedExtensions), token);
+                List<string>? nextPlaylist = !string.IsNullOrEmpty(nextFolder)
+                    ? await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(nextFolder, allowedExtensions), token)
+                    : null;
                 if (token.IsCancellationRequested) return;
-                _cachedPrevFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, -1, allowedExtensions, token), token);
+                string? prevFolder = await Task.Run(() => FileNavigator.FindNextImageFolder(currentDir, -1, allowedExtensions, token), token);
                 if (token.IsCancellationRequested) return;
-                if (!string.IsNullOrEmpty(_cachedPrevFolder)) _cachedPrevPlaylist = await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(_cachedPrevFolder, allowedExtensions), token);
+                List<string>? prevPlaylist = !string.IsNullOrEmpty(prevFolder)
+                    ? await Task.Run(() => FolderDiscoveryService.GetInitialPlaylist(prevFolder, allowedExtensions), token)
+                    : null;
+                if (token.IsCancellationRequested) return;
+
+                _cachedFolderSourceDirectory = currentDir;
+                _cachedNextFolder = nextFolder;
+                _cachedNextPlaylist = nextPlaylist;
+                _cachedPrevFolder = prevFolder;
+                _cachedPrevPlaylist = prevPlaylist;
             }
             catch { }
         }
 
-        public (string? Path, List<string>? Playlist) GetPreloadedFolderData(int offset)
+        public (string? Path, List<string>? Playlist) GetPreloadedFolderData(string currentDir, int offset)
         {
+            currentDir = NormalizeDirectoryPath(currentDir);
+            if (!string.Equals(_cachedFolderSourceDirectory, currentDir, StringComparison.OrdinalIgnoreCase))
+            {
+                return (null, null);
+            }
+
             if (offset > 0) return (_cachedNextFolder, _cachedNextPlaylist);
             if (offset < 0) return (_cachedPrevFolder, _cachedPrevPlaylist);
             return (null, null);
+        }
+
+        private static string NormalizeDirectoryPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return string.Empty;
+
+            string normalized = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (normalized.Length == 2 && normalized[1] == ':') normalized += Path.DirectorySeparatorChar;
+            return normalized;
         }
 
         public void CancelPreloads()
