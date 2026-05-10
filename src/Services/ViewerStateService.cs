@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.ObjectModel;
 namespace quick_image_viewer.Services
 {
@@ -31,8 +32,18 @@ namespace quick_image_viewer.Services
         [ObservableProperty]
         public partial bool IsSlideshowRunning { get; set; } = false;
 
-        [ObservableProperty]
-        public partial bool IsSearchingFolder { get; set; } = false;
+                private bool _isSearchingFolder = false;
+        public bool IsSearchingFolder
+        {
+            get => _isSearchingFolder;
+            set
+            {
+                if (SetProperty(ref _isSearchingFolder, value))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[State] IsSearchingFolder changed to: {value} (Thread: {System.Environment.CurrentManagedThreadId})");
+                }
+            }
+        }
 
         [ObservableProperty]
         public partial bool IsDisplayUpdating { get; set; } = false;

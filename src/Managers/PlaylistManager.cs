@@ -25,6 +25,7 @@ namespace quick_image_viewer.Managers
         private readonly IViewerCacheManager _cacheManager;
         private readonly DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _loadCts;
+        private CancellationTokenSource? _navigateCts;
 
         public PlaylistManager(IViewerStateService state, ISettingsManager settings, INotificationService notification, IViewerCacheManager cacheManager)
         {
@@ -54,13 +55,11 @@ namespace quick_image_viewer.Managers
             int remaining = _state.Playlist.Count - currentIndex;
             int effective = Math.Min(splitCount, remaining);
 
-            // Archives (Covers) are always single page in folder view
             if (ArchiveManager.IsArchive(_state.Playlist[currentIndex]) && !ArchiveManager.IsArchivePath(_state.Playlist[currentIndex]))
             {
                 return 1;
             }
 
-            // Normal images: stop spread if we hit an archive
             for (int i = 1; i < effective; i++)
             {
                 if (ArchiveManager.IsArchive(_state.Playlist[currentIndex + i]) && !ArchiveManager.IsArchivePath(_state.Playlist[currentIndex + i]))
@@ -84,7 +83,6 @@ namespace quick_image_viewer.Managers
             }
             else if (offset > 0)
             {
-                // Go forward by current visible spreads
                 for (int i = 0; i < offset; i++)
                 {
                     newIndex += GetEffectiveSplitCountForIndex(newIndex);
@@ -93,7 +91,6 @@ namespace quick_image_viewer.Managers
             }
             else
             {
-                // Go backward by previous spreads
                 for (int i = 0; i < Math.Abs(offset); i++)
                 {
                     if (newIndex <= 0) break;
@@ -101,12 +98,10 @@ namespace quick_image_viewer.Managers
                     int target = newIndex - 1;
                     if (ArchiveManager.IsArchive(_state.Playlist[target]) && !ArchiveManager.IsArchivePath(_state.Playlist[target]))
                     {
-                        // The item before is an archive, it's a spread of its own
                         newIndex = target;
                     }
                     else
                     {
-                        // The item before is a normal image, look back to find spread start
                         int moved = 0;
                         while (target > 0 && moved < step - 1)
                         {
@@ -120,14 +115,12 @@ namespace quick_image_viewer.Managers
                 }
             }
 
-            // Boundary checks
             if (newIndex < 0 || (offset < 0 && newIndex == _state.CurrentIndex && _state.CurrentIndex == 0))
             {
                 int action = _settings.BoundaryAction;
                 if (action == 1) { NavigateFolder(-1); return; }
                 else if (action == 2)
                 {
-                    // Loop to end: find the START of the LAST spread
                     int lastStart = _state.Playlist.Count - 1;
                     int moved = 0;
                     while (lastStart > 0 && moved < step - 1)
@@ -187,12 +180,20 @@ namespace quick_image_viewer.Managers
             string currentDir = _state.CurrentDirectory;
             if (string.IsNullOrEmpty(currentDir)) return;
 
-            // Normalize path to ensure consistency in FileNavigator (remove trailing slashes)
             currentDir = currentDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            if (currentDir.Length == 2 && currentDir[1] == ':') currentDir += Path.DirectorySeparatorChar; // Handle C: -> C:\
+            if (currentDir.Length == 2 && currentDir[1] == ':') currentDir += Path.DirectorySeparatorChar;
+
+            // Cancel previous navigation request to prevent race conditions
+            _navigateCts?.Cancel();
+            _navigateCts = new CancellationTokenSource();
+            var token = _navigateCts.Token;
 
             var (preloadedPath, preloadedPlaylist) = _cacheManager.GetPreloadedFolderData(offset);
-            if (!string.IsNullOrEmpty(preloadedPath) && preloadedPlaylist != null && preloadedPlaylist.Count > 0)
+            
+            // Only use preloaded data if it points to a DIFFERENT folder than the current one
+            if (!string.IsNullOrEmpty(preloadedPath) && 
+                !string.Equals(preloadedPath, currentDir, StringComparison.OrdinalIgnoreCase) && 
+                preloadedPlaylist != null && preloadedPlaylist.Count > 0)
             {
                 LoadDirectory(preloadedPath, string.Empty, false, false, preloadedPlaylist);
                 return;
@@ -203,20 +204,37 @@ namespace quick_image_viewer.Managers
 
             _ = Task.Run(() =>
             {
-                string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset, allowedExtensions);
-                _dispatcherQueue.TryEnqueue(() =>
+                try
                 {
-                    if (!string.IsNullOrEmpty(targetDir))
+                    string? targetDir = FileNavigator.FindNextImageFolder(currentDir, offset, allowedExtensions, token);
+                    
+                    if (token.IsCancellationRequested) return;
+
+                    _dispatcherQueue.TryEnqueue(() =>
                     {
-                        LoadDirectory(targetDir, string.Empty);
-                    }
-                    else
+                        if (token.IsCancellationRequested) return;
+
+                        if (!string.IsNullOrEmpty(targetDir))
+                        {
+                            LoadDirectory(targetDir, string.Empty);
+                        }
+                        else
+                        {
+                            _state.IsSearchingFolder = false;
+                            _notification.Show(_settings.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
+                            WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                        }
+                    });
+                }
+                catch
+                {
+                    _dispatcherQueue.TryEnqueue(() =>
                     {
+                        if (token.IsCancellationRequested) return;
                         _state.IsSearchingFolder = false;
-                        _notification.Show(_settings.GetString(offset > 0 ? "Notification_NoMoreFoldersEnd" : "Notification_NoMoreFoldersStart"));
                         WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
-                    }
-                });
+                    });
+                }
             });
         }
 
@@ -224,11 +242,12 @@ namespace quick_image_viewer.Managers
         {
             _loadCts?.Cancel();
             _loadCts = new CancellationTokenSource();
+            var token = _loadCts.Token;
+            
             _state.CurrentDirectory = path;
             _state.IsSearchingFolder = true;
             _state.Playlist.Clear();
-            var token = _loadCts.Token;
-
+            
             _ = Task.Run(() =>
             {
                 try
@@ -246,6 +265,7 @@ namespace quick_image_viewer.Managers
                 {
                     _dispatcherQueue.TryEnqueue(() =>
                     {
+                        if (token.IsCancellationRequested) return;
                         _state.IsSearchingFolder = false;
                         WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     });
@@ -255,6 +275,8 @@ namespace quick_image_viewer.Managers
 
         private void OnInitialFilesLoaded(string path, string initialFile, bool includeSiblings, bool includeSubfolders, CancellationToken token)
         {
+            if (token.IsCancellationRequested) return;
+
             if (_state.Playlist.Count > 0)
             {
                 WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
@@ -265,8 +287,15 @@ namespace quick_image_viewer.Managers
                 }
                 else
                 {
-                    _state.IsSearchingFolder = false;
-                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                    // For fast preloaded loads, give a tiny buffer for UI signals to propagate before hiding overlay
+                    _ = Task.Run(async () => {
+                        await Task.Delay(200); 
+                        _dispatcherQueue.TryEnqueue(() => {
+                            if (token.IsCancellationRequested) return;
+                            _state.IsSearchingFolder = false;
+                            WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                        });
+                    });
                 }
             }
             else if (includeSiblings || includeSubfolders)
@@ -283,15 +312,7 @@ namespace quick_image_viewer.Managers
         private void UpdatePlaylist(List<string> files, string targetPath, bool alreadySorted)
         {
             string currentPath = !string.IsNullOrEmpty(targetPath) ? targetPath : _state.CurrentImagePath;
-            List<string> sortedFiles;
-            if (alreadySorted)
-            {
-                sortedFiles = files;
-            }
-            else
-            {
-                sortedFiles = files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
-            }
+            List<string> sortedFiles = alreadySorted ? files : files.Distinct().OrderBy(f => f, new NaturalStringComparer()).ToList();
 
             _state.Playlist = new ObservableCollection<string>(sortedFiles);
 
@@ -312,36 +333,42 @@ namespace quick_image_viewer.Managers
             var comparer = new NaturalStringComparer();
             var lastUpdate = DateTime.Now;
 
-            await FolderDiscoveryService.DiscoverFilesAsync(path, includeSiblings, includeSubfolders, (newFiles) =>
+            try
             {
-                accumulatedFiles.AddRange(newFiles);
-                var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
-                accumulatedFiles = sorted;
-
-                if ((DateTime.Now - lastUpdate).TotalMilliseconds > 1000)
+                await FolderDiscoveryService.DiscoverFilesAsync(path, includeSiblings, includeSubfolders, (newFiles) =>
                 {
-                    lastUpdate = DateTime.Now;
-                    _dispatcherQueue.TryEnqueue(() =>
+                    accumulatedFiles.AddRange(newFiles);
+                    var sorted = accumulatedFiles.Distinct().OrderBy(f => f, comparer).ToList();
+                    accumulatedFiles = sorted;
+
+                    if ((DateTime.Now - lastUpdate).TotalMilliseconds > 1000)
                     {
-                        if (token.IsCancellationRequested) return;
+                        lastUpdate = DateTime.Now;
+                        _dispatcherQueue.TryEnqueue(() =>
+                        {
+                            if (token.IsCancellationRequested) return;
 
-                        string currentPath = _state.CurrentImagePath;
-                        UpdatePlaylist(sorted, currentPath, true);
-                        WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
-                    });
-                }
-            }, token, _settings.EnabledExtensions);
-
-            _dispatcherQueue.TryEnqueue(() =>
+                            string currentPath = _state.CurrentImagePath;
+                            UpdatePlaylist(sorted, currentPath, true);
+                            WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
+                        });
+                    }
+                }, token, _settings.EnabledExtensions);
+            }
+            catch {}
+            finally
             {
-                if (!token.IsCancellationRequested)
+                _dispatcherQueue.TryEnqueue(() =>
                 {
+                    if (token.IsCancellationRequested) return;
+
                     UpdatePlaylist(accumulatedFiles, _state.CurrentImagePath, true);
                     WeakReferenceMessenger.Default.Send(new PlaylistUpdatedMessage(false));
-                }
-                _state.IsSearchingFolder = false;
-                WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
-            });
+                    
+                    _state.IsSearchingFolder = false;
+                    WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                });
+            }
         }
 
         public void RemoveFromPlaylist(string path)
@@ -355,8 +382,6 @@ namespace quick_image_viewer.Managers
                 }
 
                 _state.Playlist.RemoveAt(index);
-                // GridItems management moved to GridManager via message
-
                 if (_state.CurrentIndex > index) _state.CurrentIndex--;
                 if (_state.CurrentIndex >= _state.Playlist.Count) _state.CurrentIndex = _state.Playlist.Count - 1;
 

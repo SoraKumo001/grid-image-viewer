@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+
 namespace quick_image_viewer.Helpers
 {
     public class NaturalStringComparer : IComparer<string>
@@ -25,30 +26,36 @@ namespace quick_image_viewer.Helpers
         public static string? FindNextImageFolder(string currentPath, int offset, IEnumerable<string>? allowedExtensions = null, CancellationToken token = default)
         {
             string? node = currentPath;
-
             int maxIterations = 1000;
+
             for (int i = 0; i < maxIterations; i++)
             {
                 if (token.IsCancellationRequested) return null;
+
+                // Get the next candidate node in the tree
                 node = offset == 1 ? GetNextNodeDFS(node, allowedExtensions) : GetPrevNodeDFS(node, allowedExtensions);
                 if (string.IsNullOrEmpty(node)) break;
 
                 try
                 {
+                    // Check if the node is an archive or a folder containing images
                     if (ArchiveManager.IsArchive(node, allowedExtensions))
                     {
                         if (ArchiveManager.HasArchiveImages(node, allowedExtensions))
                         {
                             return node;
                         }
-                        continue;
+                        continue; // Skip archives without supported images
                     }
 
-                    bool hasImages = Directory.EnumerateFiles(node)
-                                              .Any(f => FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(f), allowedExtensions));
-                    if (hasImages)
+                    if (Directory.Exists(node))
                     {
-                        return node;
+                        bool hasImages = Directory.EnumerateFiles(node)
+                                                  .Any(f => FolderDiscoveryService.IsSupportedExtension(Path.GetExtension(f), allowedExtensions));
+                        if (hasImages)
+                        {
+                            return node;
+                        }
                     }
                 }
                 catch { }
@@ -72,9 +79,11 @@ namespace quick_image_viewer.Helpers
 
         private static string? GetNextNodeDFS(string current, IEnumerable<string>? allowedExtensions = null)
         {
+            // 1. Dive into the first child if exists
             var children = GetChildNodes(current, allowedExtensions);
             if (children.Length > 0) return children[0];
 
+            // 2. Otherwise, find the next sibling. If none, go up to parent and find its next sibling.
             string node = current;
             while (true)
             {
@@ -98,16 +107,19 @@ namespace quick_image_viewer.Helpers
 
         private static string? GetPrevNodeDFS(string current, IEnumerable<string>? allowedExtensions = null)
         {
-            var parent = Directory.GetParent(current);
-            if (parent == null) return null;
+            string? parentPath = Path.GetDirectoryName(current);
+            if (string.IsNullOrEmpty(parentPath)) return null;
 
             try
             {
-                var siblings = GetChildNodes(parent.FullName, allowedExtensions);
+                var siblings = GetChildNodes(parentPath, allowedExtensions);
                 int idx = Array.FindIndex(siblings, d => string.Equals(d, current, StringComparison.OrdinalIgnoreCase));
+
                 if (idx > 0)
                 {
+                    // 1. Move to the previous sibling
                     string node = siblings[idx - 1];
+                    // 2. Dive into its deepest last child
                     while (true)
                     {
                         var children = GetChildNodes(node, allowedExtensions);
@@ -115,14 +127,13 @@ namespace quick_image_viewer.Helpers
                         node = children[children.Length - 1];
                     }
                 }
-                else if (idx == 0)
+                else
                 {
-                    return parent.FullName;
+                    // 3. No previous sibling, return the parent itself
+                    return parentPath;
                 }
             }
-            catch { }
-
-            return parent.FullName;
+            catch { return parentPath; }
         }
     }
 }
