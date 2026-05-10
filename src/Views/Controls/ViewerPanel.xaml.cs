@@ -62,11 +62,11 @@ namespace quick_image_viewer.Views.Controls
             }
         }
 
-        private void OnPaintSurface(int bufferIndex, int pageIndex, SKPaintSurfaceEventArgs e)
+        private void OnPaintSurface(int bufferIndex, int pageIndex, SKPaintGLSurfaceEventArgs e)
         {
             PaintSurfaceRequested?.Invoke(this, (bufferIndex, pageIndex, e));
         }
 
-        public event EventHandler<(int bufferIndex, int pageIndex, SKPaintSurfaceEventArgs args)>? PaintSurfaceRequested;
+        public event EventHandler<(int bufferIndex, int pageIndex, SKPaintGLSurfaceEventArgs args)>? PaintSurfaceRequested;
     }
 }

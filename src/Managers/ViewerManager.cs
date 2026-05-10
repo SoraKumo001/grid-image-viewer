@@ -724,7 +724,7 @@ namespace quick_image_viewer.Managers
 
 
 
-        public void PaintCanvas(int bufferIndex, int pageIndex, SKPaintSurfaceEventArgs e)
+        public void PaintCanvas(int bufferIndex, int pageIndex, SKPaintGLSurfaceEventArgs e)
         {
             var canvas = e.Surface.Canvas;
             canvas.Clear(SkiaSharp.SKColors.Transparent);

@@ -10,7 +10,7 @@ namespace quick_image_viewer.Interfaces
         Task UpdateDisplayAsync();
         void UpdateStretch(bool resetPosition = false);
         void HandleWindowSizeChanged(double width, double height);
-        void PaintCanvas(int bufferIndex, int pageIndex, SKPaintSurfaceEventArgs e);
+        void PaintCanvas(int bufferIndex, int pageIndex, SKPaintGLSurfaceEventArgs e);
         string? GetPathForPage(int index);
         void InvalidatePage(int index);
         void ToggleMetadataPanel(bool cycle = false);

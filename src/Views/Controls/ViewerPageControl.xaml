@@ -11,7 +11,7 @@
 
     <Grid x:Name="InternalRootGrid" Background="Transparent" IsTabStop="False">
         <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
-        <skia:SKXamlCanvas x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
+        <skia:SKSwapChainPanel x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
         
         <local:VideoPlayerControl x:Name="InternalVideoPlayer" Visibility="Collapsed" />
 

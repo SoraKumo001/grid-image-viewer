@@ -12,7 +12,7 @@ namespace quick_image_viewer.Views.Controls
         public event System.EventHandler<Windows.Foundation.Size>? VideoSizeChanged;
         public Grid RootGrid => InternalRootGrid;
         public Image PageImage => InternalPageImage;
-        public SkiaSharp.Views.Windows.SKXamlCanvas PageCanvas => InternalPageCanvas;
+        public SkiaSharp.Views.Windows.SKSwapChainPanel PageCanvas => InternalPageCanvas;
         public ProgressRing LoadingRing => InternalLoadingRing;
         public Border FocusBorder => InternalFocusBorder;
 

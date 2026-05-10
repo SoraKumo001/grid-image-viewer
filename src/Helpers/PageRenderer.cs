@@ -194,24 +194,17 @@ namespace quick_image_viewer.Helpers
 
                     var destRect = new SKRect(x, y, x + bmpToDraw.Width * scale, y + bmpToDraw.Height * scale);
 
-                    if (scale != 1.0f)
-                    {
-                        var sampling = UseHighQualityScaling
-                            ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
-                            : new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
+                    var sampling = (scale != 1.0f && UseHighQualityScaling)
+                        ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
+                        : new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
 
-                        if (_cachedImage == null || _lastImageBitmap != bmpToDraw)
-                        {
-                            _cachedImage?.Dispose();
-                            _cachedImage = SKImage.FromBitmap(bmpToDraw);
-                            _lastImageBitmap = bmpToDraw;
-                        }
-                        canvas.DrawImage(_cachedImage, destRect, sampling, null);
-                    }
-                    else
+                    if (_cachedImage == null || _lastImageBitmap != bmpToDraw)
                     {
-                        canvas.DrawBitmap(bmpToDraw, destRect);
+                        _cachedImage?.Dispose();
+                        _cachedImage = SKImage.FromBitmap(bmpToDraw);
+                        _lastImageBitmap = bmpToDraw;
                     }
+                    canvas.DrawImage(_cachedImage, destRect, sampling, null);
                 }
             }
         }

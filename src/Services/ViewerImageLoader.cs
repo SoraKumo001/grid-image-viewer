@@ -139,8 +139,8 @@ namespace quick_image_viewer.Services
 
         private bool IsSkiaSupported(string filePath)
         {
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            return ext == ".webp" || ext == ".gif" || ext == ".avis";
+            // 動画以外は原則 Skia バックエンドでの描画を優先し、GPUアクセラレーションを有効にする
+            return !MediaHelper.IsVideo(filePath);
         }
 
         private async Task LoadVideoAsync(string filePath, ViewerPageControl pageControl, PageRenderer renderer, CancellationToken token)
