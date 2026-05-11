@@ -5,8 +5,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
-using Windows.Storage;
-using Windows.Storage.FileProperties;
 namespace quick_image_viewer.Helpers
 {
     public static class ImageProcessor

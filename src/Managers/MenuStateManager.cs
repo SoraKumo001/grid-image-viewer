@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Foundation;
-using Windows.Storage;
 using Windows.System;
 
 namespace quick_image_viewer.Managers

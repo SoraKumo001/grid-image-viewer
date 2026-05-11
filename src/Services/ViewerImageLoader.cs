@@ -4,14 +4,12 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
-using quick_image_viewer.ViewModels;
 using quick_image_viewer.Views.Controls;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
-using Windows.Storage;
 
 namespace quick_image_viewer.Services
 {

@@ -16,7 +16,6 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
 namespace quick_image_viewer.Managers
 {
     internal class GridManager : IGridManager

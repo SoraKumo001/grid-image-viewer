@@ -54,7 +54,7 @@ namespace quick_image_viewer.Services
                     var fileInfo = new FileInfo(filePath);
                     info.FileName = fileInfo.Name;
                     info.FileSize = FormatBytes(fileInfo.Length);
-                    
+
                     using var stream = File.OpenRead(filePath);
                     directories = ImageMetadataReader.ReadMetadata(stream);
                 }
