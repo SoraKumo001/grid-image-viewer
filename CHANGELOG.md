@@ -1,4 +1,12 @@
-$!header## v1.5.4 - 2026-05-10
+$!header## v1.5.5 - 2026-05-11
+
+- **Store Compliance & Permissions**:
+  - [Refactor] Migrated from `Windows.Storage` APIs to standard `.NET System.IO` across all core services (`ViewerImageLoader`, `MetadataService`, `PrintService`, `ImageProcessor`) to eliminate the need for broad file system access permissions.
+  - [Security] Removed the `broadFileSystemAccess` capability to align with Microsoft Store security policies while maintaining full functionality via `runFullTrust`.
+- **Deployment & Distribution**:
+  - [Improvement] Transitioned to a **Self-contained** deployment model, including the **.NET Desktop Runtime** directly in the package to ensure a seamless "out-of-the-box" experience for all users.
+
+## v1.5.4 - 2026-05-10
 
 - **Settings & Localization**:
   - [Feature] Implemented a modular settings overlay with localization support and various customization options (5869f0d).
