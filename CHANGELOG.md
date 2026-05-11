@@ -1,4 +1,8 @@
-$!header## v1.5.5 - 2026-05-11
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## v1.5.5 - 2026-05-11
 
 - **Store Compliance & Permissions**:
   - [Refactor] Migrated from `Windows.Storage` APIs to standard `.NET System.IO` across all core services (`ViewerImageLoader`, `MetadataService`, `PrintService`, `ImageProcessor`) to eliminate the need for broad file system access permissions.
