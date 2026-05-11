@@ -26,7 +26,6 @@ namespace quick_image_viewer.Services
             CancellationToken token,
             IViewerCacheManager cacheManager)
         {
-            System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Loading: {filePath}");
             filePath = EnsureValidFilePath(filePath);
             if (string.IsNullOrEmpty(filePath)) return;
 
@@ -44,20 +43,16 @@ namespace quick_image_viewer.Services
 
                 if (isVideo)
                 {
-                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading as Video");
                     await LoadVideoAsync(filePath, pageControl, renderer, token);
                 }
                 else if (IsSkiaSupported(filePath))
                 {
-                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading as Skia");
                     await LoadSkiaImageAsync(filePath, pageControl, renderer, token);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading as Normal Image");
                     await LoadNormalImageAsync(filePath, pageControl, renderer, token, cacheManager);
                 }
-                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Load Completed: {filePath}");
             }
             catch (Exception)
             {
@@ -194,7 +189,6 @@ namespace quick_image_viewer.Services
                         var fSource = pageControl.FFmpegSource;
                         if (fSource != null && !combinedToken.IsCancellationRequested)
                         {
-                            System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Creating MediaPlaybackItem");
 
                             // CreateMediaPlaybackItem() を使用することで、OpenWithMediaPlayerAsync 内部で発生する
                             // MediaPlayer との競合（COMException）を回避できる場合があります
@@ -207,10 +201,7 @@ namespace quick_image_viewer.Services
                                     mp.IsLoopingEnabled = true;
                                     mp.Source = playbackItem;
                                 }
-                                catch (Exception ex)
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Failed to set source: {ex.Message}");
-                                }
+                                catch (Exception) { }
                             }
                         }
                     }
@@ -219,7 +210,6 @@ namespace quick_image_viewer.Services
                         if (ex is OperationCanceledException || ex is TaskCanceledException) { }
                         else
                         {
-                            System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Video Load Error: {ex.Message}");
                             pageControl.LoadingRing.IsActive = false;
                             _window?.ShowNotification($"FFmpeg Error: {ex.Message}");
                         }
@@ -231,7 +221,6 @@ namespace quick_image_viewer.Services
                 if (ex is OperationCanceledException || ex is TaskCanceledException) { }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Video dispatcher error: {ex.Message}");
                     pageControl.DispatcherQueue.TryEnqueue(() =>
                     {
                         if (combinedToken.IsCancellationRequested) return;
@@ -315,10 +304,7 @@ namespace quick_image_viewer.Services
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] CreateFFmpegMediaSourceAsync Error: {ex.Message}");
-            }
+            catch (Exception) { }
             return null;
         }
 
@@ -333,27 +319,9 @@ namespace quick_image_viewer.Services
                     try
                     {
                         if (token.IsCancellationRequested) return;
-                        System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Media Opened");
                         pageControl.IsMediaReady = true;
 
-                        try
-                        {
-                            var session = sender.PlaybackSession;
-                            if (session != null)
-                            {
-                                uint w = 0, h = 0;
-                                try { w = session.NaturalVideoWidth; } catch { }
-                                try { h = session.NaturalVideoHeight; } catch { }
-
-                                if (w > 0 && h > 0)
-                                {
-                                    var size = new Windows.Foundation.Size(w, h);
-                                    pageControl.InvokeVideoSizeChanged(size);
-                                    pageControl.UpdateLayout();
-                                }
-                            }
-                        }
-                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Session error: {ex.Message}"); }
+                        try { var session = sender.PlaybackSession; if (session != null) { uint w = 0, h = 0; try { w = session.NaturalVideoWidth; } catch { } try { h = session.NaturalVideoHeight; } catch { } if (w > 0 && h > 0) { var size = new Windows.Foundation.Size(w, h); pageControl.InvokeVideoSizeChanged(size); pageControl.UpdateLayout(); } } } catch { }
 
                         pageControl.LoadingRing.IsActive = false;
                         pageControl.PageImage.Source = null;
@@ -370,10 +338,7 @@ namespace quick_image_viewer.Services
 
                         // WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] OnMediaOpened Error: {ex.Message}");
-                    }
+                    catch (Exception) { }
                 });
             }
 
@@ -386,17 +351,13 @@ namespace quick_image_viewer.Services
                     try
                     {
                         if (token.IsCancellationRequested) return;
-                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Media Failed: {args.Error} - {args.ErrorMessage}");
                         pageControl.LoadingRing.IsActive = false;
                         pageControl.PageImage.Source = null;
                         pageControl.PageImage.Visibility = Visibility.Collapsed;
                         _window?.ShowNotification($"Video Error: {args.Error}");
                         // WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] OnMediaFailed Error: {ex.Message}");
-                    }
+                    catch (Exception) { }
                 });
             }
 
@@ -440,16 +401,14 @@ namespace quick_image_viewer.Services
 
                 if (cachedSoftwareBitmap != null)
                 {
-                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Using cached software bitmap");
                     var softwareSource = new SoftwareBitmapSource();
                     try
                     {
                         var copy = Windows.Graphics.Imaging.SoftwareBitmap.Copy(cachedSoftwareBitmap);
                         await softwareSource.SetBitmapAsync(copy);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] SetBitmapAsync Error: {ex.Message}");
                         softwareSource.Dispose();
                         cachedSoftwareBitmap = null; // フォールバックさせる
                     }
@@ -477,14 +436,12 @@ namespace quick_image_viewer.Services
 
                     if (cachedBytes != null)
                     {
-                        System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Using cached bytes");
                         using var ms = new MemoryStream(cachedBytes);
                         bitmapImage = new BitmapImage();
                         await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Loading from file");
                         bitmapImage = await LoadBitmapImageFromFileAsync(filePath);
                     }
 
@@ -497,9 +454,8 @@ namespace quick_image_viewer.Services
                     pageControl.PageImage.Source = bitmapImage;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] LoadNormalImageAsync Error: {ex.Message}");
                 throw; // Rethrow to let global handler catch it if it's critical
             }
         }
@@ -510,7 +466,6 @@ namespace quick_image_viewer.Services
             {
                 if (string.IsNullOrWhiteSpace(filePath) || filePath.Length > 32767)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Invalid path or too long: {filePath?.Length}");
                     return null;
                 }
 
@@ -519,12 +474,10 @@ namespace quick_image_viewer.Services
                 await bitmapImage.SetSourceAsync(fs.AsRandomAccessStream()).AsTask();
                 return bitmapImage;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] LoadBitmapImageFromFileAsync method failed: {ex.Message}");
                 try
                 {
-                    System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Trying fallback ImageProcessor.DecodeToBmpBytes");
                     var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
                     if (bmpBytes != null)
                     {
@@ -534,12 +487,14 @@ namespace quick_image_viewer.Services
                         return bitmapImage;
                     }
                 }
-                catch (Exception ex2)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Fallback failed: {ex2.Message}");
-                }
+                catch (Exception) { }
             }
             return null;
         }
     }
 }
+
+
+
+
+

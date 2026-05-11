@@ -23,22 +23,10 @@ namespace quick_image_viewer
 
         public App()
         {
-            this.UnhandledException += (s, e) =>
-            {
-                System.Diagnostics.Debug.WriteLine($"[App] Unhandled Exception: {e.Message}");
-                System.Diagnostics.Debug.WriteLine($"[App] Exception Detail: {e.Exception}");
-                // e.Handled = true;
-            };
 
             TaskScheduler.UnobservedTaskException += (s, e) =>
             {
-                System.Diagnostics.Debug.WriteLine($"[App] Unobserved Task Exception: {e.Exception}");
                 e.SetObserved();
-            };
-
-            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-            {
-                System.Diagnostics.Debug.WriteLine($"[App] AppDomain Exception: {e.ExceptionObject}");
             };
 
             Services = ConfigureServices();
@@ -172,3 +160,4 @@ namespace quick_image_viewer
         }
     }
 }
+

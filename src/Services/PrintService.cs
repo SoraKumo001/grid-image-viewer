@@ -109,10 +109,7 @@ namespace quick_image_viewer.Services
                 _pageDescription = e.PrintTaskOptions.GetPageDescription(1); // Page starts at 1
                 _printDocument.SetPreviewPageCount(1, PreviewPageCountType.Final);
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Paginate Error: {ex.Message}");
-            }
+            catch (Exception) { }
         }
 
         private void PrintDocument_GetPreviewPage(object sender, GetPreviewPageEventArgs e)
@@ -160,3 +157,4 @@ namespace quick_image_viewer.Services
         }
     }
 }
+

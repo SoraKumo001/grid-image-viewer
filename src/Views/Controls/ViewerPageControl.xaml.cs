@@ -116,10 +116,7 @@ namespace quick_image_viewer.Views.Controls
 
                 await Task.Delay(20);
             }
-            catch (System.Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ViewerPageControl] ResetPlaybackAsync Error: {ex.Message}");
-            }
+            catch (System.Exception) { }
             finally
             {
                 _loadingSemaphore.Release();
@@ -139,3 +136,4 @@ namespace quick_image_viewer.Views.Controls
         }
     }
 }
+

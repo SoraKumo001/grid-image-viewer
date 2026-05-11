@@ -31,18 +31,7 @@ namespace quick_image_viewer.Services
         [ObservableProperty]
         public partial bool IsSlideshowRunning { get; set; } = false;
 
-        private bool _isSearchingFolder = false;
-        public bool IsSearchingFolder
-        {
-            get => _isSearchingFolder;
-            set
-            {
-                if (SetProperty(ref _isSearchingFolder, value))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[State] IsSearchingFolder changed to: {value} (Thread: {System.Environment.CurrentManagedThreadId})");
-                }
-            }
-        }
+        [ObservableProperty] public partial bool IsSearchingFolder { get; set; } = false;
 
         [ObservableProperty]
         public partial bool IsDisplayUpdating { get; set; } = false;
@@ -50,3 +39,4 @@ namespace quick_image_viewer.Services
         public string CurrentImagePath => (Playlist != null && CurrentIndex >= 0 && CurrentIndex < Playlist.Count) ? Playlist[CurrentIndex] : string.Empty;
     }
 }
+

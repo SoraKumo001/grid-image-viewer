@@ -122,10 +122,7 @@ namespace quick_image_viewer.Services
                 }
             }
             catch (OperationCanceledException) { }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"FolderDiscoveryService Error: {ex.Message}");
-            }
+            catch (Exception) { }
         }
 
         public static List<string> GetFilesFromDirectory(string dir, bool recursive, IEnumerable<string>? allowedExtensions = null)
@@ -190,3 +187,5 @@ namespace quick_image_viewer.Services
         }
     }
 }
+
+
