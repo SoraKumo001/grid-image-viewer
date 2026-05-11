@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.6 - 2026-05-11
+
+- **Cleanup & Optimization**:
+  - [Maintenance] Removed unnecessary debug log outputs and unused exception variables to improve code cleanliness.
+  - [Refactor] Simplified search state management by leveraging `ObservableProperty` in `ViewerStateService`.
+- **Bug Fixes**:
+  - [Fix] Fixed an issue where the aspect ratio of video files was ignored in the 4-split layout's "Auto (Aspect Ratio)" mode. Now correctly fetches actual video dimensions and respects rotation metadata.
+
 ## v1.5.5 - 2026-05-11
 
 - **Store Compliance & Permissions**:
@@ -66,7 +74,7 @@ All notable changes to this project will be documented in this file.
 ## v1.4.9 - 2026-05-09
 
 - **Architecture & Refactoring**:
-  - [Refactor] Extracted video playback logic and FFmpeg integration from `ViewerPageControl` into a dedicated `VideoPlayerControl` for better maintainability.
+  - [Refactor] Extracted video playback logic and FFmpeg integration from `ViewerPageControl` into a dedicated `VideoPlayerControl` for better maintainability. 
   - [Refactor] Separated file management logic (Delete, Rename, Move) from `MainWindow` into a new `FileOperationService`.
   - [Refactor] Refactored `ViewerManager` by splitting complex layout and buffer management methods into smaller, manageable asynchronous operations.
 - **Stability & Bug Fixes**:
@@ -84,7 +92,7 @@ All notable changes to this project will be documented in this file.
 ## v1.4.7 - 2026-05-09
 
 - **Grid Mode Enhancements**:
-  - [Feature] Implemented a dedicated context menu (right-click) for Grid Mode.
+  - [Feature] Implemented a dedicated context menu (right-click) for Grid Mode. 
   - [Improvement] Tailored the grid context menu to exclude irrelevant image editing items (e.g., Crop) and include grid-specific actions like "Refresh Thumbnails" and "Sort By".
   - [Improvement] Optimized keyboard focus management specifically for Grid Mode.
 - **File Management Features**:
@@ -94,7 +102,7 @@ All notable changes to this project will be documented in this file.
   - [Security] Implemented guards to disable file modification operations (Delete, Rename, Move) for files within archives.
 - **Security & Stability**:
   - [Security] Updated `SharpCompress` library to v0.48.0 to resolve known vulnerabilities.
-  - [Fix] Corrected XAML configuration issues that caused build failures.
+  - [Fix] Corrected XAML configuration issues that caused build failures.       
   - [Improvement] Refactored bookmark menu synchronization to ensure consistent state across both Viewer and Grid mode menus.
 
 ## v1.4.6 - 2026-05-09
@@ -133,11 +141,11 @@ All notable changes to this project will be documented in this file.
 - **Video Stability & GPU Hardening**:
   - [Stability] Introduced asynchronous reset processing (`ResetPlaybackAsync`) and `SemaphoreSlim`-based mutual exclusion to prevent resource contention during rapid page switching.
   - [Stability] Implemented a **Global Initialization Lock** to serialize video decoder startups across the application, significantly reducing GPU driver hangs and crashes.
-  - [Stability] Added a short "cooldown" delay during resource disposal, allowing the OS and drivers sufficient time to safely release hardware handles.
+  - [Stability] Added a short "cooldown" delay during resource disposal, allowing the OS and drivers sufficient time to safely release hardware handles.        
   - [Fix] Explicitly implemented `Dispose()` for WinRT resources such as `SoftwareBitmapSource` to prevent memory leaks and GPU memory exhaustion.
 - **UI & UX Improvements**:
   - [Fix] Resolved an issue where the playback transport panel would incorrectly appear on non-video files (e.g., WebP, GIF, or edited images) during mouse movement.
-  - [Improvement] Eliminated the visual "jumping" effect of video position and size by forcing synchronous layout updates immediately after a video is opened.
+  - [Improvement] Eliminated the visual "jumping" effect of video position and size by forcing synchronous layout updates immediately after a video is opened.  
   - [Improvement] Enhanced playback transitions by controlling opacity during the loading phase, preventing incomplete or uninitialized frames from being visible to the user.
 - **Visual & Rendering Fixes**:
   - [Visual] Unified the background color of page containers and buffer grids to **Black**, eliminating the "gray borders" previously visible in the margins or during content loading.
@@ -180,7 +188,7 @@ All notable changes to this project will be documented in this file.
 ## v1.4.0 - 2026-05-06
 
 - **Core Architecture**:
-  - [Refactor] Completed the transition to a fully decoupled MVVM architecture using `CommunityToolkit.Mvvm`, improving testability and code separation.
+  - [Refactor] Completed the transition to a fully decoupled MVVM architecture using `CommunityToolkit.Mvvm`, improving testability and code separation.        
   - [Refactor] Componentized the UI by splitting large views into reusable controls (`ViewerPanel`, `GridImagePanel`, etc.).
   - [Improvement] Centralized cross-component communication via `WeakReferenceMessenger`.
 - **Navigation & Media Support**:
@@ -188,7 +196,7 @@ All notable changes to this project will be documented in this file.
   - [Improvement] Integrated extension filters into folder navigation logic; folders containing only disabled extensions are now correctly skipped.
   - [Fix] Fixed navigation logic to correctly handle mixed-media playlists (images, videos, and archives) in multi-page view modes.
 - **Settings & UI**:
-  - [Feature] Added "ALL" and "NONE" toggle buttons for each extension group (Images, Videos, Archives) in the settings overlay for easier configuration.
+  - [Feature] Added "ALL" and "NONE" toggle buttons for each extension group (Images, Videos, Archives) in the settings overlay for easier configuration.       
   - [Improvement] Optimized extension filtering to apply changes immediately to the active playlist and background preloading.
   - [Fix] Enhanced focus management to ensure keyboard navigation remains active after closing overlays or interacting with video controls.
 - **Stability & Performance**:
@@ -196,22 +204,22 @@ All notable changes to this project will be documented in this file.
   - [Fix] Fixed potential crashes in `SlideshowService` and `ViewerManager` related to bounds checking and empty playlists.
 - **Project Maintenance**:
   - Updated target framework to **.NET 10.0**.
-  - Updated README documentation to reflect the new architecture and features.
+  - Updated README documentation to reflect the new architecture and features.  
 
 ## v1.3.1 - 2026-05-06
 
 - **Slideshow Optimization**:
-  - [Fix] Resolved an issue where a redundant crossfade effect occurred during slideshow playback when the playlist was updated by background file discovery.
+  - [Fix] Resolved an issue where a redundant crossfade effect occurred during slideshow playback when the playlist was updated by background file discovery.   
   - [Improvement] Optimized the display update logic to prevent unnecessary re-rendering when the currently displayed images remain unchanged.
 - **Layout & Rendering**:
-  - [Feature] Implemented end-of-folder alignment for multi-view modes (Double/Quad), ensuring a full grid is displayed when reaching the end of a playlist.
+  - [Feature] Implemented end-of-folder alignment for multi-view modes (Double/Quad), ensuring a full grid is displayed when reaching the end of a playlist.    
   - [Improvement] Enhanced display synchronization between buffers to ensure seamless transitions and consistent state across different view modes.
 
 ## v1.3.0 - 2026-05-05
 
 - **Architecture Overhaul**:
   - [Refactor] Restructured the entire codebase into a modular directory hierarchy (`Interfaces`, `Services`, `Managers`, `Models`, `ViewModels`, `Helpers`, `Views`), significantly improving project maintainability and alignment with MVVM patterns.
-  - [Branding] Migrated the internal namespace and project naming from `grid_image_viewer` to `quick_image_viewer` to fully reflect the application's identity.
+  - [Branding] Migrated the internal namespace and project naming from `grid_image_viewer` to `quick_image_viewer` to fully reflect the application's identity. 
   - [Cleanup] Streamlined the project by consolidating UI components and removing redundant legacy control files.
 - **Platform & Build**:
   - Updated project configuration for .NET 10 and Windows App SDK 2.0 stability.
@@ -224,13 +232,13 @@ All notable changes to this project will be documented in this file.
   - [Feature] Implemented background preloading for the next and previous folder's image playlists, eliminating wait times during navigation.
   - [Optimization] Removed redundant directory re-scanning during navigation by utilizing preloaded playlist data for instant transitions.
 - **Branding & Visuals**:
-  - [Improvement] Overhauled the application icon transparency using a flood-fill algorithm, preserving facial details while ensuring a clean background.
+  - [Improvement] Overhauled the application icon transparency using a flood-fill algorithm, preserving facial details while ensuring a clean background.       
   - [Visual] Optimized margins across all assets to maximize the visual size and prominence of the application icon.
 
 ## v1.2.1 - 2026-05-04
 
 - **Navigation Improvements**:
-  - Enhanced folder navigation to verify image content within archives before switching, preventing dead-end navigation to empty or non-image ZIP files.
+  - Enhanced folder navigation to verify image content within archives before switching, preventing dead-end navigation to empty or non-image ZIP files.        
   - Resolved a race condition where the "Reached first/last folder" notification was occasionally suppressed.
 - **Enhanced Persistence**:
   - Implemented `LastDirectoryPath` persistence to ensure the current folder is remembered even if the session ends without an active image (e.g., empty playlist).
@@ -249,10 +257,10 @@ All notable changes to this project will be documented in this file.
   - Improved Right-click menu accessibility by moving Settings to the root level.
 - **Technical Improvements**:
   - Replaced deprecated SkiaSharp `FilterQuality` with `SKSamplingOptions` to align with SkiaSharp 3.x standards.
-  - Implemented pointer-aware keybindings: rotation, deletion, and path copying now target the image directly under the mouse cursor in multi-view modes.
+  - Implemented pointer-aware keybindings: rotation, deletion, and path copying now target the image directly under the mouse cursor in multi-view modes.       
 - **Bug Fixes**:
   - Prevented window state corruption when exiting in maximized or fullscreen modes.
-  - Fixed a bug where double-clicking on dialogs would trigger fullscreen mode.
+  - Fixed a bug where double-clicking on dialogs would trigger fullscreen mode. 
   - Improved file lock management by navigating to the next image before deleting a file.
 
 ## v1.1.0 - 2026-05-03
@@ -279,12 +287,12 @@ All notable changes to this project will be documented in this file.
 - **Metadata Overlay**: Implemented an image information panel to display EXIF data (Camera, Lens, Settings, Date).
 - **Advanced Slideshow**: Added support for crossfade transitions and options to include subfolders or sibling directories.
 - **Performance Optimization**: Improved image caching and offloaded encoding/decoding tasks to background threads to prevent UI hangs.
-- **Modern UI**: Applied Windows 11 Mica backdrop and custom title bar design.
+- **Modern UI**: Applied Windows 11 Mica backdrop and custom title bar design.  
 
 ## v1.0.1 - 2026-05-02
 
 - **Stability**: Added thread safety to image rendering operations to prevent crashes during rapid navigation.
-- **Assets**: Included official application icons and splash screen assets.
+- **Assets**: Included official application icons and splash screen assets.     
 
 ## v1.0.0 - 2026-05-02
 
