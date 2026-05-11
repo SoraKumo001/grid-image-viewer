@@ -393,6 +393,27 @@ namespace quick_image_viewer.Helpers
                 {
                     if (MediaHelper.IsVideo(sourcePath))
                     {
+                        try
+                        {
+                            var resultTask = Task.Run(async () =>
+                            {
+                                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(sourcePath);
+                                var props = await file.Properties.GetVideoPropertiesAsync();
+                                int w = (int)props.Width;
+                                int h = (int)props.Height;
+                                if (props.Orientation == Windows.Storage.FileProperties.VideoOrientation.Rotate90 || props.Orientation == Windows.Storage.FileProperties.VideoOrientation.Rotate270)
+                                {
+                                    return (h, w);
+                                }
+                                return (w, h);
+                            });
+                            var dim = resultTask.GetAwaiter().GetResult();
+                            if (dim.Item1 > 0 && dim.Item2 > 0)
+                            {
+                                return dim;
+                            }
+                        }
+                        catch { }
                         return (1920, 1080);
                     }
 
@@ -422,3 +443,4 @@ namespace quick_image_viewer.Helpers
         }
     }
 }
+
