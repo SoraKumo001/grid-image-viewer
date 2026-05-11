@@ -150,100 +150,133 @@ namespace quick_image_viewer.Services
             var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(token, uiToken);
             var combinedToken = combinedCts.Token;
 
-            await Task.Run(async () =>
+            try
             {
-                try
+                await EnqueueOnDispatcherAsync(pageControl.DispatcherQueue, async () =>
                 {
                     if (combinedToken.IsCancellationRequested) return;
 
-                    // UIスレッドでプレイヤーの準備
-                    pageControl.DispatcherQueue.TryEnqueue(async () =>
+                    // 既存のプレイヤーを破棄し、新しい MediaPlayer インスタンスを作成
+                    var mp = pageControl.CreateNewMediaPlayer();
+
+                    try
                     {
-                        if (combinedToken.IsCancellationRequested) return;
-
-                        // 既存のプレイヤーを破棄し、新しい MediaPlayer インスタンスを作成
-                        var mp = pageControl.CreateNewMediaPlayer();
-
+                        await ViewerPageControl.GetGlobalInitSemaphore().WaitAsync(combinedToken);
                         try
                         {
-                            await ViewerPageControl.GetGlobalInitSemaphore().WaitAsync(combinedToken);
-                            try
-                            {
-                                if (combinedToken.IsCancellationRequested) return;
-
-                                var config = new MediaSourceConfig();
-                                config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
-                                config.General.FastSeek = true;
-                                config.General.ReadAheadBufferDuration = TimeSpan.FromSeconds(1);
-
-                                FFmpegMediaSource? ffmpegSource = await CreateFFmpegMediaSourceAsync(filePath, config);
-
-                                if (ffmpegSource == null || combinedToken.IsCancellationRequested)
-                                {
-                                    ffmpegSource?.Dispose();
-                                    pageControl.LoadingRing.IsActive = false;
-                                    return;
-                                }
-
-                                pageControl.FFmpegSource = ffmpegSource;
-                            }
-                            finally
-                            {
-                                ViewerPageControl.GetGlobalInitSemaphore().Release();
-                            }
-
                             if (combinedToken.IsCancellationRequested) return;
 
-                            ConfigureMediaPlayer(mp, pageControl, combinedToken);
+                            var config = new MediaSourceConfig();
+                            config.Video.VideoDecoderMode = VideoDecoderMode.Automatic;
+                            config.General.FastSeek = true;
+                            config.General.ReadAheadBufferDuration = TimeSpan.FromSeconds(1);
 
-                            var fSource = pageControl.FFmpegSource;
-                            if (fSource != null && !combinedToken.IsCancellationRequested)
+                            FFmpegMediaSource? ffmpegSource = await CreateFFmpegMediaSourceAsync(filePath, config);
+
+                            if (ffmpegSource == null || combinedToken.IsCancellationRequested)
                             {
-                                System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Creating MediaPlaybackItem");
+                                ffmpegSource?.Dispose();
+                                pageControl.LoadingRing.IsActive = false;
+                                return;
+                            }
 
-                                // CreateMediaPlaybackItem() を使用することで、OpenWithMediaPlayerAsync 内部で発生する
-                                // MediaPlayer との競合（COMException）を回避できる場合があります
-                                var playbackItem = fSource.CreateMediaPlaybackItem();
+                            pageControl.FFmpegSource = ffmpegSource;
+                        }
+                        finally
+                        {
+                            ViewerPageControl.GetGlobalInitSemaphore().Release();
+                        }
 
-                                if (!combinedToken.IsCancellationRequested)
+                        if (combinedToken.IsCancellationRequested) return;
+
+                        ConfigureMediaPlayer(mp, pageControl, combinedToken);
+
+                        var fSource = pageControl.FFmpegSource;
+                        if (fSource != null && !combinedToken.IsCancellationRequested)
+                        {
+                            System.Diagnostics.Debug.WriteLine("[ViewerImageLoader] Creating MediaPlaybackItem");
+
+                            // CreateMediaPlaybackItem() を使用することで、OpenWithMediaPlayerAsync 内部で発生する
+                            // MediaPlayer との競合（COMException）を回避できる場合があります
+                            var playbackItem = fSource.CreateMediaPlaybackItem();
+
+                            if (!combinedToken.IsCancellationRequested)
+                            {
+                                try
                                 {
-                                    try
-                                    {
-                                        mp.IsLoopingEnabled = true;
-                                        mp.Source = playbackItem;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Failed to set source: {ex.Message}");
-                                    }
+                                    mp.IsLoopingEnabled = true;
+                                    mp.Source = playbackItem;
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Failed to set source: {ex.Message}");
                                 }
                             }
                         }
-                        catch (Exception ex)
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex is OperationCanceledException || ex is TaskCanceledException) { }
+                        else
                         {
-                            if (ex is OperationCanceledException || ex is TaskCanceledException) { }
-                            else
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Video Load Error: {ex.Message}");
-                                pageControl.LoadingRing.IsActive = false;
-                                _window?.ShowNotification($"FFmpeg Error: {ex.Message}");
-                            }
+                            System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Video Load Error: {ex.Message}");
+                            pageControl.LoadingRing.IsActive = false;
+                            _window?.ShowNotification($"FFmpeg Error: {ex.Message}");
                         }
-                    });
-                }
-                catch (Exception ex)
+                    }
+                }, combinedToken);
+            }
+            catch (Exception ex)
+            {
+                if (ex is OperationCanceledException || ex is TaskCanceledException) { }
+                else
                 {
-                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Task.Run Error: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] Video dispatcher error: {ex.Message}");
                     pageControl.DispatcherQueue.TryEnqueue(() =>
                     {
                         if (combinedToken.IsCancellationRequested) return;
                         pageControl.LoadingRing.IsActive = false;
                     });
                 }
-            }, combinedToken);
+            }
 
             renderer.Reset();
             renderer.CurrentFilePath = filePath;
+        }
+
+        private static Task EnqueueOnDispatcherAsync(
+            Microsoft.UI.Dispatching.DispatcherQueue dispatcher,
+            Func<Task> action,
+            CancellationToken token)
+        {
+            if (dispatcher.HasThreadAccess)
+            {
+                return action();
+            }
+
+            var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!dispatcher.TryEnqueue(async () =>
+            {
+                try
+                {
+                    token.ThrowIfCancellationRequested();
+                    await action();
+                    tcs.TrySetResult(null);
+                }
+                catch (OperationCanceledException ex)
+                {
+                    tcs.TrySetCanceled(ex.CancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            }))
+            {
+                tcs.TrySetCanceled(token);
+            }
+
+            return tcs.Task;
         }
 
         private async Task<FFmpegMediaSource?> CreateFFmpegMediaSourceAsync(string filePath, MediaSourceConfig config)

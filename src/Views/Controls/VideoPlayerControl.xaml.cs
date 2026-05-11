@@ -57,8 +57,7 @@ namespace quick_image_viewer.Views.Controls
                     var oldPlayer = _internalMediaPlayer.MediaPlayer;
                     if (oldPlayer != null)
                     {
-                        oldPlayer.Pause();
-                        oldPlayer.Source = null;
+                        DetachMediaPlayer(oldPlayer);
                     }
                     _internalMediaPlayer.Source = null;
                 }
@@ -85,12 +84,34 @@ namespace quick_image_viewer.Views.Controls
             MediaPlayerContainer.Children.Add(_internalMediaPlayer);
         }
 
+        private void DetachMediaPlayer(MediaPlayer player)
+        {
+            try { player.MediaOpened -= _onMediaOpenedHandler; } catch { }
+            try { player.MediaFailed -= _onMediaFailedHandler; } catch { }
+            try { player.VideoFrameAvailable -= OnVideoFrameAvailable; } catch { }
+            try { player.Pause(); } catch { }
+            try { player.Source = null; } catch { }
+
+            _onMediaOpenedHandler = null;
+            _onMediaFailedHandler = null;
+        }
+
         public Windows.Media.Playback.MediaPlayer CreateNewMediaPlayer()
         {
-            RecreateMediaPlayerElement();
+            if (_internalMediaPlayer == null)
+            {
+                RecreateMediaPlayerElement();
+            }
+
             if (_internalMediaPlayer == null)
             {
                 throw new InvalidOperationException("MediaPlayerElement container is not ready");
+            }
+
+            var oldPlayer = _internalMediaPlayer.MediaPlayer;
+            if (oldPlayer != null)
+            {
+                DetachMediaPlayer(oldPlayer);
             }
 
             var mp = new Windows.Media.Playback.MediaPlayer();
@@ -703,6 +724,8 @@ namespace quick_image_viewer.Views.Controls
                 mp.MediaOpened -= _onMediaOpenedHandler;
                 mp.MediaFailed -= _onMediaFailedHandler;
                 mp.VideoFrameAvailable -= OnVideoFrameAvailable;
+                _onMediaOpenedHandler = null;
+                _onMediaFailedHandler = null;
 
                 try { mp.Source = null; } catch { }
                 try { _internalMediaPlayer?.Source = null; } catch { }
