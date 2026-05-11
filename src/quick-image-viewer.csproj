@@ -49,7 +49,7 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\grid-video-player\README.md">
+    <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -67,6 +67,12 @@
     <PackageReference Include="SkiaSharp" Version="3.119.2" />
     <PackageReference Include="SkiaSharp.Views.WinUI" Version="3.119.2" />
 
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Assets\AppIcon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <!--
@@ -95,5 +101,6 @@
     <PackageProjectUrl></PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/SoraKumo001/quick-image-viewer</RepositoryUrl>
+    <PackageIcon>AppIcon.png</PackageIcon>
   </PropertyGroup>
 </Project>
