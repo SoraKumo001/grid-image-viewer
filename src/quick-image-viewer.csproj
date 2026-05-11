@@ -16,6 +16,7 @@
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en-US;ja-JP</SatelliteResourceLanguages>
     <BaseOutputPath>..\bin\</BaseOutputPath>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>

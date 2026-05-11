@@ -89,9 +89,7 @@ namespace quick_image_viewer.Managers
                         }
                         else
                         {
-                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-                            using var ras = await file.OpenReadAsync();
-                            using var stream = ras.AsStreamForRead();
+                            using var stream = System.IO.File.OpenRead(path);
                             using var ms = new MemoryStream();
                             await stream.CopyToAsync(ms, token);
                             bytes = ms.ToArray();
@@ -207,9 +205,7 @@ namespace quick_image_viewer.Managers
                         }
                         else
                         {
-                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-                            using var ras = await file.OpenReadAsync();
-                            using var stream = ras.AsStreamForRead();
+                            using var stream = System.IO.File.OpenRead(path);
                             using var ms = new MemoryStream();
                             await stream.CopyToAsync(ms, token);
                             bytes = ms.ToArray();

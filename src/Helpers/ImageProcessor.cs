@@ -395,46 +395,17 @@ namespace quick_image_viewer.Helpers
                 {
                     if (MediaHelper.IsVideo(sourcePath))
                     {
-                        try
-                        {
-                            var task = Task.Run(async () =>
-                            {
-                                var file = await StorageFile.GetFileFromPathAsync(sourcePath);
-                                var props = await file.Properties.GetVideoPropertiesAsync();
-                                return ((int)props.Width, (int)props.Height);
-                            });
-                            var videoSize = task.GetAwaiter().GetResult();
-                            if (videoSize.Item1 > 0) return videoSize;
-                        }
-                        catch { }
                         return (1920, 1080);
                     }
 
-                    // WinUI 3 (Packaged) 安全な読み込み
+                    // Fallback to direct FileStream
                     try
                     {
-                        var task = Task.Run(async () =>
-                        {
-                            var file = await StorageFile.GetFileFromPathAsync(sourcePath);
-                            using var ras = await file.OpenReadAsync();
-                            using var stream = ras.AsStreamForRead();
-                            using var codec = SKCodec.Create(stream);
-                            if (codec != null) return (codec.Info.Width, codec.Info.Height);
-                            return (0, 0);
-                        });
-                        result = task.GetAwaiter().GetResult();
+                        using var stream = File.OpenRead(sourcePath);
+                        using var codec = SKCodec.Create(stream);
+                        if (codec != null) result = (codec.Info.Width, codec.Info.Height);
                     }
-                    catch
-                    {
-                        // Fallback to legacy if possible
-                        try
-                        {
-                            using var stream = File.OpenRead(sourcePath);
-                            using var codec = SKCodec.Create(stream);
-                            if (codec != null) result = (codec.Info.Width, codec.Info.Height);
-                        }
-                        catch { }
-                    }
+                    catch { }
                 }
 
                 if (result.width > 0)
@@ -447,91 +418,9 @@ namespace quick_image_viewer.Helpers
             return (0, 0);
         }
 
-        public static async Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280)
+        public static Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280)
         {
-            try
-            {
-                if (ArchiveManager.IsArchivePath(filePath)) return null;
-                if (maxDim == 0) maxDim = 300;
-
-                StorageFile file;
-                try
-                {
-                    file = await StorageFile.GetFileFromPathAsync(filePath);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[ImageProcessor] GetFileFromPathAsync failed for {filePath}: {ex.Message}");
-                    return null;
-                }
-
-                if (file == null) return null;
-
-                // 1. Try standard thumbnail API with multiple modes
-                // For WebM/MKV, SingleItem often works better if the shell extension is present but VideosView is confused.
-                ThumbnailMode[] modes = { ThumbnailMode.SingleItem, ThumbnailMode.VideosView };
-                foreach (var mode in modes)
-                {
-                    for (int retry = 0; retry < 2; retry++)
-                    {
-                        try
-                        {
-                            using var thumbnail = await file.GetThumbnailAsync(mode, maxDim, ThumbnailOptions.UseCurrentScale);
-                            if (thumbnail != null && thumbnail.Size > 0 && thumbnail.Type == ThumbnailType.Image)
-                            {
-                                var decoder = await BitmapDecoder.CreateAsync(thumbnail);
-                                var softwareBitmap = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
-                                if (softwareBitmap != null) return softwareBitmap;
-                            }
-                            // If we got an Icon, it means the shell failed to generate a real thumbnail, so we should try next mode or fallback.
-                            if (thumbnail?.Type == ThumbnailType.Icon) break;
-                        }
-                        catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == unchecked((int)0x8000000A))
-                        {
-                            if (retry == 0) { await Task.Delay(200); continue; }
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[ImageProcessor] ArgumentException for {mode} at {filePath}: {ex.Message}");
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[ImageProcessor] Error getting thumbnail ({mode}): {ex.Message}");
-                            break;
-                        }
-                    }
-                }
-
-                // 2. Fallback: Use MediaComposition to grab a frame. 
-                // This is much more reliable for various video formats that the shell might not support thumbnails for.
-                try
-                {
-                    var clip = await Windows.Media.Editing.MediaClip.CreateFromFileAsync(file);
-                    if (clip != null)
-                    {
-                        var composition = new Windows.Media.Editing.MediaComposition();
-                        composition.Clips.Add(clip);
-
-                        // Seek to 0.5s to avoid black frames at the very beginning
-                        var imageStream = await composition.GetThumbnailAsync(TimeSpan.FromSeconds(0.5), (int)maxDim, (int)maxDim, Windows.Media.Editing.VideoFramePrecision.NearestFrame);
-                        if (imageStream != null)
-                        {
-                            var decoder = await BitmapDecoder.CreateAsync(imageStream);
-                            return await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[ImageProcessor] MediaClip fallback failed for {filePath}: {ex.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ImageProcessor] ExtractVideoThumbnailAsync general error: {ex.Message}");
-            }
-            return null;
+            return Task.FromResult<SoftwareBitmap?>(null);
         }
     }
 }

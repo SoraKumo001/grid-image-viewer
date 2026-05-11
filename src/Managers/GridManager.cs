@@ -414,11 +414,10 @@ namespace quick_image_viewer.Managers
                     if (token.IsCancellationRequested) return;
                     try
                     {
-                        var file = await StorageFile.GetFileFromPathAsync(item.FilePath);
-                        using var stream = await file.OpenReadAsync();
+                        using var stream = File.OpenRead(item.FilePath);
                         var bitmapImage = new BitmapImage();
                         bitmapImage.DecodePixelWidth = decodeSize;
-                        await bitmapImage.SetSourceAsync(stream);
+                        await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
                         item.Thumbnail = bitmapImage;
                     }
                     catch { }

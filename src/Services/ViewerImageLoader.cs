@@ -1,4 +1,3 @@
-using CommunityToolkit.Mvvm.Messaging;
 using FFmpegInteropX;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -273,11 +272,10 @@ namespace quick_image_viewer.Services
                 }
                 else
                 {
-                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                    var stream = await file.OpenReadAsync();
+                    var stream = File.OpenRead(filePath);
                     try
                     {
-                        return await FFmpegMediaSource.CreateFromStreamAsync(stream, config);
+                        return await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
                     }
                     catch
                     {
@@ -339,7 +337,7 @@ namespace quick_image_viewer.Services
                             try { sender.Play(); } catch { }
                         }
 
-                        WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                        // WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
                     catch (Exception ex)
                     {
@@ -362,7 +360,7 @@ namespace quick_image_viewer.Services
                         pageControl.PageImage.Source = null;
                         pageControl.PageImage.Visibility = Visibility.Collapsed;
                         _window?.ShowNotification($"Video Error: {args.Error}");
-                        WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+                        // WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
                     }
                     catch (Exception ex)
                     {
@@ -485,33 +483,10 @@ namespace quick_image_viewer.Services
                     return null;
                 }
 
-                // Use simple FileStream fallback if the path might cause issues with StorageFile
-                // or if it's exceptionally long (though 49M is likely a corrupted string/memory)
-                StorageFile? file = null;
-                try
-                {
-                    file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[ViewerImageLoader] StorageFile.GetFileFromPathAsync failed: {ex.Message}");
-                }
-
-                if (file != null)
-                {
-                    using var stream = await file.OpenReadAsync();
-                    var bitmapImage = new BitmapImage();
-                    await bitmapImage.SetSourceAsync(stream).AsTask();
-                    return bitmapImage;
-                }
-                else
-                {
-                    // Fallback to direct FileStream for robustness
-                    using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    var bitmapImage = new BitmapImage();
-                    await bitmapImage.SetSourceAsync(fs.AsRandomAccessStream()).AsTask();
-                    return bitmapImage;
-                }
+                using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var bitmapImage = new BitmapImage();
+                await bitmapImage.SetSourceAsync(fs.AsRandomAccessStream()).AsTask();
+                return bitmapImage;
             }
             catch (Exception ex)
             {

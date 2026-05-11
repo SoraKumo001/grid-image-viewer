@@ -67,10 +67,9 @@ namespace quick_image_viewer.Services
                 }
                 else
                 {
-                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(imagePath);
-                    using (var stream = await file.OpenReadAsync())
+                    using (var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
-                        await _printImage.SetSourceAsync(stream);
+                        await _printImage.SetSourceAsync(fs.AsRandomAccessStream());
                     }
                 }
 

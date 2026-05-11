@@ -332,11 +332,8 @@ namespace quick_image_viewer.Managers
 
             try
             {
-                var folder = await StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(targetPath));
-                var file = await StorageFile.GetFileFromPathAsync(targetPath);
-                var options = new Windows.System.FolderLauncherOptions();
-                options.ItemsToSelect.Add(file);
-                await Launcher.LaunchFolderAsync(folder, options);
+                var folderPath = Path.GetDirectoryName(targetPath);
+                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{targetPath}\"");
             }
             catch { }
         }
