@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.7 - 2026-05-12
+
+- **Performance & Grid Improvements**:
+  - [Optimization] Improved thumbnail loading performance in Grid Mode by utilizing `Parallel.ForEachAsync` for better concurrency control.
+  - [Optimization] Offloaded image metadata extraction (dimensions and file size) to background threads, preventing UI micro-stutters during folder navigation.
+  - [Refactor] Cleaned up UI thread dispatching logic using a new `EnqueueOnDispatcherAsync` helper for improved stability.
+- **Video & Archive Enhancements**:
+  - [Feature] Integrated FFmpeg-based frame extraction for video thumbnails, significantly improving thumbnail reliability and quality for various formats.
+  - [Feature] Added support for extracting video thumbnails directly from files located within archives (ZIP/RAR).
+  - [Stability] Implemented a semaphore-based throttling mechanism for video thumbnail generation to prevent GPU/CPU resource exhaustion.
+
 ## v1.5.6 - 2026-05-11
 
 - **Cleanup & Optimization**:
