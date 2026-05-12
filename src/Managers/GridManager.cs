@@ -166,44 +166,35 @@ namespace quick_image_viewer.Managers
             _gridDecodeSize = decodeSize;
 
             var items = GridItems.ToList();
-            var semaphore = new SemaphoreSlim(Math.Max(1, Environment.ProcessorCount / 4));
-            var tasks = items.Select(item => Task.Run(async () =>
-            {
-                if (token.IsCancellationRequested) return;
-                // Add a small initial delay to prioritize main image loading
-                await Task.Delay(200, token);
-                await semaphore.WaitAsync(token);
-                try
-                {
-                    await LoadSingleThumbnailAsync(item, decodeSize, token);
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }, token)).ToArray();
 
             try
             {
-                try
-                {
-                    await Task.WhenAll(tasks);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
+                // Add a small initial delay to prioritize main image loading
+                await Task.Delay(200, token);
 
-                // Recalculate layout and start animation after all items are loaded
-                _window.DispatcherQueue.TryEnqueue(() =>
+                int maxConcurrency = Math.Max(1, Environment.ProcessorCount / 4);
+                var options = new ParallelOptions
                 {
-                    UpdateGridLayout();
-                    StartGridAnimation();
+                    MaxDegreeOfParallelism = maxConcurrency,
+                    CancellationToken = token
+                };
+
+                await Parallel.ForEachAsync(items, options, async (item, ct) =>
+                {
+                    await LoadSingleThumbnailAsync(item, decodeSize, ct);
                 });
             }
-            finally
+            catch (OperationCanceledException)
             {
+                return;
             }
+
+            // Recalculate layout and start animation after all items are loaded
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateGridLayout();
+                StartGridAnimation();
+            });
         }
 
         private async Task LoadSingleThumbnailAsync(ImageItem item, int decodeSize, CancellationToken token)
@@ -345,7 +336,7 @@ namespace quick_image_viewer.Managers
                         {
                             using var skBitmapToDispose = decoded;
                             ProcessDecodedBitmap(decoded, item, decodeSize, token);
-                            _window.DispatcherQueue.TryEnqueue(() => SetMetadata(item));
+                            SetMetadata(item);
                         }
                     }
                 }
@@ -357,7 +348,7 @@ namespace quick_image_viewer.Managers
                     if (token.IsCancellationRequested) return;
 
                     ProcessDecodedBitmap(decoded, item, decodeSize, token);
-                    _window.DispatcherQueue.TryEnqueue(() => SetMetadata(item));
+                    SetMetadata(item);
                 }
             }
             catch { }
@@ -408,19 +399,26 @@ namespace quick_image_viewer.Managers
             else
             {
                 // Fallback to native BitmapImage
-                _window.DispatcherQueue.TryEnqueue(async () =>
+                try
                 {
-                    if (token.IsCancellationRequested) return;
-                    try
+                    var stream = File.OpenRead(item.FilePath);
+                    _window.DispatcherQueue.TryEnqueue(async () =>
                     {
-                        using var stream = File.OpenRead(item.FilePath);
-                        var bitmapImage = new BitmapImage();
-                        bitmapImage.DecodePixelWidth = decodeSize;
-                        await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
-                        item.Thumbnail = bitmapImage;
-                    }
-                    catch { }
-                });
+                        try
+                        {
+                            using (stream)
+                            {
+                                if (token.IsCancellationRequested) return;
+                                var bitmapImage = new BitmapImage();
+                                bitmapImage.DecodePixelWidth = decodeSize;
+                                await bitmapImage.SetSourceAsync(stream.AsRandomAccessStream());
+                                item.Thumbnail = bitmapImage;
+                            }
+                        }
+                        catch { }
+                    });
+                }
+                catch { }
             }
         }
 
@@ -481,19 +479,28 @@ namespace quick_image_viewer.Managers
 
         private void SetMetadata(ImageItem item)
         {
-            try
+            Task.Run(() =>
             {
-                var (w, h) = ImageProcessor.GetImageSize(item.FilePath);
-                string sizeStr = "";
                 try
                 {
-                    var fileInfo = new System.IO.FileInfo(item.FilePath);
-                    sizeStr = FormatFileSize(fileInfo.Length);
+                    var (w, h) = ImageProcessor.GetImageSize(item.FilePath);
+                    string sizeStr = "";
+                    try
+                    {
+                        var fileInfo = new System.IO.FileInfo(item.FilePath);
+                        sizeStr = FormatFileSize(fileInfo.Length);
+                    }
+                    catch { }
+
+                    string metadataStr = w > 0 ? $"{w}x{h} ({sizeStr})" : sizeStr;
+
+                    _window.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        item.Metadata = metadataStr;
+                    });
                 }
                 catch { }
-                item.Metadata = w > 0 ? $"{w}x{h} ({sizeStr})" : sizeStr;
-            }
-            catch { }
+            });
         }
 
         private static string FormatFileSize(long bytes)

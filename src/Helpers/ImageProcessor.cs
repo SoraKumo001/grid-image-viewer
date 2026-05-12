@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+
 namespace quick_image_viewer.Helpers
 {
     public static class ImageProcessor
@@ -437,10 +438,43 @@ namespace quick_image_viewer.Helpers
             return (0, 0);
         }
 
-        public static Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280)
+        public static async Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280)
         {
-            return Task.FromResult<SoftwareBitmap?>(null);
+            try
+            {
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                using var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.VideosView, maxDim, Windows.Storage.FileProperties.ThumbnailOptions.UseCurrentScale);
+                if (thumbnail != null && thumbnail.Size > 0)
+                {
+                    var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(thumbnail);
+                    return await decoder.GetSoftwareBitmapAsync(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
+                }
+            }
+            catch { }
+
+            try
+            {
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                var clip = await Windows.Media.Editing.MediaClip.CreateFromFileAsync(file);
+                var composition = new Windows.Media.Editing.MediaComposition();
+                composition.Clips.Add(clip);
+
+                var time = TimeSpan.Zero;
+                if (clip.OriginalDuration.TotalSeconds > 1)
+                {
+                    time = TimeSpan.FromSeconds(1);
+                }
+
+                using var stream = await composition.GetThumbnailAsync(time, (int)maxDim, (int)maxDim, Windows.Media.Editing.VideoFramePrecision.NearestFrame);
+                if (stream != null && stream.Size > 0)
+                {
+                    var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(stream);
+                    return await decoder.GetSoftwareBitmapAsync(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
+                }
+            }
+            catch { }
+
+            return null;
         }
     }
 }
-
