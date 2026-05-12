@@ -258,6 +258,7 @@ namespace quick_image_viewer.ViewModels
                     Editor.CanRedo = m.CanRedo;
                     Editor.HasValidPath = m.HasValidPath;
                     Editor.IsImageEditable = m.IsImageEditable;
+                    Editor.IsContentEditable = m.IsContentEditable;
 
                     int splitCount = _settings.MangaSplitCount;
                     Viewer.IsViewSingle = (splitCount == 1);
@@ -421,7 +422,7 @@ namespace quick_image_viewer.ViewModels
     public record ViewActionMessage(string Action, int Value);
     public record EditFilterArgs(string Path, string Filter);
     public record BookmarksChangedMessage();
-    public record UpdateMenuStatesMessage(string Path, bool CanUndo, bool CanRedo, bool HasValidPath, bool IsImageEditable);
+    public record UpdateMenuStatesMessage(string Path, bool CanUndo, bool CanRedo, bool HasValidPath, bool IsImageEditable, bool IsContentEditable);
     public record ClearImageSourceMessage(string Path);
     public record RefreshDisplayMessage();
     public record FocusRequestMessage();

@@ -31,6 +31,7 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty] public partial bool CanRedo { get; set; }
         [ObservableProperty] public partial bool HasValidPath { get; set; }
         [ObservableProperty] public partial bool IsImageEditable { get; set; }
+        [ObservableProperty] public partial bool IsContentEditable { get; set; }
         [ObservableProperty] public partial string ContextPath { get; set; } = string.Empty;
 
         public EditorViewModel()

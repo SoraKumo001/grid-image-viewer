@@ -155,6 +155,9 @@ namespace quick_image_viewer.Managers
         {
             string path = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _state.CurrentImagePath;
             bool hasPath = !string.IsNullOrEmpty(path);
+            bool isVideo = MediaHelper.IsVideo(path);
+            bool isArchive = ArchiveManager.IsArchivePath(path);
+
             bool canUndo = false;
             bool canRedo = false;
 
@@ -168,8 +171,12 @@ namespace quick_image_viewer.Managers
                 }
             }
 
-            // Send message to update ViewModel instead of direct access
-            WeakReferenceMessenger.Default.Send(new UpdateMenuStatesMessage(path, canUndo, canRedo, hasPath, !ArchiveManager.IsArchivePath(path)));
+            bool isExportable = hasPath && !isVideo;
+            bool isManageable = hasPath && !isArchive;
+            bool isEditable = hasPath && !isArchive && !isVideo;
+
+            // Send message to update ViewModel instead of direct access        
+            WeakReferenceMessenger.Default.Send(new UpdateMenuStatesMessage(path, canUndo, canRedo, isExportable, isManageable, isEditable));
         }
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
