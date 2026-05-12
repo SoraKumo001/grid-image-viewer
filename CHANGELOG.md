@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.8 - 2026-05-12
+
+- **Save As & Menu Improvements**:
+  - [Improvement] Overhauled "Save As" functionality to allow users to select the target file format (JPEG, PNG, WebP, BMP) directly within the standard file save dialog, rather than choosing it from a sub-menu.
+  - [UI/UX] Improved context menu targeting: operations like "Save As", "Crop", "Resize", and "Tone Adjustment" now correctly target the specific image under the mouse cursor in multi-view (Manga/Quad) modes.
+- **Image Editing & Stability**:
+  - [Fix] Fixed a critical issue where image transformations (Resize, Filters, Tone Adjustment) and Undo/Redo operations were not visually updating the UI.
+  - [Optimization] Improved "Tone Adjustment" responsiveness: eliminated image flickering during slider movement by optimizing the re-rendering pipeline.
+  - [Improvement] Refined Undo history for Tone Adjustment: multiple adjustments within a single session are now treated as a single undoable action to prevent history bloat.
+- **Context Menu Context-Awareness**:
+  - [Logic] Implemented smarter menu state management: save and edit actions are now automatically disabled for video files or files within archives where such operations are not supported.
+  - [Fix] Fixed a bug where Overwrite would not correctly clear the editing session, leading to stale data when returning to the same image.
+
 ## v1.5.7 - 2026-05-12
 
 - **Performance & Grid Improvements**:
