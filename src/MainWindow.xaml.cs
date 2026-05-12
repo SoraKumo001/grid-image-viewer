@@ -117,7 +117,10 @@ namespace quick_image_viewer
                 for (int pi = 0; pi < ViewerManager.Pages.Length; pi++)
                 {
                     if (ViewerManager.Pages[pi].CurrentFilePath == path)
+                    {
                         ViewerManager.Pages[pi].EditedBitmap = null;
+                        ViewerManager.Pages[pi].CurrentFilePath = null; // Force reload
+                    }
                 }
             }
         }

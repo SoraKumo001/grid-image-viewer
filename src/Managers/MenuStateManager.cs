@@ -230,8 +230,6 @@ namespace quick_image_viewer.Managers
                 if (overwrite)
                 {
                     _viewerManager.StopAnimation();
-                    // We need a way to clear the image source without direct access to Controls.
-                    // Let's send a message.
                     WeakReferenceMessenger.Default.Send(new ClearImageSourceMessage(sourcePath));
                 }
 
@@ -249,7 +247,11 @@ namespace quick_image_viewer.Managers
                     }
                 });
 
-                if (overwrite) WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+                if (overwrite)
+                {
+                    _imageEdit.ClearEdits(sourcePath);
+                    WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+                }
             }
             catch { }
         }

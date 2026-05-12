@@ -59,6 +59,20 @@ namespace quick_image_viewer.Services
                 if (session.Undo())
                 {
                     _window.ViewerManager?.StopAnimation();
+                    if (_window.ViewerManager != null)
+                    {
+                        for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
+                        {
+                            if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
+                            {
+                                _window.ViewerManager.Pages[i].EditedBitmap = session.Current;
+                                var ctrl = _window.ViewerManager.PageControls[i];
+                                ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                                ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                                ctrl.PageCanvas.Invalidate();
+                            }
+                        }
+                    }
                     _ = _window.UpdateDisplayAsync();
                 }
             }
@@ -71,6 +85,20 @@ namespace quick_image_viewer.Services
                 if (session.Redo())
                 {
                     _window.ViewerManager?.StopAnimation();
+                    if (_window.ViewerManager != null)
+                    {
+                        for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
+                        {
+                            if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
+                            {
+                                _window.ViewerManager.Pages[i].EditedBitmap = session.Current;
+                                var ctrl = _window.ViewerManager.PageControls[i];
+                                ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                                ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                                ctrl.PageCanvas.Invalidate();
+                            }
+                        }
+                    }
                     _ = _window.UpdateDisplayAsync();
                 }
             }
@@ -144,6 +172,16 @@ namespace quick_image_viewer.Services
             }
         }
 
+        private SKBitmap? LoadOriginalBitmap(string path)
+        {
+            try
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(path);
+                return SKBitmap.Decode(bytes);
+            }
+            catch { return null; }
+        }
+
         public async Task ApplyTransformationAsync(string path, Func<SKBitmap?, SKBitmap?> transform)
         {
             _window.ViewerManager?.StopAnimation();
@@ -163,11 +201,29 @@ namespace quick_image_viewer.Services
             await Task.Run(() =>
             {
                 SKBitmap? baseBmp = GetCurrentBitmap(path);
+                bool isNewSession = baseBmp == null;
+                if (isNewSession)
+                {
+                    baseBmp = LoadOriginalBitmap(path);
+                }
+
                 var newBmp = transform(baseBmp);
+
                 if (newBmp != null)
                 {
                     _window.DispatcherQueue.TryEnqueue(() =>
                     {
+                        if (isNewSession && baseBmp != null)
+                        {
+                            // Add original so we can undo back to it
+                            AddPendingEdit(path, baseBmp);
+                        }
+                        else if (isNewSession && baseBmp == null)
+                        {
+                            // Should not happen normally, but if baseBmp is null, transform might have created it
+                            // but we still need an empty state? We will just add newBmp.
+                        }
+
                         AddPendingEdit(path, newBmp);
 
                         // Force refresh of the relevant page
@@ -177,7 +233,11 @@ namespace quick_image_viewer.Services
                             {
                                 if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
                                 {
-                                    _window.ViewerManager.Pages[i].EditedBitmap = null;
+                                    _window.ViewerManager.Pages[i].EditedBitmap = newBmp;
+                                    var ctrl = _window.ViewerManager.PageControls[i];
+                                    ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                                    ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                                    ctrl.PageCanvas.Invalidate();
                                 }
                             }
                         }
