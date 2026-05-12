@@ -296,12 +296,12 @@ namespace quick_image_viewer.Managers
 
                 if (isVideo)
                 {
-                    var softwareBitmap = await ImageProcessor.ExtractVideoThumbnailAsync(item.FilePath, (uint)decodeSize);
+                    var softwareBitmap = await ImageProcessor.ExtractVideoThumbnailAsync(item.FilePath, (uint)decodeSize, token);
                     if (softwareBitmap != null)
                     {
                         item.AspectRatio = (double)softwareBitmap.PixelWidth / softwareBitmap.PixelHeight;
 
-                        _window.DispatcherQueue.TryEnqueue(async () =>
+                        await EnqueueOnDispatcherAsync(async () =>
                         {
                             using (softwareBitmap)
                             {
@@ -354,8 +354,39 @@ namespace quick_image_viewer.Managers
             catch { }
             finally
             {
-                _window.DispatcherQueue.TryEnqueue(() => item.IsLoading = false);
+                await EnqueueOnDispatcherAsync(() => item.IsLoading = false);
             }
+        }
+
+        private Task EnqueueOnDispatcherAsync(Action action)
+        {
+            return EnqueueOnDispatcherAsync(() =>
+            {
+                action();
+                return Task.CompletedTask;
+            });
+        }
+
+        private Task EnqueueOnDispatcherAsync(Func<Task> action)
+        {
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!_window.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await action();
+                    tcs.TrySetResult();
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            }))
+            {
+                tcs.TrySetResult();
+            }
+
+            return tcs.Task;
         }
 
         private void ProcessDecodedBitmap(SKBitmap? skBitmap, ImageItem item, int decodeSize, CancellationToken token)

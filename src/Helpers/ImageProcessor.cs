@@ -1,8 +1,10 @@
+using FFmpegInteropX;
 using ImageMagick;
 using quick_image_viewer.Managers;
 using SkiaSharp;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 
@@ -11,6 +13,7 @@ namespace quick_image_viewer.Helpers
     public static class ImageProcessor
     {
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (int width, int height)> _sizeCache = new();
+        private static readonly SemaphoreSlim _videoThumbnailSemaphore = new(1, 1);
 
         public static SKEncodedImageFormat GetSKEncodedImageFormat(string ext)
         {
@@ -438,23 +441,158 @@ namespace quick_image_viewer.Helpers
             return (0, 0);
         }
 
-        public static async Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280)
+        public static async Task<SoftwareBitmap?> ExtractVideoThumbnailAsync(string filePath, uint maxDim = 1280, CancellationToken token = default)
+        {
+            await _videoThumbnailSemaphore.WaitAsync(token);
+            try
+            {
+                const int maxAttempts = 3;
+                for (int attempt = 0; attempt < maxAttempts; attempt++)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    var bitmap = await TryExtractVideoFrameWithFFmpegAsync(filePath, maxDim, token)
+                        ?? await TryExtractVideoThumbnailAsync(filePath, maxDim, token);
+                    if (bitmap != null)
+                    {
+                        return bitmap;
+                    }
+
+                    if (attempt < maxAttempts - 1)
+                    {
+                        await Task.Delay(150 * (attempt + 1), token);
+                    }
+                }
+            }
+            finally
+            {
+                _videoThumbnailSemaphore.Release();
+            }
+
+            return null;
+        }
+
+        private static async Task<SoftwareBitmap?> TryExtractVideoFrameWithFFmpegAsync(string filePath, uint maxDim, CancellationToken token)
+        {
+            try
+            {
+                FrameGrabber? frameGrabber = null;
+                Stream? archiveStream = null;
+                Windows.Storage.Streams.IRandomAccessStream? randomAccessStream = null;
+
+                try
+                {
+                    if (ArchiveManager.IsArchivePath(filePath))
+                    {
+                        var (arc, entry) = ArchiveManager.SplitArchivePath(filePath);
+                        archiveStream = ArchiveManager.GetEntryStream(arc, entry);
+                        if (archiveStream == null) return null;
+
+                        randomAccessStream = archiveStream.AsRandomAccessStream();
+                        frameGrabber = await FrameGrabber.CreateFromStreamAsync(randomAccessStream);
+                    }
+                    else
+                    {
+                        frameGrabber = await FrameGrabber.CreateFromFileAsync(filePath);
+                    }
+
+                    token.ThrowIfCancellationRequested();
+                    if (frameGrabber == null) return null;
+
+                    var (decodeWidth, decodeHeight) = GetVideoThumbnailDecodeSize(frameGrabber, maxDim);
+                    frameGrabber.DecodePixelWidth = decodeWidth;
+                    frameGrabber.DecodePixelHeight = decodeHeight;
+
+                    var position = frameGrabber.Duration > TimeSpan.FromSeconds(1)
+                        ? TimeSpan.FromSeconds(1)
+                        : TimeSpan.Zero;
+
+                    var frame = await frameGrabber.ExtractVideoFrameAsync(position, exactSeek: false);
+                    token.ThrowIfCancellationRequested();
+                    if (frame == null) return null;
+
+                    try
+                    {
+                        using var encodedStream = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+                        await frame.EncodeAsJpegAsync(encodedStream);
+                        token.ThrowIfCancellationRequested();
+
+                        encodedStream.Seek(0);
+                        var decoder = await BitmapDecoder.CreateAsync(encodedStream);
+                        token.ThrowIfCancellationRequested();
+                        return await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                    }
+                    finally
+                    {
+                        (frame as IDisposable)?.Dispose();
+                    }
+                }
+                finally
+                {
+                    (frameGrabber as IDisposable)?.Dispose();
+                    randomAccessStream?.Dispose();
+                    archiveStream?.Dispose();
+                }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch { }
+
+            return null;
+        }
+
+        private static (int width, int height) GetVideoThumbnailDecodeSize(FrameGrabber frameGrabber, uint maxDim)
+        {
+            int maxSize = (int)Math.Clamp(maxDim, 1, 4096);
+
+            try
+            {
+                var stream = frameGrabber.CurrentVideoStream;
+                if (stream != null)
+                {
+                    double sourceW = stream.PixelWidth;
+                    double sourceH = stream.PixelHeight;
+
+                    if (sourceW > 0 && sourceH > 0)
+                    {
+                        double scale = Math.Min(maxSize / sourceW, maxSize / sourceH);
+                        scale = Math.Min(scale, 1.0);
+
+                        return (
+                            Math.Max(1, (int)Math.Round(sourceW * scale)),
+                            Math.Max(1, (int)Math.Round(sourceH * scale)));
+                    }
+                }
+            }
+            catch { }
+
+            return (maxSize, maxSize);
+        }
+
+        private static async Task<SoftwareBitmap?> TryExtractVideoThumbnailAsync(string filePath, uint maxDim, CancellationToken token)
         {
             try
             {
                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                token.ThrowIfCancellationRequested();
+
                 using var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.VideosView, maxDim, Windows.Storage.FileProperties.ThumbnailOptions.UseCurrentScale);
+                token.ThrowIfCancellationRequested();
+
                 if (thumbnail != null && thumbnail.Size > 0)
                 {
                     var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(thumbnail);
+                    token.ThrowIfCancellationRequested();
                     return await decoder.GetSoftwareBitmapAsync(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch { }
 
             try
             {
                 var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                token.ThrowIfCancellationRequested();
+
                 var clip = await Windows.Media.Editing.MediaClip.CreateFromFileAsync(file);
                 var composition = new Windows.Media.Editing.MediaComposition();
                 composition.Clips.Add(clip);
@@ -466,12 +604,16 @@ namespace quick_image_viewer.Helpers
                 }
 
                 using var stream = await composition.GetThumbnailAsync(time, (int)maxDim, (int)maxDim, Windows.Media.Editing.VideoFramePrecision.NearestFrame);
+                token.ThrowIfCancellationRequested();
+
                 if (stream != null && stream.Size > 0)
                 {
                     var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(stream);
+                    token.ThrowIfCancellationRequested();
                     return await decoder.GetSoftwareBitmapAsync(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch { }
 
             return null;
