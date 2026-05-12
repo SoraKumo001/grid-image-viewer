@@ -30,6 +30,8 @@ namespace quick_image_viewer.Views.Controls
             BtnClose.Focus(FocusState.Programmatic);
         }
 
+        private bool _isFirstEdit = true;
+
         private async void OnUpdateTimerTick(object? sender, object e)
         {
             _updateTimer.Stop();
@@ -46,10 +48,37 @@ namespace quick_image_viewer.Views.Controls
                     {
                         _window.DispatcherQueue.TryEnqueue(() =>
                         {
-                            _window.ImageEditService.AddPendingEdit(_sourcePath, newBmp);
+                            if (_isFirstEdit)
+                            {
+                                if (_window.ImageEditService.GetSession(_sourcePath) == null && _baseBmp != null)
+                                {
+                                    _window.ImageEditService.AddPendingEdit(_sourcePath, _baseBmp.Copy());
+                                }
+                                _window.ImageEditService.AddPendingEdit(_sourcePath, newBmp);
+                                _isFirstEdit = false;
+                            }
+                            else
+                            {
+                                _window.ImageEditService.ReplaceCurrentEdit(_sourcePath, newBmp);
+                            }
+
                             _window.StopAnimation();
 
-                            _window.ClearCachedBitmap(_sourcePath);
+                            if (_window.ViewerManager != null)
+                            {
+                                for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
+                                {
+                                    if (_window.ViewerManager.Pages[i].CurrentFilePath == _sourcePath)
+                                    {
+                                        _window.ViewerManager.Pages[i].EditedBitmap = newBmp;
+                                        var ctrl = _window.ViewerManager.PageControls[i];
+                                        ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+                                        ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
+                                        ctrl.PageCanvas.Invalidate();
+                                    }
+                                }
+                            }
+
                             _ = _window.UpdateDisplayAsync();
                         });
                     }

@@ -28,6 +28,18 @@ namespace quick_image_viewer.Services
             session.AddState(bitmap);
         }
 
+        public void ReplaceCurrentEdit(string path, SKBitmap bitmap)
+        {
+            if (_pendingEdits.TryGetValue(path, out var session))
+            {
+                session.ReplaceCurrentState(bitmap);
+            }
+            else
+            {
+                AddPendingEdit(path, bitmap);
+            }
+        }
+
         public void RenameSession(string oldPath, string newPath)
         {
             if (_pendingEdits.TryGetValue(oldPath, out var session))
@@ -275,6 +287,19 @@ namespace quick_image_viewer.Services
                 _history[0].Dispose();
                 _history.RemoveAt(0);
                 _currentIndex--;
+            }
+        }
+
+        public void ReplaceCurrentState(SKBitmap bitmap)
+        {
+            if (_currentIndex >= 0 && _currentIndex < _history.Count)
+            {
+                _history[_currentIndex].Dispose();
+                _history[_currentIndex] = bitmap;
+            }
+            else
+            {
+                AddState(bitmap);
             }
         }
 
