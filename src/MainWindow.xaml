@@ -129,12 +129,7 @@
                     <MenuFlyoutItem x:Name="MenuPrint" x:FieldModifier="internal" x:Uid="MenuPrint" Text="Print" Command="{x:Bind ViewModel.Editor.PrintCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.HasValidPath, Mode=OneWay}" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem x:Name="MenuOverwrite" x:FieldModifier="internal" x:Uid="MenuOverwrite" Text="Overwrite (Ctrl+S)" Command="{x:Bind ViewModel.Editor.OverwriteCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
-                    <MenuFlyoutSubItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As..." IsEnabled="{x:Bind ViewModel.Editor.HasValidPath, Mode=OneWay}">
-                        <MenuFlyoutItem Text="JPEG" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".jpg" />
-                        <MenuFlyoutItem Text="PNG" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".png" />
-                        <MenuFlyoutItem Text="WebP" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".webp" />
-                        <MenuFlyoutItem Text="BMP" Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter=".bmp" />
-                    </MenuFlyoutSubItem>
+                    <MenuFlyoutItem x:Name="MenuSaveAs" x:FieldModifier="internal" x:Uid="MenuSaveAs" Text="Save As..." Command="{x:Bind ViewModel.Editor.SaveAsCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.HasValidPath, Mode=OneWay}" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem x:Name="MenuRename" x:FieldModifier="internal" x:Uid="MenuRename" Text="Rename" Command="{x:Bind ViewModel.Editor.RenameFileCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />
                     <MenuFlyoutItem x:Name="MenuMoveToFolder" x:FieldModifier="internal" x:Uid="MenuMoveToFolder" Text="Move to Folder..." Command="{x:Bind ViewModel.Editor.MoveFileCommand}" CommandParameter="{x:Bind ViewModel.Editor.ContextPath, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.Editor.IsImageEditable, Mode=OneWay}" />

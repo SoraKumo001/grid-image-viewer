@@ -86,7 +86,7 @@ namespace quick_image_viewer.Managers
                 case "Undo": MenuUndo_Click(null!, null!); break;
                 case "Redo": MenuRedo_Click(null!, null!); break;
                 case "Overwrite": MenuOverwrite_Click(null!, null!); break;
-                case "SaveAs": MenuSaveAs_Click(new MenuFlyoutItem { Tag = message.Value?.ToString() ?? ".jpg" }, null!); break;
+                case "SaveAs": MenuSaveAs_Click(null!, null!); break;
                 case "Print": MenuPrint_Click(null!, null!); break;
                 case "Crop": MenuCrop_Click(null!, null!); break;
                 case "Resize": MenuResize_Click(null!, null!); break;
@@ -123,9 +123,32 @@ namespace quick_image_viewer.Managers
 
         public void UpdateTargetIndexAtPoint(Point p)
         {
-            // This still needs to know about UI elements to do coordinate transformation.
-            // For now, let's keep it but ideally we pass transformed coordinates or use a different approach.
-            // However, we can use messaging to ask the View for this information if we really want to decouple.
+            if (_viewerManager?.PageControls == null) return;
+            var pagesGrid = ((App)Application.Current).MainView?.PagesGrid;
+            if (pagesGrid == null) return;
+
+            for (int i = 0; i < _viewerManager.PageControls.Length; i++)
+            {
+                var ctrl = _viewerManager.PageControls[i];
+                if (ctrl.Visibility == Visibility.Visible)
+                {
+                    try
+                    {
+                        var transform = ctrl.TransformToVisual(pagesGrid);
+                        var bounds = transform.TransformBounds(new Rect(0, 0, ctrl.ActualWidth, ctrl.ActualHeight));
+                        if (bounds.Contains(p))
+                        {
+                            var path = _viewerManager.GetPathForPage(i);
+                            if (!string.IsNullOrEmpty(path))
+                            {
+                                _contextTargetPath = path;
+                                return;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
         }
 
         public void UpdateMenuStates()
@@ -151,10 +174,7 @@ namespace quick_image_viewer.Managers
 
         public async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuFlyoutItem item && item.Tag is string ext)
-            {
-                await SaveImageAsync(ext, false);
-            }
+            await SaveImageAsync(null, false);
         }
 
         public async void MenuOverwrite_Click(object sender, RoutedEventArgs e)
@@ -163,27 +183,46 @@ namespace quick_image_viewer.Managers
             await SaveImageAsync(Path.GetExtension(path), true);
         }
 
-        public async Task SaveImageAsync(string targetExtension, bool overwrite)
+        public async Task SaveImageAsync(string? targetExtension, bool overwrite)
         {
             string sourcePath = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _state.CurrentImagePath;
             if (string.IsNullOrEmpty(sourcePath)) return;
 
-            string destPath = overwrite ? sourcePath : Path.ChangeExtension(sourcePath, targetExtension);
-            if (!overwrite)
+            string destPath;
+            if (overwrite)
             {
-                // File Picker still needs a Window handle. We can get it from IAppWindowManager or similar.
-                // For now, let's keep this but recognize it's a UI dependency.
+                destPath = sourcePath;
+            }
+            else
+            {
                 var picker = new Windows.Storage.Pickers.FileSavePicker();
                 var hwnd = ((App)Application.Current).MainView?.WindowHandle ?? IntPtr.Zero;
                 if (hwnd == IntPtr.Zero) return;
                 WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
                 picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
-                picker.FileTypeChoices.Add(targetExtension.Trim('.').ToUpper(), new List<string>() { targetExtension });
+
+                if (string.IsNullOrEmpty(targetExtension))
+                {
+                    picker.FileTypeChoices.Add("JPEG", new List<string>() { ".jpg", ".jpeg" });
+                    picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
+                    picker.FileTypeChoices.Add("WebP", new List<string>() { ".webp" });
+                    picker.FileTypeChoices.Add("BMP", new List<string>() { ".bmp" });
+
+                    var origExt = Path.GetExtension(sourcePath).ToLower();
+                    picker.DefaultFileExtension = origExt == ".png" || origExt == ".webp" || origExt == ".bmp" ? origExt : ".jpg";
+                }
+                else
+                {
+                    picker.FileTypeChoices.Add(targetExtension.Trim('.').ToUpper(), new List<string>() { targetExtension });
+                    picker.DefaultFileExtension = targetExtension;
+                }
+
                 picker.SuggestedFileName = Path.GetFileNameWithoutExtension(sourcePath);
 
                 var file = await picker.PickSaveFileAsync();
                 if (file == null) return;
                 destPath = file.Path;
+                targetExtension = Path.GetExtension(destPath).ToLower();
             }
 
             try
@@ -202,11 +241,11 @@ namespace quick_image_viewer.Managers
                     var current = _imageEdit.GetCurrentBitmap(sourcePath);
                     if (current != null)
                     {
-                        ImageProcessor.SaveBitmap(current, destPath, targetExtension, quality);
+                        ImageProcessor.SaveBitmap(current, destPath, targetExtension!, quality);
                     }
                     else
                     {
-                        ImageProcessor.SaveImage(sourcePath, destPath, targetExtension, quality);
+                        ImageProcessor.SaveImage(sourcePath, destPath, targetExtension!, quality);
                     }
                 });
 

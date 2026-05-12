@@ -603,9 +603,29 @@ namespace quick_image_viewer
         private void EditMenuFlyout_Opening(object sender, object e) => MenuStateManager.EditMenuFlyout_Opening(sender, e);
         private void RootGrid_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var point = e.GetPosition(PagesGrid);
-            MenuStateManager.UpdateTargetIndexAtPoint(point);
-            ViewModel.Editor.ContextPath = MenuStateManager.ContextTargetPath;
+            if (ViewModel.IsGridMode)
+            {
+                if (e.OriginalSource is FrameworkElement fe && fe.DataContext is quick_image_viewer.Models.ImageItem imageItem)
+                {
+                    MenuStateManager.ContextTargetPath = imageItem.FilePath;
+                    ViewModel.Editor.ContextPath = imageItem.FilePath;
+                }
+                else
+                {
+                    var selected = GridControlInternal.GridView.SelectedItem as quick_image_viewer.Models.ImageItem;
+                    if (selected != null)
+                    {
+                        MenuStateManager.ContextTargetPath = selected.FilePath;
+                        ViewModel.Editor.ContextPath = selected.FilePath;
+                    }
+                }
+            }
+            else
+            {
+                var point = e.GetPosition(PagesGrid);
+                MenuStateManager.UpdateTargetIndexAtPoint(point);
+                ViewModel.Editor.ContextPath = MenuStateManager.ContextTargetPath;
+            }
         }
 
 
