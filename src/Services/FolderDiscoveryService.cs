@@ -12,7 +12,7 @@ namespace quick_image_viewer.Services
     {
         public static readonly string[] SupportedExtensions =
         {
-            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
+            ".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".webm", ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv", ".avif", ".avis", ".heic", ".heif", ".jxl", ".tif", ".tiff", ".svg", ".psd", ".ico",
             ".dng", ".nef", ".cr2", ".arw", ".tga", ".pcx"
         };
 
@@ -77,7 +77,16 @@ namespace quick_image_viewer.Services
                                 if (f != null && token.IsCancellationRequested) return;
                                 if (f != null && f != cleanPath && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
                                 {
-                                    siblingFiles.Add(f);
+                                    if (f.ToLower().EndsWith(".pdf"))
+                                    {
+                                        int count = PdfManager.GetPageCountAsync(f).GetAwaiter().GetResult();
+                                        for (int i = 0; i < count; i++)
+                                            siblingFiles.Add(PdfManager.CreateVirtualPath(f, i));
+                                    }
+                                    else
+                                    {
+                                        siblingFiles.Add(f);
+                                    }
                                 }
                             }
                             if (siblingFiles.Count > 0) onBatchLoaded?.Invoke(siblingFiles);
@@ -151,7 +160,16 @@ namespace quick_image_viewer.Services
 
                     if (f != null && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
                     {
-                        files.Add(f);
+                        if (f.ToLower().EndsWith(".pdf"))
+                        {
+                            int count = PdfManager.GetPageCountAsync(f).GetAwaiter().GetResult();
+                            for (int i = 0; i < count; i++)
+                                files.Add(PdfManager.CreateVirtualPath(f, i));
+                        }
+                        else
+                        {
+                            files.Add(f);
+                        }
                     }
                 }
 
@@ -175,7 +193,14 @@ namespace quick_image_viewer.Services
         public static List<string> GetInitialPlaylist(string path, IEnumerable<string>? allowedExtensions = null)
         {
             List<string> files;
-            if (ArchiveManager.IsArchive(path, allowedExtensions))
+            if (path.ToLower().EndsWith(".pdf"))
+            {
+                files = new List<string>();
+                int count = PdfManager.GetPageCountAsync(path).GetAwaiter().GetResult();
+                for (int i = 0; i < count; i++)
+                    files.Add(PdfManager.CreateVirtualPath(path, i));
+            }
+            else if (ArchiveManager.IsArchive(path, allowedExtensions))
             {
                 files = ArchiveManager.GetArchiveImages(path, allowedExtensions);
             }

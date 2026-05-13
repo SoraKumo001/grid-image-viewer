@@ -25,6 +25,7 @@ namespace quick_image_viewer.Views.Controls
         private ObservableCollection<ExtensionItem> _extensionsImages = new();
         private ObservableCollection<ExtensionItem> _extensionsVideos = new();
         private ObservableCollection<ExtensionItem> _extensionsArchives = new();
+        private ObservableCollection<ExtensionItem> _extensionsDocuments = new();
         private bool _isInitializing = true;
 
         private KeyBindingData _tempNextImage = null!;
@@ -157,6 +158,7 @@ namespace quick_image_viewer.Views.Controls
                     "Images" => _extensionsImages,
                     "Videos" => _extensionsVideos,
                     "Archives" => _extensionsArchives,
+                    "Documents" => _extensionsDocuments,
                     _ => null
                 };
 
@@ -179,6 +181,9 @@ namespace quick_image_viewer.Views.Controls
             ItemsExtensionsVideos.ItemsSource = _extensionsVideos;
             ItemsExtensionsArchives.ItemsSource = null;
             ItemsExtensionsArchives.ItemsSource = _extensionsArchives;
+            ItemsExtensionsDocuments.ItemsSource = _extensionsDocuments;
+            ItemsExtensionsDocuments.ItemsSource = null;
+            ItemsExtensionsDocuments.ItemsSource = _extensionsDocuments;
         }
 
         private void InitializeExtensionsList()
@@ -188,8 +193,9 @@ namespace quick_image_viewer.Views.Controls
             _extensionsImages.Clear();
             _extensionsVideos.Clear();
             _extensionsArchives.Clear();
+            _extensionsDocuments.Clear();
 
-            var all = FolderDiscoveryService.SupportedExtensions.Concat(ArchiveManager.ArchiveExtensions).Distinct().OrderBy(e => e);
+            var all = FolderDiscoveryService.SupportedExtensions.Concat(ArchiveManager.ArchiveExtensions).Append(".pdf").Distinct().OrderBy(e => e);
 
             foreach (var ext in all)
             {
@@ -199,7 +205,11 @@ namespace quick_image_viewer.Views.Controls
                     IsEnabled = _settings.EnabledExtensions.Contains(ext)
                 };
 
-                if (ArchiveManager.ArchiveExtensions.Contains(ext))
+                if (ext == ".pdf")
+                {
+                    _extensionsDocuments.Add(item);
+                }
+                else if (ArchiveManager.ArchiveExtensions.Contains(ext))
                 {
                     _extensionsArchives.Add(item);
                 }
@@ -216,6 +226,9 @@ namespace quick_image_viewer.Views.Controls
             ItemsExtensionsImages.ItemsSource = _extensionsImages;
             ItemsExtensionsVideos.ItemsSource = _extensionsVideos;
             ItemsExtensionsArchives.ItemsSource = _extensionsArchives;
+            ItemsExtensionsDocuments.ItemsSource = _extensionsDocuments;
+            ItemsExtensionsDocuments.ItemsSource = null;
+            ItemsExtensionsDocuments.ItemsSource = _extensionsDocuments;
         }
 
         private void InitializeKeyBindingsList()

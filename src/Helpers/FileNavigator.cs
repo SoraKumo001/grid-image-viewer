@@ -39,13 +39,16 @@ namespace quick_image_viewer.Helpers
                 try
                 {
                     // Check if the node is an archive or a folder containing images
-                    if (ArchiveManager.IsArchive(node, allowedExtensions))
+                    if (ArchiveManager.IsArchive(node, allowedExtensions) || PdfManager.IsPdfPath(node))
                     {
-                        if (ArchiveManager.HasArchiveImages(node, allowedExtensions))
-                        {
-                            return node;
-                        }
-                        continue; // Skip archives without supported images
+                        bool hasContent = false;
+                        if (ArchiveManager.IsArchive(node, allowedExtensions))
+                            hasContent = ArchiveManager.HasArchiveImages(node, allowedExtensions);
+                        else
+                            hasContent = PdfManager.GetPageCountAsync(node).GetAwaiter().GetResult() > 0;
+
+                        if (hasContent) return node;
+                        continue;
                     }
 
                     if (Directory.Exists(node))
@@ -70,7 +73,7 @@ namespace quick_image_viewer.Helpers
             {
                 if (!Directory.Exists(path)) return Array.Empty<string>();
                 return Directory.EnumerateFileSystemEntries(path)
-                    .Where(e => Directory.Exists(e) || ArchiveManager.IsArchive(e, allowedExtensions))
+                    .Where(e => Directory.Exists(e) || ArchiveManager.IsArchive(e, allowedExtensions) || PdfManager.IsPdfPath(e))
                     .OrderBy(e => e, new NaturalStringComparer())
                     .ToArray();
             }

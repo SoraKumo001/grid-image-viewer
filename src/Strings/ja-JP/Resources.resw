@@ -692,4 +692,7 @@
   <data name="TopPanel_ZoomReset.ToolTipService.ToolTip" xml:space="preserve">
     <value>移動・ズームのリセット (Ctrl+0)</value>
   </data>
+  <data name="Settings_Extensions_Documents.Text" xml:space="preserve">
+    <value>ドキュメント</value>
+  </data>
 </root>

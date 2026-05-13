@@ -167,7 +167,34 @@
                                                 </ItemsControl>
                                             </StackPanel>
 
-                                            <!-- Archives Group -->
+                                                                                          <!-- Documents Group -->
+                                              <StackPanel Spacing="8">
+                                                  <Grid Margin="0,0,0,2">
+                                                      <Grid.ColumnDefinitions>
+                                                          <ColumnDefinition Width="*" />
+                                                          <ColumnDefinition Width="Auto" />
+                                                      </Grid.ColumnDefinitions>
+                                                      <TextBlock x:Uid="Settings_Extensions_Documents" Text="Documents" Foreground="#888888" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                                          <Button Content="ALL" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Documents_All" Style="{StaticResource DefaultButtonStyle}" />
+                                                          <Button Content="NONE" FontSize="9" Padding="6,0" Height="20" Click="BtnGroupFilter_Click" Tag="Documents_None" Style="{StaticResource DefaultButtonStyle}" />
+                                                      </StackPanel>
+                                                  </Grid>
+                                                  <ItemsControl x:Name="ItemsExtensionsDocuments">
+                                                      <ItemsControl.ItemsPanel>
+                                                          <ItemsPanelTemplate>
+                                                              <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="80" MaximumRowsOrColumns="4" />
+                                                          </ItemsPanelTemplate>
+                                                      </ItemsControl.ItemsPanel>
+                                                      <ItemsControl.ItemTemplate>
+                                                          <DataTemplate>
+                                                              <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}" Foreground="White" MinHeight="32" FontSize="12" />
+                                                          </DataTemplate>
+                                                      </ItemsControl.ItemTemplate>
+                                                  </ItemsControl>
+                                              </StackPanel>
+
+                                              <!-- Archives Group -->
                                             <StackPanel Spacing="8">
                                                 <Grid Margin="0,0,0,2">
                                                     <Grid.ColumnDefinitions>

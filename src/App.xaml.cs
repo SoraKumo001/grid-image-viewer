@@ -122,6 +122,15 @@ namespace quick_image_viewer
                             fileLoaded = true;
                         }
                     }
+                    else if (PdfManager.IsVirtualPath(lastImagePath))
+                    {
+                        var (actualPath, _) = PdfManager.SplitVirtualPath(lastImagePath);
+                        if (System.IO.File.Exists(actualPath))
+                        {
+                            _window.LoadDirectory(actualPath, lastImagePath);
+                            fileLoaded = true;
+                        }
+                    }
                     else if (System.IO.File.Exists(lastImagePath))
                     {
                         _window.LoadDirectory(System.IO.Path.GetDirectoryName(lastImagePath) ?? "", lastImagePath);
@@ -149,7 +158,7 @@ namespace quick_image_viewer
         {
             if (_window == null) return;
 
-            if (ArchiveManager.IsArchive(filePath))
+            if (ArchiveManager.IsArchive(filePath) || PdfManager.IsPdfPath(filePath))
             {
                 _window.LoadDirectory(filePath);
             }

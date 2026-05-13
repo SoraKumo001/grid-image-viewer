@@ -484,8 +484,13 @@ namespace quick_image_viewer.Helpers
                         string ext = Path.GetExtension(file.Path).ToLowerInvariant();
                         bool isSupported = FolderDiscoveryService.IsSupportedExtension(ext, _settings.EnabledExtensions);
                         bool isArchive = ArchiveManager.IsArchive(file.Path);
+                        bool isPdf = PdfManager.IsPdfPath(file.Path);
 
-                        if (isSupported)
+                        if (isPdf)
+                        {
+                            WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(file.Path));
+                        }
+                        else if (isSupported)
                         {
                             string dir = Path.GetDirectoryName(file.Path) ?? string.Empty;
                             WeakReferenceMessenger.Default.Send(new LoadDirectoryMessage(dir, file.Path));

@@ -204,6 +204,7 @@ namespace quick_image_viewer.Managers
                         foreach (var ext in quick_image_viewer.Managers.ArchiveManager.ArchiveExtensions)
                         {
                             if (!_data.EnabledExtensions.Contains(ext)) _data.EnabledExtensions.Add(ext);
+                            if (!_data.EnabledExtensions.Contains(".pdf")) _data.EnabledExtensions.Add(".pdf");
                         }
                     }
                 }
@@ -213,6 +214,7 @@ namespace quick_image_viewer.Managers
                     foreach (var ext in quick_image_viewer.Managers.ArchiveManager.ArchiveExtensions)
                     {
                         if (!_data.EnabledExtensions.Contains(ext)) _data.EnabledExtensions.Add(ext);
+                        if (!_data.EnabledExtensions.Contains(".pdf")) _data.EnabledExtensions.Add(".pdf");
                     }
                 }
             }

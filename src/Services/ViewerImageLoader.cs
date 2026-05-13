@@ -28,6 +28,7 @@ namespace quick_image_viewer.Services
             {
                 new EditSessionLoaderStrategy(_window),
                 new VideoLoaderStrategy(_window),
+                new PdfLoaderStrategy(_window),
                 new SkiaImageLoaderStrategy(_window),
                 new NormalImageLoaderStrategy(_window)
             };

@@ -692,4 +692,7 @@
   <data name="TopPanel_ZoomReset.ToolTipService.ToolTip" xml:space="preserve">
     <value>Reset Pan &amp; Zoom (Ctrl+0)</value>
   </data>
+  <data name="Settings_Extensions_Documents.Text" xml:space="preserve">
+    <value>Documents</value>
+  </data>
 </root>
