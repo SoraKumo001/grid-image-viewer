@@ -22,11 +22,13 @@ MassiGra に近い操作感を目指して開発されています。
 
 ## 📁 対応フォーマット
 
-- **画像**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.avif`, `.heic`, `.heif`, `.jxl`, `.tif`, `.tiff`, `.svg`, `.ico`, `.tga`, `.pcx`
-- **RAW 画像**: `.dng`, `.nef`, `.cr2`, `.arw`
-- **動画**: `.mp4`, `.mkv`, `.mov`, `.avi`, `.wmv`, `.flv`, `.webm`, `.avis`
-- **圧縮ファイル**: `.zip`, `.cbz`, `.rar`, `.cbr`, `.7z`
-- **その他**: `.pdf`, `.psd`
+| カテゴリ | 対応フォーマット |
+| --- | --- |
+| **画像** | `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.avif`, `.heic`, `.heif`, `.jxl`, `.tif`, `.tiff`, `.svg`, `.ico`, `.tga`, `.pcx` |
+| **RAW 画像** | `.dng`, `.nef`, `.cr2`, `.arw` |
+| **動画** | `.mp4`, `.mkv`, `.mov`, `.avi`, `.wmv`, `.flv`, `.webm`, `.avis` |
+| **圧縮ファイル** | `.zip`, `.cbz`, `.rar`, `.cbr`, `.7z` |
+| **その他** | `.pdf`, `.psd` |
 
 ## ⌨️ 主要なショートカット
 

@@ -22,11 +22,13 @@ Developed with the goal of providing an experience similar to MassiGra.
 
 ## 📁 Supported Formats
 
-- **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.avif`, `.heic`, `.heif`, `.jxl`, `.tif`, `.tiff`, `.svg`, `.ico`, `.tga`, `.pcx`
-- **RAW Images**: `.dng`, `.nef`, `.cr2`, `.arw`
-- **Videos**: `.mp4`, `.mkv`, `.mov`, `.avi`, `.wmv`, `.flv`, `.webm`, `.avis`
-- **Archives**: `.zip`, `.cbz`, `.rar`, `.cbr`, `.7z`
-- **Others**: `.pdf`, `.psd`
+| Category | Supported Formats |
+| --- | --- |
+| **Images** | `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.avif`, `.heic`, `.heif`, `.jxl`, `.tif`, `.tiff`, `.svg`, `.ico`, `.tga`, `.pcx` |
+| **RAW Images** | `.dng`, `.nef`, `.cr2`, `.arw` |
+| **Videos** | `.mp4`, `.mkv`, `.mov`, `.avi`, `.wmv`, `.flv`, `.webm`, `.avis` |
+| **Archives** | `.zip`, `.cbz`, `.rar`, `.cbr`, `.7z` |
+| **Others** | `.pdf`, `.psd` |
 
 ## ⌨️ Essential Shortcuts
 
