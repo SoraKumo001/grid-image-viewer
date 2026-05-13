@@ -404,6 +404,16 @@ namespace quick_image_viewer.Managers
                 if (_settings.MangaSplitCount == 4) WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
             }
         }
+        public void MenuDirection_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem item)
+            {
+                _settings.IsRightToLeft = item.IsChecked;
+                _settings.SaveMangaMode();
+                if (_settings.MangaSplitCount > 1) WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+                UpdateMenuStates();
+            }
+        }
 
         public void MenuStretchMode_Click(object sender, RoutedEventArgs e)
         {

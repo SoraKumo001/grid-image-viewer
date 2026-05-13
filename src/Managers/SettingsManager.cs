@@ -43,6 +43,7 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyNextFolder { get; set; } = new KeyBindingData(VirtualKey.Down);
         public KeyBindingData KeyPrevFolder { get; set; } = new KeyBindingData(VirtualKey.Up);
         public KeyBindingData KeyToggleManga { get; set; } = new KeyBindingData(VirtualKey.G, ctrl: true);
+        public KeyBindingData KeyToggleReadingDirection { get; set; } = new KeyBindingData(VirtualKey.R, ctrl: true);
         public KeyBindingData KeyExit { get; set; } = new KeyBindingData(VirtualKey.Escape);
         public KeyBindingData KeyToggleGrid { get; set; } = new KeyBindingData(VirtualKey.Enter);
         public KeyBindingData KeySlideshow { get; set; } = new KeyBindingData(VirtualKey.A);
@@ -73,7 +74,8 @@ namespace quick_image_viewer.Managers
         public VirtualKey? LegacyKeyToggleGrid { get; set; }
         public VirtualKey? LegacyKeySlideshow { get; set; }
 
-        public int MangaSplitCount { get; set; } = 1; // 1, 2, or 4
+        public int MangaSplitCount { get; set; } = 1;
+        public bool IsRightToLeft { get; set; } = true; // 1, 2, or 4
         public int QuadLayoutMode { get; set; } = 0; // 0: Auto, 1: Horizontal, 2: 2x2 Grid
         public int SlideshowMangaSplitCount { get; set; } = 0; // 0: Keep current, 1: 1 page, 2: 2 pages, 3: 4 pages
         public bool SlideshowFullscreen { get; set; } = false;
@@ -118,6 +120,7 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyNextFolder { get => _data.KeyNextFolder; set => _data.KeyNextFolder = value; }
         public KeyBindingData KeyPrevFolder { get => _data.KeyPrevFolder; set => _data.KeyPrevFolder = value; }
         public KeyBindingData KeyToggleManga { get => _data.KeyToggleManga; set => _data.KeyToggleManga = value; }
+        public KeyBindingData KeyToggleReadingDirection { get => _data.KeyToggleReadingDirection; set => _data.KeyToggleReadingDirection = value; }
         public KeyBindingData KeyExit { get => _data.KeyExit; set => _data.KeyExit = value; }
         public KeyBindingData KeyToggleGrid { get => _data.KeyToggleGrid; set => _data.KeyToggleGrid = value; }
         public KeyBindingData KeySlideshow { get => _data.KeySlideshow; set => _data.KeySlideshow = value; }
@@ -139,6 +142,7 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyZoom100 { get => _data.KeyZoom100; set => _data.KeyZoom100 = value; }
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
+        public bool IsRightToLeft { get => _data.IsRightToLeft; set => _data.IsRightToLeft = value; }
         public int QuadLayoutMode { get => _data.QuadLayoutMode; set => _data.QuadLayoutMode = value; }
         public int SlideshowMangaSplitCount { get => _data.SlideshowMangaSplitCount; set => _data.SlideshowMangaSplitCount = value; }
 
@@ -379,3 +383,4 @@ namespace quick_image_viewer.Managers
         }
     }
 }
+

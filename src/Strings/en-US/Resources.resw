@@ -695,4 +695,15 @@
   <data name="Settings_Extensions_Documents.Text" xml:space="preserve">
     <value>Documents</value>
   </data>
+  <data name="MenuReadingDirection.Text" xml:space="preserve">
+    <value>Reading Direction</value>
+  </data>
+  <data name="MenuDirectionRTL.Text" xml:space="preserve">
+    <value>Right to Left (Manga)</value>
+  </data>
+  <data name="KeyBinding_ToggleReadingDirection" xml:space="preserve">
+    <value>Toggle Reading Direction</value>
+  </data>
 </root>
+
+

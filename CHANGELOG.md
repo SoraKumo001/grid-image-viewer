@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.10 - 2026-05-13
+
+- **Reading Direction & Layout Improvements**:
+  - [Feature] Added a "Reading Direction" toggle for multi-page layouts (Manga/Quad mode), allowing users to switch between "Right to Left" (Manga) and "Left to Right" (Western) display orders.
+  - [Feature] Added a customizable keyboard shortcut (Ctrl+R by default) to quickly toggle the reading direction.
+  - [UI/UX] Arrow key navigation now dynamically adapts to the selected reading direction (e.g., in Left to Right mode, the Right Arrow goes to the next page).
+  - [Fix] Fixed an issue where switching split modes could result in visual gaps or incorrect image alignment due to incomplete layout resets and timing conflicts.
+
 ## v1.5.9 - 2026-05-13
 
 - **PDF Support (Virtual Folder Mode)**:
@@ -239,3 +247,5 @@ All notable changes to this project will be documented in this file.
 
 - **Initial Release**: Basic image viewing features with Grid and Manga Mode support.
 - **Format Support**: Support for AVIF, WebP, JPEG XL and more.
+
+

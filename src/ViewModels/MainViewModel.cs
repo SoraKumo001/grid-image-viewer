@@ -274,6 +274,7 @@ namespace quick_image_viewer.ViewModels
                     Viewer.IsStretchOriginal = (stretchMode == 0);
                     Viewer.IsStretchContain = (stretchMode == 2);
                     Viewer.IsStretchCover = (stretchMode == 3);
+                    Viewer.IsRightToLeft = _settings.IsRightToLeft;
 
                     ShowPageIndicator = _settings.ShowPageIndicator;
                     UpdateBookmarkMenuText();
@@ -405,6 +406,7 @@ namespace quick_image_viewer.ViewModels
     public record OpenSlideshowMessage();
     public record ToggleGridMessage();
     public record ToggleMangaMessage();
+    public record ToggleReadingDirectionMessage();
     public record ToggleStretchMessage();
     public record ToggleBookmarkMessage();
     public record ToggleBookmarkPanelMessage()
@@ -429,3 +431,4 @@ namespace quick_image_viewer.ViewModels
     public record FocusRequestMessage();
     public record LoadDirectoryMessage(string Path, string InitialFile = "", bool IncludeSiblings = false, bool IncludeSubfolders = false, System.Collections.Generic.List<string>? PreloadedPlaylist = null);
 }
+

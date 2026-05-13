@@ -5,6 +5,7 @@ namespace quick_image_viewer.Interfaces
     public interface ISettingsManager
     {
         int MangaSplitCount { get; set; }
+        bool IsRightToLeft { get; set; }
         int QuadLayoutMode { get; set; }
         int SlideshowMangaSplitCount { get; set; }
         bool SlideshowFullscreen { get; set; }
@@ -36,6 +37,7 @@ namespace quick_image_viewer.Interfaces
         KeyBindingData KeyNextFolder { get; set; }
         KeyBindingData KeyPrevFolder { get; set; }
         KeyBindingData KeyToggleManga { get; set; }
+        KeyBindingData KeyToggleReadingDirection { get; set; }
         KeyBindingData KeyExit { get; set; }
         KeyBindingData KeyToggleGrid { get; set; }
         KeyBindingData KeySlideshow { get; set; }
@@ -69,3 +71,4 @@ namespace quick_image_viewer.Interfaces
         string GetString(string key);
     }
 }
+

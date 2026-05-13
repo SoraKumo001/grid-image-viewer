@@ -323,6 +323,13 @@ namespace quick_image_viewer.Helpers
                 return;
             }
 
+            if (IsMatch(_settings.KeyToggleReadingDirection, e.Key, isCtrl, isShift, isAlt))
+            {
+                WeakReferenceMessenger.Default.Send<ToggleReadingDirectionMessage>();
+                e.Handled = true;
+                return;
+            }
+
             if (IsMatch(_settings.KeyToggleManga, e.Key, isCtrl, isShift, isAlt))
             {
                 _window.ViewModel.Viewer.ToggleMangaModeCommand.Execute(null);
@@ -395,13 +402,15 @@ namespace quick_image_viewer.Helpers
 
             if (e.Key == Windows.System.VirtualKey.Left)
             {
-                WeakReferenceMessenger.Default.Send(new NavigationMessage(_settings.MangaSplitCount > 1 ? 1 : -1, isShift));
+                int direction = (_settings.MangaSplitCount > 1 && _settings.IsRightToLeft) ? 1 : -1;
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(direction, isShift));
                 e.Handled = true;
                 return;
             }
             if (e.Key == Windows.System.VirtualKey.Right)
             {
-                WeakReferenceMessenger.Default.Send(new NavigationMessage(_settings.MangaSplitCount > 1 ? -1 : 1, isShift));
+                int direction = (_settings.MangaSplitCount > 1 && _settings.IsRightToLeft) ? -1 : 1;
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(direction, isShift));
                 e.Handled = true;
                 return;
             }
@@ -515,3 +524,4 @@ namespace quick_image_viewer.Helpers
 
     }
 }
+

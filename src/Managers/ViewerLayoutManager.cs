@@ -48,20 +48,19 @@ namespace quick_image_viewer.Managers
                 cols[2].Width = new GridLength(0); cols[3].Width = new GridLength(0);
                 rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
 
-                Grid.SetColumn(pageGrids[0], 1); Grid.SetRow(pageGrids[0], 0);
+                bool rtl = _settings.IsRightToLeft;
+                Grid.SetColumn(pageGrids[0], rtl ? 1 : 0); Grid.SetRow(pageGrids[0], 0);
                 Grid.SetColumnSpan(pageGrids[0], 1); Grid.SetRowSpan(pageGrids[0], 2);
-                Grid.SetColumn(pageGrids[1], 0); Grid.SetRow(pageGrids[1], 0);
+                Grid.SetColumn(pageGrids[1], rtl ? 0 : 1); Grid.SetRow(pageGrids[1], 0);
                 Grid.SetColumnSpan(pageGrids[1], 1); Grid.SetRowSpan(pageGrids[1], 2);
-
                 pageGrids[0].Visibility = Visibility.Visible;
                 pageGrids[1].Visibility = Visibility.Visible;
                 pageGrids[2].Visibility = Visibility.Collapsed;
                 pageGrids[3].Visibility = Visibility.Collapsed;
-
                 if (!uniformToFill)
                 {
-                    pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
-                    pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
+                    pageGrids[0].SetContentAlignment(rtl ? HorizontalAlignment.Left : HorizontalAlignment.Right, VerticalAlignment.Center);
+                    pageGrids[1].SetContentAlignment(rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left, VerticalAlignment.Center);
                 }
             }
             else if (effectiveSplitCount == 3)
@@ -101,15 +100,14 @@ namespace quick_image_viewer.Managers
                     cols[3].Width = new GridLength(0);
                     rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
 
-                    Grid.SetColumn(pageGrids[0], 2); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
+                    bool rtl = _settings.IsRightToLeft;
+                    Grid.SetColumn(pageGrids[0], rtl ? 2 : 0); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
                     Grid.SetColumn(pageGrids[1], 1); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 0); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
-
+                    Grid.SetColumn(pageGrids[2], rtl ? 0 : 2); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
                     if (!uniformToFill)
                     {
-                        // 3分割横並び: 0(右端)と1(中央)をくっつける
-                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
-                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[0].SetContentAlignment(rtl ? HorizontalAlignment.Left : HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[1].SetContentAlignment(rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left, VerticalAlignment.Center);
                         pageGrids[2].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
                     }
                 }
@@ -129,18 +127,17 @@ namespace quick_image_viewer.Managers
                     cols[3].Width = new GridLength(1, GridUnitType.Star);
                     rows[0].Height = new GridLength(1, GridUnitType.Star); rows[1].Height = new GridLength(0);
 
-                    Grid.SetColumn(pageGrids[0], 3); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
-                    Grid.SetColumn(pageGrids[1], 2); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 1); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
-                    Grid.SetColumn(pageGrids[3], 0); Grid.SetRow(pageGrids[3], 0); Grid.SetRowSpan(pageGrids[3], 2); Grid.SetColumnSpan(pageGrids[3], 1);
-
+                    bool rtl = _settings.IsRightToLeft;
+                    Grid.SetColumn(pageGrids[0], rtl ? 3 : 0); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 2); Grid.SetColumnSpan(pageGrids[0], 1);
+                    Grid.SetColumn(pageGrids[1], rtl ? 2 : 1); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 2); Grid.SetColumnSpan(pageGrids[1], 1);
+                    Grid.SetColumn(pageGrids[2], rtl ? 1 : 2); Grid.SetRow(pageGrids[2], 0); Grid.SetRowSpan(pageGrids[2], 2); Grid.SetColumnSpan(pageGrids[2], 1);
+                    Grid.SetColumn(pageGrids[3], rtl ? 0 : 3); Grid.SetRow(pageGrids[3], 0); Grid.SetRowSpan(pageGrids[3], 2); Grid.SetColumnSpan(pageGrids[3], 1);
                     if (!uniformToFill)
                     {
-                        // 4分割横並び: [3|2] [1|0] のように2ペア作る
-                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
-                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
-                        pageGrids[2].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Center);
-                        pageGrids[3].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[0].SetContentAlignment(rtl ? HorizontalAlignment.Left : HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[1].SetContentAlignment(rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left, VerticalAlignment.Center);
+                        pageGrids[2].SetContentAlignment(rtl ? HorizontalAlignment.Left : HorizontalAlignment.Right, VerticalAlignment.Center);
+                        pageGrids[3].SetContentAlignment(rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left, VerticalAlignment.Center);
                     }
                 }
                 else
@@ -151,17 +148,17 @@ namespace quick_image_viewer.Managers
                     rows[0].Height = new GridLength(1, GridUnitType.Star);
                     rows[1].Height = new GridLength(1, GridUnitType.Star);
 
-                    Grid.SetColumn(pageGrids[0], 1); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 1); Grid.SetColumnSpan(pageGrids[0], 1);
-                    Grid.SetColumn(pageGrids[1], 0); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 1); Grid.SetColumnSpan(pageGrids[1], 1);
-                    Grid.SetColumn(pageGrids[2], 1); Grid.SetRow(pageGrids[2], 1); Grid.SetRowSpan(pageGrids[2], 1); Grid.SetColumnSpan(pageGrids[2], 1);
-                    Grid.SetColumn(pageGrids[3], 0); Grid.SetRow(pageGrids[3], 1); Grid.SetRowSpan(pageGrids[3], 1); Grid.SetColumnSpan(pageGrids[3], 1);
-
+                    bool rtl = _settings.IsRightToLeft;
+                    Grid.SetColumn(pageGrids[0], rtl ? 1 : 0); Grid.SetRow(pageGrids[0], 0); Grid.SetRowSpan(pageGrids[0], 1); Grid.SetColumnSpan(pageGrids[0], 1);
+                    Grid.SetColumn(pageGrids[1], rtl ? 0 : 1); Grid.SetRow(pageGrids[1], 0); Grid.SetRowSpan(pageGrids[1], 1); Grid.SetColumnSpan(pageGrids[1], 1);
+                    Grid.SetColumn(pageGrids[2], rtl ? 1 : 0); Grid.SetRow(pageGrids[2], 1); Grid.SetRowSpan(pageGrids[2], 1); Grid.SetColumnSpan(pageGrids[2], 1);
+                    Grid.SetColumn(pageGrids[3], rtl ? 0 : 1); Grid.SetRow(pageGrids[3], 1); Grid.SetRowSpan(pageGrids[3], 1); Grid.SetColumnSpan(pageGrids[3], 1);
                     if (!uniformToFill)
                     {
-                        pageGrids[0].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Bottom);
-                        pageGrids[1].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Bottom);
-                        pageGrids[2].SetContentAlignment(HorizontalAlignment.Left, VerticalAlignment.Top);
-                        pageGrids[3].SetContentAlignment(HorizontalAlignment.Right, VerticalAlignment.Top);
+                        pageGrids[0].SetContentAlignment(rtl ? HorizontalAlignment.Left : HorizontalAlignment.Right, VerticalAlignment.Bottom);
+                        pageGrids[1].SetContentAlignment(rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left, VerticalAlignment.Bottom);
+                        pageGrids[2].SetContentAlignment(rtl ? HorizontalAlignment.Left : HorizontalAlignment.Right, VerticalAlignment.Top);
+                        pageGrids[3].SetContentAlignment(rtl ? HorizontalAlignment.Right : HorizontalAlignment.Left, VerticalAlignment.Top);
                     }
                 }
             }
@@ -217,4 +214,5 @@ namespace quick_image_viewer.Managers
         }
     }
 }
+
 

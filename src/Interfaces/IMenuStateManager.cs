@@ -29,6 +29,7 @@ namespace quick_image_viewer.Interfaces
         void MenuOpenExplorer_Click(object sender, RoutedEventArgs e);
         void MenuViewMode_Click(object sender, RoutedEventArgs e);
         void MenuLayoutMode_Click(object sender, RoutedEventArgs e);
+        void MenuDirection_Click(object sender, RoutedEventArgs e);
         void MenuStretchMode_Click(object sender, RoutedEventArgs e);
         void MenuKeyBindings_Click(object sender, RoutedEventArgs e);
         string GetString(string key);

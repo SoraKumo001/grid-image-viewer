@@ -32,6 +32,7 @@ namespace quick_image_viewer.ViewModels
         [ObservableProperty] public partial bool IsStretchCover { get; set; }
 
         [ObservableProperty] public partial bool IsMetadataVisible { get; set; }
+        [ObservableProperty] public partial bool IsRightToLeft { get; set; }
 
         public ViewerViewModel()
         {
@@ -49,3 +50,4 @@ namespace quick_image_viewer.ViewModels
         }
     }
 }
+

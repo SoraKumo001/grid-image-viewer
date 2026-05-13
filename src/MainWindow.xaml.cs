@@ -20,6 +20,7 @@ namespace quick_image_viewer
         IRecipient<SlideshowNextRequestedMessage>,
         IRecipient<ToggleGridMessage>,
         IRecipient<ToggleMangaMessage>,
+        IRecipient<ToggleReadingDirectionMessage>,
         IRecipient<ToggleStretchMessage>,
         IRecipient<CopyPathMessage>,
         IRecipient<DeleteFileMessage>,
@@ -288,6 +289,7 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<SlideshowNextRequestedMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleGridMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleMangaMessage>(this);
+            WeakReferenceMessenger.Default.Register<ToggleReadingDirectionMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleStretchMessage>(this);
             WeakReferenceMessenger.Default.Register<CopyPathMessage>(this);
             WeakReferenceMessenger.Default.Register<DeleteFileMessage>(this);
@@ -359,6 +361,27 @@ namespace quick_image_viewer
             ((IMainView)this).UpdateContextFlyout();
             ShowNotification(_settings.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
             _ = UpdateDisplayAsync();
+        }
+
+        public void Receive(ToggleReadingDirectionMessage message)
+        {
+            _settings.IsRightToLeft = !_settings.IsRightToLeft;
+            _settings.SaveMangaMode();
+            ViewModel.Viewer.IsRightToLeft = _settings.IsRightToLeft;
+            if (_settings.MangaSplitCount > 1) WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
+            MenuStateManager.UpdateMenuStates();
+
+            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
+            string direction = _settings.IsRightToLeft ? "RTL" : "LTR";
+            try
+            {
+                string locName = loader.GetString("MenuReadingDirection/Text");
+                ShowNotification($"{locName}: {direction}");
+            }
+            catch
+            {
+                ShowNotification($"Reading Direction: {direction}");
+            }
         }
 
         public void Receive(ToggleMangaMessage message)
@@ -641,6 +664,7 @@ namespace quick_image_viewer
         private void MenuPageIndicatorToggle_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuPageIndicatorToggle_Click(sender, e);
         private void MenuViewMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuViewMode_Click(sender, e);
         private void MenuLayoutMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuLayoutMode_Click(sender, e);
+        private void MenuDirection_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuDirection_Click(sender, e);
         private void MenuStretchMode_Click(object sender, RoutedEventArgs e) => MenuStateManager.MenuStretchMode_Click(sender, e);
         private void MenuSort_Click(object sender, RoutedEventArgs e)
         {
@@ -689,4 +713,5 @@ namespace quick_image_viewer
         private void BookmarkPanel_PanelHoverEnded(object? sender, EventArgs e) => _leftHoverTimer.Start();
     }
 }
+
 

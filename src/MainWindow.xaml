@@ -178,6 +178,9 @@
                         <ToggleMenuFlyoutItem x:Name="MenuLayoutHorz" x:FieldModifier="internal" x:Uid="MenuLayoutHorz" Text="Horizontal (1x4)" Click="MenuLayoutMode_Click" Tag="1" IsChecked="{x:Bind ViewModel.Viewer.IsLayoutHorz, Mode=OneWay}" />
                         <ToggleMenuFlyoutItem x:Name="MenuLayoutGrid" x:FieldModifier="internal" x:Uid="MenuLayoutGrid" Text="Grid (2x2)" Click="MenuLayoutMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.Viewer.IsLayoutGrid, Mode=OneWay}" />
                     </MenuFlyoutSubItem>
+                    <MenuFlyoutSubItem x:Name="MenuReadingDirection" x:Uid="MenuReadingDirection" Text="Reading Direction">
+                        <ToggleMenuFlyoutItem x:Name="MenuDirectionRTL" x:FieldModifier="internal" x:Uid="MenuDirectionRTL" Text="Right to Left (Manga)" Click="MenuDirection_Click" IsChecked="{x:Bind ViewModel.Viewer.IsRightToLeft, Mode=TwoWay}" />
+                    </MenuFlyoutSubItem>
                     <MenuFlyoutSubItem x:Name="MenuStretchMode" x:Uid="MenuStretchMode" Text="Stretch Mode">
                         <ToggleMenuFlyoutItem x:Name="MenuStretchContain" x:FieldModifier="internal" x:Uid="MenuStretchContain" Text="Contain (Uniform)" Click="MenuStretchMode_Click" Tag="2" IsChecked="{x:Bind ViewModel.Viewer.IsStretchContain, Mode=OneWay}" />
                         <ToggleMenuFlyoutItem x:Name="MenuStretchCover" x:FieldModifier="internal" x:Uid="MenuStretchCover" Text="Cover (UniformToFill)" Click="MenuStretchMode_Click" Tag="3" IsChecked="{x:Bind ViewModel.Viewer.IsStretchCover, Mode=OneWay}" />
@@ -370,3 +373,4 @@
         </ContentDialog>
     </Grid>
 </Window>
+

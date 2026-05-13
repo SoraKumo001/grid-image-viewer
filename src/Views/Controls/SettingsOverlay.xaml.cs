@@ -33,6 +33,7 @@ namespace quick_image_viewer.Views.Controls
         private KeyBindingData _tempNextFolder = null!;
         private KeyBindingData _tempPrevFolder = null!;
         private KeyBindingData _tempToggleManga = null!;
+        private KeyBindingData _tempToggleReadingDirection = null!;
         private KeyBindingData _tempExit = null!;
         private KeyBindingData _tempToggleGrid = null!;
         private KeyBindingData _tempSlideshow = null!;
@@ -88,6 +89,7 @@ namespace quick_image_viewer.Views.Controls
             _tempNextFolder = _settings.KeyNextFolder.Clone();
             _tempPrevFolder = _settings.KeyPrevFolder.Clone();
             _tempToggleManga = _settings.KeyToggleManga.Clone();
+            _tempToggleReadingDirection = _settings.KeyToggleReadingDirection.Clone();
             _tempExit = _settings.KeyExit.Clone();
             _tempToggleGrid = _settings.KeyToggleGrid.Clone();
             _tempSlideshow = _settings.KeySlideshow.Clone();
@@ -245,6 +247,7 @@ namespace quick_image_viewer.Views.Controls
             // View Modes
             BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_View")));
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleManga"), _tempToggleManga));
+            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleReadingDirection"), _tempToggleReadingDirection));
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleGrid"), _tempToggleGrid));
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleSlideshow"), _tempSlideshow));
             BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_Metadata"), _tempMetadata));
@@ -369,6 +372,7 @@ namespace quick_image_viewer.Views.Controls
             CopyKeyBinding(defaults.KeyNextFolder, _tempNextFolder);
             CopyKeyBinding(defaults.KeyPrevFolder, _tempPrevFolder);
             CopyKeyBinding(defaults.KeyToggleManga, _tempToggleManga);
+            CopyKeyBinding(defaults.KeyToggleReadingDirection, _tempToggleReadingDirection);
             CopyKeyBinding(defaults.KeyExit, _tempExit);
             CopyKeyBinding(defaults.KeyToggleGrid, _tempToggleGrid);
             CopyKeyBinding(defaults.KeySlideshow, _tempSlideshow);
@@ -464,6 +468,7 @@ namespace quick_image_viewer.Views.Controls
             _settings.KeyNextFolder = _tempNextFolder;
             _settings.KeyPrevFolder = _tempPrevFolder;
             _settings.KeyToggleManga = _tempToggleManga;
+            _settings.KeyToggleReadingDirection = _tempToggleReadingDirection;
             _settings.KeyExit = _tempExit;
             _settings.KeyToggleGrid = _tempToggleGrid;
             _settings.KeySlideshow = _tempSlideshow;

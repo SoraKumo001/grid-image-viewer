@@ -43,6 +43,7 @@ namespace quick_image_viewer.Managers
         private int _lastMangaSplitCount = -1;
         private int _lastEffectiveSplitCount = 1;
         private int _lastCachedQuadLayout = -1;
+        private bool _lastIsRightToLeft = true;
         private Microsoft.UI.Xaml.DispatcherTimer? _resizeTimer;
         private double _lastResizeWidth;
         private double _lastResizeHeight;
@@ -357,7 +358,7 @@ namespace quick_image_viewer.Managers
             _window.ViewModel.OverrideDisplayIndex = maxIndexInView + 1;
 
             bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
-            bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || cachedQuadLayout != _lastCachedQuadLayout;
+            bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || cachedQuadLayout != _lastCachedQuadLayout || _settings.IsRightToLeft != _lastIsRightToLeft;
 
             return new LayoutInfo(splitCount, effectiveSplitCount, gridStartIndex, cachedQuadLayout, isSlideshowRunning, nextPaths, stateChanged, splitChanged, currentPaths);
         }
@@ -571,6 +572,7 @@ namespace quick_image_viewer.Managers
             _lastMangaSplitCount = info.SplitCount;
             _lastEffectiveSplitCount = info.EffectiveSplitCount;
             _lastCachedQuadLayout = info.CachedQuadLayout;
+            _lastIsRightToLeft = _settings.IsRightToLeft;
 
             _window.AnimationService.StartAnimation();
             _window.UpdatePageIndicator();
