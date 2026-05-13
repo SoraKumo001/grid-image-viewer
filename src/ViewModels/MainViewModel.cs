@@ -423,6 +423,7 @@ namespace quick_image_viewer.ViewModels
     public record EditFilterArgs(string Path, string Filter);
     public record BookmarksChangedMessage();
     public record UpdateMenuStatesMessage(string Path, bool CanUndo, bool CanRedo, bool HasValidPath, bool IsImageEditable, bool IsContentEditable);
+    public record EditActionCompletedMessage(string Path, SkiaSharp.SKBitmap? Bitmap);
     public record ClearImageSourceMessage(string Path);
     public record RefreshDisplayMessage();
     public record FocusRequestMessage();

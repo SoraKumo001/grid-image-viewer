@@ -17,7 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace quick_image_viewer.Managers
 {
-    public partial class ViewerManager : IViewerManager, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>
+    public partial class ViewerManager : IViewerManager, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>, IRecipient<EditActionCompletedMessage>
     {
         private readonly IMainView _window;
         private readonly ISettingsManager _settings;
@@ -60,6 +60,7 @@ namespace quick_image_viewer.Managers
             // They will be initialized on first use in UpdateDisplayAsync or other methods
 
             WeakReferenceMessenger.Default.Register<ZoomMessage>(this);
+            WeakReferenceMessenger.Default.Register<EditActionCompletedMessage>(this);
             WeakReferenceMessenger.Default.Register<ToggleMetadataMessage>(this);
         }
 
@@ -809,6 +810,28 @@ namespace quick_image_viewer.Managers
             foreach (var p in _pagesBuffer[0]) p.Reset();
             foreach (var p in _pagesBuffer[1]) p.Reset();
             GC.SuppressFinalize(this);
+        }
+
+        public void Receive(EditActionCompletedMessage message)
+        {
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                StopAnimation();
+                bool updated = false;
+                for (int i = 0; i < Pages.Length; i++)
+                {
+                    if (Pages[i].CurrentFilePath == message.Path)
+                    {
+                        Pages[i].EditedBitmap = message.Bitmap;
+                        var ctrl = PageControls[i];
+                        ctrl.PageImage.Visibility = Visibility.Collapsed;
+                        ctrl.PageCanvas.Visibility = Visibility.Visible;
+                        ctrl.PageCanvas.Invalidate();
+                        updated = true;
+                    }
+                }
+                if (updated) _ = UpdateDisplayAsync();
+            });
         }
     }
 }

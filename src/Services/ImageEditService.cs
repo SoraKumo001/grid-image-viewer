@@ -1,5 +1,7 @@
+using CommunityToolkit.Mvvm.Messaging;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
+using quick_image_viewer.ViewModels;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -70,22 +72,7 @@ namespace quick_image_viewer.Services
             {
                 if (session.Undo())
                 {
-                    _window.ViewerManager?.StopAnimation();
-                    if (_window.ViewerManager != null)
-                    {
-                        for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
-                        {
-                            if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
-                            {
-                                _window.ViewerManager.Pages[i].EditedBitmap = session.Current;
-                                var ctrl = _window.ViewerManager.PageControls[i];
-                                ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-                                ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-                                ctrl.PageCanvas.Invalidate();
-                            }
-                        }
-                    }
-                    _ = _window.UpdateDisplayAsync();
+                    WeakReferenceMessenger.Default.Send(new EditActionCompletedMessage(path, session.Current));
                 }
             }
         }
@@ -96,22 +83,7 @@ namespace quick_image_viewer.Services
             {
                 if (session.Redo())
                 {
-                    _window.ViewerManager?.StopAnimation();
-                    if (_window.ViewerManager != null)
-                    {
-                        for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
-                        {
-                            if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
-                            {
-                                _window.ViewerManager.Pages[i].EditedBitmap = session.Current;
-                                var ctrl = _window.ViewerManager.PageControls[i];
-                                ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-                                ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-                                ctrl.PageCanvas.Invalidate();
-                            }
-                        }
-                    }
-                    _ = _window.UpdateDisplayAsync();
+                    WeakReferenceMessenger.Default.Send(new EditActionCompletedMessage(path, session.Current));
                 }
             }
         }
@@ -237,23 +209,7 @@ namespace quick_image_viewer.Services
                         }
 
                         AddPendingEdit(path, newBmp);
-
-                        // Force refresh of the relevant page
-                        if (_window.ViewerManager != null)
-                        {
-                            for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
-                            {
-                                if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
-                                {
-                                    _window.ViewerManager.Pages[i].EditedBitmap = newBmp;
-                                    var ctrl = _window.ViewerManager.PageControls[i];
-                                    ctrl.PageImage.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-                                    ctrl.PageCanvas.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
-                                    ctrl.PageCanvas.Invalidate();
-                                }
-                            }
-                        }
-                        _ = _window.UpdateDisplayAsync();
+                        WeakReferenceMessenger.Default.Send(new EditActionCompletedMessage(path, newBmp));
                     });
                 }
             });
