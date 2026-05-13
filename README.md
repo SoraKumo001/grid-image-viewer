@@ -20,6 +20,14 @@ Developed with the goal of providing an experience similar to MassiGra.
 - **Grid View**: Instant thumbnail overview of all images in a folder with an optimized layout.
 - **Basic Editing**: Brightness adjustment, rotation, filters, cropping, resizing, etc.
 
+## 📁 Supported Formats
+
+- **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.avif`, `.heic`, `.heif`, `.jxl`, `.tif`, `.tiff`, `.svg`, `.ico`, `.tga`, `.pcx`
+- **RAW Images**: `.dng`, `.nef`, `.cr2`, `.arw`
+- **Videos**: `.mp4`, `.mkv`, `.mov`, `.avi`, `.wmv`, `.flv`, `.webm`, `.avis`
+- **Archives**: `.zip`, `.cbz`, `.rar`, `.cbr`, `.7z`
+- **Others**: `.pdf`, `.psd`
+
 ## ⌨️ Essential Shortcuts
 
 | Action                     | Key                                               |
