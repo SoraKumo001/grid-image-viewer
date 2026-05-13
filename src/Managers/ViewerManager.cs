@@ -41,7 +41,7 @@ namespace quick_image_viewer.Managers
         private int _cachedQuadLayout = 1;
         private bool _lastIsSlideshowRunning = false;
         private int _lastMangaSplitCount = -1;
-        private int _lastEffectiveSplitCount = -1;
+        private int _lastEffectiveSplitCount = 1;
         private int _lastCachedQuadLayout = -1;
         private Microsoft.UI.Xaml.DispatcherTimer? _resizeTimer;
         private double _lastResizeWidth;
@@ -65,6 +65,7 @@ namespace quick_image_viewer.Managers
         }
 
         private bool _eventsSubscribed = false;
+        private bool _needsUpdate = false;
         private void UpdateBufferReferences()
         {
             if (_window.ViewerControl == null) return;
@@ -147,7 +148,11 @@ namespace quick_image_viewer.Managers
 
         public async Task UpdateDisplayAsync()
         {
-            if (_window.State.IsDisplayUpdating) return;
+            if (_window.State.IsDisplayUpdating)
+            {
+                _needsUpdate = true;
+                return;
+            }
 
             if (!_window.DispatcherQueue.HasThreadAccess)
             {
@@ -156,6 +161,7 @@ namespace quick_image_viewer.Managers
             }
 
             _window.State.IsDisplayUpdating = true;
+            _needsUpdate = false;
             try
             {
                 if (!await EnsureUIReadyAsync()) return;
@@ -182,6 +188,10 @@ namespace quick_image_viewer.Managers
             finally
             {
                 _window.State.IsDisplayUpdating = false;
+                if (_needsUpdate)
+                {
+                    _window.DispatcherQueue.TryEnqueue(async () => await UpdateDisplayAsync());
+                }
             }
         }
 
@@ -484,6 +494,12 @@ namespace quick_image_viewer.Managers
 
                 _window.ViewerControl.CurrentBufferIndex = context.TargetBufferIdx;
                 UpdateBufferReferences();
+
+                _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                {
+                    for (int i = 0; i < 4; i++) InvalidatePage(i);
+                });
+
                 _window.AnimationService.StartGridCrossfade(nextBuffer, prevBuffer);
 
                 var prevControls = _window.ViewerControl.PageControlsBuffer[prevBufferIdx];
@@ -516,6 +532,14 @@ namespace quick_image_viewer.Managers
                 // Small additional delay to ensure WinUI has finished rendering the first frame
                 // of the newly loaded images before we hide the background.
                 await Task.Delay(32);
+
+                if (token.IsCancellationRequested) return;
+
+                // 画面が表示され、レイアウトが更新された後に明示的に再描画を要求する
+                for (int i = 0; i < 4; i++)
+                {
+                    InvalidatePage(i);
+                }
 
                 if (token.IsCancellationRequested) return;
 
@@ -702,7 +726,7 @@ namespace quick_image_viewer.Managers
 
         private void ApplyCurrentLayout()
         {
-            if (_window.ViewerControl == null) return;
+            if (_window.ViewerControl == null || _window.State.IsDisplayUpdating) return;
             int currentBufferIdx = _window.ViewerControl.CurrentBufferIndex;
             int splitCount = _settings.MangaSplitCount;
             int effectiveSplitCount = _lastEffectiveSplitCount;
@@ -740,27 +764,17 @@ namespace quick_image_viewer.Managers
             int hAlign = 1; // Center
             int vAlign = 1; // Center
 
-            int effectiveSplitCount = _lastEffectiveSplitCount > 0 ? _lastEffectiveSplitCount : 1;
+            var controls = _window.ViewerControl?.PageControlsBuffer[bufferIndex];
+            if (controls != null && pageIndex < controls.Length)
+            {
+                var ha = controls[pageIndex].PageImage.HorizontalAlignment;
+                var va = controls[pageIndex].PageImage.VerticalAlignment;
 
-            if (effectiveSplitCount == 2) hAlign = pageIndex == 0 ? 0 : 2;
-            else if (effectiveSplitCount == 3)
-            {
-                if (_cachedQuadLayout == 2)
-                {
-                    if (pageIndex == 0) { hAlign = 1; vAlign = 2; }
-                    else if (pageIndex == 1) { hAlign = 2; vAlign = 0; }
-                    else if (pageIndex == 2) { hAlign = 0; vAlign = 0; }
-                }
-            }
-            else if (effectiveSplitCount == 4)
-            {
-                if (_cachedQuadLayout == 2)
-                {
-                    if (pageIndex == 0) { hAlign = 0; vAlign = 2; }
-                    else if (pageIndex == 1) { hAlign = 2; vAlign = 2; }
-                    else if (pageIndex == 2) { hAlign = 0; vAlign = 0; }
-                    else if (pageIndex == 3) { hAlign = 2; vAlign = 0; }
-                }
+                if (ha == Microsoft.UI.Xaml.HorizontalAlignment.Left) hAlign = 0;
+                else if (ha == Microsoft.UI.Xaml.HorizontalAlignment.Right) hAlign = 2;
+
+                if (va == Microsoft.UI.Xaml.VerticalAlignment.Top) vAlign = 0;
+                else if (va == Microsoft.UI.Xaml.VerticalAlignment.Bottom) vAlign = 2;
             }
 
             var renderer = _pagesBuffer[bufferIndex][pageIndex];
@@ -770,7 +784,6 @@ namespace quick_image_viewer.Managers
             }
 
             // 動画フレームがあれば重ねて描画
-            var controls = _window.ViewerControl?.PageControlsBuffer[bufferIndex];
             if (controls != null && pageIndex < controls.Length)
             {
                 controls[pageIndex].PaintVideoFrame(canvas, e.Info, hAlign, vAlign);
@@ -835,3 +848,10 @@ namespace quick_image_viewer.Managers
         }
     }
 }
+
+
+
+
+
+
+

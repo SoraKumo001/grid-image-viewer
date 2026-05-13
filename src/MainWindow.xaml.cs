@@ -689,3 +689,4 @@ namespace quick_image_viewer
         private void BookmarkPanel_PanelHoverEnded(object? sender, EventArgs e) => _leftHoverTimer.Start();
     }
 }
+

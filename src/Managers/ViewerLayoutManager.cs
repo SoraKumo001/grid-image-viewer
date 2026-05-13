@@ -26,10 +26,7 @@ namespace quick_image_viewer.Managers
             bool uniformToFill = (isSlideshowRunning && (_settings.SlideshowUniformToFill || _settings.ImageStretchMode == 3));
 
 
-            for (int i = 0; i < 4; i++)
-            {
-                pageGrids[i].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
-            }
+            for (int i = 0; i < 4; i++) { cols[i].Width = new GridLength(0); rows[0].Height = new GridLength(0); rows[1].Height = new GridLength(0); pageGrids[i].Visibility = Visibility.Collapsed; Grid.SetColumnSpan(pageGrids[i], 1); Grid.SetRowSpan(pageGrids[i], 1); pageGrids[i].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center); }
 
             if (effectiveSplitCount == 1)
             {
@@ -220,3 +217,4 @@ namespace quick_image_viewer.Managers
         }
     }
 }
+
