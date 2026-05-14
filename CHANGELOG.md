@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.11 - 2026-05-14
+
+- **Core Infrastructure & Grid Performance**:
+  - [Refactor] Overhauled core management services and menu state infrastructure for more robust image and PDF handling.
+  - [Feature] Implemented `GridManager` to handle thumbnail rendering and smooth grid layout animations, improving the overall responsiveness of Grid Mode.
+- **Documentation**:
+  - [Improvement] Converted the "Supported Formats" section in README files to a table format for better clarity and comparison.
+
 ## v1.5.10 - 2026-05-13
 
 - **Reading Direction & Layout Improvements**:
