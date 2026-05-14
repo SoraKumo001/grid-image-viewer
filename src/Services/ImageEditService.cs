@@ -5,6 +5,7 @@ using quick_image_viewer.ViewModels;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 namespace quick_image_viewer.Services
 {
@@ -156,11 +157,35 @@ namespace quick_image_viewer.Services
             }
         }
 
-        private SKBitmap? LoadOriginalBitmap(string path)
+        private async Task<SKBitmap?> LoadOriginalBitmapAsync(string path)
         {
             try
             {
-                byte[] bytes = System.IO.File.ReadAllBytes(path);
+                if (quick_image_viewer.Managers.PdfManager.IsPdfPath(path))
+                {
+                    var (actualPath, pageIndex) = quick_image_viewer.Managers.PdfManager.SplitVirtualPath(path);
+                    var stream = await quick_image_viewer.Managers.PdfManager.RenderPageToStreamAsync(actualPath, pageIndex);
+                    if (stream != null)
+                    {
+                        using (stream)
+                        using (var netStream = stream.AsStreamForRead())
+                        using (var ms = new MemoryStream())
+                        {
+                            await netStream.CopyToAsync(ms);
+                            return SKBitmap.Decode(ms.ToArray());
+                        }
+                    }
+                    return null;
+                }
+                if (quick_image_viewer.Managers.ArchiveManager.IsArchivePath(path))
+                {
+                    var (arc, ent) = quick_image_viewer.Managers.ArchiveManager.SplitArchivePath(path);
+                    var bytesArc = quick_image_viewer.Managers.ArchiveManager.GetEntryBytes(arc, ent);
+                    if (bytesArc != null) return SKBitmap.Decode(bytesArc);
+                    return null;
+                }
+
+                byte[] bytes = await System.IO.File.ReadAllBytesAsync(path);
                 return SKBitmap.Decode(bytes);
             }
             catch { return null; }
@@ -171,48 +196,33 @@ namespace quick_image_viewer.Services
             _window.ViewerManager?.StopAnimation();
 
             // Clear current image sources to prevent access violations during update
-            if (_window.ViewerManager != null)
+            _window.ViewerManager?.ClearPageImageForPath(path);
+
+            SKBitmap? baseBmp = GetCurrentBitmap(path);
+            bool isNewSession = baseBmp == null;
+            if (isNewSession)
             {
-                for (int i = 0; i < _window.ViewerManager.Pages.Length; i++)
-                {
-                    if (_window.ViewerManager.Pages[i].CurrentFilePath == path)
-                    {
-                        _window.ViewerManager.PageControls[i].PageImage.Source = null;
-                    }
-                }
+                baseBmp = await LoadOriginalBitmapAsync(path);
             }
 
-            await Task.Run(() =>
+            if (baseBmp == null) return;
+
+            var newBmp = await Task.Run(() => transform(baseBmp));
+
+            if (newBmp != null)
             {
-                SKBitmap? baseBmp = GetCurrentBitmap(path);
-                bool isNewSession = baseBmp == null;
-                if (isNewSession)
+                _window.DispatcherQueue.TryEnqueue(() =>
                 {
-                    baseBmp = LoadOriginalBitmap(path);
-                }
-
-                var newBmp = transform(baseBmp);
-
-                if (newBmp != null)
-                {
-                    _window.DispatcherQueue.TryEnqueue(() =>
+                    if (isNewSession)
                     {
-                        if (isNewSession && baseBmp != null)
-                        {
-                            // Add original so we can undo back to it
-                            AddPendingEdit(path, baseBmp);
-                        }
-                        else if (isNewSession && baseBmp == null)
-                        {
-                            // Should not happen normally, but if baseBmp is null, transform might have created it
-                            // but we still need an empty state? We will just add newBmp.
-                        }
+                        // Add original so we can undo back to it
+                        AddPendingEdit(path, baseBmp);
+                    }
 
-                        AddPendingEdit(path, newBmp);
-                        WeakReferenceMessenger.Default.Send(new EditActionCompletedMessage(path, newBmp));
-                    });
-                }
-            });
+                    AddPendingEdit(path, newBmp);
+                    WeakReferenceMessenger.Default.Send(new EditActionCompletedMessage(path, newBmp));
+                });
+            }
         }
     }
 

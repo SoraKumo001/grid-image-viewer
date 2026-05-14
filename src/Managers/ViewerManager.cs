@@ -811,6 +811,24 @@ namespace quick_image_viewer.Managers
             }
         }
 
+        public void ClearPageImageForPath(string path)
+        {
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                for (int b = 0; b < 2; b++)
+                {
+                    for (int i = 0; i < _pagesBuffer[b].Length; i++)
+                    {
+                        if (_pagesBuffer[b][i].CurrentFilePath == path)
+                        {
+                            var ctrl = _window.ViewerControl?.PageControlsBuffer[b][i];
+                            if (ctrl != null) ctrl.PageImage.Source = null;
+                        }
+                    }
+                }
+            });
+        }
+
         public void Dispose()
         {
             _displayCts?.Cancel();
@@ -833,19 +851,33 @@ namespace quick_image_viewer.Managers
             {
                 StopAnimation();
                 bool updated = false;
-                for (int i = 0; i < Pages.Length; i++)
+                for (int b = 0; b < 2; b++)
                 {
-                    if (Pages[i].CurrentFilePath == message.Path)
+                    for (int i = 0; i < _pagesBuffer[b].Length; i++)
                     {
-                        Pages[i].EditedBitmap = message.Bitmap;
-                        var ctrl = PageControls[i];
-                        ctrl.PageImage.Visibility = Visibility.Collapsed;
-                        ctrl.PageCanvas.Visibility = Visibility.Visible;
-                        ctrl.PageCanvas.Invalidate();
-                        updated = true;
+                        if (_pagesBuffer[b][i].CurrentFilePath == message.Path)
+                        {
+                            _pagesBuffer[b][i].EditedBitmap = message.Bitmap;
+                            var ctrl = _window.ViewerControl?.PageControlsBuffer[b][i];
+                            if (ctrl != null)
+                            {
+                                ctrl.PageImage.Visibility = Visibility.Collapsed;
+                                ctrl.PageCanvas.Visibility = Visibility.Visible;
+                                ctrl.PageCanvas.Invalidate();
+                            }
+                            updated = true;
+                        }
                     }
                 }
-                if (updated) _ = UpdateDisplayAsync();
+                if (updated)
+                {
+                    _ = UpdateDisplayAsync();
+                }
+                else
+                {
+                    // For debugging: show notification if path not found in buffers
+                    // ShowNotification("Debug: Edit path not found in buffers");
+                }
             });
         }
     }

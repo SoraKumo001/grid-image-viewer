@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Windows.Data.Pdf;
 using Windows.Storage;
@@ -9,7 +8,7 @@ namespace quick_image_viewer.Managers
 {
     public static class PdfManager
     {
-        private static readonly Dictionary<string, PdfDocument> _documentCache = new();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, PdfDocument> _documentCache = new();
 
         public static async Task<int> GetPageCountAsync(string filePath)
         {
@@ -29,7 +28,7 @@ namespace quick_image_viewer.Managers
             {
                 var file = await StorageFile.GetFileFromPathAsync(filePath);
                 var doc = await PdfDocument.LoadFromFileAsync(file);
-                _documentCache[filePath] = doc;
+                _documentCache.TryAdd(filePath, doc);
                 return doc;
             }
             catch { return null; }

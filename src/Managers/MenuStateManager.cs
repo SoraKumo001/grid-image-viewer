@@ -187,6 +187,11 @@ namespace quick_image_viewer.Managers
         public async void MenuOverwrite_Click(object sender, RoutedEventArgs e)
         {
             string path = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _state.CurrentImagePath;
+            if (PdfManager.IsPdfPath(path))
+            {
+                await SaveImageAsync(null, false);
+                return;
+            }
             await SaveImageAsync(Path.GetExtension(path), true);
         }
 
@@ -215,7 +220,7 @@ namespace quick_image_viewer.Managers
                     picker.FileTypeChoices.Add("WebP", new List<string>() { ".webp" });
                     picker.FileTypeChoices.Add("BMP", new List<string>() { ".bmp" });
 
-                    var origExt = Path.GetExtension(sourcePath).ToLower();
+                    var origExt = PdfManager.IsPdfPath(sourcePath) ? ".jpg" : Path.GetExtension(sourcePath).ToLower();
                     picker.DefaultFileExtension = origExt == ".png" || origExt == ".webp" || origExt == ".bmp" ? origExt : ".jpg";
                 }
                 else
@@ -224,7 +229,15 @@ namespace quick_image_viewer.Managers
                     picker.DefaultFileExtension = targetExtension;
                 }
 
-                picker.SuggestedFileName = Path.GetFileNameWithoutExtension(sourcePath);
+                if (PdfManager.IsPdfPath(sourcePath))
+                {
+                    var (actualPath, pageIndex) = PdfManager.SplitVirtualPath(sourcePath);
+                    picker.SuggestedFileName = Path.GetFileNameWithoutExtension(actualPath) + $"_page{pageIndex + 1}";
+                }
+                else
+                {
+                    picker.SuggestedFileName = Path.GetFileNameWithoutExtension(sourcePath);
+                }
 
                 var file = await picker.PickSaveFileAsync();
                 if (file == null) return;
@@ -318,13 +331,16 @@ namespace quick_image_viewer.Managers
             _dialog.ShowResizeOverlay(sourcePath, origW, origH);
         }
 
-        public void MenuTone_Click(object sender, RoutedEventArgs e)
+        public async void MenuTone_Click(object sender, RoutedEventArgs e)
         {
             string sourcePath = !string.IsNullOrEmpty(_contextTargetPath) ? _contextTargetPath : _state.CurrentImagePath;
             if (string.IsNullOrEmpty(sourcePath)) return;
 
             SKBitmap? baseBmp = _imageEdit.GetCurrentBitmap(sourcePath)?.Copy();
-            if (baseBmp == null) { try { baseBmp = SKBitmap.Decode(sourcePath); } catch { } }
+            if (baseBmp == null)
+            {
+                baseBmp = await Task.Run(() => ImageProcessor.LoadBitmap(sourcePath));
+            }
 
             _dialog.ShowToneAdjustmentOverlay(sourcePath, baseBmp);
         }

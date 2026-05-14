@@ -38,7 +38,11 @@ namespace quick_image_viewer.Services.LoaderStrategies
                     if (stream == null || token.IsCancellationRequested) return;
 
                     using var netStream = stream.AsStreamForRead();
-                    var skData = SKData.Create(netStream);
+                    using var ms = new MemoryStream();
+                    await netStream.CopyToAsync(ms);
+                    byte[] bytes = ms.ToArray();
+
+                    var skData = SKData.CreateCopy(bytes);
                     if (skData == null) return;
 
                     var bitmap = SKBitmap.Decode(skData);

@@ -41,8 +41,26 @@ namespace quick_image_viewer.Helpers
             catch { return null; }
         }
 
-        private static SKBitmap? LoadBitmap(string path)
+        public static SKBitmap? LoadBitmap(string path)
         {
+            if (PdfManager.IsPdfPath(path))
+            {
+                var (actualPath, pageIndex) = PdfManager.SplitVirtualPath(path);
+                var streamTask = Task.Run(() => PdfManager.RenderPageToStreamAsync(actualPath, pageIndex));
+                var stream = streamTask.GetAwaiter().GetResult();
+                if (stream != null)
+                {
+                    using (stream)
+                    using (var netStream = stream.AsStreamForRead())
+                    using (var ms = new MemoryStream())
+                    {
+                        netStream.CopyTo(ms);
+                        return SKBitmap.Decode(ms.ToArray());
+                    }
+                }
+                return null;
+            }
+
             byte[]? bytes = ReadAllBytes(path);
             if (bytes == null) return null;
             return SKBitmap.Decode(bytes);
@@ -71,29 +89,15 @@ namespace quick_image_viewer.Helpers
         /// </summary>
         public static void SaveImage(string sourcePath, string destPath, string targetExtension, int quality = 100)
         {
-            byte[]? fileBytes = null;
-            if (ArchiveManager.IsArchivePath(sourcePath))
+            try
             {
-                var (arc, ent) = ArchiveManager.SplitArchivePath(sourcePath);
-                fileBytes = ArchiveManager.GetEntryBytes(arc, ent);
+                using var bitmap = LoadBitmap(sourcePath);
+                if (bitmap != null)
+                {
+                    SaveBitmap(bitmap, destPath, targetExtension, quality);
+                }
             }
-            else
-            {
-                fileBytes = File.ReadAllBytes(sourcePath);
-            }
-
-            if (fileBytes == null) return;
-
-            using var data = SKData.CreateCopy(fileBytes);
-            using var codec = SKCodec.Create(data);
-            using var bitmap = SKBitmap.Decode(codec);
-            if (bitmap != null)
-            {
-                using var image = SKImage.FromBitmap(bitmap);
-                using var skData = image.Encode(GetSKEncodedImageFormat(targetExtension), quality);
-                using var stream = File.Open(destPath, FileMode.Create, FileAccess.Write);
-                skData.SaveTo(stream);
-            }
+            catch { }
         }
 
         /// <summary>
