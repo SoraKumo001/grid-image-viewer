@@ -393,6 +393,17 @@ namespace quick_image_viewer.Helpers
                         if (arcCodec != null) result = (arcCodec.Info.Width, arcCodec.Info.Height);
                     }
                 }
+                else if (PdfManager.IsPdfPath(sourcePath))
+                {
+                    var (actualPath, pageIndex) = PdfManager.SplitVirtualPath(sourcePath);
+                    var doc = PdfManager.GetDocumentAsync(actualPath).GetAwaiter().GetResult();
+                    if (doc != null && pageIndex < doc.PageCount)
+                    {
+                        using var page = doc.GetPage((uint)pageIndex);
+                        // Convert points to roughly pixels (assuming 96 DPI if we don't know better)
+                        result = ((int)page.Size.Width, (int)page.Size.Height);
+                    }
+                }
                 else
                 {
                     if (MediaHelper.IsVideo(sourcePath))

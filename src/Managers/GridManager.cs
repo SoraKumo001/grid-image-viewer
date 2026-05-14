@@ -203,12 +203,36 @@ namespace quick_image_viewer.Managers
             {
                 if (token.IsCancellationRequested) return;
 
-                var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
+                bool isPdf = PdfManager.IsPdfPath(item.FilePath);
+                var ext = isPdf ? ".pdf" : Path.GetExtension(item.FilePath).ToLowerInvariant();
                 bool mightBeAnimated = ext == ".webp" || ext == ".gif" || ext == ".avis" || ext == ".webm";
-                bool isVideo = MediaHelper.IsVideo(item.FilePath);
-                bool isArchive = ArchiveManager.IsArchive(item.FilePath);
+                bool isVideo = !isPdf && MediaHelper.IsVideo(item.FilePath);
+                bool isArchive = !isPdf && ArchiveManager.IsArchive(item.FilePath);
 
                 bool handledBySkia = false;
+
+                if (isPdf)
+                {
+                    var (actualPath, pageIndex) = PdfManager.SplitVirtualPath(item.FilePath);
+                    using var stream = await PdfManager.RenderPageToStreamAsync(actualPath, pageIndex);
+                    if (stream != null)
+                    {
+                        var (w, h) = ImageProcessor.GetImageSize(item.FilePath);
+                        if (w > 0 && h > 0) item.AspectRatio = (double)w / h;
+
+                        await EnqueueOnDispatcherAsync(async () =>
+                        {
+                            if (token.IsCancellationRequested) return;
+                            var bitmapImage = new BitmapImage();
+                            bitmapImage.DecodePixelWidth = decodeSize;
+                            await bitmapImage.SetSourceAsync(stream);
+                            if (token.IsCancellationRequested) return;
+                            item.Thumbnail = bitmapImage;
+                            SetMetadata(item);
+                        });
+                        handledBySkia = true;
+                    }
+                }
                 if (mightBeAnimated)
                 {
                     byte[]? bytes = null;
@@ -514,11 +538,17 @@ namespace quick_image_viewer.Managers
             {
                 try
                 {
+                    string actualPath = item.FilePath;
+                    if (PdfManager.IsPdfPath(item.FilePath))
+                    {
+                        (actualPath, _) = PdfManager.SplitVirtualPath(item.FilePath);
+                    }
+
                     var (w, h) = ImageProcessor.GetImageSize(item.FilePath);
                     string sizeStr = "";
                     try
                     {
-                        var fileInfo = new System.IO.FileInfo(item.FilePath);
+                        var fileInfo = new System.IO.FileInfo(actualPath);
                         sizeStr = FormatFileSize(fileInfo.Length);
                     }
                     catch { }
