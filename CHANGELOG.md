@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.12 - 2026-05-18
+
+- **UI/UX Improvements**:
+  - [Fix] Fixed a bug where the context menu would remain in "Grid Mode" even after returning to the standard viewer (e.g., when clicking an image in the grid).
+  - [Fix] Centralized mode-switching logic in `MainWindow` to ensure consistent UI updates (context menus, notifications) across all navigation paths.
+
 ## v1.5.11 - 2026-05-14
 
 - **Core Infrastructure & Grid Performance**:

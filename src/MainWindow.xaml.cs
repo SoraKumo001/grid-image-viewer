@@ -222,6 +222,16 @@ namespace quick_image_viewer
             ((App)Application.Current).SetMainView(this);
 
             State = services.GetRequiredService<IViewerStateService>();
+            if (State is System.ComponentModel.INotifyPropertyChanged npc)
+            {
+                npc.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(IViewerStateService.IsGridMode))
+                    {
+                        ((IMainView)this).UpdateContextFlyout();
+                    }
+                };
+            }
             _settings = services.GetRequiredService<ISettingsManager>();
             ViewModel = services.GetRequiredService<MainViewModel>();
 
@@ -358,7 +368,6 @@ namespace quick_image_viewer
         public void Receive(ToggleGridMessage message)
         {
             IsGridMode = !IsGridMode;
-            ((IMainView)this).UpdateContextFlyout();
             ShowNotification(_settings.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
             _ = UpdateDisplayAsync();
         }
@@ -713,5 +722,3 @@ namespace quick_image_viewer
         private void BookmarkPanel_PanelHoverEnded(object? sender, EventArgs e) => _leftHoverTimer.Start();
     }
 }
-
-
