@@ -278,10 +278,9 @@ namespace quick_image_viewer.Helpers
                 _window.SlideshowManager.StopSlideshow();
                 if (IsMatch(_settings.KeyExit, e.Key, isCtrl, isShift, isAlt))
                 {
-                    if (_window.AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
+                    if (_window.IsFullscreen)
                     {
-                        _window.AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                        _window.AppTitleBar.Visibility = Visibility.Visible;
+                        _window.IsFullscreen = false;
                     }
                     e.Handled = true;
                     return;
@@ -359,10 +358,9 @@ namespace quick_image_viewer.Helpers
 
             if (IsMatch(_settings.KeyExit, e.Key, isCtrl, isShift, isAlt))
             {
-                if (_window.AppWindow.Presenter.Kind == Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen)
+                if (_window.IsFullscreen)
                 {
-                    _window.AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.Default);
-                    _window.AppTitleBar.Visibility = Visibility.Visible;
+                    _window.IsFullscreen = false;
                     e.Handled = true;
                     return;
                 }

@@ -516,7 +516,7 @@ namespace quick_image_viewer
             menu.Items.Clear();
             if (_settings.Bookmarks.Count == 0)
             {
-                menu.Items.Add(new MenuFlyoutItem { Text = _settings.GetString("Bookmark_Empty"), IsEnabled = false });
+                menu.Items.Add(new MenuFlyoutItem { Text = _settings.GetString("Bookmark_Empty.Text"), IsEnabled = false });
             }
             else
             {
@@ -680,7 +680,7 @@ namespace quick_image_viewer
             if (sender is MenuFlyoutItem item && item.Tag is string sortType)
             {
                 // TODO: Implement sorting logic in PlaylistManager
-                ShowNotification(_settings.GetString("MenuSort_" + sortType) + " (Not Implemented)");
+                ShowNotification(_settings.GetString("MenuSort_" + sortType + ".Text") + " (Not Implemented)");
             }
         }
         private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e)

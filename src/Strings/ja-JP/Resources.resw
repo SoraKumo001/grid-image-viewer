@@ -656,6 +656,12 @@
   <data name="Notification_Moved" xml:space="preserve">
     <value>ファイルを移動しました</value>
   </data>
+  <data name="Notification_RenameFailed" xml:space="preserve">
+    <value>名前の変更に失敗しました: {0}</value>
+  </data>
+  <data name="Notification_MoveFailed" xml:space="preserve">
+    <value>移動に失敗しました: {0}</value>
+  </data>
   <data name="Settings_Options.Text" xml:space="preserve">
     <value>オプション</value>
   </data>

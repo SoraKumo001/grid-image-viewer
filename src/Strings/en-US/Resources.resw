@@ -656,6 +656,12 @@
   <data name="Notification_Moved" xml:space="preserve">
     <value>File moved</value>
   </data>
+  <data name="Notification_RenameFailed" xml:space="preserve">
+    <value>Rename failed: {0}</value>
+  </data>
+  <data name="Notification_MoveFailed" xml:space="preserve">
+    <value>Move failed: {0}</value>
+  </data>
   <data name="Settings_Options.Text" xml:space="preserve">
     <value>Options</value>
   </data>

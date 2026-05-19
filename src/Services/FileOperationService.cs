@@ -25,8 +25,8 @@ namespace quick_image_viewer.Services
             {
                 Title = _settings.GetString("DeleteDialog_Title"),
                 Content = string.Format(_settings.GetString("DeleteDialog_Content"), System.IO.Path.GetFileName(path)),
-                PrimaryButtonText = _settings.GetString("DeleteDialog_Primary"),
-                CloseButtonText = _settings.GetString("DeleteDialog_Close"),
+                PrimaryButtonText = _settings.GetString("DeleteDialog_PrimaryButton"),
+                CloseButtonText = _settings.GetString("DeleteDialog_CloseButton"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = _window.Content?.XamlRoot
             };
@@ -48,7 +48,7 @@ namespace quick_image_viewer.Services
                 }
                 catch (Exception ex)
                 {
-                    _window.ShowNotification("Error: " + ex.Message);
+                    _window.ShowNotification(string.Format(_settings.GetString("Notification_DeleteFailed"), ex.Message));
                 }
             }
         }
@@ -101,7 +101,7 @@ namespace quick_image_viewer.Services
                 }
                 catch (Exception ex)
                 {
-                    _window.ShowNotification("Error: " + ex.Message);
+                    _window.ShowNotification(string.Format(_settings.GetString("Notification_RenameFailed"), ex.Message));
                 }
             }
         }
@@ -132,7 +132,7 @@ namespace quick_image_viewer.Services
                 }
                 catch (Exception ex)
                 {
-                    _window.ShowNotification("Error: " + ex.Message);
+                    _window.ShowNotification(string.Format(_settings.GetString("Notification_MoveFailed"), ex.Message));
                 }
             }
         }
