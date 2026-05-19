@@ -742,8 +742,27 @@ namespace quick_image_viewer.Managers
                 _cachedQuadLayout,
                 _window.State.IsSlideshowRunning);
 
+            _window.ViewerControl.CurrentBuffer.UpdateLayout();
             UpdateAllVideoVisualSizes();
             for (int i = 0; i < 4; i++) InvalidatePage(i);
+
+            _window.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                UpdateAllVideoVisualSizes();
+                for (int i = 0; i < 4; i++) InvalidatePage(i);
+            });
+
+            _ = UpdateVideoVisualSizesAfterLayoutDelayAsync();
+        }
+
+        private async Task UpdateVideoVisualSizesAfterLayoutDelayAsync()
+        {
+            await Task.Delay(32);
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateAllVideoVisualSizes();
+                for (int i = 0; i < 4; i++) InvalidatePage(i);
+            });
         }
 
         private void UpdateAllVideoVisualSizes()
@@ -752,7 +771,7 @@ namespace quick_image_viewer.Managers
             var controls = _window.ViewerControl.PageControlsBuffer[_window.ViewerControl.CurrentBufferIndex];
             foreach (var pc in controls)
             {
-                pc.UpdateVideoVisualSize();
+                pc.UpdateVideoVisualSize(pc.ActualWidth, pc.ActualHeight);
             }
         }
 

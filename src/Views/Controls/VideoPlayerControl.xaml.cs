@@ -129,6 +129,7 @@ namespace quick_image_viewer.Views.Controls
         public bool IsMediaReady { get; set; } = false;
         private uint _lastNaturalWidth = 0;
         private uint _lastNaturalHeight = 0;
+        private bool _isLayoutUpdateQueued = false;
 
         public FFmpegMediaSource? FFmpegSource
         {
@@ -202,26 +203,45 @@ namespace quick_image_viewer.Views.Controls
         {
             _pendingWidth = e.NewSize.Width;
             _pendingHeight = e.NewSize.Height;
+            UpdateVideoVisualSize(_pendingStretch, _pendingHAlign, _pendingVAlign, _pendingWidth, _pendingHeight);
+            QueueVideoVisualSizeUpdateAfterLayout();
             _resizeDebounceTimer.Stop();
             _resizeDebounceTimer.Start();
 
             UpdateClip(_pendingWidth, _pendingHeight);
 
-            var mp = _internalMediaPlayer?.MediaPlayer;
-            if (mp != null && mp.PlaybackSession.PlaybackState != MediaPlaybackState.None)
-            {
-                double scale = 1.0;
-                try
-                {
-                    if (this.XamlRoot != null)
-                        scale = this.XamlRoot.RasterizationScale;
-                }
-                catch { }
+        }
 
-                uint width = (uint)System.Math.Max(1, this.ActualWidth * scale);
-                uint height = (uint)System.Math.Max(1, this.ActualHeight * scale);
-                try { mp.SetSurfaceSize(new Windows.Foundation.Size(width, height)); } catch { }
+        private void QueueVideoVisualSizeUpdateAfterLayout()
+        {
+            if (!_isLayoutUpdateQueued)
+            {
+                _isLayoutUpdateQueued = true;
+                LayoutUpdated += VideoPlayerControl_LayoutUpdated;
             }
+
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                UpdateVideoVisualSize(_pendingStretch, _pendingHAlign, _pendingVAlign, ActualWidth, ActualHeight);
+            });
+
+            _ = UpdateVideoVisualSizeAfterLayoutDelayAsync();
+        }
+
+        private void VideoPlayerControl_LayoutUpdated(object? sender, object e)
+        {
+            LayoutUpdated -= VideoPlayerControl_LayoutUpdated;
+            _isLayoutUpdateQueued = false;
+            UpdateVideoVisualSize(_pendingStretch, _pendingHAlign, _pendingVAlign, ActualWidth, ActualHeight);
+        }
+
+        private async Task UpdateVideoVisualSizeAfterLayoutDelayAsync()
+        {
+            await Task.Delay(32);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateVideoVisualSize(_pendingStretch, _pendingHAlign, _pendingVAlign, ActualWidth, ActualHeight);
+            });
         }
 
         private void UpdateClip(double w, double h)
@@ -521,6 +541,7 @@ namespace quick_image_viewer.Views.Controls
                 _internalMediaPlayer.Width = double.NaN;
                 _internalMediaPlayer.Height = double.NaN;
                 _internalMediaPlayer.Margin = new Thickness(0);
+                ApplyMediaSurfaceSize(containerW, containerH);
                 return;
             }
 
@@ -552,6 +573,36 @@ namespace quick_image_viewer.Views.Controls
             _internalMediaPlayer.Margin = new Thickness(left, top, 0, 0);
             _internalMediaPlayer.HorizontalAlignment = HorizontalAlignment.Left;
             _internalMediaPlayer.VerticalAlignment = VerticalAlignment.Top;
+            ApplyMediaSurfaceSize(targetW, targetH);
+        }
+
+        private void ApplyMediaSurfaceSize(double width, double height)
+        {
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            if (mp == null || width <= 0 || height <= 0) return;
+
+            try
+            {
+                if (mp.PlaybackSession.PlaybackState == MediaPlaybackState.None) return;
+            }
+            catch
+            {
+                return;
+            }
+
+            double scale = 1.0;
+            try
+            {
+                if (XamlRoot != null)
+                {
+                    scale = XamlRoot.RasterizationScale;
+                }
+            }
+            catch { }
+
+            uint surfaceWidth = (uint)System.Math.Max(1, width * scale);
+            uint surfaceHeight = (uint)System.Math.Max(1, height * scale);
+            try { mp.SetSurfaceSize(new Windows.Foundation.Size(surfaceWidth, surfaceHeight)); } catch { }
         }
 
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)

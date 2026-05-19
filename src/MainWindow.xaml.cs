@@ -575,9 +575,7 @@ namespace quick_image_viewer
         private void RootGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerWheelChanged(sender, e);
         private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            // Debounce resize handling to improve performance
-            _resizeTimer.Stop();
-            _resizeTimer.Start();
+            ViewerManager.HandleWindowSizeChanged(e.NewSize.Width, e.NewSize.Height);
         }
 
         private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerPressed(sender, e);
