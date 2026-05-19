@@ -169,10 +169,19 @@ namespace quick_image_viewer.Managers
             int layout = _settings.QuadLayoutMode;
             if (_settings.MangaSplitCount != 4 || layout != 0) return layout;
 
-            double avgRatio = 0;
             int validCount = 0;
-            int landscapeCount = 0;
-            int portraitCount = 0;
+            int horizontalVotes = 0;
+            int gridVotes = 0;
+            double horizontalAreaTotal = 0;
+            double gridAreaTotal = 0;
+
+            if (windowHeight <= 0) windowHeight = 1;
+            if (windowWidth <= 0) windowWidth = 1;
+
+            double horizontalCellWidth = windowWidth / 4;
+            double horizontalCellHeight = windowHeight;
+            double gridCellWidth = windowWidth / 2;
+            double gridCellHeight = windowHeight / 2;
 
             for (int i = 0; i < 4; i++)
             {
@@ -187,30 +196,42 @@ namespace quick_image_viewer.Managers
                         var (w, h) = ImageProcessor.GetImageSize(playlist[indexToLoad]);
                         if (w > 0 && h > 0)
                         {
-                            avgRatio += (double)w / h;
+                            double ratio = (double)w / h;
+                            double horizontalArea = GetContainedArea(ratio, horizontalCellWidth, horizontalCellHeight);
+                            double gridArea = GetContainedArea(ratio, gridCellWidth, gridCellHeight);
+
+                            horizontalAreaTotal += horizontalArea;
+                            gridAreaTotal += gridArea;
                             validCount++;
 
-                            if (w > h) landscapeCount++;
-                            else portraitCount++;
+                            if (horizontalArea > gridArea) horizontalVotes++;
+                            else if (gridArea > horizontalArea) gridVotes++;
                         }
                     }
                     catch { }
                 }
             }
 
-            // Priority 1: Majority rule
-            if (landscapeCount > portraitCount) return 2; // Grid (2x2) is better for wide images
-            if (portraitCount > landscapeCount) return 1; // Horizontal (1x4) is often preferred for tall images
+            if (horizontalVotes > gridVotes) return 1;
+            if (gridVotes > horizontalVotes) return 2;
 
-            // Priority 2: Fallback to mathematical best fit if tied or no valid counts
-            double a = validCount > 0 ? avgRatio / validCount : 0.75; // Default to portrait ratio
-            if (windowHeight <= 0) windowHeight = 1;
-            if (windowWidth <= 0) windowWidth = 1;
+            if (validCount > 0)
+            {
+                return horizontalAreaTotal >= gridAreaTotal ? 1 : 2;
+            }
 
-            double s1 = System.Math.Min(windowWidth / (4 * a), windowHeight);
-            double s2 = System.Math.Min(windowWidth / (2 * a), windowHeight / 2);
+            // Default to portrait-oriented content when no dimensions are available.
+            double defaultRatio = 0.75;
+            double defaultHorizontalArea = GetContainedArea(defaultRatio, horizontalCellWidth, horizontalCellHeight);
+            double defaultGridArea = GetContainedArea(defaultRatio, gridCellWidth, gridCellHeight);
+            return defaultHorizontalArea >= defaultGridArea ? 1 : 2;
+        }
 
-            return s1 > s2 ? 1 : 2;
+        private static double GetContainedArea(double imageRatio, double cellWidth, double cellHeight)
+        {
+            double renderedWidth = System.Math.Min(cellWidth, cellHeight * imageRatio);
+            double renderedHeight = renderedWidth / imageRatio;
+            return renderedWidth * renderedHeight;
         }
     }
 }
