@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.13 - 2026-05-19
+
+- **Enhanced Interaction & Input**:
+  - [Feature] Implemented a dedicated `InputHandler` to provide more robust keyboard shortcuts, mouse panning (Ctrl+Drag), and precise image transformation controls.
+- **Layout & Multi-Page Viewing**:
+  - [Feature] Added `ViewerLayoutManager` to manage dynamic grid configurations (1, 2, 3, and 4-split layouts).
+  - [Feature] Introduced an intelligent "Auto" layout mode for Quad-view that automatically selects between horizontal and grid arrangements based on the aspect ratios of the images being displayed.
+- **Core Viewer & Video Improvements**:
+  - [Feature] Refactored core viewer management and integrated dedicated video player controls for a more consistent and responsive media playback experience.
+
 ## v1.5.12 - 2026-05-18
 
 - **UI/UX Improvements**:
