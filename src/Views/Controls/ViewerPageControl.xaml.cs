@@ -1,6 +1,7 @@
 using FFmpegInteropX;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using quick_image_viewer.Helpers;
 using System;
 using System.Threading.Tasks;
 using Windows.Media.Playback;
@@ -133,6 +134,26 @@ namespace quick_image_viewer.Views.Controls
             InternalPageImage.HorizontalAlignment = h;
             InternalPageImage.VerticalAlignment = v;
             VideoPlayer.SetContentAlignment(h, v);
+        }
+
+        public double GetContentAspectRatio(PageRenderer? renderer)
+        {
+            if (IsVideoContent)
+            {
+                return VideoPlayer.VideoAspectRatio;
+            }
+            if (renderer != null)
+            {
+                lock (renderer)
+                {
+                    var bmp = renderer.EditedBitmap ?? renderer.Bitmap;
+                    if (bmp != null && bmp.Width > 0 && bmp.Height > 0)
+                    {
+                        return (double)bmp.Width / bmp.Height;
+                    }
+                }
+            }
+            return 0.75;
         }
     }
 }

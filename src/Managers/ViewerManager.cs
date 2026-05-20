@@ -399,10 +399,18 @@ namespace quick_image_viewer.Managers
             var token = _displayCts.Token;
 
             int targetBufferIdx = _window.ViewerControl.InactiveBufferIndex;
+            var targetGrid = _window.ViewerControl.PagesGrids[targetBufferIdx];
+            double[] tempAspects = new double[info.EffectiveSplitCount];
+            for (int i = 0; i < info.EffectiveSplitCount; i++) tempAspects[i] = 0.75;
+
             _layoutManager.UpdateLayoutGrid(
+                targetGrid,
                 _window.ViewerControl.ColsBuffer[targetBufferIdx],
                 _window.ViewerControl.RowsBuffer[targetBufferIdx],
                 _window.ViewerControl.PageControlsBuffer[targetBufferIdx],
+                tempAspects,
+                _window.ViewerControl.ScrollViewer.ViewportWidth,
+                _window.ViewerControl.ScrollViewer.ViewportHeight,
                 info.SplitCount,
                 info.EffectiveSplitCount,
                 info.CachedQuadLayout,
@@ -482,6 +490,24 @@ namespace quick_image_viewer.Managers
 
             // 全タスク待機後にキャンセル状態を再確認
             if (token.IsCancellationRequested) return;
+
+            // Update layout with actual loaded aspect ratios before swapping buffers
+            int targetBufferIdx = context.TargetBufferIdx;
+            var targetGrid = _window.ViewerControl.PagesGrids[targetBufferIdx];
+            double[] loadedAspects = GetAspectRatios(targetBufferIdx, info.EffectiveSplitCount);
+
+            _layoutManager.UpdateLayoutGrid(
+                targetGrid,
+                _window.ViewerControl.ColsBuffer[targetBufferIdx],
+                _window.ViewerControl.RowsBuffer[targetBufferIdx],
+                _window.ViewerControl.PageControlsBuffer[targetBufferIdx],
+                loadedAspects,
+                _window.ViewerControl.ScrollViewer.ViewportWidth,
+                _window.ViewerControl.ScrollViewer.ViewportHeight,
+                info.SplitCount,
+                info.EffectiveSplitCount,
+                info.CachedQuadLayout,
+                info.IsSlideshowRunning);
 
             var prevBuffer = _window.ViewerControl.CurrentBuffer;
             var nextBuffer = _window.ViewerControl.InactiveBuffer;
@@ -726,6 +752,26 @@ namespace quick_image_viewer.Managers
             }
         }
 
+        private double[] GetAspectRatios(int bufferIdx, int count)
+        {
+            var aspectRatios = new double[count];
+            var pages = _pagesBuffer[bufferIdx];
+            var controls = _window.ViewerControl.PageControlsBuffer[bufferIdx];
+            for (int i = 0; i < count; i++)
+            {
+                if (i < controls.Length)
+                {
+                    var renderer = i < pages.Length ? pages[i] : null;
+                    aspectRatios[i] = controls[i].GetContentAspectRatio(renderer);
+                }
+                else
+                {
+                    aspectRatios[i] = 0.75;
+                }
+            }
+            return aspectRatios;
+        }
+
         private void ApplyCurrentLayout()
         {
             if (_window.ViewerControl == null || _window.State.IsDisplayUpdating) return;
@@ -733,10 +779,17 @@ namespace quick_image_viewer.Managers
             int splitCount = _settings.MangaSplitCount;
             int effectiveSplitCount = _lastEffectiveSplitCount;
 
+            var currentGrid = _window.ViewerControl.PagesGrids[currentBufferIdx];
+            double[] aspects = GetAspectRatios(currentBufferIdx, effectiveSplitCount);
+
             _layoutManager.UpdateLayoutGrid(
+                currentGrid,
                 _window.ViewerControl.ColsBuffer[currentBufferIdx],
                 _window.ViewerControl.RowsBuffer[currentBufferIdx],
                 _window.ViewerControl.PageControlsBuffer[currentBufferIdx],
+                aspects,
+                _window.ViewerControl.ScrollViewer.ViewportWidth,
+                _window.ViewerControl.ScrollViewer.ViewportHeight,
                 splitCount,
                 effectiveSplitCount,
                 _cachedQuadLayout,

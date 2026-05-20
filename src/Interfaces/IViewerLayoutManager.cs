@@ -6,9 +6,13 @@ namespace quick_image_viewer.Interfaces
     public interface IViewerLayoutManager
     {
         void UpdateLayoutGrid(
+            Grid grid,
             ColumnDefinition[] cols,
             RowDefinition[] rows,
             ViewerPageControl[] pageGrids,
+            double[] aspectRatios,
+            double viewportWidth,
+            double viewportHeight,
             int splitCount,
             int effectiveSplitCount,
             int currentQuadLayout,

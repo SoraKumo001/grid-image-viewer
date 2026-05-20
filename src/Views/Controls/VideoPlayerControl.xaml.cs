@@ -127,6 +127,34 @@ namespace quick_image_viewer.Views.Controls
         private FFmpegMediaSource? _ffmpegSource;
         public bool IsVideoContent { get; set; } = false;
         public bool IsMediaReady { get; set; } = false;
+
+        public double VideoAspectRatio
+        {
+            get
+            {
+                uint w = _lastNaturalWidth;
+                uint h = _lastNaturalHeight;
+                if (w > 0 && h > 0) return (double)w / h;
+
+                var mp = _internalMediaPlayer?.MediaPlayer;
+                if (mp != null)
+                {
+                    try
+                    {
+                        var session = mp.PlaybackSession;
+                        if (session != null)
+                        {
+                            var sw = session.NaturalVideoWidth;
+                            var sh = session.NaturalVideoHeight;
+                            if (sw > 0 && sh > 0) return (double)sw / sh;
+                        }
+                    }
+                    catch { }
+                }
+                return 0.75;
+            }
+        }
+
         private uint _lastNaturalWidth = 0;
         private uint _lastNaturalHeight = 0;
         private bool _isLayoutUpdateQueued = false;
