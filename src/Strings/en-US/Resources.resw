@@ -485,6 +485,12 @@
   <data name="Settings_ShowPageIndicator.Content" xml:space="preserve">
     <value>Show Page Count</value>
   </data>
+  <data name="Settings_PanAnimation.Content" xml:space="preserve">
+    <value>Enable slide animation for Cover mode</value>
+  </data>
+  <data name="Settings_PanSpeed.Text" xml:space="preserve">
+    <value>Slide Speed</value>
+  </data>
   <data name="Settings_VideoVolume.Text" xml:space="preserve">
     <value>Video Master Volume</value>
   </data>

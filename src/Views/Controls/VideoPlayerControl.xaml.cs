@@ -66,6 +66,7 @@ namespace quick_image_viewer.Views.Controls
                 _internalMediaPlayer = null;
             }
 
+            _pendingStretch = (Stretch)_settings.ImageStretchMode;
             _internalMediaPlayer = new MediaPlayerElement
             {
                 AutoPlay = false,
@@ -78,7 +79,8 @@ namespace quick_image_viewer.Views.Controls
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 FocusVisualPrimaryThickness = new Thickness(0),
                 FocusVisualSecondaryThickness = new Thickness(0),
-                Visibility = Visibility.Collapsed
+                Visibility = Visibility.Collapsed,
+                Stretch = _pendingStretch
             };
 
             MediaPlayerContainer.Children.Add(_internalMediaPlayer);
@@ -127,6 +129,21 @@ namespace quick_image_viewer.Views.Controls
         private FFmpegMediaSource? _ffmpegSource;
         public bool IsVideoContent { get; set; } = false;
         public bool IsMediaReady { get; set; } = false;
+
+        // Slide Animation States for Video
+        private bool _panInitialized = false;
+        private float _panStartX = 0.5f;
+        private float _panStartY = 0.5f;
+        private float _panEndX = 0.5f;
+        private float _panEndY = 0.5f;
+        private DateTime _panStartTime;
+        private double _panDurationMs = 10000;
+        private static readonly Random _panRand = new Random();
+
+        public void ResetPanAnimation()
+        {
+            _panInitialized = false;
+        }
 
         public double VideoAspectRatio
         {
@@ -303,15 +320,71 @@ namespace quick_image_viewer.Views.Controls
 
                     float w = _skFrameBitmap.Width * scale;
                     float h = _skFrameBitmap.Height * scale;
-                    float x = (info.Width - w) / 2f;
-                    float y = (info.Height - h) / 2f;
+                    float x = 0;
+                    float y = 0;
 
-                    if (stretch != Stretch.UniformToFill)
+                    if (stretch == Stretch.UniformToFill && _settings.EnablePanAnimation)
                     {
-                        if (hAlign == 0) x = 0;
-                        else if (hAlign == 2) x = info.Width - w;
-                        if (vAlign == 0) y = 0;
-                        else if (vAlign == 2) y = info.Height - h;
+                        float diffX = w - info.Width;
+                        float diffY = h - info.Height;
+
+                        bool canPanX = diffX > 0.5f;
+                        bool canPanY = diffY > 0.5f;
+
+                        if (canPanX || canPanY)
+                        {
+                            if (!_panInitialized)
+                            {
+                                _panStartX = (float)_panRand.NextDouble();
+                                _panStartY = (float)_panRand.NextDouble();
+                                _panEndX = (float)_panRand.NextDouble();
+                                _panEndY = (float)_panRand.NextDouble();
+                                _panStartTime = DateTime.Now;
+                                _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / _settings.PanAnimationSpeed;
+                                _panInitialized = true;
+                            }
+
+                            double elapsed = (DateTime.Now - _panStartTime).TotalMilliseconds;
+                            double t = elapsed / _panDurationMs;
+
+                            if (t >= 1.0)
+                            {
+                                _panStartX = _panEndX;
+                                _panStartY = _panEndY;
+                                _panEndX = (float)_panRand.NextDouble();
+                                _panEndY = (float)_panRand.NextDouble();
+                                _panStartTime = DateTime.Now;
+                                _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / _settings.PanAnimationSpeed;
+                                t = 0.0;
+                            }
+
+                            // Linear interpolation to keep moving without pauses at the ends
+                            double easedT = t;
+
+                            float curX = _panStartX + (float)(easedT * (_panEndX - _panStartX));
+                            float curY = _panStartY + (float)(easedT * (_panEndY - _panStartY));
+
+                            x = canPanX ? -diffX * curX : -diffX * 0.5f;
+                            y = canPanY ? -diffY * curY : -diffY * 0.5f;
+                        }
+                        else
+                        {
+                            x = (info.Width - w) / 2f;
+                            y = (info.Height - h) / 2f;
+                        }
+                    }
+                    else
+                    {
+                        x = (info.Width - w) / 2f;
+                        y = (info.Height - h) / 2f;
+
+                        if (stretch != Stretch.UniformToFill)
+                        {
+                            if (hAlign == 0) x = 0;
+                            else if (hAlign == 2) x = info.Width - w;
+                            if (vAlign == 0) y = 0;
+                            else if (vAlign == 2) y = info.Height - h;
+                        }
                     }
 
                     canvas.DrawBitmap(_skFrameBitmap, new SkiaSharp.SKRect(x, y, x + w, y + h));
@@ -592,11 +665,67 @@ namespace quick_image_viewer.Views.Controls
             double left = 0;
             double top = 0;
 
-            if (hAlign == HorizontalAlignment.Center) left = (containerW - targetW) / 2;
-            else if (hAlign == HorizontalAlignment.Right) left = containerW - targetW;
+            if (_internalMediaPlayer.Stretch == Stretch.UniformToFill && _settings.EnablePanAnimation)
+            {
+                double diffX = targetW - containerW;
+                double diffY = targetH - containerH;
 
-            if (vAlign == VerticalAlignment.Center) top = (containerH - targetH) / 2;
-            else if (vAlign == VerticalAlignment.Bottom) top = containerH - targetH;
+                bool canPanX = diffX > 0.5;
+                bool canPanY = diffY > 0.5;
+
+                if (canPanX || canPanY)
+                {
+                    if (!_panInitialized)
+                    {
+                        _panStartX = (float)_panRand.NextDouble();
+                        _panStartY = (float)_panRand.NextDouble();
+                        _panEndX = (float)_panRand.NextDouble();
+                        _panEndY = (float)_panRand.NextDouble();
+                        _panStartTime = DateTime.Now;
+                        _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / _settings.PanAnimationSpeed;
+                        _panInitialized = true;
+                    }
+
+                    double elapsed = (DateTime.Now - _panStartTime).TotalMilliseconds;
+                    double t = elapsed / _panDurationMs;
+
+                    if (t >= 1.0)
+                    {
+                        _panStartX = _panEndX;
+                        _panStartY = _panEndY;
+                        _panEndX = (float)_panRand.NextDouble();
+                        _panEndY = (float)_panRand.NextDouble();
+                        _panStartTime = DateTime.Now;
+                        _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / _settings.PanAnimationSpeed;
+                        t = 0.0;
+                    }
+
+                    // Linear interpolation to keep moving without pauses at the ends
+                    double easedT = t;
+
+                    float curX = _panStartX + (float)(easedT * (_panEndX - _panStartX));
+                    float curY = _panStartY + (float)(easedT * (_panEndY - _panStartY));
+
+                    left = canPanX ? -diffX * curX : -diffX * 0.5;
+                    top = canPanY ? -diffY * curY : -diffY * 0.5;
+                }
+                else
+                {
+                    if (hAlign == HorizontalAlignment.Center) left = (containerW - targetW) / 2;
+                    else if (hAlign == HorizontalAlignment.Right) left = containerW - targetW;
+
+                    if (vAlign == VerticalAlignment.Center) top = (containerH - targetH) / 2;
+                    else if (vAlign == VerticalAlignment.Bottom) top = containerH - targetH;
+                }
+            }
+            else
+            {
+                if (hAlign == HorizontalAlignment.Center) left = (containerW - targetW) / 2;
+                else if (hAlign == HorizontalAlignment.Right) left = containerW - targetW;
+
+                if (vAlign == VerticalAlignment.Center) top = (containerH - targetH) / 2;
+                else if (vAlign == VerticalAlignment.Bottom) top = containerH - targetH;
+            }
 
             _internalMediaPlayer.Margin = new Thickness(left, top, 0, 0);
             _internalMediaPlayer.HorizontalAlignment = HorizontalAlignment.Left;
@@ -824,6 +953,7 @@ namespace quick_image_viewer.Views.Controls
             IsMediaReady = false;
             _lastNaturalWidth = 0;
             _lastNaturalHeight = 0;
+            ResetPanAnimation();
             if (_ffmpegSource != null)
             {
                 try { _ffmpegSource.PlaybackSession = null; } catch { }

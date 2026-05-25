@@ -93,6 +93,8 @@ namespace quick_image_viewer.Managers
         public int BackgroundColorMode { get; set; } = 0; // 0: System (Mica), 1: Black, 2: White
         public bool UseHighQualityScaling { get; set; } = true;
         public bool ShowPageIndicator { get; set; } = true;
+        public bool EnablePanAnimation { get; set; } = true;
+        public double PanAnimationSpeed { get; set; } = 1.0;
         public double VideoVolume { get; set; } = 0.5;
 
         public int JpegQuality { get; set; } = 90;
@@ -161,6 +163,8 @@ namespace quick_image_viewer.Managers
         public int BackgroundColorMode { get => _data.BackgroundColorMode; set => _data.BackgroundColorMode = value; }
         public bool UseHighQualityScaling { get => _data.UseHighQualityScaling; set => _data.UseHighQualityScaling = value; }
         public bool ShowPageIndicator { get => _data.ShowPageIndicator; set => _data.ShowPageIndicator = value; }
+        public bool EnablePanAnimation { get => _data.EnablePanAnimation; set => _data.EnablePanAnimation = value; }
+        public double PanAnimationSpeed { get => _data.PanAnimationSpeed; set => _data.PanAnimationSpeed = value; }
         public double VideoVolume { get => _data.VideoVolume; set => _data.VideoVolume = value; }
         public int BoundaryAction { get => _data.BoundaryAction; set => _data.BoundaryAction = value; }
 

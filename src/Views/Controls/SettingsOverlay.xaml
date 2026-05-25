@@ -56,6 +56,12 @@
                                     <StackPanel Spacing="8">
                                         <CheckBox x:Name="CheckHighQuality" x:Uid="Settings_HighQuality" Content="High Quality Scaling" Foreground="White" Click="SettingControl_Changed" />
                                         <CheckBox x:Name="CheckShowPageIndicator" x:Uid="Settings_ShowPageIndicator" Content="Show Page Count" Foreground="White" Click="SettingControl_Changed" />
+                                        <CheckBox x:Name="CheckPanAnimation" x:Uid="Settings_PanAnimation" Content="Enable slide animation for Cover mode" Foreground="White" Click="SettingControl_Changed" />
+                                        <StackPanel Orientation="Horizontal" Spacing="12" Margin="24,0,0,0" x:Name="PanelPanSpeed">
+                                            <TextBlock x:Uid="Settings_PanSpeed" Text="Slide Speed" VerticalAlignment="Center" Foreground="#AAAAAA" Width="100" />
+                                            <Slider x:Name="SliderPanSpeed" Minimum="0.1" Maximum="3.0" StepFrequency="0.1" ValueChanged="SliderPanSpeed_ValueChanged" Width="160" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TxtPanSpeed" Text="1.0x" VerticalAlignment="Center" Foreground="White" Width="40" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
 

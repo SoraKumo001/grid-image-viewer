@@ -485,6 +485,12 @@
   <data name="Settings_ShowPageIndicator.Content" xml:space="preserve">
     <value>ページ数を表示</value>
   </data>
+  <data name="Settings_PanAnimation.Content" xml:space="preserve">
+    <value>全体を埋める時にスライドアニメーションを有効にする</value>
+  </data>
+  <data name="Settings_PanSpeed.Text" xml:space="preserve">
+    <value>スライド速度</value>
+  </data>
   <data name="Settings_VideoVolume.Text" xml:space="preserve">
     <value>動画マスター音量</value>
   </data>

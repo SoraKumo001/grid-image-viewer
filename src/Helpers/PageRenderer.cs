@@ -20,6 +20,18 @@ namespace quick_image_viewer.Helpers
         public int FrameCount { get; internal set; } = 0;
         public int CurrentFrameDuration { get; internal set; } = 100;
         public bool UseHighQualityScaling { get; set; } = true;
+        public bool EnablePanAnimation { get; set; } = false;
+        public double PanAnimationSpeed { get; set; } = 1.0;
+
+        // Slide Animation States
+        private bool _panInitialized = false;
+        private float _panStartX = 0.5f;
+        private float _panStartY = 0.5f;
+        private float _panEndX = 0.5f;
+        private float _panEndY = 0.5f;
+        private DateTime _panStartTime;
+        private double _panDurationMs = 10000;
+        private static readonly Random _panRand = new Random();
 
         public bool IsAnimated => Codec != null && FrameCount > 1;
 
@@ -178,18 +190,74 @@ namespace quick_image_viewer.Helpers
                     else // None (Original)
                         scale = 1.0f;
 
-                    float x = (info.Width - bmpToDraw.Width * scale) / 2;
-                    if (StretchMode != 3) // Not Cover
-                    {
-                        if (horizontalAlignment == 0) x = 0;
-                        else if (horizontalAlignment == 2) x = info.Width - bmpToDraw.Width * scale;
-                    }
+                    float x = 0;
+                    float y = 0;
 
-                    float y = (info.Height - bmpToDraw.Height * scale) / 2;
-                    if (StretchMode != 3) // Not Cover
+                    if (StretchMode == 3 && EnablePanAnimation)
                     {
-                        if (verticalAlignment == 0) y = 0;
-                        else if (verticalAlignment == 2) y = info.Height - bmpToDraw.Height * scale;
+                        float diffX = bmpToDraw.Width * scale - info.Width;
+                        float diffY = bmpToDraw.Height * scale - info.Height;
+
+                        bool canPanX = diffX > 0.5f;
+                        bool canPanY = diffY > 0.5f;
+
+                        if (canPanX || canPanY)
+                        {
+                            if (!_panInitialized)
+                            {
+                                _panStartX = (float)_panRand.NextDouble();
+                                _panStartY = (float)_panRand.NextDouble();
+                                _panEndX = (float)_panRand.NextDouble();
+                                _panEndY = (float)_panRand.NextDouble();
+                                _panStartTime = DateTime.Now;
+                                _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / PanAnimationSpeed; // 8 to 15 seconds divided by speed multiplier
+                                _panInitialized = true;
+                            }
+
+                            double elapsed = (DateTime.Now - _panStartTime).TotalMilliseconds;
+                            double t = elapsed / _panDurationMs;
+
+                            if (t >= 1.0)
+                            {
+                                _panStartX = _panEndX;
+                                _panStartY = _panEndY;
+                                _panEndX = (float)_panRand.NextDouble();
+                                _panEndY = (float)_panRand.NextDouble();
+                                _panStartTime = DateTime.Now;
+                                _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / PanAnimationSpeed;
+                                t = 0.0;
+                            }
+
+                            // Linear interpolation to keep moving without pauses at the ends
+                            double easedT = t;
+
+                            float curX = _panStartX + (float)(easedT * (_panEndX - _panStartX));
+                            float curY = _panStartY + (float)(easedT * (_panEndY - _panStartY));
+
+                            x = canPanX ? -diffX * curX : -diffX * 0.5f;
+                            y = canPanY ? -diffY * curY : -diffY * 0.5f;
+                        }
+                        else
+                        {
+                            x = (info.Width - bmpToDraw.Width * scale) / 2;
+                            y = (info.Height - bmpToDraw.Height * scale) / 2;
+                        }
+                    }
+                    else
+                    {
+                        x = (info.Width - bmpToDraw.Width * scale) / 2;
+                        if (StretchMode != 3) // Not Cover
+                        {
+                            if (horizontalAlignment == 0) x = 0;
+                            else if (horizontalAlignment == 2) x = info.Width - bmpToDraw.Width * scale;
+                        }
+
+                        y = (info.Height - bmpToDraw.Height * scale) / 2;
+                        if (StretchMode != 3) // Not Cover
+                        {
+                            if (verticalAlignment == 0) y = 0;
+                            else if (verticalAlignment == 2) y = info.Height - bmpToDraw.Height * scale;
+                        }
                     }
 
                     var destRect = new SKRect(x, y, x + bmpToDraw.Width * scale, y + bmpToDraw.Height * scale);
@@ -227,6 +295,7 @@ namespace quick_image_viewer.Helpers
                 FrameCount = 0;
                 CurrentFrame = -1;
                 PriorFrame = -1;
+                _panInitialized = false;
             }
         }
 

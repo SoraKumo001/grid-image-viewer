@@ -44,6 +44,7 @@ namespace quick_image_viewer.Managers
         private int _lastEffectiveSplitCount = 1;
         private int _lastCachedQuadLayout = -1;
         private bool _lastIsRightToLeft = true;
+        private bool _isRenderingSubscribed = false;
         private Microsoft.UI.Xaml.DispatcherTimer? _resizeTimer;
         private double _lastResizeWidth;
         private double _lastResizeHeight;
@@ -237,6 +238,7 @@ namespace quick_image_viewer.Managers
             _window.ImageGridView.Visibility = Visibility.Visible;
             _window.AnimationService.StopAnimation();
             _window.GridManager.StartGridAnimation();
+            UpdateRenderingSubscription();
 
             _window.ImageGridView.SelectedIndex = _window.CurrentIndex;
             _window.ImageGridView.ScrollIntoView(_window.ImageGridView.SelectedItem);
@@ -431,6 +433,9 @@ namespace quick_image_viewer.Managers
                 targetControls[i].ResetPlayback();
                 targetControls[i].LoadingRing.IsActive = false;
                 targetPages[i].Reset();
+                targetPages[i].StretchMode = (int)(Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
+                targetPages[i].EnablePanAnimation = _settings.EnablePanAnimation;
+                targetPages[i].PanAnimationSpeed = _settings.PanAnimationSpeed;
                 targetControls[i].Visibility = Visibility.Collapsed;
             }
 
@@ -603,6 +608,7 @@ namespace quick_image_viewer.Managers
             _window.AnimationService.StartAnimation();
             _window.UpdatePageIndicator();
             WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
+            UpdateRenderingSubscription();
         }
 
 
@@ -685,6 +691,8 @@ namespace quick_image_viewer.Managers
                                 {
                                     _pagesBuffer[b][i].StretchMode = stretchMode;
                                     _pagesBuffer[b][i].UseHighQualityScaling = _settings.UseHighQualityScaling;
+                                    _pagesBuffer[b][i].EnablePanAnimation = _settings.EnablePanAnimation;
+                                    _pagesBuffer[b][i].PanAnimationSpeed = _settings.PanAnimationSpeed;
                                 }
                             }
                         }
@@ -702,6 +710,7 @@ namespace quick_image_viewer.Managers
                             controls[i].PageCanvas.Invalidate();
                         }
                     }
+                    UpdateRenderingSubscription();
                 }
                 catch { }
             });
@@ -806,6 +815,7 @@ namespace quick_image_viewer.Managers
             });
 
             _ = UpdateVideoVisualSizesAfterLayoutDelayAsync();
+            UpdateRenderingSubscription();
         }
 
         private async Task UpdateVideoVisualSizesAfterLayoutDelayAsync()
@@ -914,6 +924,13 @@ namespace quick_image_viewer.Managers
             }
             foreach (var p in _pagesBuffer[0]) p.Reset();
             foreach (var p in _pagesBuffer[1]) p.Reset();
+
+            if (_isRenderingSubscribed)
+            {
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= OnCompositionRendering;
+                _isRenderingSubscribed = false;
+            }
+
             GC.SuppressFinalize(this);
         }
 
@@ -951,6 +968,43 @@ namespace quick_image_viewer.Managers
                     // ShowNotification("Debug: Edit path not found in buffers");
                 }
             });
+        }
+
+        private void UpdateRenderingSubscription()
+        {
+            _window.DispatcherQueue.TryEnqueue(() =>
+            {
+                bool needRendering = _settings.EnablePanAnimation
+                                     && !_window.IsGridMode
+                                     && _settings.ImageStretchMode == 3
+                                     && _window.Playlist.Count > 0;
+
+                if (needRendering && !_isRenderingSubscribed)
+                {
+                    Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += OnCompositionRendering;
+                    _isRenderingSubscribed = true;
+                }
+                else if (!needRendering && _isRenderingSubscribed)
+                {
+                    Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= OnCompositionRendering;
+                    _isRenderingSubscribed = false;
+                }
+            });
+        }
+
+        private void OnCompositionRendering(object? sender, object e)
+        {
+            if (_window.ViewerControl == null || _window.IsGridMode) return;
+
+            int effectiveCount = GetEffectiveSplitCount();
+            for (int i = 0; i < effectiveCount; i++)
+            {
+                InvalidatePage(i);
+                if (i < _pageControls.Length && _pageControls[i] != null && _pageControls[i].IsVideoContent)
+                {
+                    _pageControls[i].UpdateVideoVisualSize();
+                }
+            }
         }
     }
 }

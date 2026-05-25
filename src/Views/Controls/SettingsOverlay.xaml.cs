@@ -65,6 +65,10 @@ namespace quick_image_viewer.Views.Controls
             ComboBackground.SelectedIndex = _settings.BackgroundColorMode >= 0 ? _settings.BackgroundColorMode : 0;
             CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
             CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
+            CheckPanAnimation.IsChecked = _settings.EnablePanAnimation;
+            SliderPanSpeed.IsEnabled = _settings.EnablePanAnimation;
+            SliderPanSpeed.Value = _settings.PanAnimationSpeed;
+            TxtPanSpeed.Text = $"{_settings.PanAnimationSpeed:F1}x";
             SliderVideoVolume.Value = (int)(_settings.VideoVolume * 100);
             ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
 
@@ -114,11 +118,25 @@ namespace quick_image_viewer.Views.Controls
         private void SettingControl_Changed(object sender, RoutedEventArgs e)
         {
             if (_isInitializing || _settings == null || _window == null) return;
+            if (ReferenceEquals(sender, CheckPanAnimation))
+            {
+                SliderPanSpeed.IsEnabled = CheckPanAnimation.IsChecked ?? true;
+            }
             ApplyTemporarySettings();
         }
 
         private void SliderVideoVolume_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
+            if (_isInitializing || _settings == null || _window == null) return;
+            ApplyTemporarySettings();
+        }
+
+        private void SliderPanSpeed_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        {
+            if (TxtPanSpeed != null)
+            {
+                TxtPanSpeed.Text = $"{e.NewValue:F1}x";
+            }
             if (_isInitializing || _settings == null || _window == null) return;
             ApplyTemporarySettings();
         }
@@ -130,6 +148,8 @@ namespace quick_image_viewer.Views.Controls
 
             _settings.UseHighQualityScaling = CheckHighQuality.IsChecked ?? true;
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
+            _settings.EnablePanAnimation = CheckPanAnimation.IsChecked ?? true;
+            _settings.PanAnimationSpeed = SliderPanSpeed.Value;
 
             if (ComboBoundary.SelectedIndex >= 0)
                 _settings.BoundaryAction = ComboBoundary.SelectedIndex;
@@ -420,6 +440,10 @@ namespace quick_image_viewer.Views.Controls
                 ComboBackground.SelectedIndex = _settings.BackgroundColorMode >= 0 ? _settings.BackgroundColorMode : 0;
                 CheckHighQuality.IsChecked = _settings.UseHighQualityScaling;
                 CheckShowPageIndicator.IsChecked = _settings.ShowPageIndicator;
+                CheckPanAnimation.IsChecked = _settings.EnablePanAnimation;
+                SliderPanSpeed.IsEnabled = _settings.EnablePanAnimation;
+                SliderPanSpeed.Value = _settings.PanAnimationSpeed;
+                TxtPanSpeed.Text = $"{_settings.PanAnimationSpeed:F1}x";
                 SliderVideoVolume.Value = (int)(_settings.VideoVolume * 100);
                 ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
 
@@ -457,6 +481,8 @@ namespace quick_image_viewer.Views.Controls
 
             _settings.UseHighQualityScaling = CheckHighQuality.IsChecked ?? true;
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
+            _settings.EnablePanAnimation = CheckPanAnimation.IsChecked ?? true;
+            _settings.PanAnimationSpeed = SliderPanSpeed.Value;
 
             if (ComboBoundary.SelectedIndex >= 0)
                 _settings.BoundaryAction = ComboBoundary.SelectedIndex;
