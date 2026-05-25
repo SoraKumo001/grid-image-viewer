@@ -41,6 +41,7 @@ namespace quick_image_viewer.Views.Controls
         private HorizontalAlignment _pendingHAlign;
         private VerticalAlignment _pendingVAlign;
         private bool _isDraggingSlider = false;
+        private bool _isUpdatingSliderFromCode = false;
         private readonly Interfaces.ISettingsManager _settings;
 
         public void RecreateMediaPlayerElement()
@@ -827,14 +828,17 @@ namespace quick_image_viewer.Views.Controls
 
                 if (session.NaturalDuration.TotalSeconds > 0)
                 {
+                    _isUpdatingSliderFromCode = true;
                     TimelineSlider.Maximum = session.NaturalDuration.TotalSeconds;
                     TimelineSlider.Value = session.Position.TotalSeconds;
                     TimeText.Text = $"{FormatTime(session.Position)} / {FormatTime(session.NaturalDuration)}";
                     UpdatePlayPauseIcon(session.PlaybackState);
+                    _isUpdatingSliderFromCode = false;
                 }
             }
             catch (System.Exception)
             {
+                _isUpdatingSliderFromCode = false;
             }
         }
 
@@ -903,8 +907,10 @@ namespace quick_image_viewer.Views.Controls
 
         private void TimelineSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
         {
+            if (_isUpdatingSliderFromCode) return;
+
             var player = _internalMediaPlayer?.MediaPlayer;
-            if (_isDraggingSlider && player != null)
+            if (player != null)
             {
                 try
                 {
