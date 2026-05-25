@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
+using quick_image_viewer.Models;
 using quick_image_viewer.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,12 +13,6 @@ using System.Linq;
 
 namespace quick_image_viewer.Views.Controls
 {
-    public class ExtensionItem
-    {
-        public string Name { get; set; } = string.Empty;
-        public bool IsEnabled { get; set; }
-    }
-
     public sealed partial class SettingsOverlay : UserControl
     {
         private readonly IMainView _window;
@@ -28,31 +23,61 @@ namespace quick_image_viewer.Views.Controls
         private ObservableCollection<ExtensionItem> _extensionsDocuments = new();
         private bool _isInitializing = true;
 
-        private KeyBindingData _tempNextImage = null!;
-        private KeyBindingData _tempPrevImage = null!;
-        private KeyBindingData _tempNextFolder = null!;
-        private KeyBindingData _tempPrevFolder = null!;
-        private KeyBindingData _tempToggleManga = null!;
-        private KeyBindingData _tempToggleReadingDirection = null!;
-        private KeyBindingData _tempExit = null!;
-        private KeyBindingData _tempToggleGrid = null!;
-        private KeyBindingData _tempSlideshow = null!;
-        private KeyBindingData _tempMetadata = null!;
-        private KeyBindingData _tempToggleBookmarks = null!;
-        private KeyBindingData _tempToggleFullscreen = null!;
-        private KeyBindingData _tempToggleStretchMode = null!;
-        private KeyBindingData _tempAddBookmark = null!;
-        private KeyBindingData _tempRotateRight = null!;
-        private KeyBindingData _tempRotateLeft = null!;
-        private KeyBindingData _tempFlipHorizontal = null!;
-        private KeyBindingData _tempCopyPath = null!;
-        private KeyBindingData _tempDeleteFile = null!;
-        private KeyBindingData _tempRenameFile = null!;
-        private KeyBindingData _tempMoveFile = null!;
-        private KeyBindingData _tempZoomIn = null!;
-        private KeyBindingData _tempZoomOut = null!;
-        private KeyBindingData _tempZoomReset = null!;
-        private KeyBindingData _tempZoom100 = null!;
+        private class KeyBindingDefinition
+        {
+            public string PropertyName { get; }
+            public string ResourceKey { get; }
+            public string CategoryResourceKey { get; }
+
+            public KeyBindingDefinition(string propertyName, string resourceKey, string categoryResourceKey)
+            {
+                PropertyName = propertyName;
+                ResourceKey = resourceKey;
+                CategoryResourceKey = categoryResourceKey;
+            }
+        }
+
+        private static readonly List<KeyBindingDefinition> KeyBindingDefinitions = new()
+        {
+            // Navigation
+            new(nameof(ISettingsManager.KeyNextImage), "KeyBinding_NextImage", "KeyBinding_Category_Navigation"),
+            new(nameof(ISettingsManager.KeyPrevImage), "KeyBinding_PrevImage", "KeyBinding_Category_Navigation"),
+            new(nameof(ISettingsManager.KeyNextFolder), "KeyBinding_NextFolder", "KeyBinding_Category_Navigation"),
+            new(nameof(ISettingsManager.KeyPrevFolder), "KeyBinding_PrevFolder", "KeyBinding_Category_Navigation"),
+
+            // View Modes
+            new(nameof(ISettingsManager.KeyToggleManga), "KeyBinding_ToggleManga", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeyToggleReadingDirection), "KeyBinding_ToggleReadingDirection", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeyToggleGrid), "KeyBinding_ToggleGrid", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeySlideshow), "KeyBinding_Slideshow", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeyMetadata), "KeyBinding_Metadata", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeyToggleFullscreen), "KeyBinding_ToggleFullscreen", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeyToggleStretchMode), "KeyBinding_ToggleStretchMode", "KeyBinding_Category_View"),
+
+            // Bookmarks
+            new(nameof(ISettingsManager.KeyToggleBookmarks), "KeyBinding_ToggleBookmarks", "KeyBinding_Category_Bookmarks"),
+            new(nameof(ISettingsManager.KeyAddBookmark), "KeyBinding_AddBookmark", "KeyBinding_Category_Bookmarks"),
+
+            // Zoom
+            new(nameof(ISettingsManager.KeyZoomIn), "KeyBinding_ZoomIn", "KeyBinding_Category_Zoom"),
+            new(nameof(ISettingsManager.KeyZoomOut), "KeyBinding_ZoomOut", "KeyBinding_Category_Zoom"),
+            new(nameof(ISettingsManager.KeyZoomReset), "KeyBinding_ZoomReset", "KeyBinding_Category_Zoom"),
+            new(nameof(ISettingsManager.KeyZoom100), "KeyBinding_Zoom100", "KeyBinding_Category_Zoom"),
+
+            // Actions
+            new(nameof(ISettingsManager.KeyRotateRight), "KeyBinding_RotateRight", "KeyBinding_Category_Action"),
+            new(nameof(ISettingsManager.KeyRotateLeft), "KeyBinding_RotateLeft", "KeyBinding_Category_Action"),
+            new(nameof(ISettingsManager.KeyFlipHorizontal), "KeyBinding_FlipHorizontal", "KeyBinding_Category_Action"),
+            new(nameof(ISettingsManager.KeyCopyPath), "KeyBinding_CopyPath", "KeyBinding_Category_Action"),
+            new(nameof(ISettingsManager.KeyDeleteFile), "KeyBinding_DeleteFile", "KeyBinding_Category_Action"),
+            new(nameof(ISettingsManager.KeyRenameFile), "KeyBinding_RenameFile", "KeyBinding_Category_Action"),
+            new(nameof(ISettingsManager.KeyMoveFile), "KeyBinding_MoveFile", "KeyBinding_Category_Action"),
+
+            // Application
+            new(nameof(ISettingsManager.KeyExit), "KeyBinding_Exit", "KeyBinding_Category_App")
+        };
+
+        private readonly Dictionary<string, KeyBindingData> _tempBindings = new();
 
         public SettingsOverlay(IMainView window, ISettingsManager settings, int initialTabIndex = 0)
         {
@@ -88,31 +113,16 @@ namespace quick_image_viewer.Views.Controls
 
         private void InitializeKeyBindingData()
         {
-            _tempNextImage = _settings.KeyNextImage.Clone();
-            _tempPrevImage = _settings.KeyPrevImage.Clone();
-            _tempNextFolder = _settings.KeyNextFolder.Clone();
-            _tempPrevFolder = _settings.KeyPrevFolder.Clone();
-            _tempToggleManga = _settings.KeyToggleManga.Clone();
-            _tempToggleReadingDirection = _settings.KeyToggleReadingDirection.Clone();
-            _tempExit = _settings.KeyExit.Clone();
-            _tempToggleGrid = _settings.KeyToggleGrid.Clone();
-            _tempSlideshow = _settings.KeySlideshow.Clone();
-            _tempMetadata = _settings.KeyMetadata.Clone();
-            _tempToggleBookmarks = _settings.KeyToggleBookmarks.Clone();
-            _tempToggleFullscreen = _settings.KeyToggleFullscreen.Clone();
-            _tempToggleStretchMode = _settings.KeyToggleStretchMode.Clone();
-            _tempAddBookmark = _settings.KeyAddBookmark.Clone();
-            _tempRotateRight = _settings.KeyRotateRight.Clone();
-            _tempRotateLeft = _settings.KeyRotateLeft.Clone();
-            _tempFlipHorizontal = _settings.KeyFlipHorizontal.Clone();
-            _tempCopyPath = _settings.KeyCopyPath.Clone();
-            _tempDeleteFile = _settings.KeyDeleteFile.Clone();
-            _tempRenameFile = _settings.KeyRenameFile.Clone();
-            _tempMoveFile = _settings.KeyMoveFile.Clone();
-            _tempZoomIn = _settings.KeyZoomIn.Clone();
-            _tempZoomOut = _settings.KeyZoomOut.Clone();
-            _tempZoomReset = _settings.KeyZoomReset.Clone();
-            _tempZoom100 = _settings.KeyZoom100.Clone();
+            _tempBindings.Clear();
+            var type = typeof(ISettingsManager);
+            foreach (var def in KeyBindingDefinitions)
+            {
+                var prop = type.GetProperty(def.PropertyName);
+                if (prop != null && prop.GetValue(_settings) is KeyBindingData binding)
+                {
+                    _tempBindings[def.PropertyName] = binding.Clone();
+                }
+            }
         }
 
         private void SettingControl_Changed(object sender, RoutedEventArgs e)
@@ -256,49 +266,21 @@ namespace quick_image_viewer.Views.Controls
         private void InitializeKeyBindingsList()
         {
             BindingsStack.Children.Clear();
+            string? currentCategory = null;
 
-            // Navigation
-            BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_Navigation")));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_NextImage"), _tempNextImage));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_PrevImage"), _tempPrevImage));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_NextFolder"), _tempNextFolder));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_PrevFolder"), _tempPrevFolder));
+            foreach (var def in KeyBindingDefinitions)
+            {
+                if (def.CategoryResourceKey != currentCategory)
+                {
+                    currentCategory = def.CategoryResourceKey;
+                    BindingsStack.Children.Add(CreateKeyHeader(GetString(currentCategory)));
+                }
 
-            // View Modes
-            BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_View")));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleManga"), _tempToggleManga));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleReadingDirection"), _tempToggleReadingDirection));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleGrid"), _tempToggleGrid));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleSlideshow"), _tempSlideshow));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_Metadata"), _tempMetadata));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleFullscreen"), _tempToggleFullscreen));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleStretchMode"), _tempToggleStretchMode));
-
-            // Bookmarks
-            BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_Bookmarks")));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ToggleBookmarks"), _tempToggleBookmarks));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_AddBookmark"), _tempAddBookmark));
-
-            // Zoom
-            BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_Zoom")));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ZoomIn"), _tempZoomIn));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ZoomOut"), _tempZoomOut));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_ZoomReset"), _tempZoomReset));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_Zoom100"), _tempZoom100));
-
-            // Actions
-            BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_Action")));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_RotateRight"), _tempRotateRight));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_RotateLeft"), _tempRotateLeft));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_FlipHorizontal"), _tempFlipHorizontal));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_CopyPath"), _tempCopyPath));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_DeleteFile"), _tempDeleteFile));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_RenameFile"), _tempRenameFile));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_MoveFile"), _tempMoveFile));
-
-            // Application
-            BindingsStack.Children.Add(CreateKeyHeader(GetString("KeyBinding_Category_App")));
-            BindingsStack.Children.Add(CreateKeyRow(GetString("KeyBinding_Exit"), _tempExit));
+                if (_tempBindings.TryGetValue(def.PropertyName, out var binding))
+                {
+                    BindingsStack.Children.Add(CreateKeyRow(GetString(def.ResourceKey), binding));
+                }
+            }
         }
 
         private UIElement CreateKeyHeader(string text)
@@ -387,31 +369,18 @@ namespace quick_image_viewer.Views.Controls
         private void BtnResetKeyBindings_Click(object sender, RoutedEventArgs e)
         {
             var defaults = new SettingsData();
-            CopyKeyBinding(defaults.KeyNextImage, _tempNextImage);
-            CopyKeyBinding(defaults.KeyPrevImage, _tempPrevImage);
-            CopyKeyBinding(defaults.KeyNextFolder, _tempNextFolder);
-            CopyKeyBinding(defaults.KeyPrevFolder, _tempPrevFolder);
-            CopyKeyBinding(defaults.KeyToggleManga, _tempToggleManga);
-            CopyKeyBinding(defaults.KeyToggleReadingDirection, _tempToggleReadingDirection);
-            CopyKeyBinding(defaults.KeyExit, _tempExit);
-            CopyKeyBinding(defaults.KeyToggleGrid, _tempToggleGrid);
-            CopyKeyBinding(defaults.KeySlideshow, _tempSlideshow);
-            CopyKeyBinding(defaults.KeyMetadata, _tempMetadata);
-            CopyKeyBinding(defaults.KeyToggleBookmarks, _tempToggleBookmarks);
-            CopyKeyBinding(defaults.KeyToggleFullscreen, _tempToggleFullscreen);
-            CopyKeyBinding(defaults.KeyToggleStretchMode, _tempToggleStretchMode);
-            CopyKeyBinding(defaults.KeyAddBookmark, _tempAddBookmark);
-            CopyKeyBinding(defaults.KeyRotateRight, _tempRotateRight);
-            CopyKeyBinding(defaults.KeyRotateLeft, _tempRotateLeft);
-            CopyKeyBinding(defaults.KeyFlipHorizontal, _tempFlipHorizontal);
-            CopyKeyBinding(defaults.KeyCopyPath, _tempCopyPath);
-            CopyKeyBinding(defaults.KeyDeleteFile, _tempDeleteFile);
-            CopyKeyBinding(defaults.KeyRenameFile, _tempRenameFile);
-            CopyKeyBinding(defaults.KeyMoveFile, _tempMoveFile);
-            CopyKeyBinding(defaults.KeyZoomIn, _tempZoomIn);
-            CopyKeyBinding(defaults.KeyZoomOut, _tempZoomOut);
-            CopyKeyBinding(defaults.KeyZoomReset, _tempZoomReset);
-            CopyKeyBinding(defaults.KeyZoom100, _tempZoom100);
+            var defaultsType = typeof(SettingsData);
+            foreach (var def in KeyBindingDefinitions)
+            {
+                var prop = defaultsType.GetProperty(def.PropertyName);
+                if (prop != null && prop.GetValue(defaults) is KeyBindingData defaultBinding)
+                {
+                    if (_tempBindings.TryGetValue(def.PropertyName, out var tempBinding))
+                    {
+                        CopyKeyBinding(defaultBinding, tempBinding);
+                    }
+                }
+            }
             InitializeKeyBindingsList();
         }
 
@@ -489,31 +458,15 @@ namespace quick_image_viewer.Views.Controls
 
             _settings.VideoVolume = SliderVideoVolume.Value / 100.0;
 
-            _settings.KeyNextImage = _tempNextImage;
-            _settings.KeyPrevImage = _tempPrevImage;
-            _settings.KeyNextFolder = _tempNextFolder;
-            _settings.KeyPrevFolder = _tempPrevFolder;
-            _settings.KeyToggleManga = _tempToggleManga;
-            _settings.KeyToggleReadingDirection = _tempToggleReadingDirection;
-            _settings.KeyExit = _tempExit;
-            _settings.KeyToggleGrid = _tempToggleGrid;
-            _settings.KeySlideshow = _tempSlideshow;
-            _settings.KeyMetadata = _tempMetadata;
-            _settings.KeyToggleBookmarks = _tempToggleBookmarks;
-            _settings.KeyToggleFullscreen = _tempToggleFullscreen;
-            _settings.KeyToggleStretchMode = _tempToggleStretchMode;
-            _settings.KeyAddBookmark = _tempAddBookmark;
-            _settings.KeyRotateRight = _tempRotateRight;
-            _settings.KeyRotateLeft = _tempRotateLeft;
-            _settings.KeyFlipHorizontal = _tempFlipHorizontal;
-            _settings.KeyCopyPath = _tempCopyPath;
-            _settings.KeyDeleteFile = _tempDeleteFile;
-            _settings.KeyRenameFile = _tempRenameFile;
-            _settings.KeyMoveFile = _tempMoveFile;
-            _settings.KeyZoomIn = _tempZoomIn;
-            _settings.KeyZoomOut = _tempZoomOut;
-            _settings.KeyZoomReset = _tempZoomReset;
-            _settings.KeyZoom100 = _tempZoom100;
+            var type = typeof(ISettingsManager);
+            foreach (var def in KeyBindingDefinitions)
+            {
+                var prop = type.GetProperty(def.PropertyName);
+                if (prop != null && prop.CanWrite && _tempBindings.TryGetValue(def.PropertyName, out var tempBinding))
+                {
+                    prop.SetValue(_settings, tempBinding);
+                }
+            }
 
             var newExts = _extensionsImages.Concat(_extensionsVideos).Concat(_extensionsArchives)
                 .Where(i => i.IsEnabled)

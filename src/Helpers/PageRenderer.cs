@@ -10,6 +10,10 @@ namespace quick_image_viewer.Helpers
     /// </summary>
     public class PageRenderer : IDisposable
     {
+        private readonly object _stateLock = new();
+        private SKImage? _displayImage;
+        private SKBitmap? _lastImageBitmap;
+
         public SKData? Data { get; internal set; }
         public SKCodec? Codec { get; internal set; }
         public SKBitmap? Bitmap { get; set; }
@@ -41,7 +45,7 @@ namespace quick_image_viewer.Helpers
         /// </summary>
         public void LoadSkia(string filePath, CancellationToken token)
         {
-            lock (this)
+            lock (_stateLock)
             {
                 if (token.IsCancellationRequested) return;
 
@@ -106,6 +110,15 @@ namespace quick_image_viewer.Helpers
                     PriorFrame = 0;
                     CurrentFrameDuration = codec.FrameInfo[0].Duration > 0 ? codec.FrameInfo[0].Duration : 100;
                 }
+
+                // Initialize drawing buffer image
+                var targetBitmap = EditedBitmap ?? Bitmap;
+                if (targetBitmap != null)
+                {
+                    _displayImage?.Dispose();
+                    _displayImage = SKImage.FromBitmap(targetBitmap);
+                    _lastImageBitmap = targetBitmap;
+                }
             }
         }
 
@@ -136,7 +149,8 @@ namespace quick_image_viewer.Helpers
             {
                 try
                 {
-                    lock (this)
+                    SKImage? newImage = null;
+                    lock (_stateLock)
                     {
                         if (Codec == null || Bitmap == null) return;
 
@@ -157,9 +171,20 @@ namespace quick_image_viewer.Helpers
 
                         Codec.GetPixels(imageInfo, Bitmap.GetPixels(), options);
 
-                        _cachedImage?.Dispose();
-                        _cachedImage = null;
                         PriorFrame = CurrentFrame;
+                        newImage = SKImage.FromBitmap(Bitmap);
+                    }
+
+                    if (newImage != null)
+                    {
+                        SKImage? oldImage;
+                        lock (_stateLock)
+                        {
+                            oldImage = _displayImage;
+                            _displayImage = newImage;
+                            _lastImageBitmap = Bitmap;
+                        }
+                        oldImage?.Dispose();
                     }
                 }
                 catch { }
@@ -177,120 +202,135 @@ namespace quick_image_viewer.Helpers
         /// </summary>
         public void Paint(SKCanvas canvas, SKImageInfo info, int horizontalAlignment, int verticalAlignment = 1)
         {
-            lock (this)
+            SKImage? imgToDraw = null;
+            lock (_stateLock)
             {
-                var bmpToDraw = EditedBitmap ?? Bitmap;
-                if (bmpToDraw != null)
+                var expectedBitmap = EditedBitmap ?? Bitmap;
+                if (expectedBitmap != null && (_displayImage == null || _lastImageBitmap != expectedBitmap))
                 {
-                    float scale;
-                    if (StretchMode == 3) // UniformToFill
-                        scale = Math.Max((float)info.Width / bmpToDraw.Width, (float)info.Height / bmpToDraw.Height);
-                    else if (StretchMode == 2) // Uniform
-                        scale = Math.Min((float)info.Width / bmpToDraw.Width, (float)info.Height / bmpToDraw.Height);
-                    else // None (Original)
-                        scale = 1.0f;
+                    _displayImage?.Dispose();
+                    _displayImage = SKImage.FromBitmap(expectedBitmap);
+                    _lastImageBitmap = expectedBitmap;
+                }
+                imgToDraw = _displayImage;
+            }
 
-                    float x = 0;
-                    float y = 0;
+            if (imgToDraw != null)
+            {
+                float scale;
+                if (StretchMode == 3) // UniformToFill
+                    scale = Math.Max((float)info.Width / imgToDraw.Width, (float)info.Height / imgToDraw.Height);
+                else if (StretchMode == 2) // Uniform
+                    scale = Math.Min((float)info.Width / imgToDraw.Width, (float)info.Height / imgToDraw.Height);
+                else // None (Original)
+                    scale = 1.0f;
 
-                    if (StretchMode == 3 && EnablePanAnimation)
+                float x = 0;
+                float y = 0;
+
+                if (StretchMode == 3 && EnablePanAnimation)
+                {
+                    float diffX = imgToDraw.Width * scale - info.Width;
+                    float diffY = imgToDraw.Height * scale - info.Height;
+
+                    bool canPanX = diffX > 0.5f;
+                    bool canPanY = diffY > 0.5f;
+
+                    if (canPanX || canPanY)
                     {
-                        float diffX = bmpToDraw.Width * scale - info.Width;
-                        float diffY = bmpToDraw.Height * scale - info.Height;
-
-                        bool canPanX = diffX > 0.5f;
-                        bool canPanY = diffY > 0.5f;
-
-                        if (canPanX || canPanY)
+                        if (!_panInitialized)
                         {
-                            if (!_panInitialized)
-                            {
-                                _panStartX = (float)_panRand.NextDouble();
-                                _panStartY = (float)_panRand.NextDouble();
-                                _panEndX = (float)_panRand.NextDouble();
-                                _panEndY = (float)_panRand.NextDouble();
-                                _panStartTime = DateTime.Now;
-                                _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / PanAnimationSpeed; // 8 to 15 seconds divided by speed multiplier
-                                _panInitialized = true;
-                            }
-
-                            double elapsed = (DateTime.Now - _panStartTime).TotalMilliseconds;
-                            double t = elapsed / _panDurationMs;
-
-                            if (t >= 1.0)
-                            {
-                                _panStartX = _panEndX;
-                                _panStartY = _panEndY;
-                                _panEndX = (float)_panRand.NextDouble();
-                                _panEndY = (float)_panRand.NextDouble();
-                                _panStartTime = DateTime.Now;
-                                _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / PanAnimationSpeed;
-                                t = 0.0;
-                            }
-
-                            // Linear interpolation to keep moving without pauses at the ends
-                            double easedT = t;
-
-                            float curX = _panStartX + (float)(easedT * (_panEndX - _panStartX));
-                            float curY = _panStartY + (float)(easedT * (_panEndY - _panStartY));
-
-                            x = canPanX ? -diffX * curX : -diffX * 0.5f;
-                            y = canPanY ? -diffY * curY : -diffY * 0.5f;
+                            _panStartX = (float)_panRand.NextDouble();
+                            _panStartY = (float)_panRand.NextDouble();
+                            _panEndX = (float)_panRand.NextDouble();
+                            _panEndY = (float)_panRand.NextDouble();
+                            _panStartTime = DateTime.Now;
+                            _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / PanAnimationSpeed; // 8 to 15 seconds divided by speed multiplier
+                            _panInitialized = true;
                         }
-                        else
+
+                        double elapsed = (DateTime.Now - _panStartTime).TotalMilliseconds;
+                        double t = elapsed / _panDurationMs;
+
+                        if (t >= 1.0)
                         {
-                            x = (info.Width - bmpToDraw.Width * scale) / 2;
-                            y = (info.Height - bmpToDraw.Height * scale) / 2;
+                            _panStartX = _panEndX;
+                            _panStartY = _panEndY;
+                            _panEndX = (float)_panRand.NextDouble();
+                            _panEndY = (float)_panRand.NextDouble();
+                            _panStartTime = DateTime.Now;
+                            _panDurationMs = (8000 + _panRand.NextDouble() * 7000) / PanAnimationSpeed;
+                            t = 0.0;
                         }
+
+                        // Linear interpolation to keep moving without pauses at the ends
+                        double easedT = t;
+
+                        float curX = _panStartX + (float)(easedT * (_panEndX - _panStartX));
+                        float curY = _panStartY + (float)(easedT * (_panEndY - _panStartY));
+
+                        x = canPanX ? -diffX * curX : -diffX * 0.5f;
+                        y = canPanY ? -diffY * curY : -diffY * 0.5f;
                     }
                     else
                     {
-                        x = (info.Width - bmpToDraw.Width * scale) / 2;
-                        if (StretchMode != 3) // Not Cover
-                        {
-                            if (horizontalAlignment == 0) x = 0;
-                            else if (horizontalAlignment == 2) x = info.Width - bmpToDraw.Width * scale;
-                        }
-
-                        y = (info.Height - bmpToDraw.Height * scale) / 2;
-                        if (StretchMode != 3) // Not Cover
-                        {
-                            if (verticalAlignment == 0) y = 0;
-                            else if (verticalAlignment == 2) y = info.Height - bmpToDraw.Height * scale;
-                        }
+                        x = (info.Width - imgToDraw.Width * scale) / 2;
+                        y = (info.Height - imgToDraw.Height * scale) / 2;
                     }
-
-                    var destRect = new SKRect(x, y, x + bmpToDraw.Width * scale, y + bmpToDraw.Height * scale);
-
-                    var sampling = (scale != 1.0f && UseHighQualityScaling)
-                        ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
-                        : new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
-
-                    if (_cachedImage == null || _lastImageBitmap != bmpToDraw)
+                }
+                else
+                {
+                    x = (info.Width - imgToDraw.Width * scale) / 2;
+                    if (StretchMode != 3) // Not Cover
                     {
-                        _cachedImage?.Dispose();
-                        _cachedImage = SKImage.FromBitmap(bmpToDraw);
-                        _lastImageBitmap = bmpToDraw;
+                        if (horizontalAlignment == 0) x = 0;
+                        else if (horizontalAlignment == 2) x = info.Width - imgToDraw.Width * scale;
                     }
-                    canvas.DrawImage(_cachedImage, destRect, sampling, null);
+
+                    y = (info.Height - imgToDraw.Height * scale) / 2;
+                    if (StretchMode != 3) // Not Cover
+                    {
+                        if (verticalAlignment == 0) y = 0;
+                        else if (verticalAlignment == 2) y = info.Height - imgToDraw.Height * scale;
+                    }
+                }
+
+                var destRect = new SKRect(x, y, x + imgToDraw.Width * scale, y + imgToDraw.Height * scale);
+
+                var sampling = (scale != 1.0f && UseHighQualityScaling)
+                    ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
+                    : new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
+
+                canvas.DrawImage(imgToDraw, destRect, sampling, null);
+            }
+        }
+
+        private SKBitmap? _editedBitmap;
+        public SKBitmap? EditedBitmap
+        {
+            get => _editedBitmap;
+            set
+            {
+                lock (_stateLock)
+                {
+                    _editedBitmap = value;
+                    _displayImage?.Dispose();
+                    _displayImage = value != null ? SKImage.FromBitmap(value) : (Bitmap != null ? SKImage.FromBitmap(Bitmap) : null);
+                    _lastImageBitmap = value ?? Bitmap;
                 }
             }
         }
 
-        public SKBitmap? EditedBitmap { get; set; }
-        private SKImage? _cachedImage;
-        private SKBitmap? _lastImageBitmap;
-
         public void Reset()
         {
-            lock (this)
+            lock (_stateLock)
             {
                 Codec?.Dispose(); Codec = null;
                 Data?.Dispose(); Data = null;
                 Bitmap?.Dispose(); Bitmap = null;
-                _cachedImage?.Dispose(); _cachedImage = null;
+                _displayImage?.Dispose(); _displayImage = null;
                 _lastImageBitmap = null;
-                EditedBitmap = null;
+                _editedBitmap = null;
                 CurrentFilePath = null;
                 FrameCount = 0;
                 CurrentFrame = -1;

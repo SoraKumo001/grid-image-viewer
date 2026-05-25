@@ -39,12 +39,17 @@ namespace quick_image_viewer.Managers
         private CancellationTokenSource? _displayCts;
         public bool IsUpdatingDisplay => _window.State.IsDisplayUpdating;
         private int _cachedQuadLayout = 1;
-        private bool _lastIsSlideshowRunning = false;
-        private int _lastMangaSplitCount = -1;
-        private int _lastEffectiveSplitCount = 1;
-        private int _lastCachedQuadLayout = -1;
-        private bool _lastIsRightToLeft = true;
         private bool _isRenderingSubscribed = false;
+
+        private record struct LayoutState(
+            bool IsSlideshowRunning,
+            int MangaSplitCount,
+            int EffectiveSplitCount,
+            int CachedQuadLayout,
+            bool IsRightToLeft
+        );
+
+        private LayoutState _lastLayoutState = new(false, -1, 1, -1, true);
         private Microsoft.UI.Xaml.DispatcherTimer? _resizeTimer;
         private double _lastResizeWidth;
         private double _lastResizeHeight;
@@ -359,8 +364,8 @@ namespace quick_image_viewer.Managers
             }
             _window.ViewModel.OverrideDisplayIndex = maxIndexInView + 1;
 
-            bool stateChanged = isSlideshowRunning != _lastIsSlideshowRunning;
-            bool splitChanged = splitCount != _lastMangaSplitCount || effectiveSplitCount != _lastEffectiveSplitCount || cachedQuadLayout != _lastCachedQuadLayout || _settings.IsRightToLeft != _lastIsRightToLeft;
+            bool stateChanged = isSlideshowRunning != _lastLayoutState.IsSlideshowRunning;
+            bool splitChanged = splitCount != _lastLayoutState.MangaSplitCount || effectiveSplitCount != _lastLayoutState.EffectiveSplitCount || cachedQuadLayout != _lastLayoutState.CachedQuadLayout || _settings.IsRightToLeft != _lastLayoutState.IsRightToLeft;
 
             return new LayoutInfo(splitCount, effectiveSplitCount, gridStartIndex, cachedQuadLayout, isSlideshowRunning, nextPaths, stateChanged, splitChanged, currentPaths);
         }
@@ -599,11 +604,13 @@ namespace quick_image_viewer.Managers
                 });
             }
 
-            _lastIsSlideshowRunning = info.IsSlideshowRunning;
-            _lastMangaSplitCount = info.SplitCount;
-            _lastEffectiveSplitCount = info.EffectiveSplitCount;
-            _lastCachedQuadLayout = info.CachedQuadLayout;
-            _lastIsRightToLeft = _settings.IsRightToLeft;
+            _lastLayoutState = new LayoutState(
+                info.IsSlideshowRunning,
+                info.SplitCount,
+                info.EffectiveSplitCount,
+                info.CachedQuadLayout,
+                _settings.IsRightToLeft
+            );
 
             _window.AnimationService.StartAnimation();
             _window.UpdatePageIndicator();
@@ -786,7 +793,7 @@ namespace quick_image_viewer.Managers
             if (_window.ViewerControl == null || _window.State.IsDisplayUpdating) return;
             int currentBufferIdx = _window.ViewerControl.CurrentBufferIndex;
             int splitCount = _settings.MangaSplitCount;
-            int effectiveSplitCount = _lastEffectiveSplitCount;
+            int effectiveSplitCount = _lastLayoutState.EffectiveSplitCount;
 
             var currentGrid = _window.ViewerControl.PagesGrids[currentBufferIdx];
             double[] aspects = GetAspectRatios(currentBufferIdx, effectiveSplitCount);
