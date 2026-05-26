@@ -53,23 +53,23 @@ namespace quick_image_viewer
 
         // === Components and Services ===
         internal ISettingsManager _settings;
-        public ISlideshowService SlideshowService { get; private set; }
-        public ISlideshowManager SlideshowManager { get; private set; }
-        public IViewerCacheManager ViewerCacheManager { get; private set; }
-        public IViewerManager ViewerManager { get; private set; }
-        public IGridManager GridManager { get; private set; }
-        public IAppWindowManager AppWindowManager { get; private set; }
-        public IMenuStateManager MenuStateManager { get; private set; }
-        public IBookmarkManager BookmarkManager { get; private set; }
-        public IPlaylistManager PlaylistManager { get; private set; }
-        public IPrintService PrintService { get; private set; }
-        public IAnimationService AnimationService { get; private set; }
-        public IDialogService DialogService { get; private set; }
-        public INotificationService NotificationService { get; private set; }
-        public IMetadataDisplayService MetadataDisplayService { get; private set; }
-        public IImageEditService ImageEditService { get; private set; }
-        public IInputHandler InputHandler { get; private set; }
-        public IFileOperationService FileOperationService { get; private set; }
+        public ISlideshowService SlideshowService { get; private set; } = null!;
+        public ISlideshowManager SlideshowManager { get; private set; } = null!;
+        public IViewerCacheManager ViewerCacheManager { get; private set; } = null!;
+        public IViewerManager ViewerManager { get; private set; } = null!;
+        public IGridManager GridManager { get; private set; } = null!;
+        public IAppWindowManager AppWindowManager { get; private set; } = null!;
+        public IMenuStateManager MenuStateManager { get; private set; } = null!;
+        public IBookmarkManager BookmarkManager { get; private set; } = null!;
+        public IPlaylistManager PlaylistManager { get; private set; } = null!;
+        public IPrintService PrintService { get; private set; } = null!;
+        public IAnimationService AnimationService { get; private set; } = null!;
+        public IDialogService DialogService { get; private set; } = null!;
+        public INotificationService NotificationService { get; private set; } = null!;
+        public IMetadataDisplayService MetadataDisplayService { get; private set; } = null!;
+        public IImageEditService ImageEditService { get; private set; } = null!;
+        public IInputHandler InputHandler { get; private set; } = null!;
+        public IFileOperationService FileOperationService { get; private set; } = null!;
 
         IMetadataDisplayService IMainView.MetadataDisplayService => MetadataDisplayService;
         IImageEditService IMainView.ImageEditService => ImageEditService;
@@ -238,46 +238,13 @@ namespace quick_image_viewer
             this.InitializeComponent();
 
             RootGrid.DataContext = ViewModel;
+            ResolveServices(services);
 
-            SlideshowService = services.GetRequiredService<ISlideshowService>();
-            SlideshowManager = services.GetRequiredService<ISlideshowManager>();
-
-            ViewerCacheManager = services.GetRequiredService<IViewerCacheManager>();
-            ViewerManager = services.GetRequiredService<IViewerManager>();
-            GridManager = services.GetRequiredService<IGridManager>();
-            AppWindowManager = services.GetRequiredService<IAppWindowManager>();
-            MenuStateManager = services.GetRequiredService<IMenuStateManager>();
-            BookmarkManager = services.GetRequiredService<IBookmarkManager>();
-            PlaylistManager = services.GetRequiredService<IPlaylistManager>();
-            this.PrintService = services.GetRequiredService<IPrintService>();
-
-            this.AnimationService = services.GetRequiredService<IAnimationService>();
-            this.DialogService = services.GetRequiredService<IDialogService>();
-            this.NotificationService = services.GetRequiredService<INotificationService>();
-            this.MetadataDisplayService = services.GetRequiredService<IMetadataDisplayService>();
-            ImageEditService = services.GetRequiredService<IImageEditService>();
-            FileOperationService = services.GetRequiredService<IFileOperationService>();
-
-            InputHandler = services.GetRequiredService<IInputHandler>();
-
-            _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-            _resizeTimer.Tick += (s, e) => { _resizeTimer.Stop(); _ = UpdateDisplayAsync(); };
-
-            _topHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
-            _topHoverTimer.Tick += (s, e) => { _topHoverTimer.Stop(); ViewModel.IsTopPanelVisible = false; };
-
-            _leftHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
-            _leftHoverTimer.Tick += (s, e) =>
-            {
-                _leftHoverTimer.Stop();
-                _leftHoverTimer.Interval = TimeSpan.FromMilliseconds(300); // 1秒ディレイなどから復帰させる
-                ViewModel.IsBookmarkPanelHovered = false;
-            };
-
-            // Setup Controls
-            ViewerControlInternal.PaintSurfaceRequested += (s, e) => ViewerManager.PaintCanvas(e.bufferIndex, e.pageIndex, e.args);
-            GridControlInternal.GridView.ItemClick += ImageGridView_ItemClick;
-            GridControlInternal.GridView.SizeChanged += ImageGridView_SizeChanged;
+            var timers = CreateTimers();
+            _resizeTimer = timers.ResizeTimer;
+            _topHoverTimer = timers.TopHoverTimer;
+            _leftHoverTimer = timers.LeftHoverTimer;
+            WireControlEvents();
 
             // Sync ViewModel with Settings
             ViewModel.MangaSplitCount = _settings.MangaSplitCount;
@@ -285,15 +252,36 @@ namespace quick_image_viewer
             ViewModel.BoundaryAction = _settings.BoundaryAction;
 
             this.Closed += MainWindow_Closed;
-            AppWindowManager.InitializeWindow();
+            AppWindowManager!.InitializeWindow();
             ((IMainView)this).UpdateContextFlyout();
+            WireRootEvents();
 
-            RootGrid.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(RootGrid_PointerPressed), true);
-            RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
-            RootGrid.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(RootGrid_PointerReleased), true);
-            RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
-            RootGrid.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(RootGrid_KeyDown), true);
+            RegisterMessages();
+        }
 
+        private void ResolveServices(IServiceProvider services)
+        {
+            SlideshowService = services.GetRequiredService<ISlideshowService>();
+            SlideshowManager = services.GetRequiredService<ISlideshowManager>();
+            ViewerCacheManager = services.GetRequiredService<IViewerCacheManager>();
+            ViewerManager = services.GetRequiredService<IViewerManager>();
+            GridManager = services.GetRequiredService<IGridManager>();
+            AppWindowManager = services.GetRequiredService<IAppWindowManager>();
+            MenuStateManager = services.GetRequiredService<IMenuStateManager>();
+            BookmarkManager = services.GetRequiredService<IBookmarkManager>();
+            PlaylistManager = services.GetRequiredService<IPlaylistManager>();
+            PrintService = services.GetRequiredService<IPrintService>();
+            AnimationService = services.GetRequiredService<IAnimationService>();
+            DialogService = services.GetRequiredService<IDialogService>();
+            NotificationService = services.GetRequiredService<INotificationService>();
+            MetadataDisplayService = services.GetRequiredService<IMetadataDisplayService>();
+            ImageEditService = services.GetRequiredService<IImageEditService>();
+            FileOperationService = services.GetRequiredService<IFileOperationService>();
+            InputHandler = services.GetRequiredService<IInputHandler>();
+        }
+
+        private void RegisterMessages()
+        {
             WeakReferenceMessenger.Default.Register<FullscreenMessage>(this);
             WeakReferenceMessenger.Default.Register<PlaylistUpdatedMessage>(this);
             WeakReferenceMessenger.Default.Register<SlideshowNextRequestedMessage>(this);
@@ -311,6 +299,40 @@ namespace quick_image_viewer
             WeakReferenceMessenger.Default.Register<RefreshDisplayMessage>(this);
             WeakReferenceMessenger.Default.Register<BookmarksChangedMessage>(this);
             WeakReferenceMessenger.Default.Register<FocusRequestMessage>(this);
+        }
+
+        private (DispatcherTimer ResizeTimer, DispatcherTimer TopHoverTimer, DispatcherTimer LeftHoverTimer) CreateTimers()
+        {
+            var resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+            resizeTimer.Tick += (s, e) => { resizeTimer.Stop(); RequestDisplayUpdate(); };
+
+            var topHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            topHoverTimer.Tick += (s, e) => { topHoverTimer.Stop(); ViewModel.IsTopPanelVisible = false; };
+
+            var leftHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            leftHoverTimer.Tick += (s, e) =>
+            {
+                leftHoverTimer.Stop();
+                leftHoverTimer.Interval = TimeSpan.FromMilliseconds(300);
+                ViewModel.IsBookmarkPanelHovered = false;
+            };
+            return (resizeTimer, topHoverTimer, leftHoverTimer);
+        }
+
+        private void WireControlEvents()
+        {
+            ViewerControlInternal.PaintSurfaceRequested += (s, e) => ViewerManager!.PaintCanvas(e.bufferIndex, e.pageIndex, e.args);
+            GridControlInternal.GridView.ItemClick += ImageGridView_ItemClick;
+            GridControlInternal.GridView.SizeChanged += ImageGridView_SizeChanged;
+        }
+
+        private void WireRootEvents()
+        {
+            RootGrid.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(RootGrid_PointerPressed), true);
+            RootGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
+            RootGrid.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(RootGrid_PointerReleased), true);
+            RootGrid.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler(RootGrid_PointerMoved), true);
+            RootGrid.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(RootGrid_KeyDown), true);
         }
 
 
@@ -331,45 +353,19 @@ namespace quick_image_viewer
                 await Task.Delay(200);
             }
 
-            _ = UpdateDisplayAsync();
+            RequestDisplayUpdate();
         }
 
         public void Receive(SlideshowNextRequestedMessage message)
         {
-            if (ViewModel.IsSlideshowRunning)
-            {
-                if (_settings.SlideshowRandom)
-                {
-                    _ = UpdateDisplayAsync();
-                }
-                else
-                {
-                    int increment = _settings.MangaSplitCount;
-                    if (CurrentIndex + increment >= Playlist.Count)
-                    {
-                        if (_settings.SlideshowNextFolder)
-                        {
-                            WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(1));
-                        }
-                        else if (_settings.SlideshowLoop)
-                        {
-                            CurrentIndex = 0;
-                            _ = UpdateDisplayAsync();
-                        }
-                    }
-                    else
-                    {
-                        _ = UpdateDisplayAsync();
-                    }
-                }
-            }
+            HandleSlideshowNextRequest();
         }
 
         public void Receive(ToggleGridMessage message)
         {
             IsGridMode = !IsGridMode;
             ShowNotification(_settings.GetString(IsGridMode ? "Notification_GridModeOn" : "Notification_GridModeOff"));
-            _ = UpdateDisplayAsync();
+            RequestDisplayUpdate();
         }
 
         public void Receive(ToggleReadingDirectionMessage message)
@@ -379,18 +375,7 @@ namespace quick_image_viewer
             ViewModel.Viewer.IsRightToLeft = _settings.IsRightToLeft;
             if (_settings.MangaSplitCount > 1) WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
             MenuStateManager.UpdateMenuStates();
-
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            string direction = _settings.IsRightToLeft ? "RTL" : "LTR";
-            try
-            {
-                string locName = loader.GetString("MenuReadingDirection/Text");
-                ShowNotification($"{locName}: {direction}");
-            }
-            catch
-            {
-                ShowNotification($"Reading Direction: {direction}");
-            }
+            ShowReadingDirectionNotification();
         }
 
         public void Receive(ToggleMangaMessage message)
@@ -399,11 +384,8 @@ namespace quick_image_viewer
             _settings.MangaSplitCount = count;
             _settings.SaveMangaMode();
             ViewModel.MangaSplitCount = count;
-            _ = UpdateDisplayAsync();
-
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            string modeKey = count == 1 ? "MenuViewMode_Single/Text" : (count == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
-            ShowNotification(loader.GetString(modeKey));
+            RequestDisplayUpdate();
+            ShowLocalizedNotification(GetMangaModeResourceKey(count));
         }
 
         public void Receive(ToggleStretchMessage message)
@@ -413,59 +395,37 @@ namespace quick_image_viewer
             _settings.ImageStretchMode = next;
             _settings.SaveSettings();
             ViewerManager.UpdateStretch(true);
-
-            var loader = new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader();
-            string modeKey = next == 2 ? "MenuStretchContain/Text" : (next == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
-            ShowNotification(loader.GetString(modeKey));
+            ShowLocalizedNotification(GetStretchModeResourceKey(next));
         }
 
         public void Receive(CopyPathMessage message)
         {
-            if (string.IsNullOrEmpty(message.Path)) return;
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(message.Path);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-            ShowNotification(_settings.GetString("Notification_PathCopied"));
+            CopyPathToClipboard(message.Path);
         }
 
         public void Receive(DeleteFileMessage message)
         {
-            _ = HandleDeleteFileAsync(message.Path);
+            _ = DeleteFileAsync(message.Path);
         }
 
-        public async Task HandleDeleteFileAsync(string path)
+        public async Task DeleteFileAsync(string path)
         {
             await FileOperationService.HandleDeleteFileAsync(path);
         }
 
         public void Receive(RenameFileMessage message)
         {
-            _ = FileOperationService.HandleRenameFileAsync(message.Path);
+            RenameFile(message.Path);
         }
 
         public void Receive(MoveFileMessage message)
         {
-            _ = FileOperationService.HandleMoveFileAsync(message.Path);
+            MoveFile(message.Path);
         }
 
         public void Receive(ShellActionMessage message)
         {
-            switch (message.Action)
-            {
-                case "OpenExplorer":
-                    MenuStateManager.ContextTargetPath = message.Path;
-                    MenuStateManager.MenuOpenExplorer_Click(null!, null!);
-                    break;
-                case "Settings":
-                    MenuStateManager.MenuSettings_Click(null!, null!);
-                    break;
-                case "KeyBindings":
-                    MenuStateManager.MenuKeyBindings_Click(null!, null!);
-                    break;
-                case "Support":
-                    MenuStateManager.MenuSupport_Click(null!, null!);
-                    break;
-            }
+            HandleShellAction(message.Action, message.Path);
         }
 
         public void Receive(TogglePageIndicatorMessage message)
@@ -480,7 +440,7 @@ namespace quick_image_viewer
 
         public void Receive(RefreshDisplayMessage message)
         {
-            _ = UpdateDisplayAsync();
+            RequestDisplayUpdate();
         }
 
         public void Receive(BookmarksChangedMessage message)
@@ -490,18 +450,135 @@ namespace quick_image_viewer
 
         public void Receive(FocusRequestMessage message)
         {
+            FocusActiveSurface();
+        }
+
+        private void HandleSlideshowNextRequest()
+        {
+            if (!ViewModel.IsSlideshowRunning) return;
+            if (_settings.SlideshowRandom)
+            {
+                RequestDisplayUpdate();
+                return;
+            }
+
+            if (!IsAtSlideshowBoundary())
+            {
+                RequestDisplayUpdate();
+                return;
+            }
+
+            if (_settings.SlideshowNextFolder)
+            {
+                WeakReferenceMessenger.Default.Send(new FolderNavigationMessage(1));
+                return;
+            }
+
+            if (_settings.SlideshowLoop)
+            {
+                CurrentIndex = 0;
+                RequestDisplayUpdate();
+            }
+        }
+
+        private bool IsAtSlideshowBoundary()
+        {
+            int increment = _settings.MangaSplitCount;
+            return CurrentIndex + increment >= Playlist.Count;
+        }
+
+        private void CopyPathToClipboard(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(path);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            ShowNotification(_settings.GetString("Notification_PathCopied"));
+        }
+
+        private void RenameFile(string path)
+        {
+            _ = FileOperationService.HandleRenameFileAsync(path);
+        }
+
+        private void MoveFile(string path)
+        {
+            _ = FileOperationService.HandleMoveFileAsync(path);
+        }
+
+        private void FocusActiveSurface()
+        {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (IsGridMode)
-                {
-                    ImageGridView.Focus(FocusState.Programmatic);
-                }
-                else
-                {
-                    RootGrid.Focus(FocusState.Programmatic);
-                }
+                if (IsGridMode) ImageGridView.Focus(FocusState.Programmatic);
+                else RootGrid.Focus(FocusState.Programmatic);
             });
         }
+
+        private void HandleShellAction(string action, string path)
+        {
+            switch (action)
+            {
+                case "OpenExplorer":
+                    OpenInExplorer(path);
+                    break;
+                case "Settings":
+                    OpenSettingsDialog();
+                    break;
+                case "KeyBindings":
+                    OpenKeyBindingsDialog();
+                    break;
+                case "Support":
+                    OpenSupportPage();
+                    break;
+            }
+        }
+
+        private void OpenInExplorer(string path)
+        {
+            MenuStateManager.ContextTargetPath = path;
+            MenuStateManager.MenuOpenExplorer_Click(null!, null!);
+        }
+
+        private void OpenSettingsDialog() => MenuStateManager.MenuSettings_Click(null!, null!);
+        private void OpenKeyBindingsDialog() => MenuStateManager.MenuKeyBindings_Click(null!, null!);
+        private void OpenSupportPage() => MenuStateManager.MenuSupport_Click(null!, null!);
+
+        private void ShowReadingDirectionNotification()
+        {
+            string direction = _settings.IsRightToLeft ? "RTL" : "LTR";
+            try
+            {
+                string label = GetResourceLoader().GetString("MenuReadingDirection/Text");
+                ShowNotification($"{label}: {direction}");
+            }
+            catch
+            {
+                ShowNotification($"Reading Direction: {direction}");
+            }
+        }
+
+        private void ShowLocalizedNotification(string resourceKey)
+        {
+            ShowNotification(GetResourceLoader().GetString(resourceKey));
+        }
+
+        private static string GetMangaModeResourceKey(int mangaSplitCount)
+        {
+            return mangaSplitCount == 1
+                ? "MenuViewMode_Single/Text"
+                : (mangaSplitCount == 2 ? "MenuViewMode_Double/Text" : "MenuViewMode_Quad/Text");
+        }
+
+        private static string GetStretchModeResourceKey(int stretchMode)
+        {
+            return stretchMode == 2
+                ? "MenuStretchContain/Text"
+                : (stretchMode == 3 ? "MenuStretchCover/Text" : "MenuStretchOriginal/Text");
+        }
+
+        private static Microsoft.Windows.ApplicationModel.Resources.ResourceLoader GetResourceLoader()
+            => new();
 
         private void UpdateBookmarkMenu()
         {
@@ -531,12 +608,7 @@ namespace quick_image_viewer
 
         private void MainWindow_Closed(object sender, WindowEventArgs args)
         {
-            PrintService.UnregisterForPrinting();
-            ViewerManager.Dispose();
-            GridManager.Dispose();
-            SlideshowManager.Dispose();
-            foreach (var item in GridItems) item.DisposeCodec();
-
+            DisposeManagedResources();
             AppWindowManager.SaveWindowState();
         }
 
@@ -586,46 +658,8 @@ namespace quick_image_viewer
             if (e.Handled) return;
 
             var point = e.GetCurrentPoint(RootGrid).Position;
-            bool isTopEdge = point.Y <= 60;
-            bool isLeftEdge = point.X <= 60;
-
-            // パネル自体にマウスが乗っている場合も表示を維持する
-            bool isOverTopPanel = point.Y <= 80 && ViewModel.IsTopPanelVisible;
-            bool isOverBookmarkPanel = point.X <= 280 && ViewModel.IsBookmarkPanelHovered;
-
-            if (isTopEdge || isOverTopPanel)
-            {
-                ViewModel.IsTopPanelVisible = true;
-                _topHoverTimer.Stop(); // 非表示タイマーをリセット
-            }
-            else
-            {
-                if (ViewModel.IsTopPanelVisible) _topHoverTimer.Start();
-            }
-
-            if (isLeftEdge || isOverBookmarkPanel)
-            {
-                // 動画の再生パネル（トランスポートコントロール）の上にマウスがある場合は、
-                // ブックマークリストを表示する判定をスキップする。
-                if (ViewModel.IsVideoTransportHovered && !isOverBookmarkPanel)
-                {
-                    if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
-                    return;
-                }
-
-                // クリック直後（1秒ディレイ中）は再表示を抑制する
-                if (_leftHoverTimer.IsEnabled && _leftHoverTimer.Interval >= TimeSpan.FromMilliseconds(500))
-                {
-                    return;
-                }
-
-                ViewModel.IsBookmarkPanelHovered = true;
-                _leftHoverTimer.Stop(); // 非表示タイマーをリセット
-            }
-            else
-            {
-                if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
-            }
+            UpdateTopPanelHoverState(point);
+            UpdateBookmarkPanelHoverState(point);
         }
 
         private void RootGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => InputHandler.HandlePointerReleased(sender, e);
@@ -638,20 +672,7 @@ namespace quick_image_viewer
         {
             if (ViewModel.IsGridMode)
             {
-                if (e.OriginalSource is FrameworkElement fe && fe.DataContext is quick_image_viewer.Models.ImageItem imageItem)
-                {
-                    MenuStateManager.ContextTargetPath = imageItem.FilePath;
-                    ViewModel.Editor.ContextPath = imageItem.FilePath;
-                }
-                else
-                {
-                    var selected = GridControlInternal.GridView.SelectedItem as quick_image_viewer.Models.ImageItem;
-                    if (selected != null)
-                    {
-                        MenuStateManager.ContextTargetPath = selected.FilePath;
-                        ViewModel.Editor.ContextPath = selected.FilePath;
-                    }
-                }
+                UpdateGridContextTargetFromRightTap(e);
             }
             else
             {
@@ -659,6 +680,77 @@ namespace quick_image_viewer
                 MenuStateManager.UpdateTargetIndexAtPoint(point);
                 ViewModel.Editor.ContextPath = MenuStateManager.ContextTargetPath;
             }
+        }
+
+        private void UpdateTopPanelHoverState(Windows.Foundation.Point point)
+        {
+            bool isTopEdge = point.Y <= 60;
+            bool isOverTopPanel = point.Y <= 80 && ViewModel.IsTopPanelVisible;
+
+            if (isTopEdge || isOverTopPanel)
+            {
+                ViewModel.IsTopPanelVisible = true;
+                _topHoverTimer.Stop();
+                return;
+            }
+
+            if (ViewModel.IsTopPanelVisible) _topHoverTimer.Start();
+        }
+
+        private void UpdateBookmarkPanelHoverState(Windows.Foundation.Point point)
+        {
+            bool isLeftEdge = point.X <= 60;
+            bool isOverBookmarkPanel = point.X <= 280 && ViewModel.IsBookmarkPanelHovered;
+            if (!isLeftEdge && !isOverBookmarkPanel)
+            {
+                if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
+                return;
+            }
+
+            if (ShouldSuppressBookmarkPanelHover(isOverBookmarkPanel))
+            {
+                return;
+            }
+
+            ViewModel.IsBookmarkPanelHovered = true;
+            _leftHoverTimer.Stop();
+        }
+
+        private bool ShouldSuppressBookmarkPanelHover(bool isOverBookmarkPanel)
+        {
+            if (ViewModel.IsVideoTransportHovered && !isOverBookmarkPanel)
+            {
+                if (ViewModel.IsBookmarkPanelHovered) _leftHoverTimer.Start();
+                return true;
+            }
+
+            if (_leftHoverTimer.IsEnabled && _leftHoverTimer.Interval >= TimeSpan.FromMilliseconds(500))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void UpdateGridContextTargetFromRightTap(RightTappedRoutedEventArgs e)
+        {
+            if (TrySetContextTargetFromOriginalSource(e)) return;
+
+            var selected = GridControlInternal.GridView.SelectedItem as quick_image_viewer.Models.ImageItem;
+            if (selected == null) return;
+
+            MenuStateManager.ContextTargetPath = selected.FilePath;
+            ViewModel.Editor.ContextPath = selected.FilePath;
+        }
+
+        private bool TrySetContextTargetFromOriginalSource(RightTappedRoutedEventArgs e)
+        {
+            if (e.OriginalSource is not FrameworkElement fe) return false;
+            if (fe.DataContext is not quick_image_viewer.Models.ImageItem imageItem) return false;
+
+            MenuStateManager.ContextTargetPath = imageItem.FilePath;
+            ViewModel.Editor.ContextPath = imageItem.FilePath;
+            return true;
         }
 
 
@@ -684,17 +776,7 @@ namespace quick_image_viewer
         private void BookmarkListView_ItemClick(object sender, ItemClickEventArgs e)
         {
             BookmarkManager.BookmarkListView_ItemClick(sender, e);
-
-            // ブックマーク選択後はホバー状態を解除する。
-            // 読み込みが速い場合、この直後のマウスポインター判定で再度パネルが開いてしまうのを防ぐため、
-            // 少し長めのディレイ（1秒）を設定して閉じる。
-            _leftHoverTimer.Stop();
-            _leftHoverTimer.Interval = TimeSpan.FromSeconds(1);
-            _leftHoverTimer.Start();
-
-            // 重要：タイマーの Interval を元に戻すため、一回限りのリセットフラグや
-            // Tick内でのリセット処理を検討するが、ここでは単純に閉じる。
-            ViewModel.IsBookmarkPanelHovered = false;
+            CollapseBookmarkPanelTemporarily();
         }
         private void BookmarkListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => BookmarkManager.BookmarkListView_DragItemsCompleted(sender, args);
         private void MenuBookmarkRemove_Click(object sender, RoutedEventArgs e) => BookmarkManager.MenuBookmarkRemove_Click(sender, e);
@@ -718,5 +800,24 @@ namespace quick_image_viewer
         private void TopPanel_PanelHoverEnded(object? sender, EventArgs e) => _topHoverTimer.Start();
         private void BookmarkPanel_PanelHoverStarted(object? sender, EventArgs e) => _leftHoverTimer.Stop();
         private void BookmarkPanel_PanelHoverEnded(object? sender, EventArgs e) => _leftHoverTimer.Start();
+
+        private void RequestDisplayUpdate() => _ = UpdateDisplayAsync();
+
+        private void DisposeManagedResources()
+        {
+            PrintService.UnregisterForPrinting();
+            ViewerManager.Dispose();
+            GridManager.Dispose();
+            SlideshowManager.Dispose();
+            foreach (var item in GridItems) item.DisposeCodec();
+        }
+
+        private void CollapseBookmarkPanelTemporarily()
+        {
+            _leftHoverTimer.Stop();
+            _leftHoverTimer.Interval = TimeSpan.FromSeconds(1);
+            _leftHoverTimer.Start();
+            ViewModel.IsBookmarkPanelHovered = false;
+        }
     }
 }
