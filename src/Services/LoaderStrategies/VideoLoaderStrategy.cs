@@ -140,16 +140,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
                 }
                 else
                 {
-                    var stream = File.OpenRead(filePath);
-                    try
-                    {
-                        return await FFmpegMediaSource.CreateFromStreamAsync(stream.AsRandomAccessStream(), config);
-                    }
-                    catch
-                    {
-                        stream.Dispose();
-                        throw;
-                    }
+                    return await FFmpegMediaSource.CreateFromFileAsync(filePath, config);
                 }
             }
             catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "CreateFFmpegMediaSourceAsync failed", ex); }

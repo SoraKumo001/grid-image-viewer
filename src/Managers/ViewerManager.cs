@@ -928,6 +928,62 @@ namespace quick_image_viewer.Managers
             });
         }
 
+        public async Task ReleaseFileResourcesAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path) || _window.ViewerControl == null) return;
+
+            if (!_window.DispatcherQueue.HasThreadAccess)
+            {
+                var tcs = new TaskCompletionSource();
+                if (!_window.DispatcherQueue.TryEnqueue(async () =>
+                {
+                    try
+                    {
+                        await ReleaseFileResourcesAsync(path);
+                        tcs.SetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                }))
+                {
+                    return;
+                }
+                await tcs.Task;
+                return;
+            }
+
+            _displayCts?.Cancel();
+            _cacheManager.CancelPreloads();
+
+            var resetTasks = new List<Task>();
+            for (int b = 0; b < 2; b++)
+            {
+                for (int i = 0; i < _pagesBuffer[b].Length; i++)
+                {
+                    if (!StringComparer.OrdinalIgnoreCase.Equals(_pagesBuffer[b][i].CurrentFilePath, path))
+                    {
+                        continue;
+                    }
+
+                    var ctrl = _window.ViewerControl.PageControlsBuffer[b][i];
+                    ctrl.PageImage.Source = null;
+                    ctrl.PageCanvas.Visibility = Visibility.Collapsed;
+                    resetTasks.Add(ctrl.ResetPlaybackAsync());
+                    _pagesBuffer[b][i].Reset();
+                }
+            }
+
+            if (resetTasks.Count > 0)
+            {
+                await Task.WhenAll(resetTasks);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                await Task.Delay(50);
+            }
+        }
+
         public void Dispose()
         {
             _displayCts?.Cancel();

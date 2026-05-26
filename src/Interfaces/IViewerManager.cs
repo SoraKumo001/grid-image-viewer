@@ -27,5 +27,6 @@ namespace quick_image_viewer.Interfaces
         void HandlePointerMoved(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e);
         void ReplacePath(string oldPath, string newPath);
         void ClearPageImageForPath(string path);
+        Task ReleaseFileResourcesAsync(string path);
     }
 }

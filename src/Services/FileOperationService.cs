@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml.Controls;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace quick_image_viewer.Services
@@ -41,7 +42,8 @@ namespace quick_image_viewer.Services
                 {
                     if (System.IO.File.Exists(path))
                     {
-                        System.IO.File.Delete(path);
+                        await _window.ViewerManager.ReleaseFileResourcesAsync(path);
+                        await DeleteFileWithRetryAsync(path);
                         _window.PlaylistManager.RemoveFromPlaylist(path);
                         _window.ShowNotification(_settings.GetString("Notification_FileDeleted"));
                     }
@@ -49,6 +51,28 @@ namespace quick_image_viewer.Services
                 catch (Exception ex)
                 {
                     _window.ShowNotification(string.Format(_settings.GetString("Notification_DeleteFailed"), ex.Message));
+                }
+            }
+        }
+
+        private static async Task DeleteFileWithRetryAsync(string path)
+        {
+            const int maxAttempts = 5;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    System.IO.File.Delete(path);
+                    return;
+                }
+                catch (IOException) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(100);
+                }
+                catch (UnauthorizedAccessException) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(100);
                 }
             }
         }
