@@ -9,9 +9,9 @@ namespace quick_image_viewer.Services
 {
     internal class DialogService : IDialogService
     {
-        private readonly IMainView _window;
+        private readonly IOverlayHost _window;
 
-        public DialogService(IMainView window)
+        public DialogService(IOverlayHost window)
         {
             _window = window;
         }

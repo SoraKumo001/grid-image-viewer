@@ -19,7 +19,7 @@ namespace quick_image_viewer
     {
         private MainWindow? _window;
         public IServiceProvider Services { get; private set; }
-        public IMainView? MainView { get; private set; }
+        public MainWindow? MainView { get; private set; }
 
         public App()
         {
@@ -33,7 +33,7 @@ namespace quick_image_viewer
             InitializeComponent();
         }
 
-        public void SetMainView(IMainView view) => MainView = view;
+        public void SetMainView(MainWindow view) => MainView = view;
 
         private static ServiceProvider ConfigureServices()
         {
@@ -42,7 +42,18 @@ namespace quick_image_viewer
             // Core
             services.AddSingleton<ISettingsManager, SettingsManager>();
             services.AddSingleton<IViewerStateService, ViewerStateService>();
-            services.AddSingleton<IMainView>(s => ((App)Application.Current).MainView ?? throw new InvalidOperationException("MainView not initialized"));
+            RegisterMainViewHost<IGridHost>(services);
+            RegisterMainViewHost<IAppWindowHost>(services);
+            RegisterMainViewHost<INotificationHost>(services);
+            RegisterMainViewHost<IAnimationHost>(services);
+            RegisterMainViewHost<IFileOperationHost>(services);
+            RegisterMainViewHost<IInputHost>(services);
+            RegisterMainViewHost<ISlideshowHost>(services);
+            RegisterMainViewHost<IPrintHost>(services);
+            RegisterMainViewHost<IImageEditHost>(services);
+            RegisterMainViewHost<IMetadataHost>(services);
+            RegisterMainViewHost<IViewerHost>(services);
+            RegisterMainViewHost<IOverlayHost>(services);
 
             // ViewModel
             services.AddTransient<MainViewModel>();
@@ -67,6 +78,19 @@ namespace quick_image_viewer
             services.AddSingleton<IFileOperationService, FileOperationService>();
 
             return services.BuildServiceProvider();
+        }
+
+        private static T ResolveMainView<T>() where T : class
+        {
+            var mainView = ((App)Application.Current).MainView
+                ?? throw new InvalidOperationException("MainView not initialized");
+            if (mainView is T host) return host;
+            throw new InvalidOperationException($"MainView does not implement {typeof(T).Name}");
+        }
+
+        private static void RegisterMainViewHost<THost>(IServiceCollection services) where THost : class
+        {
+            services.AddSingleton<THost>(s => ResolveMainView<THost>());
         }
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)

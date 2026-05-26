@@ -13,7 +13,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
 {
     internal class NormalImageLoaderStrategy : BaseLoaderStrategy, ILoaderStrategy
     {
-        public NormalImageLoaderStrategy(IMainView window) : base(window) { }
+        public NormalImageLoaderStrategy(IViewerLoaderHost window) : base(window) { }
 
         public bool CanHandle(string filePath)
         {

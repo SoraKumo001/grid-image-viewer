@@ -15,7 +15,7 @@ namespace quick_image_viewer.Views.Controls
 {
     public sealed partial class SettingsOverlay : UserControl
     {
-        private readonly IMainView _window;
+        private readonly IOverlayHost _window;
         private readonly ISettingsManager _settings;
         private ObservableCollection<ExtensionItem> _extensionsImages = new();
         private ObservableCollection<ExtensionItem> _extensionsVideos = new();
@@ -79,7 +79,7 @@ namespace quick_image_viewer.Views.Controls
 
         private readonly Dictionary<string, KeyBindingData> _tempBindings = new();
 
-        public SettingsOverlay(IMainView window, ISettingsManager settings, int initialTabIndex = 0)
+        public SettingsOverlay(IOverlayHost window, ISettingsManager settings, int initialTabIndex = 0)
         {
             this.InitializeComponent();
             _window = window;

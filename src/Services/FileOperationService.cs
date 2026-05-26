@@ -8,10 +8,10 @@ namespace quick_image_viewer.Services
 {
     internal class FileOperationService : IFileOperationService
     {
-        private readonly IMainView _window;
+        private readonly IFileOperationHost _window;
         private readonly ISettingsManager _settings;
 
-        public FileOperationService(IMainView window, ISettingsManager settings)
+        public FileOperationService(IFileOperationHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

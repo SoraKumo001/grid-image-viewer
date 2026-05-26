@@ -16,7 +16,7 @@ namespace quick_image_viewer.Helpers
 {
     public class InputHandler : IInputHandler
     {
-        private readonly IMainView _window;
+        private readonly IInputHost _window;
         private readonly ISettingsManager _settings;
 
         private Windows.Foundation.Point _lastPointerPoint;
@@ -26,7 +26,7 @@ namespace quick_image_viewer.Helpers
         private double _startTranslateX;
         private double _startTranslateY;
 
-        public InputHandler(IMainView window, ISettingsManager settings)
+        public InputHandler(IInputHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

@@ -9,14 +9,14 @@ namespace quick_image_viewer.Services
 {
     internal class AnimationService : IAnimationService
     {
-        private readonly IMainView _window;
+        private readonly IAnimationHost _window;
         private readonly ISettingsManager _settings;
         private readonly DispatcherTimer _animationTimer;
         private Grid? _currentCrossfadeGrid;
         private Grid? _prevCrossfadeGrid;
         private Storyboard? _gridStoryboard;
 
-        public AnimationService(IMainView window, ISettingsManager settings)
+        public AnimationService(IAnimationHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

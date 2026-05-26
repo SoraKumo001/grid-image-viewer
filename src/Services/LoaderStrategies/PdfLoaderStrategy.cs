@@ -13,7 +13,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
 {
     internal class PdfLoaderStrategy : BaseLoaderStrategy, ILoaderStrategy
     {
-        public PdfLoaderStrategy(IMainView window) : base(window) { }
+        public PdfLoaderStrategy(IViewerLoaderHost window) : base(window) { }
 
         public bool CanHandle(string filePath)
         {

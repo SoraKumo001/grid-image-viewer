@@ -9,7 +9,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
 {
     internal class SkiaImageLoaderStrategy : BaseLoaderStrategy, ILoaderStrategy
     {
-        public SkiaImageLoaderStrategy(IMainView window) : base(window) { }
+        public SkiaImageLoaderStrategy(IViewerLoaderHost window) : base(window) { }
 
         public bool CanHandle(string filePath)
         {

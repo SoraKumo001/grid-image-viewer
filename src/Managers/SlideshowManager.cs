@@ -10,7 +10,7 @@ namespace quick_image_viewer.Managers
 {
     public class SlideshowManager : ISlideshowManager, IRecipient<OpenSlideshowMessage>, IRecipient<LoadDirectoryMessage>
     {
-        private IMainView _mainWindow;
+        private ISlideshowHost _mainWindow;
         private ISettingsManager _settings;
         private ISlideshowService _slideshowService;
         private IViewerStateService _state;
@@ -24,7 +24,7 @@ namespace quick_image_viewer.Managers
         private bool _isInternalNavigation = false;
         private MainViewModel ViewModel => _mainWindow.ViewModel;
 
-        public SlideshowManager(IMainView mainWindow, ISettingsManager settings, ISlideshowService slideshowService, IViewerStateService state)
+        public SlideshowManager(ISlideshowHost mainWindow, ISettingsManager settings, ISlideshowService slideshowService, IViewerStateService state)
         {
             _mainWindow = mainWindow;
             _settings = settings;

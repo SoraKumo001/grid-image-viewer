@@ -5,11 +5,11 @@ namespace quick_image_viewer.Services
 {
     internal class MetadataDisplayService : IMetadataDisplayService
     {
-        private readonly IMainView _window;
+        private readonly IMetadataHost _window;
         private readonly ISettingsManager _settings;
         private int _focusedPageIndex = 0;
 
-        public MetadataDisplayService(IMainView window, ISettingsManager settings)
+        public MetadataDisplayService(IMetadataHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

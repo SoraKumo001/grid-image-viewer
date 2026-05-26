@@ -3,10 +3,10 @@ namespace quick_image_viewer.Managers
 {
     internal class AppWindowManager : IAppWindowManager
     {
-        private readonly IMainView _window;
+        private readonly IAppWindowHost _window;
         private readonly ISettingsManager _settings;
 
-        public AppWindowManager(IMainView window, ISettingsManager settings)
+        public AppWindowManager(IAppWindowHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

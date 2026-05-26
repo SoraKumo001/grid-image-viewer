@@ -14,7 +14,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
 {
     internal class VideoLoaderStrategy : BaseLoaderStrategy, ILoaderStrategy
     {
-        public VideoLoaderStrategy(IMainView window) : base(window) { }
+        public VideoLoaderStrategy(IViewerLoaderHost window) : base(window) { }
 
         public bool CanHandle(string filePath)
         {

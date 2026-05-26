@@ -14,7 +14,7 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 namespace quick_image_viewer
 {
-    public sealed partial class MainWindow : Window, IMainView,
+    public sealed partial class MainWindow : Window, IGridHost, IAppWindowHost, INotificationHost, IAnimationHost, IFileOperationHost, IInputHost, ISlideshowHost, IPrintHost, IImageEditHost, IMetadataHost, IViewerLoaderHost, IViewerHost, IOverlayHost,
         IRecipient<FullscreenMessage>,
         IRecipient<PlaylistUpdatedMessage>,
         IRecipient<SlideshowNextRequestedMessage>,
@@ -71,103 +71,76 @@ namespace quick_image_viewer
         public IInputHandler InputHandler { get; private set; } = null!;
         public IFileOperationService FileOperationService { get; private set; } = null!;
 
-        IMetadataDisplayService IMainView.MetadataDisplayService => MetadataDisplayService;
-        IImageEditService IMainView.ImageEditService => ImageEditService;
-        IDialogService IMainView.DialogService => DialogService;
-        IAnimationService IMainView.AnimationService => AnimationService;
-        INotificationService IMainView.NotificationService => NotificationService;
-        IPlaylistManager IMainView.PlaylistManager => PlaylistManager;
-        IViewerManager IMainView.ViewerManager => ViewerManager;
-        IGridManager IMainView.GridManager => GridManager;
-        IMenuStateManager IMainView.MenuStateManager => MenuStateManager;
-        ListView IMainView.BookmarkListView => BookmarkPanel.ListView;
-        IPrintService IMainView.PrintService => PrintService;
-        IBookmarkManager IMainView.BookmarkManager => BookmarkManager;
-        IAppWindowManager IMainView.AppWindowManager => AppWindowManager;
-        System.Collections.Generic.List<FrameworkElement> IMainView.GetPageGrids() => GetPageGrids();
-        FrameworkElement IMainView.PageGrid1 => PageGrid1;
-        FrameworkElement IMainView.PageGrid2 => PageGrid2;
-        FrameworkElement IMainView.PageGrid3 => PageGrid3;
-        FrameworkElement IMainView.PageGrid4 => PageGrid4;
-
-
-
-        MenuFlyoutSubItem IMainView.MenuBookmarkList => MenuBookmarkList;
-
-        ContentDialog IMainView.SlideshowDialog => SlideshowDialog;
-        ComboBox IMainView.SlideshowMangaSplitCount => SlideshowMangaSplitCount;
-        CheckBox IMainView.SlideshowFullscreen => SlideshowFullscreen;
-        CheckBox IMainView.SlideshowRandom => SlideshowRandom;
-        CheckBox IMainView.SlideshowLoop => SlideshowLoop;
-        CheckBox IMainView.SlideshowNextFolder => SlideshowNextFolder;
-        CheckBox IMainView.SlideshowIncludeSiblings => SlideshowIncludeSiblings;
-        CheckBox IMainView.SlideshowCurrentFolderOnly => SlideshowCurrentFolderOnly;
-        ComboBox IMainView.SlideshowStretchMode => SlideshowStretchMode;
-        CheckBox IMainView.SlideshowCrossfade => SlideshowCrossfade;
-        NumberBox IMainView.SlideshowInterval => SlideshowInterval;
-        NumberBox IMainView.SlideshowCrossfadeDuration => SlideshowCrossfadeDuration;
-        UIElement IMainView.Content => this.Content;
-        GridView IMainView.ImageGridView => GridControlInternal.GridView;
-        void IMainView.ShowNotification(string message) => ShowNotification(message);
-        void IMainView.StopAnimation() => ViewerManager?.StopAnimation();
-        void IMainView.ClearCachedBitmap(string path)
-        {
-            if (ViewerManager != null)
-            {
-                foreach (var ctrl in ViewerManager.PageControls) ctrl.PageImage.Source = null;
-                for (int pi = 0; pi < ViewerManager.Pages.Length; pi++)
-                {
-                    if (ViewerManager.Pages[pi].CurrentFilePath == path)
-                    {
-                        ViewerManager.Pages[pi].EditedBitmap = null;
-                        ViewerManager.Pages[pi].CurrentFilePath = null; // Force reload
-                    }
-                }
-            }
-        }
-
-        void IMainView.Close() => Close();
-        void IMainView.SetGridLoading(bool isLoading, bool isBackground)
-        {
-            if (GridControlInternal != null)
-            {
-                if (isBackground) GridControlInternal.SetBackgroundLoading(isLoading);
-                else GridControlInternal.SetLoading(isLoading);
-            }
-        }
-        Microsoft.UI.Windowing.AppWindow IMainView.AppWindow => AppWindow;
-        System.Collections.ObjectModel.ObservableCollection<string> IMainView.Playlist => ViewModel.Playlist;
-        int IMainView.CurrentIndex { get => ViewModel.CurrentIndex; set => ViewModel.CurrentIndex = value; }
-        bool IMainView.IsSearchingFolder { get => IsSearchingFolder; set => IsSearchingFolder = value; }
-        Microsoft.UI.Dispatching.DispatcherQueue IMainView.DispatcherQueue => DispatcherQueue;
-        void IMainView.UpdateGridItems(bool force) => UpdateGridItems(force);
-        Windows.Foundation.Rect IMainView.Bounds => Bounds;
-        string IMainView.CurrentDirectory { get => CurrentDirectory; set => CurrentDirectory = value; }
-        ScrollViewer IMainView.ImageScrollViewer => ImageScrollViewer;
-        UIElement IMainView.NotificationOverlay => NotificationOverlay;
-        TextBlock IMainView.NotificationText => NotificationOverlay.Text;
-        TextBlock IMainView.TxtMetaTitle => TxtMetaTitle;
-        TextBlock IMainView.TxtMetaFileName => TxtMetaFileName;
-        TextBlock IMainView.TxtMetaDimensions => TxtMetaDimensions;
-        TextBlock IMainView.TxtMetaFileSize => TxtMetaFileSize;
-        UIElement IMainView.ExifDivider => ExifDivider;
-        UIElement IMainView.ExifGrid => ExifGrid;
-        TextBlock IMainView.TxtMetaCamera => TxtMetaCamera;
-        TextBlock IMainView.TxtMetaLens => TxtMetaLens;
-        TextBlock IMainView.TxtMetaSettings => TxtMetaSettings;
-        TextBlock IMainView.TxtMetaDate => TxtMetaDate;
-        Grid IMainView.PagesGrid => ViewerControlInternal.RootPagesContainer;
-        Grid IMainView.RootGrid => RootGrid;
-        bool IMainView.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
-        IntPtr IMainView.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
-        bool IMainView.ExtendsContentIntoTitleBar { get => ExtendsContentIntoTitleBar; set => ExtendsContentIntoTitleBar = value; }
-        void IMainView.SetTitleBar(UIElement tb) => SetTitleBar(tb);
-        Border IMainView.AppTitleBar => AppTitleBar;
-        string IMainView.CurrentImagePath => CurrentImagePath;
-        void IMainView.UpdateContextFlyout()
-        {
-            RootGrid.ContextFlyout = IsGridMode ? GridMenuFlyout : EditMenuFlyout;
-        }
+        Border IAppWindowHost.AppTitleBar => AppTitleBar;
+        Grid IAppWindowHost.RootGrid => RootGrid;
+        IntPtr IAppWindowHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        UIElement INotificationHost.NotificationOverlay => NotificationOverlay;
+        TextBlock INotificationHost.NotificationText => NotificationOverlay.Text;
+        Microsoft.UI.Dispatching.DispatcherQueue IAnimationHost.DispatcherQueue => DispatcherQueue;
+        IViewerManager IAnimationHost.ViewerManager => ViewerManager;
+        IMetadataDisplayService IAnimationHost.MetadataDisplayService => MetadataDisplayService;
+        bool IAnimationHost.IsGridMode { get => IsGridMode; set => IsGridMode = value; }
+        System.Collections.ObjectModel.ObservableCollection<string> IAnimationHost.Playlist => Playlist;
+        UIElement IFileOperationHost.Content => this.Content;
+        bool IFileOperationHost.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
+        IntPtr IFileOperationHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IPlaylistManager IFileOperationHost.PlaylistManager => PlaylistManager;
+        IImageEditService IFileOperationHost.ImageEditService => ImageEditService;
+        IViewerManager IFileOperationHost.ViewerManager => ViewerManager;
+        void IFileOperationHost.ShowNotification(string message) => ShowNotification(message);
+        Grid IInputHost.RootGrid => RootGrid;
+        Grid IInputHost.PagesGrid => PagesGrid;
+        ScrollViewer IInputHost.ImageScrollViewer => ImageScrollViewer;
+        IViewerManager IInputHost.ViewerManager => ViewerManager;
+        IMetadataDisplayService IInputHost.MetadataDisplayService => MetadataDisplayService;
+        IImageEditService IInputHost.ImageEditService => ImageEditService;
+        ISlideshowManager IInputHost.SlideshowManager => SlideshowManager;
+        bool IInputHost.IsGridMode { get => IsGridMode; set => IsGridMode = value; }
+        bool IInputHost.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
+        bool IInputHost.IsFullscreen { get => IsFullscreen; set => IsFullscreen = value; }
+        string IInputHost.CurrentImagePath => CurrentImagePath;
+        int IInputHost.CurrentIndex { get => CurrentIndex; set => CurrentIndex = value; }
+        System.Collections.ObjectModel.ObservableCollection<string> IInputHost.Playlist => Playlist;
+        UIElement ISlideshowHost.Content => this.Content;
+        IViewerManager ISlideshowHost.ViewerManager => ViewerManager;
+        ContentDialog ISlideshowHost.SlideshowDialog => SlideshowDialog;
+        ComboBox ISlideshowHost.SlideshowMangaSplitCount => SlideshowMangaSplitCount;
+        CheckBox ISlideshowHost.SlideshowFullscreen => SlideshowFullscreen;
+        CheckBox ISlideshowHost.SlideshowRandom => SlideshowRandom;
+        CheckBox ISlideshowHost.SlideshowLoop => SlideshowLoop;
+        CheckBox ISlideshowHost.SlideshowNextFolder => SlideshowNextFolder;
+        CheckBox ISlideshowHost.SlideshowIncludeSiblings => SlideshowIncludeSiblings;
+        CheckBox ISlideshowHost.SlideshowCurrentFolderOnly => SlideshowCurrentFolderOnly;
+        ComboBox ISlideshowHost.SlideshowStretchMode => SlideshowStretchMode;
+        CheckBox ISlideshowHost.SlideshowCrossfade => SlideshowCrossfade;
+        NumberBox ISlideshowHost.SlideshowInterval => SlideshowInterval;
+        NumberBox ISlideshowHost.SlideshowCrossfadeDuration => SlideshowCrossfadeDuration;
+        Task ISlideshowHost.UpdateDisplayAsync() => UpdateDisplayAsync();
+        Microsoft.UI.Dispatching.DispatcherQueue IPrintHost.DispatcherQueue => DispatcherQueue;
+        IntPtr IPrintHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        void IPrintHost.ShowNotification(string message) => ShowNotification(message);
+        Microsoft.UI.Dispatching.DispatcherQueue IImageEditHost.DispatcherQueue => DispatcherQueue;
+        IViewerManager IImageEditHost.ViewerManager => ViewerManager;
+        Grid IMetadataHost.PagesGrid => PagesGrid;
+        ViewerPanel IMetadataHost.ViewerControl => ViewerControl;
+        TextBlock IMetadataHost.TxtMetaTitle => TxtMetaTitle;
+        TextBlock IMetadataHost.TxtMetaFileName => TxtMetaFileName;
+        TextBlock IMetadataHost.TxtMetaDimensions => TxtMetaDimensions;
+        TextBlock IMetadataHost.TxtMetaFileSize => TxtMetaFileSize;
+        UIElement IMetadataHost.ExifDivider => ExifDivider;
+        UIElement IMetadataHost.ExifGrid => ExifGrid;
+        TextBlock IMetadataHost.TxtMetaCamera => TxtMetaCamera;
+        TextBlock IMetadataHost.TxtMetaLens => TxtMetaLens;
+        TextBlock IMetadataHost.TxtMetaSettings => TxtMetaSettings;
+        TextBlock IMetadataHost.TxtMetaDate => TxtMetaDate;
+        Microsoft.UI.Dispatching.DispatcherQueue IViewerLoaderHost.DispatcherQueue => DispatcherQueue;
+        ISlideshowManager IViewerLoaderHost.SlideshowManager => SlideshowManager;
+        IImageEditService IViewerLoaderHost.ImageEditService => ImageEditService;
+        void IViewerLoaderHost.ShowNotification(string message) => ShowNotification(message);
+        Grid IOverlayHost.RootGrid => RootGrid;
+        bool IOverlayHost.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
+        Microsoft.UI.Dispatching.DispatcherQueue IOverlayHost.DispatcherQueue => DispatcherQueue;
+        IntPtr IOverlayHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
 
         // === UI Helpers ===
         public ViewerPanel ViewerControl => ViewerControlInternal;
@@ -228,7 +201,7 @@ namespace quick_image_viewer
                 {
                     if (e.PropertyName == nameof(IViewerStateService.IsGridMode))
                     {
-                        ((IMainView)this).UpdateContextFlyout();
+                        UpdateContextFlyout();
                     }
                 };
             }
@@ -253,7 +226,7 @@ namespace quick_image_viewer
 
             this.Closed += MainWindow_Closed;
             AppWindowManager!.InitializeWindow();
-            ((IMainView)this).UpdateContextFlyout();
+            UpdateContextFlyout();
             WireRootEvents();
 
             RegisterMessages();
@@ -435,7 +408,7 @@ namespace quick_image_viewer
 
         public void Receive(ClearImageSourceMessage message)
         {
-            ((IMainView)this).ClearCachedBitmap(message.Path);
+            ClearCachedBitmap(message.Path);
         }
 
         public void Receive(RefreshDisplayMessage message)
@@ -593,15 +566,13 @@ namespace quick_image_viewer
             menu.Items.Clear();
             if (_settings.Bookmarks.Count == 0)
             {
-                menu.Items.Add(new MenuFlyoutItem { Text = _settings.GetString("Bookmark_Empty.Text"), IsEnabled = false });
+                menu.Items.Add(CreateEmptyBookmarkMenuItem());
             }
             else
             {
                 foreach (var bm in _settings.Bookmarks)
                 {
-                    var bmItem = new MenuFlyoutItem { Text = bm.Name, Tag = bm.Path };
-                    bmItem.Click += (s, e) => LoadDirectory(bm.Path);
-                    menu.Items.Add(bmItem);
+                    menu.Items.Add(CreateBookmarkMenuItem(bm.Name, bm.Path));
                 }
             }
         }
@@ -626,6 +597,14 @@ namespace quick_image_viewer
             PlaylistManager.LoadDirectory(path, initialFile, includeSiblings, includeSubfolders, preloadedPlaylist);
         }
 
+        public void SetGridLoading(bool isLoading, bool isBackground = false)
+        {
+            if (GridControlInternal != null)
+            {
+                if (isBackground) GridControlInternal.SetBackgroundLoading(isLoading);
+                else GridControlInternal.SetLoading(isLoading);
+            }
+        }
         public void UpdateGridItems(bool forceFullUpdate) => GridManager.UpdateGridItems(forceFullUpdate);
 
         public Task UpdateDisplayAsync() => ViewerManager.UpdateDisplayAsync();
@@ -639,8 +618,28 @@ namespace quick_image_viewer
         public Visibility GetSearchingOverlayVisibility(bool isSearching, bool isSlideshowRunning)
             => (isSearching && !isSlideshowRunning) ? Visibility.Visible : Visibility.Collapsed;
 
+        public IntPtr WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
         public string CurrentImagePath => ViewModel.Playlist != null && ViewModel.CurrentIndex >= 0 && ViewModel.CurrentIndex < ViewModel.Playlist.Count ? ViewModel.Playlist[ViewModel.CurrentIndex] : string.Empty;
         public void ShowNotification(string message) => ViewerManager.ShowNotification(message);
+        public void UpdateContextFlyout()
+        {
+            RootGrid.ContextFlyout = IsGridMode ? GridMenuFlyout : EditMenuFlyout;
+        }
+        public void ClearCachedBitmap(string path)
+        {
+            if (ViewerManager != null)
+            {
+                foreach (var ctrl in ViewerManager.PageControls) ctrl.PageImage.Source = null;
+                for (int pi = 0; pi < ViewerManager.Pages.Length; pi++)
+                {
+                    if (ViewerManager.Pages[pi].CurrentFilePath == path)
+                    {
+                        ViewerManager.Pages[pi].EditedBitmap = null;
+                        ViewerManager.Pages[pi].CurrentFilePath = null;
+                    }
+                }
+            }
+        }
 
 
 
@@ -736,21 +735,33 @@ namespace quick_image_viewer
         {
             if (TrySetContextTargetFromOriginalSource(e)) return;
 
-            var selected = GridControlInternal.GridView.SelectedItem as quick_image_viewer.Models.ImageItem;
+            var selected = GridControlInternal.GridView.SelectedItem as ImageItem;
             if (selected == null) return;
-
-            MenuStateManager.ContextTargetPath = selected.FilePath;
-            ViewModel.Editor.ContextPath = selected.FilePath;
+            SetContextTargetPath(selected.FilePath);
         }
 
         private bool TrySetContextTargetFromOriginalSource(RightTappedRoutedEventArgs e)
         {
             if (e.OriginalSource is not FrameworkElement fe) return false;
-            if (fe.DataContext is not quick_image_viewer.Models.ImageItem imageItem) return false;
-
-            MenuStateManager.ContextTargetPath = imageItem.FilePath;
-            ViewModel.Editor.ContextPath = imageItem.FilePath;
+            if (fe.DataContext is not ImageItem imageItem) return false;
+            SetContextTargetPath(imageItem.FilePath);
             return true;
+        }
+
+        private void SetContextTargetPath(string filePath)
+        {
+            MenuStateManager.ContextTargetPath = filePath;
+            ViewModel.Editor.ContextPath = filePath;
+        }
+
+        private MenuFlyoutItem CreateEmptyBookmarkMenuItem()
+            => new() { Text = _settings.GetString("Bookmark_Empty.Text"), IsEnabled = false };
+
+        private MenuFlyoutItem CreateBookmarkMenuItem(string name, string path)
+        {
+            var item = new MenuFlyoutItem { Text = name, Tag = path };
+            item.Click += (s, e) => LoadDirectory(path);
+            return item;
         }
 
 

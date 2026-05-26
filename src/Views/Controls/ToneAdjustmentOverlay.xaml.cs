@@ -13,12 +13,12 @@ namespace quick_image_viewer.Views.Controls
 {
     public sealed partial class ToneAdjustmentOverlay : UserControl
     {
-        private readonly IMainView _window;
+        private readonly IOverlayHost _window;
         private readonly string _sourcePath;
         private readonly SKBitmap? _baseBmp;
         private readonly DispatcherTimer _updateTimer;
 
-        public ToneAdjustmentOverlay(IMainView window, string sourcePath, SKBitmap? baseBmp)
+        public ToneAdjustmentOverlay(IOverlayHost window, string sourcePath, SKBitmap? baseBmp)
         {
             this.InitializeComponent();
             _window = window;

@@ -20,7 +20,7 @@ namespace quick_image_viewer.Managers
 {
     internal class GridManager : IGridManager
     {
-        private readonly IMainView _window;
+        private readonly IGridHost _window;
         private readonly ISettingsManager _settings;
 
         private ScrollViewer? _gridScrollViewer;
@@ -29,7 +29,7 @@ namespace quick_image_viewer.Managers
         private int _gridDecodeSize = 300;
         private CancellationTokenSource? _gridCts;
 
-        public GridManager(IMainView window, ISettingsManager settings)
+        public GridManager(IGridHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;

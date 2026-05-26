@@ -19,7 +19,7 @@ namespace quick_image_viewer.Managers
 {
     public partial class ViewerManager : IViewerManager, IRecipient<ZoomMessage>, IRecipient<ToggleMetadataMessage>, IRecipient<EditActionCompletedMessage>
     {
-        private readonly IMainView _window;
+        private readonly IViewerHost _window;
         private readonly ISettingsManager _settings;
         private readonly IViewerLayoutManager _layoutManager;
         private readonly IViewerImageLoader _imageLoader;
@@ -55,7 +55,7 @@ namespace quick_image_viewer.Managers
         private double _lastResizeHeight;
         private readonly ResourceLoader _resourceLoader = new();
 
-        public ViewerManager(IMainView window, ISettingsManager settings, IViewerCacheManager cacheManager)
+        public ViewerManager(IViewerHost window, ISettingsManager settings, IViewerCacheManager cacheManager)
         {
             _window = window;
             _settings = settings;

@@ -9,7 +9,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
 {
     internal class EditSessionLoaderStrategy : BaseLoaderStrategy, ILoaderStrategy
     {
-        public EditSessionLoaderStrategy(IMainView window) : base(window) { }
+        public EditSessionLoaderStrategy(IViewerLoaderHost window) : base(window) { }
 
         public bool CanHandle(string filePath)
         {

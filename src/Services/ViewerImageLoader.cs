@@ -14,11 +14,11 @@ namespace quick_image_viewer.Services
 {
     internal class ViewerImageLoader : IViewerImageLoader
     {
-        private readonly IMainView _window;
+        private readonly IViewerLoaderHost _window;
         private readonly ISettingsManager _settings;
         private readonly List<ILoaderStrategy> _strategies;
 
-        public ViewerImageLoader(IMainView window, ISettingsManager settings)
+        public ViewerImageLoader(IViewerLoaderHost window, ISettingsManager settings)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _settings = settings;

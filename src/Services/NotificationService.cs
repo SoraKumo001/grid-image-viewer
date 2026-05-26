@@ -5,10 +5,10 @@ namespace quick_image_viewer.Services
 {
     internal class NotificationService : INotificationService
     {
-        private readonly IMainView _window;
+        private readonly INotificationHost _window;
         private readonly DispatcherTimer _timer;
 
-        public NotificationService(IMainView window)
+        public NotificationService(INotificationHost window)
         {
             _window = window;
             _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };

@@ -11,10 +11,10 @@ namespace quick_image_viewer.Services
 {
     internal class ImageEditService : IImageEditService
     {
-        private readonly IMainView _window;
+        private readonly IImageEditHost _window;
         private readonly Dictionary<string, EditSession> _pendingEdits = new Dictionary<string, EditSession>();
 
-        public ImageEditService(IMainView window)
+        public ImageEditService(IImageEditHost window)
         {
             _window = window;
         }

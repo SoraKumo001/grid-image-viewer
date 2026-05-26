@@ -9,12 +9,12 @@ namespace quick_image_viewer.Views.Controls
 {
     public sealed partial class CropOverlay : UserControl
     {
-        private readonly IMainView _window;
+        private readonly IOverlayHost _window;
         private Point _startPoint;
         private bool _isSelecting = false;
         private Rect _selectionRect;
 
-        public CropOverlay(IMainView window)
+        public CropOverlay(IOverlayHost window)
         {
             this.InitializeComponent();
             _window = window;
@@ -95,7 +95,7 @@ namespace quick_image_viewer.Views.Controls
             }
             else if (e.Key == Windows.System.VirtualKey.Escape)
             {
-                _window.DialogService.Close(this);
+                Close();
             }
         }
 
@@ -109,7 +109,14 @@ namespace quick_image_viewer.Views.Controls
             // Since this overlay is exactly over the RootGrid (or Row 1), we can transform points.
 
             _window.MenuStateManager.ExecuteCropWithRect(_selectionRect);
-            _window.DialogService.Close(this);
+            Close();
+        }
+
+        private void Close()
+        {
+            var parent = this.Parent as Panel;
+            parent?.Children.Remove(this);
+            _window.IsDialogOpen = false;
         }
     }
 }

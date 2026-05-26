@@ -7,9 +7,9 @@ namespace quick_image_viewer.Services.LoaderStrategies
 {
     internal abstract class BaseLoaderStrategy
     {
-        protected readonly IMainView _window;
+        protected readonly IViewerLoaderHost _window;
 
-        protected BaseLoaderStrategy(IMainView window)
+        protected BaseLoaderStrategy(IViewerLoaderHost window)
         {
             _window = window;
         }

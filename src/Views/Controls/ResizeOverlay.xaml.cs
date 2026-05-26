@@ -7,10 +7,10 @@ namespace quick_image_viewer.Views.Controls
 {
     public sealed partial class ResizeOverlay : UserControl
     {
-        private readonly IMainView _window;
+        private readonly IOverlayHost _window;
         private readonly string _sourcePath;
 
-        public ResizeOverlay(IMainView window, string sourcePath, int initialWidth, int initialHeight)
+        public ResizeOverlay(IOverlayHost window, string sourcePath, int initialWidth, int initialHeight)
         {
             this.InitializeComponent();
             _window = window;

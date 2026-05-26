@@ -12,7 +12,7 @@ namespace quick_image_viewer.Services
 {
     public class PrintService : IPrintService
     {
-        private IMainView _window;
+        private IPrintHost _window;
         private ISettingsManager _settings;
         private PrintManager _printManager = null!;
         private PrintDocument _printDocument = null!;
@@ -21,7 +21,7 @@ namespace quick_image_viewer.Services
         private BitmapImage? _printImage;
         private PrintPageDescription _pageDescription;
 
-        public PrintService(IMainView window, ISettingsManager settings)
+        public PrintService(IPrintHost window, ISettingsManager settings)
         {
             _window = window;
             _settings = settings;
