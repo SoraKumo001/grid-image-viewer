@@ -1,3 +1,4 @@
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Services;
 using SharpCompress.Archives;
@@ -61,7 +62,10 @@ namespace quick_image_viewer.Managers
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ArchiveManager", $"GetArchiveImages failed for '{archivePath}'", ex);
+            }
             // Sort by entry name (Natural Sort)
             return images.OrderBy(f => f, new NaturalStringComparer()).ToList();
         }
@@ -81,7 +85,10 @@ namespace quick_image_viewer.Managers
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ArchiveManager", $"HasArchiveImages failed for '{archivePath}'", ex);
+            }
             return false;
         }
 
@@ -102,7 +109,11 @@ namespace quick_image_viewer.Managers
                     }
                 }
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("ArchiveManager", $"GetEntryBytes failed for '{archivePath}|{entryName}'", ex);
+                return null;
+            }
         }
 
         public static Stream? GetEntryStream(string archivePath, string entryName)
@@ -112,7 +123,10 @@ namespace quick_image_viewer.Managers
                 byte[]? bytes = GetEntryBytes(archivePath, entryName);
                 if (bytes != null) return new MemoryStream(bytes);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ArchiveManager", $"GetEntryStream failed for '{archivePath}|{entryName}'", ex);
+            }
             return null;
         }
     }

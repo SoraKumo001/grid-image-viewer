@@ -62,8 +62,9 @@ namespace quick_image_viewer.Views.Controls
                     }
                     _internalMediaPlayer.Source = null;
                 }
-                catch { }
-                try { MediaPlayerContainer.Children.Remove(_internalMediaPlayer); } catch { }
+                catch (Exception ex) { AppLog.Error("VideoPlayerControl", "RecreateMediaPlayerElement detach failed: ", ex); }
+                try { MediaPlayerContainer.Children.Remove(_internalMediaPlayer); }
+                catch (Exception ex) { AppLog.Error("VideoPlayerControl", "RecreateMediaPlayerElement remove child failed: ", ex); }
                 _internalMediaPlayer = null;
             }
 
@@ -89,11 +90,11 @@ namespace quick_image_viewer.Views.Controls
 
         private void DetachMediaPlayer(MediaPlayer player)
         {
-            try { player.MediaOpened -= _onMediaOpenedHandler; } catch { }
-            try { player.MediaFailed -= _onMediaFailedHandler; } catch { }
-            try { player.VideoFrameAvailable -= OnVideoFrameAvailable; } catch { }
-            try { player.Pause(); } catch { }
-            try { player.Source = null; } catch { }
+            try { player.MediaOpened -= _onMediaOpenedHandler; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Detach MediaOpened failed: ", ex); }
+            try { player.MediaFailed -= _onMediaFailedHandler; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Detach MediaFailed failed: ", ex); }
+            try { player.VideoFrameAvailable -= OnVideoFrameAvailable; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Detach VideoFrameAvailable failed: ", ex); }
+            try { player.Pause(); } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Pause during detach failed: ", ex); }
+            try { player.Source = null; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Clear source during detach failed: ", ex); }
 
             _onMediaOpenedHandler = null;
             _onMediaFailedHandler = null;
@@ -167,7 +168,7 @@ namespace quick_image_viewer.Views.Controls
                             if (sw > 0 && sh > 0) return (double)sw / sh;
                         }
                     }
-                    catch { }
+                    catch (Exception ex) { AppLog.Error("VideoPlayerControl", "VideoAspectRatio read failed: ", ex); }
                 }
                 return 0.75;
             }
@@ -208,7 +209,7 @@ namespace quick_image_viewer.Views.Controls
                         hadFocus = true;
                     }
                 }
-                catch { }
+                catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Hide timer focus check failed: ", ex); }
 
                 CustomTransportPanel.Visibility = Visibility.Collapsed;
                 if (hadFocus)
@@ -449,7 +450,11 @@ namespace quick_image_viewer.Views.Controls
                     width = session.NaturalVideoWidth;
                     height = session.NaturalVideoHeight;
                 }
-                catch { return; }
+                catch (Exception ex)
+                {
+                    AppLog.Error("VideoPlayerControl", "Natural video size read failed: ", ex);
+                    return;
+                }
 
                 if (width == 0 || height == 0) return;
 
@@ -481,7 +486,10 @@ namespace quick_image_viewer.Views.Controls
                     InvalidateCanvasRequested?.Invoke();
                 });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("VideoPlayerControl", "OnVideoFrameAvailable failed: ", ex);
+            }
         }
 
         private unsafe void UpdateSKFrameBitmap()
@@ -623,8 +631,9 @@ namespace quick_image_viewer.Views.Controls
                     _lastNaturalHeight = currentH;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Error("VideoPlayerControl", "UpdateVideoVisualSize natural size read fallback: ", ex);
                 currentW = _lastNaturalWidth;
                 currentH = _lastNaturalHeight;
             }
@@ -743,8 +752,9 @@ namespace quick_image_viewer.Views.Controls
             {
                 if (mp.PlaybackSession.PlaybackState == MediaPlaybackState.None) return;
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Error("VideoPlayerControl", "ApplyMediaSurfaceSize state read failed: ", ex);
                 return;
             }
 
@@ -756,11 +766,12 @@ namespace quick_image_viewer.Views.Controls
                     scale = XamlRoot.RasterizationScale;
                 }
             }
-            catch { }
+            catch (Exception ex) { AppLog.Error("VideoPlayerControl", "RasterizationScale read failed: ", ex); }
 
             uint surfaceWidth = (uint)System.Math.Max(1, width * scale);
             uint surfaceHeight = (uint)System.Math.Max(1, height * scale);
-            try { mp.SetSurfaceSize(new Windows.Foundation.Size(surfaceWidth, surfaceHeight)); } catch { }
+            try { mp.SetSurfaceSize(new Windows.Foundation.Size(surfaceWidth, surfaceHeight)); }
+            catch (Exception ex) { AppLog.Error("VideoPlayerControl", "SetSurfaceSize failed: ", ex); }
         }
 
         private void InternalRootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -808,8 +819,9 @@ namespace quick_image_viewer.Views.Controls
                     mp.PlaybackSession.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
                 }
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
+                AppLog.Error("VideoPlayerControl", "TimelineSlider_PointerReleased failed: ", ex);
             }
         }
 
@@ -836,8 +848,9 @@ namespace quick_image_viewer.Views.Controls
                     _isUpdatingSliderFromCode = false;
                 }
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
+                AppLog.Error("VideoPlayerControl", "UpdateSlider failed: ", ex);
                 _isUpdatingSliderFromCode = false;
             }
         }
@@ -881,7 +894,7 @@ namespace quick_image_viewer.Views.Controls
                     hadFocus = true;
                 }
             }
-            catch { }
+            catch (Exception ex) { AppLog.Error("VideoPlayerControl", "PointerExited focus check failed: ", ex); }
 
             CustomTransportPanel.Visibility = Visibility.Collapsed;
             if (hadFocus)
@@ -917,8 +930,9 @@ namespace quick_image_viewer.Views.Controls
                     player.PlaybackSession.Position = TimeSpan.FromSeconds(e.NewValue);
                     ShowControls();
                 }
-                catch (System.Exception)
+                catch (System.Exception ex)
                 {
+                    AppLog.Error("VideoPlayerControl", "TimelineSlider_ValueChanged failed: ", ex);
                 }
             }
         }
@@ -933,7 +947,7 @@ namespace quick_image_viewer.Views.Controls
             var mp = _internalMediaPlayer?.MediaPlayer;
             if (mp != null)
             {
-                try { mp.Pause(); } catch { }
+                try { mp.Pause(); } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "ResetPlayback pause failed: ", ex); }
 
                 mp.MediaOpened -= _onMediaOpenedHandler;
                 mp.MediaFailed -= _onMediaFailedHandler;
@@ -941,8 +955,8 @@ namespace quick_image_viewer.Views.Controls
                 _onMediaOpenedHandler = null;
                 _onMediaFailedHandler = null;
 
-                try { mp.Source = null; } catch { }
-                try { _internalMediaPlayer?.Source = null; } catch { }
+                try { mp.Source = null; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "ResetPlayback clear MediaPlayer source failed: ", ex); }
+                try { _internalMediaPlayer?.Source = null; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "ResetPlayback clear element source failed: ", ex); }
 
                 await Task.Delay(20);
             }
@@ -962,7 +976,7 @@ namespace quick_image_viewer.Views.Controls
             ResetPanAnimation();
             if (_ffmpegSource != null)
             {
-                try { _ffmpegSource.PlaybackSession = null; } catch { }
+                try { _ffmpegSource.PlaybackSession = null; } catch (Exception ex) { AppLog.Error("VideoPlayerControl", "ResetPlayback clear FFmpeg playback session failed: ", ex); }
                 _ffmpegSource.Dispose();
                 _ffmpegSource = null;
             }
@@ -986,7 +1000,7 @@ namespace quick_image_viewer.Views.Controls
                     hadFocus = true;
                 }
             }
-            catch { }
+            catch (Exception ex) { AppLog.Error("VideoPlayerControl", "ResetPlayback focus check failed: ", ex); }
 
             CustomTransportPanel.Visibility = Visibility.Collapsed;
             if (hadFocus)

@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Models;
@@ -342,8 +343,9 @@ namespace quick_image_viewer.Managers
                                     item.Thumbnail = source;
                                     SetMetadata(item);
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
+                                    AppLog.Error("GridManager", "SoftwareBitmapSource assignment failed", ex);
                                     source.Dispose();
                                 }
                             }
@@ -375,7 +377,10 @@ namespace quick_image_viewer.Managers
                     SetMetadata(item);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("GridManager", $"LoadSingleThumbnailAsync failed for '{item.FilePath}'", ex);
+            }
             finally
             {
                 await EnqueueOnDispatcherAsync(() => item.IsLoading = false);
@@ -447,7 +452,10 @@ namespace quick_image_viewer.Managers
                             wb.Invalidate();
                             item.Thumbnail = wb;
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error("GridManager", "WriteableBitmap conversion failed", ex);
+                        }
                     });
                 }
             }
@@ -470,10 +478,16 @@ namespace quick_image_viewer.Managers
                                 item.Thumbnail = bitmapImage;
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error("GridManager", "BitmapImage fallback assignment failed", ex);
+                        }
                     });
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("GridManager", "BitmapImage fallback load failed", ex);
+                }
             }
         }
 
@@ -551,7 +565,10 @@ namespace quick_image_viewer.Managers
                         var fileInfo = new System.IO.FileInfo(actualPath);
                         sizeStr = FormatFileSize(fileInfo.Length);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("GridManager", "File size metadata read failed", ex);
+                    }
 
                     string metadataStr = w > 0 ? $"{w}x{h} ({sizeStr})" : sizeStr;
 
@@ -560,7 +577,10 @@ namespace quick_image_viewer.Managers
                         item.Metadata = metadataStr;
                     });
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("GridManager", $"SetMetadata failed for '{item.FilePath}'", ex);
+                }
             });
         }
 

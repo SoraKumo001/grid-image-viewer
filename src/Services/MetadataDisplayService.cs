@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using quick_image_viewer.Common;
 using quick_image_viewer.Interfaces;
 using System;
 namespace quick_image_viewer.Services
@@ -118,11 +119,11 @@ namespace quick_image_viewer.Services
             }
             catch (System.Runtime.InteropServices.COMException ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[MetadataDisplayService] COMException in UpdateMetadataPanel: 0x{ex.HResult:X} - {ex.Message}");
+                AppLog.Error("MetadataDisplayService", $"COMException in UpdateMetadataPanel: 0x{ex.HResult:X}", ex);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"[MetadataDisplayService] Exception in UpdateMetadataPanel: {ex.Message}");
+                AppLog.Error("MetadataDisplayService", "Exception in UpdateMetadataPanel", ex);
             }
         }
 
@@ -172,7 +173,10 @@ namespace quick_image_viewer.Services
                             break;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("MetadataDisplayService", "TransformToVisual failed", ex);
+                    }
                 }
             }
 

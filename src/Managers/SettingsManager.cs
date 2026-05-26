@@ -1,4 +1,5 @@
 using Microsoft.UI.Windowing;
+using quick_image_viewer.Common;
 using quick_image_viewer.Interfaces;
 using System;
 using System.IO;
@@ -226,8 +227,9 @@ namespace quick_image_viewer.Managers
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Error("SettingsManager", "LoadSettings failed", ex);
                 _data = new SettingsData();
             }
         }
@@ -239,7 +241,10 @@ namespace quick_image_viewer.Managers
                 string json = JsonSerializer.Serialize(_data, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(_settingsFilePath, json);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("SettingsManager", "Save failed", ex);
+            }
         }
 
         public void SaveKeyBindings() => Save();
@@ -284,7 +289,10 @@ namespace quick_image_viewer.Managers
                         return true;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("SettingsManager", "ImportSettingsAsync failed", ex);
+                }
             }
             return false;
         }

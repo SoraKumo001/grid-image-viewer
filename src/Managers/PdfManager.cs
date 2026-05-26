@@ -1,3 +1,4 @@
+using quick_image_viewer.Common;
 using System;
 using System.Threading.Tasks;
 using Windows.Data.Pdf;
@@ -17,7 +18,11 @@ namespace quick_image_viewer.Managers
                 var doc = await GetDocumentAsync(filePath);
                 return (int)(doc?.PageCount ?? 0);
             }
-            catch { return 0; }
+            catch (Exception ex)
+            {
+                AppLog.Error("PdfManager", $"GetPageCountAsync failed for '{filePath}'", ex);
+                return 0;
+            }
         }
 
         public static async Task<PdfDocument?> GetDocumentAsync(string filePath)
@@ -31,7 +36,11 @@ namespace quick_image_viewer.Managers
                 _documentCache.TryAdd(filePath, doc);
                 return doc;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("PdfManager", $"GetDocumentAsync failed for '{filePath}'", ex);
+                return null;
+            }
         }
 
         public static string CreateVirtualPath(string filePath, int pageIndex)
@@ -79,7 +88,11 @@ namespace quick_image_viewer.Managers
                 stream.Seek(0);
                 return stream;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("PdfManager", $"RenderPageToStreamAsync failed for '{filePath}' page {pageIndex}", ex);
+                return null;
+            }
         }
 
         public static void ClearCache()

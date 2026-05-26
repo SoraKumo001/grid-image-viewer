@@ -104,7 +104,11 @@ namespace quick_image_viewer.Managers
                             }
                         }
                     }
-                    catch { continue; }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("ViewerCacheManager", $"Binary preload failed for '{path}'", ex);
+                        continue;
+                    }
                 }
 
                 // 2. ソフトウェアビットマップキャッシュを確認・作成
@@ -134,7 +138,10 @@ namespace quick_image_viewer.Managers
                                 AddSoftwareBitmapToCache(path, softwareBitmap);
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error("ViewerCacheManager", $"Software bitmap preload failed for '{path}'", ex);
+                        }
                     }, token);
                 }
             }
@@ -220,7 +227,11 @@ namespace quick_image_viewer.Managers
                             }
                         }
                     }
-                    catch { continue; }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("ViewerCacheManager", $"Around binary preload failed for '{path}'", ex);
+                        continue;
+                    }
                 }
 
                 bool isVeryNear = (idx - currentIndex + playlist.Count) % playlist.Count < 2 * splitCount;
@@ -248,7 +259,10 @@ namespace quick_image_viewer.Managers
 
                                 lock (_softwareBitmapCache) { AddSoftwareBitmapToCache(path, softwareBitmap); }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                AppLog.Error("ViewerCacheManager", $"Around software bitmap preload failed for '{path}'", ex);
+                            }
                         }, token);
                     }
                 }
@@ -289,7 +303,10 @@ namespace quick_image_viewer.Managers
                 _folderPreloadCache = new FolderPreloadCache(currentDir, nextFolder, nextPlaylist, prevFolder, prevPlaylist);
                 _lastPreloadedDirectory = currentDir;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ViewerCacheManager", "PreloadFoldersAsync failed", ex);
+            }
         }
 
         public (string? Path, List<string>? Playlist) GetPreloadedFolderData(string currentDir, int offset)

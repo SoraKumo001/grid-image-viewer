@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.ViewModels;
@@ -68,7 +69,10 @@ namespace quick_image_viewer.Views.Controls
                         });
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("ToneAdjustmentOverlay", "Tone update failed", ex);
+                }
             });
         }
 

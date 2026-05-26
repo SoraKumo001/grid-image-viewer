@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using quick_image_viewer.Common;
 using SkiaSharp;
 using System;
 using System.ComponentModel;
@@ -157,10 +158,16 @@ namespace quick_image_viewer.Models
                         _cachedWb.Invalidate();
                         Thumbnail = _cachedWb;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("ImageItem", "AdvanceFrame UI update failed", ex);
+                    }
                 });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageItem", $"AdvanceFrame failed for '{FilePath}'", ex);
+            }
             finally
             {
                 _isDecodingFrame = false;

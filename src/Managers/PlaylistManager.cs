@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Dispatching;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
@@ -226,8 +227,9 @@ namespace quick_image_viewer.Managers
                         }
                     });
                 }
-                catch
+                catch (Exception ex)
                 {
+                    AppLog.Error("PlaylistManager", "NavigateFolder failed", ex);
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
@@ -261,8 +263,9 @@ namespace quick_image_viewer.Managers
                         OnInitialFilesLoaded(path, initialFile, includeSiblings, includeSubfolders, token);
                     });
                 }
-                catch
+                catch (Exception ex)
                 {
+                    AppLog.Error("PlaylistManager", "LoadDirectory failed", ex);
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested) return;
@@ -357,7 +360,10 @@ namespace quick_image_viewer.Managers
                     }
                 }, token, _settings.EnabledExtensions);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("PlaylistManager", "DiscoverAdditionalFilesAsync failed", ex);
+            }
             finally
             {
                 _dispatcherQueue.TryEnqueue(() =>

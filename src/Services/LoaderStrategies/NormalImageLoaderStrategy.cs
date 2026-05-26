@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Views.Controls;
@@ -40,8 +41,9 @@ namespace quick_image_viewer.Services.LoaderStrategies
                         var copy = SoftwareBitmap.Copy(cachedSoftwareBitmap);
                         await softwareSource.SetBitmapAsync(copy);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        AppLog.Error("NormalImageLoaderStrategy", "Cached software bitmap copy failed", ex);
                         softwareSource.Dispose();
                         cachedSoftwareBitmap = null;
                     }
@@ -82,7 +84,11 @@ namespace quick_image_viewer.Services.LoaderStrategies
                                 await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream()).AsTask();
                                 tcs.SetResult(bitmapImage);
                             }
-                            catch { tcs.SetResult(null); }
+                            catch (Exception ex)
+                            {
+                                AppLog.Error("NormalImageLoaderStrategy", "Cached bytes decode failed", ex);
+                                tcs.SetResult(null);
+                            }
                         });
                         bitmapImage = await tcs.Task;
                     }
@@ -103,7 +109,10 @@ namespace quick_image_viewer.Services.LoaderStrategies
                     });
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("NormalImageLoaderStrategy", "LoadAsync failed", ex);
+            }
         }
 
         private async Task<BitmapImage?> LoadBitmapImageFromFileAsync(string filePath, Microsoft.UI.Dispatching.DispatcherQueue dispatcher)
@@ -122,12 +131,17 @@ namespace quick_image_viewer.Services.LoaderStrategies
                         await bitmapImage.SetSourceAsync(fs.AsRandomAccessStream()).AsTask();
                         tcs.SetResult(bitmapImage);
                     }
-                    catch { tcs.SetResult(null); }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("NormalImageLoaderStrategy", "File stream bitmap decode failed", ex);
+                        tcs.SetResult(null);
+                    }
                 });
                 return await tcs.Task;
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Error("NormalImageLoaderStrategy", $"LoadBitmapImageFromFileAsync primary load failed for '{filePath}'", ex);
                 try
                 {
                     var bmpBytes = await Task.Run(() => ImageProcessor.DecodeToBmpBytes(filePath));
@@ -144,7 +158,10 @@ namespace quick_image_viewer.Services.LoaderStrategies
                         return await tcs.Task;
                     }
                 }
-                catch { }
+                catch (Exception fallbackEx)
+                {
+                    AppLog.Error("NormalImageLoaderStrategy", "DecodeToBmpBytes fallback failed", fallbackEx);
+                }
             }
             return null;
         }

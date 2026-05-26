@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
@@ -78,7 +79,10 @@ namespace quick_image_viewer.Services.LoaderStrategies
                     pageControl.PageCanvas.Invalidate();
                 });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("PdfLoaderStrategy", $"LoadAsync failed for '{filePath}'", ex);
+            }
         }
     }
 }

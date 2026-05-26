@@ -1,3 +1,4 @@
+using quick_image_viewer.Common;
 using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
 using System;
@@ -61,7 +62,10 @@ namespace quick_image_viewer.Helpers
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("FileNavigator", $"Candidate check failed for '{node}'", ex);
+                }
             }
 
             return null;
@@ -77,7 +81,11 @@ namespace quick_image_viewer.Helpers
                     .OrderBy(e => e, new NaturalStringComparer())
                     .ToArray();
             }
-            catch { return Array.Empty<string>(); }
+            catch (Exception ex)
+            {
+                AppLog.Error("FileNavigator", $"GetChildNodes failed for '{path}'", ex);
+                return Array.Empty<string>();
+            }
         }
 
         private static string? GetNextNodeDFS(string current, IEnumerable<string>? allowedExtensions = null)
@@ -102,7 +110,10 @@ namespace quick_image_viewer.Helpers
                         return siblings[idx + 1];
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("FileNavigator", "GetNextNodeDFS sibling enumeration failed", ex);
+                }
 
                 node = parent.FullName;
             }
@@ -136,7 +147,11 @@ namespace quick_image_viewer.Helpers
                     return parentPath;
                 }
             }
-            catch { return parentPath; }
+            catch (Exception ex)
+            {
+                AppLog.Error("FileNavigator", "GetPrevNodeDFS failed", ex);
+                return parentPath;
+            }
         }
     }
 }

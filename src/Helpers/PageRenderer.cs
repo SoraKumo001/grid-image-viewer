@@ -1,3 +1,4 @@
+using quick_image_viewer.Common;
 using quick_image_viewer.Managers;
 using SkiaSharp;
 using System;
@@ -187,7 +188,10 @@ namespace quick_image_viewer.Helpers
                         oldImage?.Dispose();
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("PageRenderer", "AdvanceFrame decode failed", ex);
+                }
                 finally
                 {
                     _isDecodingFrame = false;

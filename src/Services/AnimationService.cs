@@ -94,7 +94,8 @@ namespace quick_image_viewer.Services
                         _prevCrossfadeGrid = null;
                     }
                     _gridStoryboard = null;
-                    try { _window.MetadataDisplayService.UpdateMetadataPanel(); } catch { }
+                    try { _window.MetadataDisplayService.UpdateMetadataPanel(); }
+                    catch (Exception ex) { AppLog.Error("AnimationService", "Metadata panel update after crossfade failed", ex); }
                 });
             };
 

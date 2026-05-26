@@ -1,4 +1,6 @@
+using quick_image_viewer.Common;
 using quick_image_viewer.Interfaces;
+using System;
 namespace quick_image_viewer.Managers
 {
     internal class AppWindowManager : IAppWindowManager
@@ -41,7 +43,10 @@ namespace quick_image_viewer.Managers
                     if (System.IO.File.Exists(fallbackPath)) appWindow.SetIcon(fallbackPath);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("AppWindowManager", "SetIcon failed", ex);
+            }
 
             if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
             {

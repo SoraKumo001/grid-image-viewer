@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
@@ -26,6 +27,7 @@ namespace quick_image_viewer
 
             TaskScheduler.UnobservedTaskException += (s, e) =>
             {
+                AppLog.Error("App", "Unobserved task exception", e.Exception, includeStackTrace: true);
                 e.SetObserved();
             };
 
@@ -124,9 +126,9 @@ namespace quick_image_viewer
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore activation errors to prevent app crash
+                AppLog.Warn("App", "Activation flow failed", ex);
             }
 
             if (!fileLoaded)

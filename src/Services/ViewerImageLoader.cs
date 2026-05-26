@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
@@ -60,9 +61,12 @@ namespace quick_image_viewer.Services
                     await strategy.LoadAsync(filePath, pageControl, renderer, pageIndex, token, cacheManager);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Error handling is managed within strategies or reported via notification
+                if (ex is not OperationCanceledException && ex is not TaskCanceledException)
+                {
+                    AppLog.Error("ViewerImageLoader", "LoadPageIntoBufferAsync failed", ex);
+                }
             }
             finally
             {
@@ -98,7 +102,8 @@ namespace quick_image_viewer.Services
                 if (token.IsCancellationRequested) return;
 
                 bool isSlideshowRunning = false;
-                try { isSlideshowRunning = _window?.SlideshowManager?.IsSlideshowRunning ?? false; } catch { }
+                try { isSlideshowRunning = _window?.SlideshowManager?.IsSlideshowRunning ?? false; }
+                catch (Exception ex) { AppLog.Error("ViewerImageLoader", "Slideshow state check failed", ex); }
 
                 if (isVideo)
                 {
@@ -112,7 +117,7 @@ namespace quick_image_viewer.Services
                         pageControl.GetOrCreateMediaPlayer();
                         pageControl.PagePlayer.Opacity = 0;
                     }
-                    catch { }
+                    catch (Exception ex) { AppLog.Error("ViewerImageLoader", "MediaPlayer init failed", ex); }
                 }
                 else
                 {

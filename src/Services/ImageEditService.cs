@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.ViewModels;
@@ -188,7 +189,11 @@ namespace quick_image_viewer.Services
                 byte[] bytes = await System.IO.File.ReadAllBytesAsync(path);
                 return SKBitmap.Decode(bytes);
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageEditService", $"LoadOriginalBitmapAsync failed for '{path}'", ex);
+                return null;
+            }
         }
 
         public async Task ApplyTransformationAsync(string path, Func<SKBitmap?, SKBitmap?> transform)

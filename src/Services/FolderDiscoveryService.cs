@@ -1,3 +1,4 @@
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Managers;
 using System;
@@ -55,7 +56,11 @@ namespace quick_image_viewer.Services
                                 string? d = null;
                                 try { if (!dirEnum.MoveNext()) break; d = dirEnum.Current; }
                                 catch (UnauthorizedAccessException) { continue; }
-                                catch { break; }
+                                catch (Exception ex)
+                                {
+                                    AppLog.Error("FolderDiscoveryService", "Sibling directory enumeration stopped", ex);
+                                    break;
+                                }
 
                                 if (d != null && token.IsCancellationRequested) return;
                                 if (d != null && d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) != cleanPath)
@@ -72,7 +77,11 @@ namespace quick_image_viewer.Services
                                 string? f = null;
                                 try { if (!fileEnum.MoveNext()) break; f = fileEnum.Current; }
                                 catch (UnauthorizedAccessException) { continue; }
-                                catch { break; }
+                                catch (Exception ex)
+                                {
+                                    AppLog.Error("FolderDiscoveryService", "Sibling file enumeration stopped", ex);
+                                    break;
+                                }
 
                                 if (f != null && token.IsCancellationRequested) return;
                                 if (f != null && f != cleanPath && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
@@ -91,7 +100,10 @@ namespace quick_image_viewer.Services
                             }
                             if (siblingFiles.Count > 0) onBatchLoaded?.Invoke(siblingFiles);
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error("FolderDiscoveryService", "Sibling discovery failed", ex);
+                        }
                     }
                 }
 
@@ -107,14 +119,21 @@ namespace quick_image_viewer.Services
                                 string? d = null;
                                 try { if (!dirEnum.MoveNext()) break; d = dirEnum.Current; }
                                 catch (UnauthorizedAccessException) { continue; }
-                                catch { break; }
+                                catch (Exception ex)
+                                {
+                                    AppLog.Error("FolderDiscoveryService", "Subfolder enumeration stopped", ex);
+                                    break;
+                                }
 
                                 if (d != null && token.IsCancellationRequested) return;
                                 if (d != null) targetDirs.Add(d);
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("FolderDiscoveryService", "Subfolder discovery failed", ex);
+                    }
                 }
 
                 if (targetDirs.Count == 0) return;
@@ -131,7 +150,10 @@ namespace quick_image_viewer.Services
                 }
             }
             catch (OperationCanceledException) { }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                AppLog.Error("FolderDiscoveryService", "DiscoverFilesAsync failed", ex);
+            }
         }
 
         public static List<string> GetFilesFromDirectory(string dir, bool recursive, IEnumerable<string>? allowedExtensions = null)
@@ -142,7 +164,10 @@ namespace quick_image_viewer.Services
                 if (!Directory.Exists(dir)) return files;
                 EnumerateFilesSafe(dir, recursive, files, allowedExtensions);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("FolderDiscoveryService", "GetFilesFromDirectory failed", ex);
+            }
             return files;
         }
 
@@ -156,7 +181,11 @@ namespace quick_image_viewer.Services
                     string? f = null;
                     try { if (!fileEnum.MoveNext()) break; f = fileEnum.Current; }
                     catch (UnauthorizedAccessException) { continue; }
-                    catch { break; }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("FolderDiscoveryService", "File enumeration stopped", ex);
+                        break;
+                    }
 
                     if (f != null && IsSupportedExtension(Path.GetExtension(f), allowedExtensions))
                     {
@@ -181,13 +210,20 @@ namespace quick_image_viewer.Services
                         string? d = null;
                         try { if (!dirEnum.MoveNext()) break; d = dirEnum.Current; }
                         catch (UnauthorizedAccessException) { continue; }
-                        catch { break; }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error("FolderDiscoveryService", "Directory enumeration stopped", ex);
+                            break;
+                        }
 
                         if (d != null) EnumerateFilesSafe(d, true, files, allowedExtensions);
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("FolderDiscoveryService", "EnumerateFilesSafe failed", ex);
+            }
         }
 
         public static List<string> GetInitialPlaylist(string path, IEnumerable<string>? allowedExtensions = null)

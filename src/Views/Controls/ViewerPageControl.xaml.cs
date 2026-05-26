@@ -1,6 +1,7 @@
 using FFmpegInteropX;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using System;
 using System.Threading.Tasks;
@@ -117,7 +118,10 @@ namespace quick_image_viewer.Views.Controls
 
                 await Task.Delay(20);
             }
-            catch (System.Exception) { }
+            catch (System.Exception ex)
+            {
+                AppLog.Error("ViewerPageControl", "ResetPlaybackAsync failed", ex);
+            }
             finally
             {
                 _loadingSemaphore.Release();

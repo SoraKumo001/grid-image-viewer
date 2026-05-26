@@ -1,5 +1,6 @@
 using FFmpegInteropX;
 using ImageMagick;
+using quick_image_viewer.Common;
 using quick_image_viewer.Managers;
 using SkiaSharp;
 using System;
@@ -38,7 +39,11 @@ namespace quick_image_viewer.Helpers
                 }
                 return File.ReadAllBytes(path);
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"ReadAllBytes failed for '{path}'", ex);
+                return null;
+            }
         }
 
         public static SKBitmap? LoadBitmap(string path)
@@ -77,8 +82,9 @@ namespace quick_image_viewer.Helpers
                 image.Format = MagickFormat.Bmp;
                 return image.ToByteArray();
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Error("ImageProcessor", $"DecodeToBmpBytes failed for '{filePath}'", ex);
                 return null;
             }
         }
@@ -97,7 +103,10 @@ namespace quick_image_viewer.Helpers
                     SaveBitmap(bitmap, destPath, targetExtension, quality);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"SaveImage failed from '{sourcePath}' to '{destPath}'", ex);
+            }
         }
 
         /// <summary>
@@ -209,7 +218,11 @@ namespace quick_image_viewer.Helpers
                 if (disposeSource) source.Dispose();
                 return result;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"ApplyToneAdjustment failed for '{path}'", ex);
+                return null;
+            }
         }
 
         public static SKBitmap? ApplyFilter(string path, string filterType, SKBitmap? currentBitmap = null)
@@ -276,7 +289,11 @@ namespace quick_image_viewer.Helpers
                 if (disposeSource) source.Dispose();
                 return result;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"ApplyFilter failed for '{path}' ({filterType})", ex);
+                return null;
+            }
         }
 
         public static SKBitmap? LoadThumbnail(string path, int maxDim)
@@ -314,7 +331,10 @@ namespace quick_image_viewer.Helpers
                 }
                 bitmap.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"LoadThumbnail failed for '{path}'", ex);
+            }
             return null;
         }
 
@@ -432,7 +452,10 @@ namespace quick_image_viewer.Helpers
                                 return dim;
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error("ImageProcessor", $"Video dimension read failed for '{sourcePath}'", ex);
+                        }
                         return (1920, 1080);
                     }
 
@@ -443,7 +466,10 @@ namespace quick_image_viewer.Helpers
                         using var codec = SKCodec.Create(stream);
                         if (codec != null) result = (codec.Info.Width, codec.Info.Height);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("ImageProcessor", $"Stream codec size read failed for '{sourcePath}'", ex);
+                    }
                 }
 
                 if (result.width > 0)
@@ -452,7 +478,10 @@ namespace quick_image_viewer.Helpers
                 }
                 return result;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"GetImageSize failed for '{sourcePath}'", ex);
+            }
             return (0, 0);
         }
 
@@ -550,7 +579,10 @@ namespace quick_image_viewer.Helpers
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"TryExtractVideoFrameWithFFmpegAsync failed for '{filePath}'", ex);
+            }
 
             return null;
         }
@@ -578,7 +610,10 @@ namespace quick_image_viewer.Helpers
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", "GetVideoThumbnailDecodeSize failed", ex);
+            }
 
             return (maxSize, maxSize);
         }
@@ -601,7 +636,10 @@ namespace quick_image_viewer.Helpers
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"TryExtractVideoThumbnailAsync primary path failed for '{filePath}'", ex);
+            }
 
             try
             {
@@ -629,7 +667,10 @@ namespace quick_image_viewer.Helpers
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ImageProcessor", $"TryExtractVideoThumbnailAsync composition fallback failed for '{filePath}'", ex);
+            }
 
             return null;
         }

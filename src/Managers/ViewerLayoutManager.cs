@@ -1,8 +1,10 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Views.Controls;
+using System;
 namespace quick_image_viewer.Managers
 {
     internal class ViewerLayoutManager : IViewerLayoutManager
@@ -274,7 +276,10 @@ namespace quick_image_viewer.Managers
                             else if (gridArea > horizontalArea) gridVotes++;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("ViewerLayoutManager", $"GetImageSize failed for '{playlist[indexToLoad]}'", ex);
+                    }
                 }
             }
 

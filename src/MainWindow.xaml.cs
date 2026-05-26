@@ -38,7 +38,7 @@ namespace quick_image_viewer
         {
             get
             {
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                var hwnd = WindowHandle;
                 var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                 return Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
             }
@@ -73,7 +73,7 @@ namespace quick_image_viewer
 
         Border IAppWindowHost.AppTitleBar => AppTitleBar;
         Grid IAppWindowHost.RootGrid => RootGrid;
-        IntPtr IAppWindowHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IntPtr IAppWindowHost.WindowHandle => WindowHandle;
         UIElement INotificationHost.NotificationOverlay => NotificationOverlay;
         TextBlock INotificationHost.NotificationText => NotificationOverlay.Text;
         Microsoft.UI.Dispatching.DispatcherQueue IAnimationHost.DispatcherQueue => DispatcherQueue;
@@ -83,7 +83,7 @@ namespace quick_image_viewer
         System.Collections.ObjectModel.ObservableCollection<string> IAnimationHost.Playlist => Playlist;
         UIElement IFileOperationHost.Content => this.Content;
         bool IFileOperationHost.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
-        IntPtr IFileOperationHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IntPtr IFileOperationHost.WindowHandle => WindowHandle;
         IPlaylistManager IFileOperationHost.PlaylistManager => PlaylistManager;
         IImageEditService IFileOperationHost.ImageEditService => ImageEditService;
         IViewerManager IFileOperationHost.ViewerManager => ViewerManager;
@@ -117,7 +117,7 @@ namespace quick_image_viewer
         NumberBox ISlideshowHost.SlideshowCrossfadeDuration => SlideshowCrossfadeDuration;
         Task ISlideshowHost.UpdateDisplayAsync() => UpdateDisplayAsync();
         Microsoft.UI.Dispatching.DispatcherQueue IPrintHost.DispatcherQueue => DispatcherQueue;
-        IntPtr IPrintHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IntPtr IPrintHost.WindowHandle => WindowHandle;
         void IPrintHost.ShowNotification(string message) => ShowNotification(message);
         Microsoft.UI.Dispatching.DispatcherQueue IImageEditHost.DispatcherQueue => DispatcherQueue;
         IViewerManager IImageEditHost.ViewerManager => ViewerManager;
@@ -140,7 +140,7 @@ namespace quick_image_viewer
         Grid IOverlayHost.RootGrid => RootGrid;
         bool IOverlayHost.IsDialogOpen { get => IsDialogOpen; set => IsDialogOpen = value; }
         Microsoft.UI.Dispatching.DispatcherQueue IOverlayHost.DispatcherQueue => DispatcherQueue;
-        IntPtr IOverlayHost.WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IntPtr IOverlayHost.WindowHandle => WindowHandle;
 
         // === UI Helpers ===
         public ViewerPanel ViewerControl => ViewerControlInternal;
@@ -172,7 +172,7 @@ namespace quick_image_viewer
                 {
                     _isFullscreen = value;
 
-                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                    var hwnd = WindowHandle;
                     var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
                     if (_isFullscreen)
@@ -797,7 +797,7 @@ namespace quick_image_viewer
         private async void OpenFolderButton_Click(object sender, object e)
         {
             var picker = new Windows.Storage.Pickers.FolderPicker();
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var hwnd = WindowHandle;
             WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
             picker.FileTypeFilter.Add("*");
             var folder = await picker.PickSingleFolderAsync();

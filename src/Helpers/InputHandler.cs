@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using quick_image_viewer.Common;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
 using quick_image_viewer.Services;
@@ -65,7 +66,8 @@ namespace quick_image_viewer.Helpers
         public void HandlePointerMoved(object sender, PointerRoutedEventArgs e)
         {
             // Update last point for metadata etc.
-            try { _lastPointerPoint = e.GetCurrentPoint(_window.PagesGrid).Position; } catch { }
+            try { _lastPointerPoint = e.GetCurrentPoint(_window.PagesGrid).Position; }
+            catch (Exception ex) { AppLog.Error("InputHandler", "Pointer position read failed", ex); }
             _window.MetadataDisplayService.HandlePointerMoved(e);
 
             if (_isPanning)
@@ -123,7 +125,10 @@ namespace quick_image_viewer.Helpers
                         return _window.ViewerManager.GetPathForPage(i) ?? _window.CurrentImagePath;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("InputHandler", "TransformPoint failed", ex);
+                }
             }
 
             return _window.CurrentImagePath;

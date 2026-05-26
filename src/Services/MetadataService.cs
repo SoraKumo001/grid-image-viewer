@@ -2,6 +2,7 @@ using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 using MetadataExtractor.Formats.Jpeg;
 using MetadataExtractor.Formats.Png;
+using quick_image_viewer.Common;
 using quick_image_viewer.Managers;
 using System;
 using System.Collections.Generic;
@@ -115,9 +116,9 @@ namespace quick_image_viewer.Services
                     info.Dimensions = $"{width} x {height}";
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Return only basic info on parsing error
+                AppLog.Error("MetadataService", $"GetMetadata failed for '{filePath}'", ex);
             }
             return info;
         }

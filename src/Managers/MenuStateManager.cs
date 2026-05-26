@@ -2,11 +2,11 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Services;
 using quick_image_viewer.ViewModels;
-
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -146,7 +146,10 @@ namespace quick_image_viewer.Managers
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Error("MenuStateManager", "UpdateTargetIndexAtPoint transform failed", ex);
+                    }
                 }
             }
         }
@@ -273,7 +276,10 @@ namespace quick_image_viewer.Managers
                     WeakReferenceMessenger.Default.Send(new RefreshDisplayMessage());
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("MenuStateManager", "SaveImageAsync failed", ex);
+            }
         }
 
         public void MenuCrop_Click(object sender, RoutedEventArgs e)
@@ -398,7 +404,10 @@ namespace quick_image_viewer.Managers
                 var folderPath = Path.GetDirectoryName(targetPath);
                 System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{targetPath}\"");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Error("MenuStateManager", "OpenExplorer failed", ex);
+            }
         }
 
         public void MenuViewMode_Click(object sender, RoutedEventArgs e)
@@ -458,7 +467,11 @@ namespace quick_image_viewer.Managers
                 _stringCache[key] = val;
                 return val;
             }
-            catch { return key; }
+            catch (Exception ex)
+            {
+                AppLog.Error("MenuStateManager", $"GetString failed for '{key}'", ex);
+                return key;
+            }
         }
     }
 

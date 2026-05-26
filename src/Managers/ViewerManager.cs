@@ -277,8 +277,11 @@ namespace quick_image_viewer.Managers
             _window.GridManager.StopGridAnimation();
             WeakReferenceMessenger.Default.Send(new FocusRequestMessage());
 
-            try { _window.AnimationService.StopAnimation(); } catch { }
-            try { _window.AnimationService.StopCrossfade(); } catch { }
+            try { _window.AnimationService.StopAnimation(); }
+            catch (Exception ex) { AppLog.Error("ViewerManager", "StopAnimation failed", ex); }
+
+            try { _window.AnimationService.StopCrossfade(); }
+            catch (Exception ex) { AppLog.Error("ViewerManager", "StopCrossfade failed", ex); }
             UpdateStretch();
         }
 
@@ -496,7 +499,10 @@ namespace quick_image_viewer.Managers
                 }
             }
             catch (OperationCanceledException) { return; }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                AppLog.Error("ViewerManager", "Buffer load wait failed", ex);
+            }
 
             // 全タスク待機後にキャンセル状態を再確認
             if (token.IsCancellationRequested) return;
@@ -599,7 +605,8 @@ namespace quick_image_viewer.Managers
             {
                 _ = Task.Run(async () =>
                 {
-                    try { await Task.WhenAll(loadTasks); } catch { }
+                    try { await Task.WhenAll(loadTasks); }
+                    catch (Exception ex) { AppLog.Error("ViewerManager", "Background load completion wait failed", ex); }
                     _window.DispatcherQueue.TryEnqueue(() => _window.AnimationService.StartAnimation());
                 });
             }
@@ -719,7 +726,10 @@ namespace quick_image_viewer.Managers
                     }
                     UpdateRenderingSubscription();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("ViewerManager", "UpdateStretch failed", ex);
+                }
             });
         }
 

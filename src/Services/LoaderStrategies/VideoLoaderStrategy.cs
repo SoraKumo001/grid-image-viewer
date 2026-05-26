@@ -1,5 +1,6 @@
 using FFmpegInteropX;
 using Microsoft.UI.Xaml;
+using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
 using quick_image_viewer.Interfaces;
 using quick_image_viewer.Managers;
@@ -84,7 +85,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
                                     mp.IsLoopingEnabled = true;
                                     mp.Source = playbackItem;
                                 }
-                                catch (Exception) { }
+                                catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "Assign media source failed", ex); }
                             }
                         }
                     }
@@ -102,6 +103,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
             {
                 if (!(ex is OperationCanceledException || ex is TaskCanceledException))
                 {
+                    AppLog.Error("VideoLoaderStrategy", "LoadAsync failed", ex);
                     pageControl.DispatcherQueue.TryEnqueue(() =>
                     {
                         if (combinedToken.IsCancellationRequested) return;
@@ -150,7 +152,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "CreateFFmpegMediaSourceAsync failed", ex); }
             return null;
         }
 
@@ -173,8 +175,8 @@ namespace quick_image_viewer.Services.LoaderStrategies
                             if (session != null)
                             {
                                 uint w = 0, h = 0;
-                                try { w = session.NaturalVideoWidth; } catch { }
-                                try { h = session.NaturalVideoHeight; } catch { }
+                                try { w = session.NaturalVideoWidth; } catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "NaturalVideoWidth read failed", ex); }
+                                try { h = session.NaturalVideoHeight; } catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "NaturalVideoHeight read failed", ex); }
                                 if (w > 0 && h > 0)
                                 {
                                     var size = new Windows.Foundation.Size(w, h);
@@ -183,7 +185,7 @@ namespace quick_image_viewer.Services.LoaderStrategies
                                 }
                             }
                         }
-                        catch { }
+                        catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "MediaOpened session handling failed", ex); }
 
                         pageControl.LoadingRing.IsActive = false;
                         pageControl.PageImage.Source = null;
@@ -195,10 +197,10 @@ namespace quick_image_viewer.Services.LoaderStrategies
 
                         if (!token.IsCancellationRequested)
                         {
-                            try { sender.Play(); } catch { }
+                            try { sender.Play(); } catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "Auto-play failed", ex); }
                         }
                     }
-                    catch (Exception) { }
+                    catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "OnMediaOpened handler failed", ex); }
                 });
             }
 
@@ -216,13 +218,13 @@ namespace quick_image_viewer.Services.LoaderStrategies
                         pageControl.PageImage.Visibility = Visibility.Collapsed;
                         _window?.ShowNotification($"Video Error: {args.Error}");
                     }
-                    catch (Exception) { }
+                    catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "OnMediaFailed handler failed", ex); }
                 });
             }
 
             pageControl.SetMediaHandlers(OnMediaOpened, OnMediaFailed);
 
-            try { mp.Source = null; } catch { }
+            try { mp.Source = null; } catch (Exception ex) { AppLog.Error("VideoLoaderStrategy", "Clear media source failed", ex); }
         }
     }
 }
