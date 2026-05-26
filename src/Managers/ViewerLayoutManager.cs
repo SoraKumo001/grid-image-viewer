@@ -140,65 +140,18 @@ namespace quick_image_viewer.Managers
 
                     if (!uniformToFill)
                     {
-                        // Reset image alignments inside grid cells to center, as spacing is handled by column widths.
+                        // Keep fixed 4-way horizontal layout regardless of image aspect ratio.
                         pageGrids[0].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
                         pageGrids[1].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
                         pageGrids[2].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
                         pageGrids[3].SetContentAlignment(HorizontalAlignment.Center, VerticalAlignment.Center);
 
-                        double rSum = 0;
-                        for (int i = 0; i < effectiveSplitCount; i++)
-                        {
-                            double ratio = (aspectRatios != null && i < aspectRatios.Length) ? aspectRatios[i] : 0.75;
-                            rSum += ratio;
-                        }
-                        if (rSum <= 0) rSum = 0.75 * effectiveSplitCount;
-
-                        double wView = viewportWidth;
-                        double hView = viewportHeight;
-                        if (wView <= 0) wView = 1;
-                        if (hView <= 0) hView = 1;
-
-                        bool isHeightLimited = (wView / hView) > rSum;
-
-                        if (isHeightLimited)
-                        {
-                            // Height limited: Align grid to center and set explicit width based on total image width at viewport height.
-                            grid.HorizontalAlignment = HorizontalAlignment.Center;
-                            grid.Width = hView * rSum;
-
-                            for (int i = 0; i < 4; i++)
-                            {
-                                if (i < effectiveSplitCount)
-                                {
-                                    double ratio = (aspectRatios != null && i < aspectRatios.Length) ? aspectRatios[i] : 0.75;
-                                    cols[i].Width = new GridLength(hView * ratio);
-                                }
-                                else
-                                {
-                                    cols[i].Width = new GridLength(0);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Width limited: Let grid stretch to fill width and allocate column widths proportionally using Star.
-                            grid.HorizontalAlignment = HorizontalAlignment.Stretch;
-                            grid.Width = double.NaN;
-
-                            for (int i = 0; i < 4; i++)
-                            {
-                                if (i < effectiveSplitCount)
-                                {
-                                    double ratio = (aspectRatios != null && i < aspectRatios.Length) ? aspectRatios[i] : 0.75;
-                                    cols[i].Width = new GridLength(ratio, GridUnitType.Star);
-                                }
-                                else
-                                {
-                                    cols[i].Width = new GridLength(0);
-                                }
-                            }
-                        }
+                        grid.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        grid.Width = double.NaN;
+                        cols[0].Width = new GridLength(1, GridUnitType.Star);
+                        cols[1].Width = new GridLength(1, GridUnitType.Star);
+                        cols[2].Width = new GridLength(1, GridUnitType.Star);
+                        cols[3].Width = new GridLength(1, GridUnitType.Star);
                     }
                     else
                     {
