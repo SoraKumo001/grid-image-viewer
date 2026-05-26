@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.5.14 - 2026-05-26
+
+- **MVVM Overhaul & Architecture Modularization**:
+  - [Refactor] Migrated `MainWindow` and UI logic to an MVVM-oriented architecture, defining host interfaces (`IViewerHost`, `IInputHost`, `ISlideshowHost`, etc.) to decouple view components from business logic.
+  - [Feature] Implemented a common logging system (`AppLog`) to record application states and simplify debugging.
+  - [Refactor] Modularized core application logic across setting, animation, dialog, print, and metadata services to improve maintainability.
+- **Dynamic Layout & Display Management**:
+  - [Feature] Optimized `ViewerLayoutManager` to handle dynamic XAML grid layout updates and multi-page configurations more efficiently.
+  - [Refactor] Decoupled viewing and page rendering controls into modular manager layers to ensure smoother layout transitions.
+- **Settings & Configurable Keybindings**:
+  - [Feature] Enhanced centralized setting persistence and keybinding registration through `SettingsManager`.
+  - [UI/UX] Redesigned the `SettingsOverlay` interface for easier configuration of user preferences and custom keybindings, including updated localization resources.
+- **Media Playback & Image Loading**:
+  - [Feature] Expanded `VideoPlayerControl` for better media playback stability, navigation integration, and frame extraction capabilities.
+  - [Optimization] Improved loading strategies (`NormalImageLoaderStrategy`, `VideoLoaderStrategy`, etc.) to stabilize resource lifecycle management.
+
 ## v1.5.13 - 2026-05-19
 
 - **Enhanced Interaction & Input**:
