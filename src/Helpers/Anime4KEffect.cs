@@ -21,17 +21,23 @@ namespace quick_image_viewer.Helpers
             }
 
             vec4 main(vec2 coords) {
-                vec2 d = 1.0 / inputSize;
+                vec2 d = vec2(1.0, 1.0);
                 
                 // Sample 3x3 neighborhood luminance
-                float m  = get_luma(image.eval(coords));
+                vec4 center = image.eval(coords);
+                vec4 northColor = image.eval(coords + vec2(0.0,  -d.y));
+                vec4 southColor = image.eval(coords + vec2(0.0,  d.y));
+                vec4 westColor = image.eval(coords + vec2(-d.x, 0.0));
+                vec4 eastColor = image.eval(coords + vec2(d.x,  0.0));
+
+                float m  = get_luma(center);
                 float nw = get_luma(image.eval(coords + vec2(-d.x, -d.y)));
-                float n  = get_luma(image.eval(coords + vec2(0.0,  -d.y)));
+                float n  = get_luma(northColor);
                 float ne = get_luma(image.eval(coords + vec2(d.x,  -d.y)));
-                float w  = get_luma(image.eval(coords + vec2(-d.x, 0.0)));
-                float e  = get_luma(image.eval(coords + vec2(d.x,  0.0)));
+                float w  = get_luma(westColor);
+                float e  = get_luma(eastColor);
                 float sw = get_luma(image.eval(coords + vec2(-d.x, d.y)));
-                float s  = get_luma(image.eval(coords + vec2(0.0,  d.y)));
+                float s  = get_luma(southColor);
                 float se = get_luma(image.eval(coords + vec2(d.x,  d.y)));
                 
                 // Sobel operator
@@ -43,11 +49,17 @@ namespace quick_image_viewer.Helpers
                 
                 if (len > 0.0001) {
                     grad = grad / len;
-                    // Shift coordinates along the gradient direction to thin the edges
+                    // Shift coordinates along the gradient direction to thin the edges.
                     vec2 newCoords = coords - grad * d * strength;
-                    return image.eval(newCoords);
+                    vec4 shifted = image.eval(newCoords);
+
+                    // Add a modest edge-local sharpen so the effect remains visible at video resolutions.
+                    vec4 neighborAverage = (northColor + southColor + westColor + eastColor) * 0.25;
+                    float edgeMask = smoothstep(0.03, 0.30, len);
+                    vec4 sharpened = center + (center - neighborAverage) * strength * edgeMask;
+                    return mix(shifted, sharpened, 0.45);
                 }
-                return image.eval(coords);
+                return center;
             }
         ";
 

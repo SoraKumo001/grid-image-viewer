@@ -318,7 +318,18 @@ namespace quick_image_viewer.Helpers
                     }
                 }
 
-                canvas.DrawImage(imgToDraw, destRect, sampling, paint);
+                if (effectShader != null)
+                {
+                    canvas.Save();
+                    canvas.Translate(destRect.Left, destRect.Top);
+                    canvas.Scale(scale);
+                    canvas.DrawRect(new SKRect(0, 0, imgToDraw.Width, imgToDraw.Height), paint);
+                    canvas.Restore();
+                }
+                else
+                {
+                    canvas.DrawImage(imgToDraw, destRect, sampling, paint);
+                }
                 effectShader?.Dispose();
             }
         }

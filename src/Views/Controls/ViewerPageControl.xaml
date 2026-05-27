@@ -10,12 +10,11 @@
     IsTabStop="False">
 
     <Grid x:Name="InternalRootGrid" Background="Transparent" IsTabStop="False">
-        <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
-        <skia:SKSwapChainPanel x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" />
-        
-        <local:VideoPlayerControl x:Name="InternalVideoPlayer" Visibility="Collapsed" />
+        <Image x:Name="InternalPageImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Canvas.ZIndex="0" />
+        <local:VideoPlayerControl x:Name="InternalVideoPlayer" Visibility="Collapsed" Canvas.ZIndex="1" />
+        <skia:SKSwapChainPanel x:Name="InternalPageCanvas" Visibility="Collapsed" IsHitTestVisible="False" Canvas.ZIndex="2" />
 
-        <ProgressRing x:Name="InternalLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100" IsActive="False" />
-        <Border x:Name="InternalFocusBorder" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" />
+        <ProgressRing x:Name="InternalLoadingRing" Width="40" Height="40" Foreground="#00A2ED" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,100" IsActive="False" Canvas.ZIndex="3" />
+        <Border x:Name="InternalFocusBorder" BorderBrush="#00A2ED" BorderThickness="4" Visibility="Collapsed" IsHitTestVisible="False" Canvas.ZIndex="4" />
     </Grid>
 </UserControl>

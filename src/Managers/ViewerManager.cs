@@ -724,6 +724,17 @@ namespace quick_image_viewer.Managers
                         {
                             controls[i].PageImage.Stretch = stretch;
                             controls[i].PagePlayer.Stretch = stretch;
+                            controls[i].ApplyVideoRenderMode();
+                            if (controls[i].IsVideoContent)
+                            {
+                                controls[i].PageCanvas.Visibility = (_settings.EnableAnime4K && controls[i].IsFrameServerRenderMode && controls[i].VideoPlayer.HasProcessedFrame)
+                                    ? Visibility.Visible
+                                    : Visibility.Collapsed;
+                                if (_settings.EnableAnime4K)
+                                {
+                                    _ = controls[i].CaptureCurrentVideoFrameForAnime4KAsync();
+                                }
+                            }
                             controls[i].UpdateVideoVisualSize();
                             controls[i].PageCanvas.Invalidate();
                         }

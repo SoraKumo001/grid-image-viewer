@@ -7,11 +7,18 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using quick_image_viewer.Common;
 using quick_image_viewer.Helpers;
+using quick_image_viewer.Managers;
 using SkiaSharp;
 using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using Windows.Media.Playback;
+using Windows.Security.Cryptography;
+using Windows.Storage.Streams;
 
 namespace quick_image_viewer.Views.Controls
 {
@@ -121,8 +128,8 @@ namespace quick_image_viewer.Views.Controls
             }
 
             var mp = new Windows.Media.Playback.MediaPlayer();
-            mp.IsVideoFrameServerEnabled = false;
             _internalMediaPlayer.SetMediaPlayer(mp);
+            ApplyRenderMode();
             return mp;
         }
 
@@ -130,9 +137,34 @@ namespace quick_image_viewer.Views.Controls
         private Windows.Graphics.Imaging.SoftwareBitmap? _frameBitmap;
         private SkiaSharp.SKBitmap? _skFrameBitmap;
         private readonly object _frameLock = new();
+        private long _videoFrameCount = 0;
+        private DispatcherTimer? _frameServerFallbackTimer;
+        private bool _frameServerCopyUnsupported = false;
+        private const bool PreferFfmpegVideoFrames = true;
+        private static readonly MethodInfo? _copyFrameToSoftwareBitmapMethod =
+            typeof(MediaPlayer).GetMethod("CopyFrameToSoftwareBitmap", new[] { typeof(SoftwareBitmap) });
+        private string? _currentVideoPath;
+        private FrameGrabber? _ffmpegFrameGrabber;
+        private Stream? _ffmpegArchiveStream;
+        private IRandomAccessStream? _ffmpegArchiveRandomAccessStream;
+        private CancellationTokenSource? _ffmpegFrameCts;
+        private Task? _ffmpegFrameLoopTask;
+        private bool _ffmpegFrameTypeLogged = false;
+        private int _ffmpegLoopState = 0; // 0: stopped, 1: starting, 2: running
+        private long _ffmpegLoopGeneration = 0;
         private FFmpegMediaSource? _ffmpegSource;
         public bool IsVideoContent { get; set; } = false;
         public bool IsMediaReady { get; set; } = false;
+        public bool HasProcessedFrame
+        {
+            get
+            {
+                lock (_frameLock)
+                {
+                    return _skFrameBitmap != null;
+                }
+            }
+        }
 
         // Slide Animation States for Video
         private bool _panInitialized = false;
@@ -395,24 +427,37 @@ namespace quick_image_viewer.Views.Controls
                     SKShader? effectShader = null;
                     if (_settings.EnableAnime4K)
                     {
-                        effectShader = Anime4KEffect.CreateShader(_skFrameBitmap, (float)_settings.Anime4KStrength);
+                        using var frameImage = SKImage.FromBitmap(_skFrameBitmap);
+                        effectShader = Anime4KEffect.CreateShader(frameImage, (float)_settings.Anime4KStrength);
                         if (effectShader != null)
                         {
                             paint.Shader = effectShader;
                         }
+                        else
+                        {
+                            AppLog.Warn("VideoPlayerControl", "Anime4K shader unavailable for video frame");
+                        }
                     }
-                    canvas.DrawBitmap(_skFrameBitmap, new SkiaSharp.SKRect(x, y, x + w, y + h), paint);
+                    if (effectShader != null)
+                    {
+                        canvas.Save();
+                        canvas.Translate(x, y);
+                        canvas.Scale(scale);
+                        canvas.DrawRect(new SkiaSharp.SKRect(0, 0, _skFrameBitmap.Width, _skFrameBitmap.Height), paint);
+                        canvas.Restore();
+                    }
+                    else
+                    {
+                        canvas.DrawBitmap(_skFrameBitmap, new SkiaSharp.SKRect(x, y, x + w, y + h), paint);
+                    }
                     effectShader?.Dispose();
                 }
             }
         }
 
-        [System.Runtime.InteropServices.ComImport]
-        [System.Runtime.InteropServices.Guid("5B0D3235-4DB1-4A45-9100-2414344B004F")]
-        [System.Runtime.InteropServices.InterfaceType(System.Runtime.InteropServices.ComInterfaceType.InterfaceIsIUnknown)]
-        private interface IMemoryBufferByteAccess
+        public void SetCurrentVideoPath(string? path)
         {
-            unsafe void GetBuffer(out byte* buffer, out uint capacity);
+            _currentVideoPath = path;
         }
 
         public MediaPlayer GetOrCreateMediaPlayer()
@@ -439,20 +484,120 @@ namespace quick_image_viewer.Views.Controls
                 _internalMediaPlayer!.SetMediaPlayer(mp);
             }
 
-            mp.IsVideoFrameServerEnabled = false;
-
-            _internalMediaPlayer!.Visibility = Visibility.Visible;
             _internalMediaPlayer!.Opacity = 1.0;
-            MediaPlayerContainer.Visibility = Visibility.Visible;
-
-            VideoVisualHost.Visibility = Visibility.Collapsed;
+            ApplyRenderMode();
             return mp;
+        }
+
+        public bool IsFrameServerRenderMode => _settings.EnableAnime4K;
+
+        public void ApplyRenderMode()
+        {
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            bool useFrameServer = _settings.EnableAnime4K && !_frameServerCopyUnsupported && !PreferFfmpegVideoFrames;
+
+            if (mp != null)
+            {
+                try { mp.VideoFrameAvailable -= OnVideoFrameAvailable; }
+                catch (Exception ex) { AppLog.Error("VideoPlayerControl", "ApplyRenderMode detach frame handler failed", ex); }
+
+                try
+                {
+                    mp.IsVideoFrameServerEnabled = useFrameServer;
+                    if (useFrameServer)
+                    {
+                        mp.VideoFrameAvailable += OnVideoFrameAvailable;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Error("VideoPlayerControl", "ApplyRenderMode frame server switch failed", ex);
+                }
+            }
+
+            if (_internalMediaPlayer != null)
+            {
+                _internalMediaPlayer.Visibility = Visibility.Visible;
+                _internalMediaPlayer.Opacity = useFrameServer ? 0.0 : 1.0;
+            }
+
+            MediaPlayerContainer.Visibility = Visibility.Visible;
+            VideoVisualHost.Visibility = Visibility.Collapsed;
+
+            if (_settings.EnableAnime4K)
+            {
+                EnsureFfmpegFrameLoopStarted();
+                _ = CaptureCurrentFrameForAnime4KAsync();
+            }
+            else
+            {
+                StopFrameServerFallbackWatch();
+                StopFfmpegFrameLoop();
+            }
+        }
+
+        public void StartFrameServerFallbackWatch()
+        {
+            if (!IsFrameServerRenderMode) return;
+            var mp = _internalMediaPlayer?.MediaPlayer;
+            if (mp == null) return;
+
+            StopFrameServerFallbackWatch();
+
+            long startFrameCount = Interlocked.Read(ref _videoFrameCount);
+            _frameServerFallbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+            _frameServerFallbackTimer.Tick += (_, _) =>
+            {
+                StopFrameServerFallbackWatch();
+
+                if (!IsFrameServerRenderMode) return;
+                if (Interlocked.Read(ref _videoFrameCount) > startFrameCount) return;
+
+                try
+                {
+                    mp.VideoFrameAvailable -= OnVideoFrameAvailable;
+                    mp.IsVideoFrameServerEnabled = false;
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Error("VideoPlayerControl", "Frame server fallback switch failed", ex);
+                }
+
+                if (_internalMediaPlayer != null)
+                {
+                    _internalMediaPlayer.Visibility = Visibility.Visible;
+                    _internalMediaPlayer.Opacity = 1.0;
+                }
+                MediaPlayerContainer.Visibility = Visibility.Visible;
+                InvalidateCanvasRequested?.Invoke();
+
+                AppLog.Warn("VideoPlayerControl", "Frame server fallback activated (no video frame received)");
+
+                if (_settings.EnableAnime4K)
+                {
+                    EnsureFfmpegFrameLoopStarted();
+                }
+            };
+            _frameServerFallbackTimer.Start();
+        }
+
+        private void StopFrameServerFallbackWatch()
+        {
+            if (_frameServerFallbackTimer == null) return;
+            _frameServerFallbackTimer.Stop();
+            _frameServerFallbackTimer = null;
         }
 
         private void OnVideoFrameAvailable(MediaPlayer sender, object args)
         {
             try
             {
+                if (_copyFrameToSoftwareBitmapMethod == null)
+                {
+                    DisableFrameServerBecauseUnsupported(sender, "CopyFrameToSoftwareBitmap is unavailable on this runtime");
+                    return;
+                }
+
                 var session = sender.PlaybackSession;
                 if (session == null) return;
 
@@ -488,54 +633,293 @@ namespace quick_image_viewer.Views.Controls
                         _skFrameBitmap = new SkiaSharp.SKBitmap((int)width, (int)height, SkiaSharp.SKColorType.Bgra8888, SkiaSharp.SKAlphaType.Premul);
                     }
 
-                    dynamic dSender = sender;
-                    dSender.CopyFrameToSoftwareBitmap(_frameBitmap);
+                    try
+                    {
+                        _copyFrameToSoftwareBitmapMethod.Invoke(sender, new object[] { _frameBitmap });
+                    }
+                    catch (TargetInvocationException tie)
+                    {
+                        throw tie.InnerException ?? tie;
+                    }
 
                     UpdateSKFrameBitmap();
                 }
 
                 DispatcherQueue.TryEnqueue(() =>
                 {
+                    Interlocked.Increment(ref _videoFrameCount);
                     InvalidateCanvasRequested?.Invoke();
                 });
             }
             catch (Exception ex)
             {
-                AppLog.Error("VideoPlayerControl", "OnVideoFrameAvailable failed: ", ex);
+                if (ex is MissingMethodException || ex is MissingMemberException)
+                {
+                    DisableFrameServerBecauseUnsupported(sender, ex.Message);
+                    return;
+                }
+                DisableFrameServerBecauseUnsupported(sender, $"OnVideoFrameAvailable failed: {ex.Message}");
             }
         }
 
-        private unsafe void UpdateSKFrameBitmap()
+        private void DisableFrameServerBecauseUnsupported(MediaPlayer sender, string reason)
         {
-            if (_frameBitmap == null || _skFrameBitmap == null) return;
-            using (var buffer = _frameBitmap.LockBuffer(BitmapBufferAccessMode.Read))
-            using (var reference = buffer.CreateReference())
+            _frameServerCopyUnsupported = true;
+            StopFrameServerFallbackWatch();
+
+            try { sender.VideoFrameAvailable -= OnVideoFrameAvailable; }
+            catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Disable unsupported frame server detach failed", ex); }
+
+            try { sender.IsVideoFrameServerEnabled = false; }
+            catch (Exception ex) { AppLog.Error("VideoPlayerControl", "Disable unsupported frame server switch failed", ex); }
+
+            if (_internalMediaPlayer != null)
             {
-                ((IMemoryBufferByteAccess)reference).GetBuffer(out byte* dataIn, out uint capacity);
+                _internalMediaPlayer.Visibility = Visibility.Visible;
+                _internalMediaPlayer.Opacity = 1.0;
+            }
+            MediaPlayerContainer.Visibility = Visibility.Visible;
 
-                var desc = buffer.GetPlaneDescription(0);
-                int inputStride = desc.Stride;
-                int outputStride = _skFrameBitmap.RowBytes;
-                int widthInBytes = _frameBitmap.PixelWidth * 4;
-                int height = _frameBitmap.PixelHeight;
+            AppLog.Warn("VideoPlayerControl", $"Anime4K video frame-server disabled: {reason}");
+            DispatcherQueue.TryEnqueue(() => InvalidateCanvasRequested?.Invoke());
 
-                byte* dataOut = (byte*)_skFrameBitmap.GetPixels();
+            if (_settings.EnableAnime4K)
+            {
+                EnsureFfmpegFrameLoopStarted();
+            }
+        }
 
-                if (inputStride == outputStride && inputStride == widthInBytes)
+        private void EnsureFfmpegFrameLoopStarted()
+        {
+            if (!_settings.EnableAnime4K) return;
+            if (string.IsNullOrWhiteSpace(_currentVideoPath)) return;
+            if (Interlocked.CompareExchange(ref _ffmpegLoopState, 1, 0) != 0) return;
+            long generation = Interlocked.Increment(ref _ffmpegLoopGeneration);
+            _ = StartFfmpegFrameLoopAsync(_currentVideoPath!, generation);
+        }
+
+        private async Task StartFfmpegFrameLoopAsync(string path, long generation)
+        {
+            StopFfmpegFrameLoop();
+            _ffmpegFrameCts = new CancellationTokenSource();
+            var token = _ffmpegFrameCts.Token;
+
+            try
+            {
+                if (generation != Interlocked.Read(ref _ffmpegLoopGeneration))
                 {
-                    System.Buffer.MemoryCopy(dataIn, dataOut, capacity, (uint)(outputStride * height));
+                    Interlocked.Exchange(ref _ffmpegLoopState, 0);
+                    return;
+                }
+
+                if (ArchiveManager.IsArchivePath(path))
+                {
+                    var (arc, entry) = ArchiveManager.SplitArchivePath(path);
+                    _ffmpegArchiveStream = ArchiveManager.GetEntryStream(arc, entry);
+                    if (_ffmpegArchiveStream == null) return;
+                    _ffmpegArchiveRandomAccessStream = _ffmpegArchiveStream.AsRandomAccessStream();
+                    _ffmpegFrameGrabber = await FrameGrabber.CreateFromStreamAsync(_ffmpegArchiveRandomAccessStream);
                 }
                 else
                 {
-                    for (int y = 0; y < height; y++)
-                    {
-                        System.Buffer.MemoryCopy(
-                            dataIn + (y * inputStride),
-                            dataOut + (y * outputStride),
-                            (uint)widthInBytes,
-                            (uint)widthInBytes);
-                    }
+                    _ffmpegFrameGrabber = await FrameGrabber.CreateFromFileAsync(path);
                 }
+
+                if (_ffmpegFrameGrabber == null || token.IsCancellationRequested) return;
+
+                if (generation != Interlocked.Read(ref _ffmpegLoopGeneration))
+                {
+                    Interlocked.Exchange(ref _ffmpegLoopState, 0);
+                    return;
+                }
+
+                Interlocked.Exchange(ref _ffmpegLoopState, 2);
+                _ffmpegFrameLoopTask = Task.Run(async () =>
+                {
+                    while (!token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            var pos = await GetPlaybackPositionAsync(token);
+                            if (pos == null)
+                            {
+                                await Task.Delay(120, token);
+                                continue;
+                            }
+
+                            await ExtractAndPresentFrameAsync(pos.Value, token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLog.Error(
+                                "VideoPlayerControl",
+                                $"FFmpeg frame loop iteration failed ({ex.GetType().FullName}, 0x{ex.HResult:X8})",
+                                ex,
+                                includeStackTrace: true);
+                        }
+
+                        await Task.Delay(80, token);
+                    }
+                }, token);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Error("VideoPlayerControl", "StartFfmpegFrameLoopAsync failed", ex);
+                Interlocked.Exchange(ref _ffmpegLoopState, 0);
+            }
+        }
+
+        public async Task CaptureCurrentFrameForAnime4KAsync()
+        {
+            if (!_settings.EnableAnime4K) return;
+            if (_ffmpegFrameGrabber == null) return;
+
+            var token = _ffmpegFrameCts?.Token ?? CancellationToken.None;
+            var pos = await GetPlaybackPositionAsync(token);
+            if (pos == null) return;
+
+            try
+            {
+                await ExtractAndPresentFrameAsync(pos.Value, token);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                AppLog.Error("VideoPlayerControl", "CaptureCurrentFrameForAnime4KAsync failed", ex);
+            }
+        }
+
+        private async Task ExtractAndPresentFrameAsync(TimeSpan position, CancellationToken token)
+        {
+            if (_ffmpegFrameGrabber == null) return;
+
+            using var frame = await _ffmpegFrameGrabber.ExtractVideoFrameAsync(position, exactSeek: false, maxFrameSkip: 3);
+            if (frame == null) return;
+
+            if (!_ffmpegFrameTypeLogged)
+            {
+                _ffmpegFrameTypeLogged = true;
+                AppLog.Info("VideoPlayerControl", $"FFmpeg frame type: {frame.GetType().FullName}");
+            }
+
+            using var encodedStream = new InMemoryRandomAccessStream();
+            await frame.EncodeAsJpegAsync(encodedStream);
+            token.ThrowIfCancellationRequested();
+
+            encodedStream.Seek(0);
+            var decoder = await BitmapDecoder.CreateAsync(encodedStream);
+            using var software = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+            if (software == null) return;
+
+            lock (_frameLock)
+            {
+                _frameBitmap?.Dispose();
+                _frameBitmap = SoftwareBitmap.Copy(software);
+
+                if (_skFrameBitmap == null
+                    || _skFrameBitmap.Width != _frameBitmap.PixelWidth
+                    || _skFrameBitmap.Height != _frameBitmap.PixelHeight)
+                {
+                    _skFrameBitmap?.Dispose();
+                    _skFrameBitmap = new SKBitmap(_frameBitmap.PixelWidth, _frameBitmap.PixelHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+                }
+
+                UpdateSKFrameBitmap();
+            }
+
+            Interlocked.Increment(ref _videoFrameCount);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_settings.EnableAnime4K && _internalMediaPlayer != null)
+                {
+                    _internalMediaPlayer.Opacity = 0.0;
+                }
+                InvalidateCanvasRequested?.Invoke();
+            });
+        }
+
+        private async Task<TimeSpan?> GetPlaybackPositionAsync(CancellationToken token)
+        {
+            var tcs = new TaskCompletionSource<TimeSpan?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            bool enqueued = DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    var mp = _internalMediaPlayer?.MediaPlayer;
+                    var session = mp?.PlaybackSession;
+                    tcs.TrySetResult(session?.Position);
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Error("VideoPlayerControl", "GetPlaybackPositionAsync failed", ex);
+                    tcs.TrySetResult(null);
+                }
+            });
+
+            if (!enqueued) return null;
+
+            using (token.Register(() => tcs.TrySetCanceled(token)))
+            {
+                try
+                {
+                    return await tcs.Task.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+            }
+        }
+
+        private void StopFfmpegFrameLoop()
+        {
+            Interlocked.Increment(ref _ffmpegLoopGeneration);
+            Interlocked.Exchange(ref _ffmpegLoopState, 0);
+            try { _ffmpegFrameCts?.Cancel(); } catch { }
+            _ffmpegFrameCts?.Dispose();
+            _ffmpegFrameCts = null;
+            _ffmpegFrameLoopTask = null;
+
+            (_ffmpegFrameGrabber as IDisposable)?.Dispose();
+            _ffmpegFrameGrabber = null;
+            _ffmpegArchiveRandomAccessStream?.Dispose();
+            _ffmpegArchiveRandomAccessStream = null;
+            _ffmpegArchiveStream?.Dispose();
+            _ffmpegArchiveStream = null;
+        }
+
+        private void UpdateSKFrameBitmap()
+        {
+            if (_frameBitmap == null || _skFrameBitmap == null) return;
+
+            uint size = (uint)(_frameBitmap.PixelWidth * _frameBitmap.PixelHeight * 4);
+            if (size == 0) return;
+
+            var winrtBuffer = new Windows.Storage.Streams.Buffer(size);
+            _frameBitmap.CopyToBuffer(winrtBuffer);
+            CryptographicBuffer.CopyToByteArray(winrtBuffer, out byte[] src);
+
+            int widthInBytes = _frameBitmap.PixelWidth * 4;
+            int height = _frameBitmap.PixelHeight;
+            int dstStride = _skFrameBitmap.RowBytes;
+            IntPtr dstPtr = _skFrameBitmap.GetPixels();
+            if (dstPtr == IntPtr.Zero) return;
+
+            if (dstStride == widthInBytes)
+            {
+                Marshal.Copy(src, 0, dstPtr, Math.Min(src.Length, dstStride * height));
+                return;
+            }
+
+            int lines = Math.Min(height, src.Length / widthInBytes);
+            for (int y = 0; y < lines; y++)
+            {
+                IntPtr linePtr = IntPtr.Add(dstPtr, y * dstStride);
+                Marshal.Copy(src, y * widthInBytes, linePtr, widthInBytes);
             }
         }
 
@@ -548,9 +932,7 @@ namespace quick_image_viewer.Views.Controls
             }
             player.Volume = _settings.VideoVolume;
             player.IsMuted = _settings.VideoVolume <= 0;
-            _internalMediaPlayer.Visibility = Visibility.Visible;
-            MediaPlayerContainer.Visibility = Visibility.Visible;
-            VideoVisualHost.Visibility = Visibility.Collapsed;
+            ApplyRenderMode();
         }
 
         public void UpdateVolume()
@@ -957,6 +1339,7 @@ namespace quick_image_viewer.Views.Controls
 
         public async Task ResetPlaybackAsync()
         {
+            StopFfmpegFrameLoop();
             var mp = _internalMediaPlayer?.MediaPlayer;
             if (mp != null)
             {

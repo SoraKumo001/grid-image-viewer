@@ -45,7 +45,14 @@ namespace quick_image_viewer.Views.Controls
         public ViewerPageControl()
         {
             this.InitializeComponent();
-            InternalVideoPlayer.InvalidateCanvasRequested += () => DispatcherQueue.TryEnqueue(() => InternalPageCanvas.Invalidate());
+            InternalVideoPlayer.InvalidateCanvasRequested += () => DispatcherQueue.TryEnqueue(() =>
+            {
+                if (IsVideoContent && VideoPlayer.HasProcessedFrame)
+                {
+                    InternalPageCanvas.Visibility = Visibility.Visible;
+                }
+                InternalPageCanvas.Invalidate();
+            });
 
             // VideoPlayerControl 側からのサイズ変更通知を ViewerPageControl のイベントとして転送する。
             // 以前は InvokeVideoSizeChanged(size) を呼んでいたが、それが VideoPlayer 側を再度呼び出し
@@ -75,6 +82,11 @@ namespace quick_image_viewer.Views.Controls
         public void UpdateVolume() => VideoPlayer.UpdateVolume();
         public void PauseVideo() => VideoPlayer.PauseVideo();
         public void ResumeVideo() => VideoPlayer.ResumeVideo();
+        public bool IsFrameServerRenderMode => VideoPlayer.IsFrameServerRenderMode;
+        public void ApplyVideoRenderMode() => VideoPlayer.ApplyRenderMode();
+        public void StartVideoFrameServerFallbackWatch() => VideoPlayer.StartFrameServerFallbackWatch();
+        public void SetCurrentVideoPath(string? path) => VideoPlayer.SetCurrentVideoPath(path);
+        public Task CaptureCurrentVideoFrameForAnime4KAsync() => VideoPlayer.CaptureCurrentFrameForAnime4KAsync();
 
         internal void InvokeVideoSizeChanged(Windows.Foundation.Size size)
         {
