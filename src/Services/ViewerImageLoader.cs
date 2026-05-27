@@ -109,13 +109,12 @@ namespace quick_image_viewer.Services
                 {
                     pageControl.IsVideoContent = true;
                     pageControl.LoadingRing.IsActive = true;
-                    pageControl.PageCanvas.Visibility = _settings.EnableAnime4K ? Visibility.Visible : Visibility.Collapsed;
+                    pageControl.PageCanvas.Visibility = Visibility.Collapsed;
                     pageControl.PageImage.Visibility = Visibility.Collapsed;
 
                     try
                     {
                         pageControl.GetOrCreateMediaPlayer();
-                        pageControl.ApplyVideoRenderMode();
                         pageControl.PagePlayer.Opacity = 0;
                     }
                     catch (Exception ex) { AppLog.Error("ViewerImageLoader", "MediaPlayer init failed", ex); }

@@ -83,10 +83,7 @@ namespace quick_image_viewer.Views.Controls
         public void PauseVideo() => VideoPlayer.PauseVideo();
         public void ResumeVideo() => VideoPlayer.ResumeVideo();
         public bool IsFrameServerRenderMode => VideoPlayer.IsFrameServerRenderMode;
-        public void ApplyVideoRenderMode() => VideoPlayer.ApplyRenderMode();
         public void StartVideoFrameServerFallbackWatch() => VideoPlayer.StartFrameServerFallbackWatch();
-        public void SetCurrentVideoPath(string? path) => VideoPlayer.SetCurrentVideoPath(path);
-        public Task CaptureCurrentVideoFrameForAnime4KAsync() => VideoPlayer.CaptureCurrentFrameForAnime4KAsync();
 
         internal void InvokeVideoSizeChanged(Windows.Foundation.Size size)
         {

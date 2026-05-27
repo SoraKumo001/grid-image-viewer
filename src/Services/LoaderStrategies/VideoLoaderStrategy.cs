@@ -39,8 +39,6 @@ namespace quick_image_viewer.Services.LoaderStrategies
                 await EnqueueOnDispatcherAsync(pageControl.DispatcherQueue, async () =>
                 {
                     if (combinedToken.IsCancellationRequested) return;
-                    pageControl.SetCurrentVideoPath(filePath);
-
                     var mp = pageControl.CreateNewMediaPlayer();
 
                     try
@@ -184,7 +182,6 @@ namespace quick_image_viewer.Services.LoaderStrategies
                         pageControl.PageImage.Visibility = Visibility.Collapsed;
                         pageControl.PageImage.Opacity = 1.0;
 
-                        pageControl.ApplyVideoRenderMode();
                         pageControl.PagePlayer.Opacity = 1.0;
                         pageControl.PagePlayer.Visibility = Visibility.Visible;
                         pageControl.PageCanvas.Visibility = Visibility.Collapsed;

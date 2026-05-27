@@ -152,6 +152,9 @@ namespace quick_image_viewer.Views.Controls
         private bool _ffmpegFrameTypeLogged = false;
         private int _ffmpegLoopState = 0; // 0: stopped, 1: starting, 2: running
         private long _ffmpegLoopGeneration = 0;
+        private const int MaxAnime4KFrameDim = 1280;
+        private int _lastConfiguredDecodeW = -1;
+        private int _lastConfiguredDecodeH = -1;
         private FFmpegMediaSource? _ffmpegSource;
         public bool IsVideoContent { get; set; } = false;
         public bool IsMediaReady { get; set; } = false;
@@ -427,8 +430,10 @@ namespace quick_image_viewer.Views.Controls
                     SKShader? effectShader = null;
                     if (_settings.EnableAnime4K)
                     {
+                        // Moving content usually needs a stronger gain than still images to make ON/OFF visible.
+                        float videoStrength = (float)Math.Clamp(_settings.Anime4KStrength, 0.1, 3.0);
                         using var frameImage = SKImage.FromBitmap(_skFrameBitmap);
-                        effectShader = Anime4KEffect.CreateShader(frameImage, (float)_settings.Anime4KStrength);
+                        effectShader = Anime4KEffect.CreateShader(frameImage, videoStrength);
                         if (effectShader != null)
                         {
                             paint.Shader = effectShader;
@@ -495,6 +500,20 @@ namespace quick_image_viewer.Views.Controls
         {
             var mp = _internalMediaPlayer?.MediaPlayer;
             bool useFrameServer = _settings.EnableAnime4K && !_frameServerCopyUnsupported && !PreferFfmpegVideoFrames;
+            bool shouldResumePlayback = false;
+
+            if (mp != null)
+            {
+                try
+                {
+                    var state = mp.PlaybackSession?.PlaybackState ?? MediaPlaybackState.None;
+                    shouldResumePlayback = state == MediaPlaybackState.Playing;
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Error("VideoPlayerControl", "ApplyRenderMode playback state read failed", ex);
+                }
+            }
 
             if (mp != null)
             {
@@ -533,6 +552,22 @@ namespace quick_image_viewer.Views.Controls
             {
                 StopFrameServerFallbackWatch();
                 StopFfmpegFrameLoop();
+            }
+
+            if (mp != null && IsVideoContent && shouldResumePlayback)
+            {
+                try
+                {
+                    var state = mp.PlaybackSession?.PlaybackState ?? MediaPlaybackState.None;
+                    if (state != MediaPlaybackState.Playing)
+                    {
+                        mp.Play();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Error("VideoPlayerControl", "ApplyRenderMode playback resume failed", ex);
+                }
             }
         }
 
@@ -700,7 +735,7 @@ namespace quick_image_viewer.Views.Controls
 
         private async Task StartFfmpegFrameLoopAsync(string path, long generation)
         {
-            StopFfmpegFrameLoop();
+            StopFfmpegFrameLoop(resetGeneration: false);
             _ffmpegFrameCts = new CancellationTokenSource();
             var token = _ffmpegFrameCts.Token;
 
@@ -726,6 +761,7 @@ namespace quick_image_viewer.Views.Controls
                 }
 
                 if (_ffmpegFrameGrabber == null || token.IsCancellationRequested) return;
+                ConfigureFrameGrabberDecodeSize(_ffmpegFrameGrabber);
 
                 if (generation != Interlocked.Read(ref _ffmpegLoopGeneration))
                 {
@@ -796,6 +832,7 @@ namespace quick_image_viewer.Views.Controls
         private async Task ExtractAndPresentFrameAsync(TimeSpan position, CancellationToken token)
         {
             if (_ffmpegFrameGrabber == null) return;
+            ConfigureFrameGrabberDecodeSize(_ffmpegFrameGrabber);
 
             using var frame = await _ffmpegFrameGrabber.ExtractVideoFrameAsync(position, exactSeek: false, maxFrameSkip: 3);
             if (frame == null) return;
@@ -875,21 +912,78 @@ namespace quick_image_viewer.Views.Controls
             }
         }
 
-        private void StopFfmpegFrameLoop()
+        private void ConfigureFrameGrabberDecodeSize(FrameGrabber frameGrabber)
         {
-            Interlocked.Increment(ref _ffmpegLoopGeneration);
+            try
+            {
+                dynamic stream = frameGrabber.CurrentVideoStream;
+                int srcW = (int)stream.PixelWidth;
+                int srcH = (int)stream.PixelHeight;
+                if (srcW <= 0 || srcH <= 0) return;
+
+                double viewW = ActualWidth > 0 ? ActualWidth : srcW;
+                double viewH = ActualHeight > 0 ? ActualHeight : srcH;
+                double targetW = Math.Min(srcW, Math.Max(320, viewW * 1.25));
+                double targetH = Math.Min(srcH, Math.Max(180, viewH * 1.25));
+                double scale = Math.Min(targetW / srcW, targetH / srcH);
+                scale = Math.Min(scale, 1.0);
+
+                int decodeW = Math.Max(2, ((int)Math.Round(srcW * scale)) & ~1);
+                int decodeH = Math.Max(2, ((int)Math.Round(srcH * scale)) & ~1);
+
+                int maxDim = Math.Max(decodeW, decodeH);
+                if (maxDim > MaxAnime4KFrameDim)
+                {
+                    double clampScale = (double)MaxAnime4KFrameDim / maxDim;
+                    decodeW = Math.Max(2, ((int)Math.Round(decodeW * clampScale)) & ~1);
+                    decodeH = Math.Max(2, ((int)Math.Round(decodeH * clampScale)) & ~1);
+                }
+
+                if (decodeW == _lastConfiguredDecodeW && decodeH == _lastConfiguredDecodeH) return;
+
+                frameGrabber.DecodePixelWidth = decodeW;
+                frameGrabber.DecodePixelHeight = decodeH;
+                _lastConfiguredDecodeW = decodeW;
+                _lastConfiguredDecodeH = decodeH;
+            }
+            catch (Exception ex)
+            {
+                AppLog.Error("VideoPlayerControl", "ConfigureFrameGrabberDecodeSize failed", ex);
+            }
+        }
+
+        private void StopFfmpegFrameLoop(bool resetGeneration = true)
+        {
+            if (resetGeneration)
+            {
+                Interlocked.Increment(ref _ffmpegLoopGeneration);
+            }
             Interlocked.Exchange(ref _ffmpegLoopState, 0);
-            try { _ffmpegFrameCts?.Cancel(); } catch { }
-            _ffmpegFrameCts?.Dispose();
+            var cts = _ffmpegFrameCts;
+            var task = _ffmpegFrameLoopTask;
+            var grabber = _ffmpegFrameGrabber;
+            var ras = _ffmpegArchiveRandomAccessStream;
+            var stream = _ffmpegArchiveStream;
+
             _ffmpegFrameCts = null;
             _ffmpegFrameLoopTask = null;
-
-            (_ffmpegFrameGrabber as IDisposable)?.Dispose();
             _ffmpegFrameGrabber = null;
-            _ffmpegArchiveRandomAccessStream?.Dispose();
             _ffmpegArchiveRandomAccessStream = null;
-            _ffmpegArchiveStream?.Dispose();
             _ffmpegArchiveStream = null;
+            _lastConfiguredDecodeW = -1;
+            _lastConfiguredDecodeH = -1;
+
+            try { cts?.Cancel(); } catch { }
+            if (task != null)
+            {
+                // Avoid surfacing expected cancellation exceptions during shutdown.
+                try { ((IAsyncResult)task).AsyncWaitHandle.WaitOne(300); } catch { }
+            }
+            cts?.Dispose();
+
+            (grabber as IDisposable)?.Dispose();
+            ras?.Dispose();
+            stream?.Dispose();
         }
 
         private void UpdateSKFrameBitmap()
