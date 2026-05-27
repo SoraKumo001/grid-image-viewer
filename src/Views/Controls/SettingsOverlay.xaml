@@ -62,6 +62,12 @@
                                             <Slider x:Name="SliderPanSpeed" Minimum="0.1" Maximum="3.0" StepFrequency="0.1" ValueChanged="SliderPanSpeed_ValueChanged" Width="160" VerticalAlignment="Center" />
                                             <TextBlock x:Name="TxtPanSpeed" Text="1.0x" VerticalAlignment="Center" Foreground="White" Width="40" />
                                         </StackPanel>
+                                        <CheckBox x:Name="CheckAnime4K" Content="Enable Anime4K (Real-time Upscaler)" Foreground="White" Click="SettingControl_Changed" />
+                                        <StackPanel Orientation="Horizontal" Spacing="12" Margin="24,0,0,0" x:Name="PanelAnime4KStrength">
+                                            <TextBlock Text="Anime4K Strength" VerticalAlignment="Center" Foreground="#AAAAAA" Width="120" />
+                                            <Slider x:Name="SliderAnime4KStrength" Minimum="0.1" Maximum="2.0" StepFrequency="0.1" ValueChanged="SliderAnime4KStrength_ValueChanged" Width="160" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TxtAnime4KStrength" Text="1.0x" VerticalAlignment="Center" Foreground="White" Width="40" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
 

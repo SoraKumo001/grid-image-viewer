@@ -6,6 +6,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using quick_image_viewer.Common;
+using quick_image_viewer.Helpers;
+using SkiaSharp;
 using System;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -389,7 +391,18 @@ namespace quick_image_viewer.Views.Controls
                         }
                     }
 
-                    canvas.DrawBitmap(_skFrameBitmap, new SkiaSharp.SKRect(x, y, x + w, y + h));
+                    using var paint = new SKPaint();
+                    SKShader? effectShader = null;
+                    if (_settings.EnableAnime4K)
+                    {
+                        effectShader = Anime4KEffect.CreateShader(_skFrameBitmap, (float)_settings.Anime4KStrength);
+                        if (effectShader != null)
+                        {
+                            paint.Shader = effectShader;
+                        }
+                    }
+                    canvas.DrawBitmap(_skFrameBitmap, new SkiaSharp.SKRect(x, y, x + w, y + h), paint);
+                    effectShader?.Dispose();
                 }
             }
         }

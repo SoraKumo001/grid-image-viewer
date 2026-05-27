@@ -444,6 +444,8 @@ namespace quick_image_viewer.Managers
                 targetPages[i].StretchMode = (int)(Microsoft.UI.Xaml.Media.Stretch)_settings.ImageStretchMode;
                 targetPages[i].EnablePanAnimation = _settings.EnablePanAnimation;
                 targetPages[i].PanAnimationSpeed = _settings.PanAnimationSpeed;
+                targetPages[i].EnableAnime4K = _settings.EnableAnime4K;
+                targetPages[i].Anime4KStrength = _settings.Anime4KStrength;
                 targetControls[i].Visibility = Visibility.Collapsed;
             }
 
@@ -707,6 +709,8 @@ namespace quick_image_viewer.Managers
                                     _pagesBuffer[b][i].UseHighQualityScaling = _settings.UseHighQualityScaling;
                                     _pagesBuffer[b][i].EnablePanAnimation = _settings.EnablePanAnimation;
                                     _pagesBuffer[b][i].PanAnimationSpeed = _settings.PanAnimationSpeed;
+                                    _pagesBuffer[b][i].EnableAnime4K = _settings.EnableAnime4K;
+                                    _pagesBuffer[b][i].Anime4KStrength = _settings.Anime4KStrength;
                                 }
                             }
                         }
@@ -1081,10 +1085,3 @@ namespace quick_image_viewer.Managers
         }
     }
 }
-
-
-
-
-
-
-

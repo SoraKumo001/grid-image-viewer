@@ -26,6 +26,8 @@ namespace quick_image_viewer.Interfaces
         bool EnablePanAnimation { get; set; }
         double PanAnimationSpeed { get; set; }
         double VideoVolume { get; set; }
+        bool EnableAnime4K { get; set; }
+        double Anime4KStrength { get; set; }
         int BoundaryAction { get; set; }
         int JpegQuality { get; set; }
         List<string> EnabledExtensions { get; set; }
@@ -59,6 +61,7 @@ namespace quick_image_viewer.Interfaces
         KeyBindingData KeyZoomOut { get; set; }
         KeyBindingData KeyZoomReset { get; set; }
         KeyBindingData KeyZoom100 { get; set; }
+        KeyBindingData KeyToggleAnime4K { get; set; }
 
         void SaveSettings();
         void LoadSettings();

@@ -25,6 +25,8 @@ namespace quick_image_viewer.Helpers
         public int FrameCount { get; internal set; } = 0;
         public int CurrentFrameDuration { get; internal set; } = 100;
         public bool UseHighQualityScaling { get; set; } = true;
+        public bool EnableAnime4K { get; set; } = false;
+        public double Anime4KStrength { get; set; } = 1.0;
         public bool EnablePanAnimation { get; set; } = false;
         public double PanAnimationSpeed { get; set; } = 1.0;
 
@@ -305,7 +307,19 @@ namespace quick_image_viewer.Helpers
                     ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
                     : new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
 
-                canvas.DrawImage(imgToDraw, destRect, sampling, null);
+                using var paint = new SKPaint();
+                SKShader? effectShader = null;
+                if (EnableAnime4K)
+                {
+                    effectShader = Anime4KEffect.CreateShader(imgToDraw, (float)Anime4KStrength);
+                    if (effectShader != null)
+                    {
+                        paint.Shader = effectShader;
+                    }
+                }
+
+                canvas.DrawImage(imgToDraw, destRect, sampling, paint);
+                effectShader?.Dispose();
             }
         }
 

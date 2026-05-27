@@ -327,6 +327,19 @@ namespace quick_image_viewer.Helpers
                 return;
             }
 
+            if (IsMatch(_settings.KeyToggleAnime4K, e.Key, isCtrl, isShift, isAlt))
+            {
+                _settings.EnableAnime4K = !_settings.EnableAnime4K;
+                _settings.SaveSettings();
+                _window.ViewerManager.UpdateStretch();
+
+                string msg = _settings.EnableAnime4K ? "Anime4K: ON" : "Anime4K: OFF";
+                _window.ViewerManager.ShowNotification(msg);
+
+                e.Handled = true;
+                return;
+            }
+
             if (IsMatch(_settings.KeyToggleReadingDirection, e.Key, isCtrl, isShift, isAlt))
             {
                 WeakReferenceMessenger.Default.Send<ToggleReadingDirectionMessage>();
@@ -440,8 +453,6 @@ namespace quick_image_viewer.Helpers
             }
         }
 
-
-
         public void HandlePointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             if (e.Handled && sender is not GridView) return;
@@ -527,4 +538,3 @@ namespace quick_image_viewer.Helpers
 
     }
 }
-

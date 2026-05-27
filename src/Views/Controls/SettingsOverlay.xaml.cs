@@ -53,6 +53,7 @@ namespace quick_image_viewer.Views.Controls
             new(nameof(ISettingsManager.KeyMetadata), "KeyBinding_Metadata", "KeyBinding_Category_View"),
             new(nameof(ISettingsManager.KeyToggleFullscreen), "KeyBinding_ToggleFullscreen", "KeyBinding_Category_View"),
             new(nameof(ISettingsManager.KeyToggleStretchMode), "KeyBinding_ToggleStretchMode", "KeyBinding_Category_View"),
+            new(nameof(ISettingsManager.KeyToggleAnime4K), "KeyBinding_ToggleAnime4K", "KeyBinding_Category_View"),
 
             // Bookmarks
             new(nameof(ISettingsManager.KeyToggleBookmarks), "KeyBinding_ToggleBookmarks", "KeyBinding_Category_Bookmarks"),
@@ -96,6 +97,10 @@ namespace quick_image_viewer.Views.Controls
             TxtPanSpeed.Text = $"{_settings.PanAnimationSpeed:F1}x";
             SliderVideoVolume.Value = (int)(_settings.VideoVolume * 100);
             ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
+            CheckAnime4K.IsChecked = _settings.EnableAnime4K;
+            SliderAnime4KStrength.IsEnabled = _settings.EnableAnime4K;
+            SliderAnime4KStrength.Value = _settings.Anime4KStrength;
+            TxtAnime4KStrength.Text = $"{_settings.Anime4KStrength:F1}x";
 
             InitializeKeyBindingData();
             InitializeExtensionsList();
@@ -132,6 +137,10 @@ namespace quick_image_viewer.Views.Controls
             {
                 SliderPanSpeed.IsEnabled = CheckPanAnimation.IsChecked ?? true;
             }
+            if (ReferenceEquals(sender, CheckAnime4K))
+            {
+                SliderAnime4KStrength.IsEnabled = CheckAnime4K.IsChecked ?? true;
+            }
             ApplyTemporarySettings();
         }
 
@@ -151,6 +160,16 @@ namespace quick_image_viewer.Views.Controls
             ApplyTemporarySettings();
         }
 
+        private void SliderAnime4KStrength_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        {
+            if (TxtAnime4KStrength != null)
+            {
+                TxtAnime4KStrength.Text = $"{e.NewValue:F1}x";
+            }
+            if (_isInitializing || _settings == null || _window == null) return;
+            ApplyTemporarySettings();
+        }
+
         private void ApplyTemporarySettings()
         {
             if (ComboBackground.SelectedIndex >= 0)
@@ -160,6 +179,8 @@ namespace quick_image_viewer.Views.Controls
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
             _settings.EnablePanAnimation = CheckPanAnimation.IsChecked ?? true;
             _settings.PanAnimationSpeed = SliderPanSpeed.Value;
+            _settings.EnableAnime4K = CheckAnime4K.IsChecked ?? false;
+            _settings.Anime4KStrength = SliderAnime4KStrength.Value;
 
             if (ComboBoundary.SelectedIndex >= 0)
                 _settings.BoundaryAction = ComboBoundary.SelectedIndex;
@@ -413,6 +434,10 @@ namespace quick_image_viewer.Views.Controls
                 SliderPanSpeed.IsEnabled = _settings.EnablePanAnimation;
                 SliderPanSpeed.Value = _settings.PanAnimationSpeed;
                 TxtPanSpeed.Text = $"{_settings.PanAnimationSpeed:F1}x";
+                CheckAnime4K.IsChecked = _settings.EnableAnime4K;
+                SliderAnime4KStrength.IsEnabled = _settings.EnableAnime4K;
+                SliderAnime4KStrength.Value = _settings.Anime4KStrength;
+                TxtAnime4KStrength.Text = $"{_settings.Anime4KStrength:F1}x";
                 SliderVideoVolume.Value = (int)(_settings.VideoVolume * 100);
                 ComboBoundary.SelectedIndex = _settings.BoundaryAction >= 0 ? _settings.BoundaryAction : 1;
 
@@ -452,6 +477,8 @@ namespace quick_image_viewer.Views.Controls
             _settings.ShowPageIndicator = CheckShowPageIndicator.IsChecked ?? true;
             _settings.EnablePanAnimation = CheckPanAnimation.IsChecked ?? true;
             _settings.PanAnimationSpeed = SliderPanSpeed.Value;
+            _settings.EnableAnime4K = CheckAnime4K.IsChecked ?? false;
+            _settings.Anime4KStrength = SliderAnime4KStrength.Value;
 
             if (ComboBoundary.SelectedIndex >= 0)
                 _settings.BoundaryAction = ComboBoundary.SelectedIndex;

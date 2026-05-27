@@ -33,10 +33,6 @@ namespace quick_image_viewer.Managers
         public bool IsFolder { get; set; } = true;
     }
 
-
-
-
-
     public class SettingsData
     {
         public KeyBindingData KeyNextImage { get; set; } = new KeyBindingData(VirtualKey.Space);
@@ -64,6 +60,7 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyZoomOut { get; set; } = new KeyBindingData(VirtualKey.Subtract, ctrl: true);
         public KeyBindingData KeyZoomReset { get; set; } = new KeyBindingData(VirtualKey.Number0, ctrl: true);
         public KeyBindingData KeyZoom100 { get; set; } = new KeyBindingData(VirtualKey.Number1, ctrl: true);
+        public KeyBindingData KeyToggleAnime4K { get; set; } = new KeyBindingData(VirtualKey.Y);
 
         // Legacy properties for migration
         public VirtualKey? LegacyKeyNextImage { get; set; }
@@ -97,6 +94,8 @@ namespace quick_image_viewer.Managers
         public bool EnablePanAnimation { get; set; } = true;
         public double PanAnimationSpeed { get; set; } = 1.0;
         public double VideoVolume { get; set; } = 0.5;
+        public bool EnableAnime4K { get; set; } = false;
+        public double Anime4KStrength { get; set; } = 1.0;
 
         public int JpegQuality { get; set; } = 90;
 
@@ -143,6 +142,7 @@ namespace quick_image_viewer.Managers
         public KeyBindingData KeyZoomOut { get => _data.KeyZoomOut; set => _data.KeyZoomOut = value; }
         public KeyBindingData KeyZoomReset { get => _data.KeyZoomReset; set => _data.KeyZoomReset = value; }
         public KeyBindingData KeyZoom100 { get => _data.KeyZoom100; set => _data.KeyZoom100 = value; }
+        public KeyBindingData KeyToggleAnime4K { get => _data.KeyToggleAnime4K; set => _data.KeyToggleAnime4K = value; }
 
         public int MangaSplitCount { get => _data.MangaSplitCount; set => _data.MangaSplitCount = value; }
         public bool IsRightToLeft { get => _data.IsRightToLeft; set => _data.IsRightToLeft = value; }
@@ -167,6 +167,8 @@ namespace quick_image_viewer.Managers
         public bool EnablePanAnimation { get => _data.EnablePanAnimation; set => _data.EnablePanAnimation = value; }
         public double PanAnimationSpeed { get => _data.PanAnimationSpeed; set => _data.PanAnimationSpeed = value; }
         public double VideoVolume { get => _data.VideoVolume; set => _data.VideoVolume = value; }
+        public bool EnableAnime4K { get => _data.EnableAnime4K; set => _data.EnableAnime4K = value; }
+        public double Anime4KStrength { get => _data.Anime4KStrength; set => _data.Anime4KStrength = value; }
         public int BoundaryAction { get => _data.BoundaryAction; set => _data.BoundaryAction = value; }
 
         public int JpegQuality { get => _data.JpegQuality; set => _data.JpegQuality = value; }
@@ -395,4 +397,3 @@ namespace quick_image_viewer.Managers
         }
     }
 }
-
